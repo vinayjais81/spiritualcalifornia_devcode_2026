@@ -1,0 +1,72 @@
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
+import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
+import { AppModule } from './app.module';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule, { rawBody: true });
+
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('PORT', 3001);
+  const frontendUrl = configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
+  const nodeEnv = configService.get<string>('NODE_ENV', 'development');
+
+  // Security
+  app.use(helmet());
+  app.use(cookieParser());
+
+  // CORS — allow localhost and any LAN IP in development
+  const allowedOrigins =
+    nodeEnv === 'production'
+      ? [frontendUrl]
+      : [frontendUrl, /^http:\/\/localhost:\d+$/, /^http:\/\/172\.\d+\.\d+\.\d+:\d+$/];
+
+  app.enableCors({
+    origin: allowedOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
+
+  // Global prefix + versioning
+  app.setGlobalPrefix('api');
+  app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
+
+  // Global validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      transformOptions: { enableImplicitConversion: true },
+    }),
+  );
+
+  // Swagger (non-production only)
+  if (nodeEnv !== 'production') {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('Spiritual California API')
+      .setDescription('Marketplace API for Seekers and Guides')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addCookieAuth('refresh_token')
+      .build();
+
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api/docs', app, document, {
+      swaggerOptions: { persistAuthorization: true },
+    });
+  }
+
+  await app.listen(port);
+  console.log(`🚀 API running on http://localhost:${port}/api/v1`);
+
+  if (nodeEnv !== 'production') {
+    console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
+  }
+}
+
+bootstrap();

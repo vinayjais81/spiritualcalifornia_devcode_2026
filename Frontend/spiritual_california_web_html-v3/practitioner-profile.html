@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+  <title>Maya Rosenberg — Spiritual California</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --gold: #E8B84B;
+      --gold-light: #F5D98A;
+      --gold-pale: #FDF6E3;
+      --charcoal: #3A3530;
+      --warm-gray: #8A8278;
+      --off-white: #FAFAF7;
+      --white: #FFFFFF;
+      --orange: #F07820;
+      --green: #5A8A6A;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--off-white);
+      color: var(--charcoal);
+      cursor: url('cursor.png') 16 16, auto;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 48px;
+      background: rgba(250,250,247,0.95);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(232,184,75,0.15);
+    }
+    .nav-brand { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .nav-logo-img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+    .nav-brand-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 500; color: var(--charcoal); }
+    .nav-brand-tagline { font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--warm-gray); margin-top: 2px; }
+    .nav-links { display: flex; gap: 32px; list-style: none; }
+    .nav-links a { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--warm-gray); text-decoration: none; transition: color 0.3s; }
+    .nav-links a:hover { color: var(--gold); }
+    .nav-cta { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--charcoal); text-decoration: none; border-bottom: 1.5px solid var(--gold); padding-bottom: 2px; }
+
+    /* HERO BANNER */
+    .profile-hero {
+      margin-top: 69px;
+      height: 280px;
+      background: linear-gradient(135deg, #2C2420 0%, #4A3C30 40%, #6B5240 100%);
+      position: relative; overflow: hidden;
+    }
+    .profile-hero-overlay {
+      position: absolute; inset: 0;
+      background: url('assets/yoga_outdoor.jpg') center/cover no-repeat;
+      opacity: 0.3;
+    }
+    .profile-hero-botanical {
+      position: absolute; right: 60px; bottom: 0;
+      opacity: 0.08; font-size: 200px; line-height: 1;
+    }
+
+    /* PROFILE HEADER */
+    .profile-header {
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 48px;
+      position: relative;
+    }
+    .profile-avatar-wrap {
+      position: absolute;
+      top: -70px; left: 48px;
+    }
+    .profile-avatar {
+      width: 140px; height: 140px; border-radius: 50%;
+      border: 4px solid var(--white);
+      object-fit: cover;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    }
+    .verified-badge {
+      position: absolute; bottom: 4px; right: 4px;
+      background: var(--gold); color: var(--white);
+      border-radius: 50%; width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; border: 2px solid var(--white);
+    }
+    .profile-meta {
+      padding-top: 24px; padding-left: 172px;
+      padding-bottom: 28px;
+      background: var(--white);
+      border-bottom: 1px solid rgba(232,184,75,0.1);
+    }
+    .profile-name-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+    .profile-name { font-family: 'Cormorant Garamond', serif; font-size: 32px; font-weight: 500; color: var(--charcoal); }
+    .profile-verified { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 20px; background: var(--gold-pale); border: 1px solid var(--gold); font-size: 11px; color: var(--charcoal); letter-spacing: 0.05em; }
+    .profile-tagline { font-size: 15px; color: var(--warm-gray); margin-bottom: 12px; line-height: 1.5; }
+    .profile-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .profile-tag { padding: 5px 13px; border-radius: 20px; background: var(--gold-pale); border: 1px solid rgba(232,184,75,0.4); font-size: 12px; color: var(--charcoal); }
+    .profile-tag.verified-mod { background: #EBF5EE; border-color: rgba(90,138,106,0.4); color: var(--green); }
+    .profile-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-book { padding: 12px 28px; border-radius: 8px; background: var(--charcoal); color: var(--white); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; border: none; cursor: pointer; transition: background 0.3s; }
+    .btn-book:hover { background: var(--gold); }
+    .btn-message { padding: 12px 24px; border-radius: 8px; background: transparent; color: var(--charcoal); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; border: 1.5px solid rgba(58,53,48,0.25); cursor: pointer; transition: all 0.3s; }
+    .btn-message:hover { border-color: var(--gold); color: var(--gold); }
+    .profile-stats { display: flex; gap: 28px; margin-top: 14px; }
+    .profile-stat { text-align: center; }
+    .profile-stat-num { font-family: 'Cormorant Garamond', serif; font-size: 22px; font-weight: 500; color: var(--charcoal); }
+    .profile-stat-label { font-size: 11px; color: var(--warm-gray); letter-spacing: 0.08em; text-transform: uppercase; }
+
+    /* MAIN LAYOUT */
+    .profile-body {
+      max-width: 1100px; margin: 0 auto;
+      padding: 40px 48px;
+      display: grid; grid-template-columns: 1fr 340px; gap: 48px;
+    }
+
+    /* TABS */
+    .tabs { display: flex; gap: 0; border-bottom: 1px solid rgba(232,184,75,0.15); margin-bottom: 36px; }
+    .tab {
+      padding: 12px 24px; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--warm-gray); cursor: pointer; border-bottom: 2px solid transparent;
+      transition: all 0.3s; margin-bottom: -1px;
+    }
+    .tab.active { color: var(--charcoal); border-bottom-color: var(--gold); }
+    .tab:hover { color: var(--charcoal); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ABOUT */
+    .about-text { font-size: 15px; color: var(--charcoal); line-height: 1.85; margin-bottom: 32px; }
+
+    /* POST COMPOSER */
+    .post-composer {
+      background: var(--white); border-radius: 14px;
+      border: 1px solid rgba(232,184,75,0.2);
+      padding: 20px; margin-bottom: 28px;
+    }
+    .composer-tabs { display: flex; gap: 0; border-bottom: 1px solid rgba(232,184,75,0.1); margin-bottom: 16px; }
+    .comp-tab { padding: 8px 18px; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--warm-gray); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s; }
+    .comp-tab.active { color: var(--charcoal); border-bottom-color: var(--gold); }
+    .comp-body { display: none; }
+    .comp-body.active { display: block; }
+    .comp-textarea { width: 100%; border: 1px solid rgba(138,130,120,0.2); border-radius: 8px; padding: 14px; font-family: 'Inter', sans-serif; font-size: 14px; color: var(--charcoal); resize: vertical; min-height: 100px; outline: none; transition: border-color 0.3s; }
+    .comp-textarea:focus { border-color: var(--gold); }
+    .comp-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+    .comp-media-btns { display: flex; gap: 10px; }
+    .comp-media-btn { padding: 7px 14px; border-radius: 20px; border: 1px solid rgba(138,130,120,0.2); background: transparent; font-size: 12px; color: var(--warm-gray); cursor: pointer; transition: all 0.2s; }
+    .comp-media-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .comp-submit { padding: 9px 22px; border-radius: 8px; background: var(--charcoal); color: var(--white); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; border: none; cursor: pointer; transition: background 0.3s; }
+    .comp-submit:hover { background: var(--gold); }
+
+    /* POST CARD */
+    .post-card {
+      background: var(--white); border-radius: 14px;
+      border: 1px solid rgba(232,184,75,0.12);
+      padding: 28px; margin-bottom: 20px;
+      transition: box-shadow 0.3s;
+    }
+    .post-card:hover { box-shadow: 0 4px 24px rgba(232,184,75,0.1); }
+    .post-meta { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .post-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold-pale); }
+    .post-author { font-size: 14px; font-weight: 500; color: var(--charcoal); }
+    .post-date { font-size: 12px; color: var(--warm-gray); }
+    .post-category { padding: 3px 10px; border-radius: 12px; background: var(--gold-pale); font-size: 11px; color: var(--charcoal); margin-left: auto; }
+    .post-title { font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 400; color: var(--charcoal); margin-bottom: 10px; line-height: 1.3; }
+    .post-excerpt { font-size: 14px; color: var(--warm-gray); line-height: 1.75; margin-bottom: 18px; }
+    .post-image { width: 100%; border-radius: 10px; margin-bottom: 18px; object-fit: cover; max-height: 320px; }
+    .post-video-embed { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 10px; margin-bottom: 18px; }
+    .post-video-embed iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; border-radius: 10px; }
+    .post-footer { display: flex; align-items: center; gap: 20px; padding-top: 14px; border-top: 1px solid rgba(232,184,75,0.1); }
+    .post-action { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--warm-gray); cursor: pointer; transition: color 0.2s; background: none; border: none; padding: 0; }
+    .post-action:hover { color: var(--gold); }
+    .post-read-more { margin-left: auto; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--charcoal); text-decoration: none; border-bottom: 1px solid rgba(58,53,48,0.2); padding-bottom: 1px; transition: color 0.2s; }
+    .post-read-more:hover { color: var(--gold); border-color: var(--gold); }
+
+    /* REVIEWS */
+    .review-card { background: var(--white); border-radius: 12px; padding: 22px; margin-bottom: 16px; border: 1px solid rgba(232,184,75,0.12); }
+    .review-stars { color: var(--gold); font-size: 14px; margin-bottom: 8px; }
+    .review-text { font-size: 14px; color: var(--charcoal); line-height: 1.7; margin-bottom: 12px; font-style: italic; }
+    .review-author { font-size: 12px; color: var(--warm-gray); }
+    .review-type { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+
+    /* TESTIMONIALS (from peers) */
+    .testimonial-card { background: var(--gold-pale); border-radius: 12px; padding: 22px; margin-bottom: 16px; border: 1px solid rgba(232,184,75,0.2); }
+    .testimonial-peer { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .testimonial-peer-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold); }
+    .testimonial-peer-name { font-size: 13px; font-weight: 500; color: var(--charcoal); }
+    .testimonial-peer-title { font-size: 11px; color: var(--warm-gray); }
+    .testimonial-text { font-size: 14px; color: var(--charcoal); line-height: 1.7; font-style: italic; }
+
+    /* SIDEBAR */
+    .sidebar {}
+    .sidebar-card { background: var(--white); border-radius: 14px; border: 1px solid rgba(232,184,75,0.15); padding: 24px; margin-bottom: 20px; }
+    .sidebar-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 400; color: var(--charcoal); margin-bottom: 16px; }
+    .session-slot { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(232,184,75,0.1); }
+    .session-slot:last-child { border-bottom: none; }
+    .session-name { font-size: 14px; color: var(--charcoal); }
+    .session-price { font-size: 14px; font-weight: 500; color: var(--charcoal); }
+    .session-type { font-size: 11px; color: var(--warm-gray); margin-top: 2px; }
+    .btn-book-sm { padding: 8px 18px; border-radius: 6px; background: var(--charcoal); color: var(--white); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; border: none; cursor: pointer; transition: background 0.3s; white-space: nowrap; }
+    .btn-book-sm:hover { background: var(--gold); }
+    .product-item { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid rgba(232,184,75,0.1); }
+    .product-item:last-child { border-bottom: none; }
+    .product-thumb { width: 52px; height: 52px; border-radius: 8px; object-fit: cover; background: var(--gold-pale); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    .product-name { font-size: 13px; color: var(--charcoal); font-weight: 500; margin-bottom: 3px; }
+    .product-price { font-size: 13px; color: var(--warm-gray); }
+    .product-type-badge { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold); }
+    .event-item { padding: 14px 0; border-bottom: 1px solid rgba(232,184,75,0.1); }
+    .event-item:last-child { border-bottom: none; }
+    .event-date { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 4px; }
+    .event-name { font-size: 14px; font-weight: 500; color: var(--charcoal); margin-bottom: 4px; }
+    .event-meta { font-size: 12px; color: var(--warm-gray); }
+    .event-price { font-size: 13px; color: var(--charcoal); font-weight: 500; margin-top: 6px; }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+      .profile-body { grid-template-columns: 1fr; padding: 24px 20px; }
+      .profile-meta { padding-left: 20px; padding-top: 90px; }
+      .profile-avatar-wrap { top: -60px; left: 20px; }
+      nav { padding: 12px 20px; }
+      .nav-links { display: none; }
+    }
+    @media (max-width: 640px) {
+      .profile-stats { gap: 16px; }
+      .profile-actions { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="index.html" class="nav-brand">
+    <img src="assets/logo.jpg" alt="Spiritual California" class="nav-logo-img"/>
+    <div>
+      <div class="nav-brand-name">Spiritual California</div>
+      <div class="nav-brand-tagline">mind · body · soul</div>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#">Practitioners</a></li>
+    <li><a href="#">Shop</a></li>
+    <li><a href="#">Soul Travels</a></li>
+    <li><a href="#">Events</a></li>
+  </ul>
+  <a href="register.html" class="nav-cta">Sign In</a>
+</nav>
+
+<!-- HERO BANNER -->
+<div class="profile-hero">
+  <div class="profile-hero-overlay"></div>
+  <div class="profile-hero-botanical">🌸</div>
+</div>
+
+<!-- PROFILE HEADER -->
+<div style="background:var(--white); border-bottom:1px solid rgba(232,184,75,0.1);">
+  <div class="profile-header">
+    <div class="profile-avatar-wrap">
+      <img src="assets/hero1.jpg" alt="Maya Rosenberg" class="profile-avatar"/>
+      <div class="verified-badge">✦</div>
+    </div>
+    <div class="profile-meta">
+      <div class="profile-name-row">
+        <div class="profile-name">Maya Rosenberg</div>
+        <div class="profile-verified">✦ Verified Practitioner</div>
+      </div>
+      <div class="profile-tagline">Ayurvedic practitioner & meditation guide · helping you return to balance · Los Angeles, CA</div>
+      <div class="profile-tags">
+        <span class="profile-tag verified-mod">✦ Ayurveda</span>
+        <span class="profile-tag verified-mod">✦ Meditation</span>
+        <span class="profile-tag verified-mod">✦ Breathwork</span>
+        <span class="profile-tag">Sound Healing</span>
+        <span class="profile-tag">Energy Healing</span>
+        <span class="profile-tag">Nutrition Coaching</span>
+        <span class="profile-tag">🇺🇸 English</span>
+        <span class="profile-tag">🇷🇺 Russian</span>
+      </div>
+      <div class="profile-actions">
+        <button class="btn-book">Book a Session</button>
+        <button class="btn-message">✉ Message</button>
+        <button class="btn-message">♡ Save</button>
+      </div>
+      <div class="profile-stats">
+        <div class="profile-stat">
+          <div class="profile-stat-num">4.9</div>
+          <div class="profile-stat-label">Rating</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-num">127</div>
+          <div class="profile-stat-label">Sessions</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-num">48</div>
+          <div class="profile-stat-label">Reviews</div>
+        </div>
+        <div class="profile-stat">
+          <div class="profile-stat-num">6 yrs</div>
+          <div class="profile-stat-label">Experience</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE BODY -->
+<div class="profile-body">
+
+  <!-- MAIN COLUMN -->
+  <div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('posts')">Updates & Articles</div>
+      <div class="tab" onclick="switchTab('about')">About</div>
+      <div class="tab" onclick="switchTab('reviews')">Reviews (48)</div>
+      <div class="tab" onclick="switchTab('testimonials')">Peer Testimonials</div>
+    </div>
+
+    <!-- TAB: POSTS -->
+    <div class="tab-content active" id="tab-posts">
+
+      <!-- POST COMPOSER (visible to practitioner when logged in) -->
+      <div class="post-composer">
+        <div class="composer-tabs">
+          <div class="comp-tab active" onclick="switchCompTab('update')">Quick Update</div>
+          <div class="comp-tab" onclick="switchCompTab('article')">Write Article</div>
+          <div class="comp-tab" onclick="switchCompTab('video')">Embed Video</div>
+        </div>
+
+        <div class="comp-body active" id="comp-update">
+          <textarea class="comp-textarea" placeholder="Share a thought, insight, or update with your community…"></textarea>
+          <div class="comp-actions">
+            <div class="comp-media-btns">
+              <button class="comp-media-btn">📷 Photo</button>
+              <button class="comp-media-btn">🔗 Link</button>
+            </div>
+            <button class="comp-submit">Post Update</button>
+          </div>
+        </div>
+
+        <div class="comp-body" id="comp-article">
+          <input type="text" class="comp-textarea" placeholder="Article title…" style="min-height:auto; margin-bottom:10px; font-family:'Cormorant Garamond',serif; font-size:20px;"/>
+          <textarea class="comp-textarea" placeholder="Write your article here. Share your knowledge, experience, or a story that might help someone on their journey…" rows="6"></textarea>
+          <div class="comp-actions">
+            <div class="comp-media-btns">
+              <button class="comp-media-btn">📷 Cover Image</button>
+              <button class="comp-media-btn">🏷 Category</button>
+            </div>
+            <button class="comp-submit">Publish Article</button>
+          </div>
+        </div>
+
+        <div class="comp-body" id="comp-video">
+          <textarea class="comp-textarea" placeholder="Paste a YouTube or Vimeo URL here…" rows="2" style="min-height:60px;"></textarea>
+          <textarea class="comp-textarea" placeholder="Add a description or reflection about this video…" rows="3" style="margin-top:10px;"></textarea>
+          <div class="comp-actions">
+            <div></div>
+            <button class="comp-submit">Embed Video</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- POST 1: Article with image -->
+      <div class="post-card">
+        <div class="post-meta">
+          <img src="assets/hero1.jpg" alt="Maya" class="post-avatar"/>
+          <div>
+            <div class="post-author">Maya Rosenberg</div>
+            <div class="post-date">March 8, 2026</div>
+          </div>
+          <div class="post-category">Ayurveda</div>
+        </div>
+        <div class="post-title">The Three Doshas and Why Your Morning Routine Might Be Working Against You</div>
+        <img src="assets/ayurveda.jpg" alt="Ayurveda" class="post-image"/>
+        <div class="post-excerpt">Most wellness advice is written for Pitta types — the driven, ambitious, slightly overheated people who dominate the wellness industry. But if you're a Vata, that 5am cold shower and intense cardio routine might be the exact reason you feel anxious and depleted by noon. Here's how to read your body's signals and build a morning practice that actually works for your constitution…</div>
+        <div class="post-footer">
+          <button class="post-action">♡ 34</button>
+          <button class="post-action">💬 12 comments</button>
+          <button class="post-action">↗ Share</button>
+          <a href="#" class="post-read-more">Read Full Article →</a>
+        </div>
+      </div>
+
+      <!-- POST 2: YouTube video embed -->
+      <div class="post-card">
+        <div class="post-meta">
+          <img src="assets/hero1.jpg" alt="Maya" class="post-avatar"/>
+          <div>
+            <div class="post-author">Maya Rosenberg</div>
+            <div class="post-date">February 22, 2026</div>
+          </div>
+          <div class="post-category">Meditation</div>
+        </div>
+        <div class="post-title">20-Minute Guided Nidra for Deep Rest — Free Session</div>
+        <div class="post-video-embed">
+          <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Yoga Nidra Guided Meditation" allowfullscreen></iframe>
+        </div>
+        <div class="post-excerpt">Yoga Nidra — the "yogic sleep" — is one of the most powerful tools I know for nervous system restoration. This 20-minute session is designed for anyone experiencing burnout, sleep issues, or chronic stress. No experience needed. All you need is a comfortable place to lie down.</div>
+        <div class="post-footer">
+          <button class="post-action">♡ 87</button>
+          <button class="post-action">💬 29 comments</button>
+          <button class="post-action">↗ Share</button>
+        </div>
+      </div>
+
+      <!-- POST 3: Quick update with photo -->
+      <div class="post-card">
+        <div class="post-meta">
+          <img src="assets/hero1.jpg" alt="Maya" class="post-avatar"/>
+          <div>
+            <div class="post-author">Maya Rosenberg</div>
+            <div class="post-date">February 14, 2026</div>
+          </div>
+          <div class="post-category">Update</div>
+        </div>
+        <img src="assets/poppy_close.jpg" alt="California poppies" class="post-image" style="max-height:240px;"/>
+        <div class="post-excerpt">Just returned from a week of silence at a small hermitage in the Santa Cruz mountains. No phone, no screens — just breath, birdsong, and the slow unfolding of what's been waiting beneath the noise. I'm back with new sessions available in March. If you've been feeling the pull toward stillness, this might be your moment. 🌸</div>
+        <div class="post-footer">
+          <button class="post-action">♡ 156</button>
+          <button class="post-action">💬 41 comments</button>
+          <button class="post-action">↗ Share</button>
+        </div>
+      </div>
+
+    </div><!-- /tab-posts -->
+
+    <!-- TAB: ABOUT -->
+    <div class="tab-content" id="tab-about">
+      <div class="about-text">
+        <p style="margin-bottom:20px;">I came to Ayurveda the way most people do — through exhaustion. After years of working in tech in San Francisco, I found myself in a state of burnout so complete that I couldn't remember what it felt like to feel well. A friend recommended an Ayurvedic practitioner in Marin, and that first consultation changed the direction of my life.</p>
+        <p style="margin-bottom:20px;">I trained for three years at the California College of Ayurveda, completed an advanced practicum in Kerala, India, and studied Yoga Nidra and Tibetan breathwork practices with teachers in Dharamsala. I am certified by the National Ayurvedic Medical Association (NAMA) and have been in private practice in Los Angeles since 2020.</p>
+        <p style="margin-bottom:20px;">My approach is deeply individualized. I don't believe in one-size-fits-all wellness. I work with your unique constitution, your life circumstances, and the specific challenges you're facing right now — whether that's burnout, digestive issues, sleep problems, anxiety, or a more diffuse sense that something is off and you can't quite name it.</p>
+        <p>I offer sessions in English and Russian, both online and in-person in Los Angeles. I also lead small group retreats and contribute to Soul Travels programs in India and Sri Lanka.</p>
+      </div>
+
+      <div style="margin-bottom:28px;">
+        <div style="font-size:11px; letter-spacing:0.15em; text-transform:uppercase; color:var(--warm-gray); margin-bottom:14px;">Verified Credentials</div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--white); border-radius:10px; border:1px solid rgba(90,138,106,0.2);">
+            <span style="font-size:20px;">📜</span>
+            <div>
+              <div style="font-size:14px; font-weight:500; color:var(--charcoal);">Certified Ayurvedic Practitioner (CAP)</div>
+              <div style="font-size:12px; color:var(--warm-gray);">California College of Ayurveda · Verified ✦</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--white); border-radius:10px; border:1px solid rgba(90,138,106,0.2);">
+            <span style="font-size:20px;">📜</span>
+            <div>
+              <div style="font-size:14px; font-weight:500; color:var(--charcoal);">500-Hour Yoga Teacher Training (RYT-500)</div>
+              <div style="font-size:12px; color:var(--warm-gray);">Yoga Alliance · Verified ✦</div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:12px; padding:12px 16px; background:var(--white); border-radius:10px; border:1px solid rgba(232,184,75,0.2);">
+            <span style="font-size:20px;">📜</span>
+            <div>
+              <div style="font-size:14px; font-weight:500; color:var(--charcoal);">Tibetan Breathwork — Teacher Attestation</div>
+              <div style="font-size:12px; color:var(--warm-gray);">Lama Tenzin Dorje, Dharamsala · Pending verification</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: REVIEWS -->
+    <div class="tab-content" id="tab-reviews">
+      <div style="display:flex; align-items:center; gap:20px; margin-bottom:28px; padding:20px; background:var(--white); border-radius:12px; border:1px solid rgba(232,184,75,0.15);">
+        <div style="text-align:center;">
+          <div style="font-family:'Cormorant Garamond',serif; font-size:52px; font-weight:300; color:var(--charcoal); line-height:1;">4.9</div>
+          <div style="color:var(--gold); font-size:18px; margin:4px 0;">★★★★★</div>
+          <div style="font-size:12px; color:var(--warm-gray);">48 reviews</div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:13px; color:var(--warm-gray); margin-bottom:4px;">These are verified reviews from seekers who have completed a paid session with Maya.</div>
+        </div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-type">Verified Session Review</div>
+        <div class="review-stars">★★★★★</div>
+        <div class="review-text">"My session with Maya was one of the most grounding experiences I've had in years. She listened without judgment, asked exactly the right questions, and gave me a practical Ayurvedic protocol that I've been following for three weeks now. My sleep has improved dramatically."</div>
+        <div class="review-author">— Sarah K., Los Angeles · Ayurveda Consultation · February 2026</div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-type">Verified Session Review</div>
+        <div class="review-stars">★★★★★</div>
+        <div class="review-text">"I was skeptical about online sessions but Maya made the experience feel completely personal. Her knowledge of Ayurveda is deep and she explains everything in a way that's accessible. I left the session with a clear plan and, more importantly, a sense of hope I hadn't felt in months."</div>
+        <div class="review-author">— Michael T., San Francisco · Burnout Recovery Program · January 2026</div>
+      </div>
+
+      <div class="review-card">
+        <div class="review-type">Verified Session Review</div>
+        <div class="review-stars">★★★★☆</div>
+        <div class="review-text">"Really wonderful practitioner. The Yoga Nidra session was deeply restorative — I fell into a state I can only describe as conscious sleep. The only reason for 4 stars is that I wished the session had been a bit longer. Will definitely book again."</div>
+        <div class="review-author">— Priya M., San Diego · Yoga Nidra Session · December 2025</div>
+      </div>
+    </div>
+
+    <!-- TAB: PEER TESTIMONIALS -->
+    <div class="tab-content" id="tab-testimonials">
+      <p style="font-size:13px; color:var(--warm-gray); margin-bottom:24px; line-height:1.7;">These testimonials are written by other verified practitioners on Spiritual California — colleagues who can speak to Maya's expertise, professionalism, and approach.</p>
+
+      <div class="testimonial-card">
+        <div class="testimonial-peer">
+          <img src="assets/hero2.jpg" alt="Priya Nair" class="testimonial-peer-avatar"/>
+          <div>
+            <div class="testimonial-peer-name">Priya Nair</div>
+            <div class="testimonial-peer-title">Ayurvedic Physician & Life Coach · ✦ Verified</div>
+          </div>
+        </div>
+        <div class="testimonial-text">"Maya is one of the most grounded Ayurvedic practitioners I've had the privilege of knowing. Her training is rigorous, her intuition is remarkable, and her ability to hold space for people in difficult moments is a genuine gift. I refer clients to her without hesitation."</div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="testimonial-peer">
+          <img src="assets/hero3.jpg" alt="Lena Kovacs" class="testimonial-peer-avatar"/>
+          <div>
+            <div class="testimonial-peer-name">Lena Kovacs</div>
+            <div class="testimonial-peer-title">Yoga & Breathwork Teacher · ✦ Verified</div>
+          </div>
+        </div>
+        <div class="testimonial-text">"I've co-facilitated retreats with Maya and watched her work with dozens of participants. What sets her apart is her ability to meet each person exactly where they are — without agenda, without projection. She embodies the practices she teaches."</div>
+      </div>
+    </div>
+
+  </div><!-- /main column -->
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- Book a Session -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">Book a Session</div>
+      <div class="session-slot">
+        <div>
+          <div class="session-name">1:1 Consultation (60 min)</div>
+          <div class="session-type">Online or In-Person · LA</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="session-price">$150</div>
+          <button class="btn-book-sm" style="margin-top:6px;">Book</button>
+        </div>
+      </div>
+      <div class="session-slot">
+        <div>
+          <div class="session-name">Deep Dive Session (90 min)</div>
+          <div class="session-type">Online or In-Person · LA</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="session-price">$220</div>
+          <button class="btn-book-sm" style="margin-top:6px;">Book</button>
+        </div>
+      </div>
+      <div class="session-slot">
+        <div>
+          <div class="session-name">4-Session Package</div>
+          <div class="session-type">Save $80 · Flexible scheduling</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="session-price">$520</div>
+          <button class="btn-book-sm" style="margin-top:6px;">Book</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Products -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">From the Shop</div>
+      <div class="product-item">
+        <div class="product-thumb">💾</div>
+        <div>
+          <div class="product-type-badge">Digital</div>
+          <div class="product-name">30-Day Awareness Training</div>
+          <div class="product-price">$29 · Instant download</div>
+        </div>
+      </div>
+      <div class="product-item">
+        <div class="product-thumb">🌿</div>
+        <div>
+          <div class="product-type-badge">Physical</div>
+          <div class="product-name">Vata-Balancing Herbal Blend</div>
+          <div class="product-price">$38 · Ships in 3–5 days</div>
+        </div>
+      </div>
+      <div class="product-item">
+        <div class="product-thumb">🎵</div>
+        <div>
+          <div class="product-type-badge">Digital</div>
+          <div class="product-name">Yoga Nidra Audio Series (7 sessions)</div>
+          <div class="product-price">$49 · Instant download</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Events -->
+    <div class="sidebar-card">
+      <div class="sidebar-title">Upcoming Events</div>
+      <div class="event-item">
+        <div class="event-date">March 21 · 7:00 PM PST</div>
+        <div class="event-name">New Moon Meditation Circle</div>
+        <div class="event-meta">Virtual · Zoom · 90 min</div>
+        <div class="event-price">$35 per person</div>
+      </div>
+      <div class="event-item">
+        <div class="event-date">April 5–6 · Los Angeles</div>
+        <div class="event-name">Ayurveda & Spring Reset Weekend</div>
+        <div class="event-meta">In-Person · Silver Lake, LA</div>
+        <div class="event-price">$280 per person</div>
+      </div>
+      <div class="event-item">
+        <div class="event-date">October 12–22 · India</div>
+        <div class="event-name">Soul Travel: Kerala Panchakarma</div>
+        <div class="event-meta">Soul Travel · 10 Days · Kerala</div>
+        <div class="event-price">From $3,200 per person</div>
+      </div>
+    </div>
+
+  </div><!-- /sidebar -->
+
+</div><!-- /profile-body -->
+
+<script>
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t,i) => {
+      const names = ['posts','about','reviews','testimonials'];
+      t.classList.toggle('active', names[i] === name);
+    });
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+  }
+
+  function switchCompTab(name) {
+    document.querySelectorAll('.comp-tab').forEach((t,i) => {
+      const names = ['update','article','video'];
+      t.classList.toggle('active', names[i] === name);
+    });
+    document.querySelectorAll('.comp-body').forEach(c => c.classList.remove('active'));
+    document.getElementById('comp-' + name).classList.add('active');
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,1649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+  <title>Spiritual California — Find Your Guide. Begin Your Journey.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold: #E8B84B;
+      --gold-light: #F5D98A;
+      --gold-pale: #FDF6E3;
+      --charcoal: #3A3530;
+      --warm-gray: #8A8278;
+      --off-white: #FAFAF7;
+      --white: #FFFFFF;
+      --orange: #F07820;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      cursor: url('cursor.png') 16 16, auto;
+      font-family: 'Inter', sans-serif;
+      background-color: var(--off-white);
+      color: var(--charcoal);
+      overflow-x: hidden;
+    }
+
+    /* ─── NAVIGATION ─────────────────────────────────────────── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: 14px 48px;
+      background: rgba(250,250,247,0.96);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(232,184,75,0.12);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      grid-column: 2;
+    }
+
+    .nav-logo-img {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .nav-brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+
+    .nav-brand-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--charcoal);
+    }
+
+    .nav-brand-tagline {
+      font-family: 'Inter', sans-serif;
+      font-size: 9px;
+      font-weight: 400;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--warm-gray);
+      margin-top: 3px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 36px;
+      list-style: none;
+      grid-column: 1;
+    }
+
+    .nav-links a {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--warm-gray);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover { color: var(--gold); }
+
+    .nav-cta {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--charcoal);
+      text-decoration: none;
+      border-bottom: 1.5px solid var(--gold);
+      padding-bottom: 2px;
+      transition: color 0.3s;
+      grid-column: 3;
+      justify-self: end;
+    }
+
+    .nav-cta:hover { color: var(--gold); }
+
+    /* ─── HERO ───────────────────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 110px 60px 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-headline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(52px, 8.5vw, 108px);
+      font-weight: 300;
+      line-height: 1.05;
+      letter-spacing: -0.01em;
+      color: var(--charcoal);
+      text-align: center;
+      max-width: 900px;
+      margin-bottom: 28px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-headline em {
+      font-style: italic;
+      color: var(--gold);
+    }
+
+    .hero-sub {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 300;
+      letter-spacing: 0.08em;
+      color: var(--warm-gray);
+      text-align: center;
+      margin-bottom: 44px;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Botanical BG */
+    .botanical-bg {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0.07;
+    }
+
+    /* ─── POPPY NAV ──────────────────────────────────────────── */
+    .poppy-nav {
+      display: flex;
+      gap: 28px;
+      align-items: flex-end;
+      justify-content: center;
+      margin-bottom: 60px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .poppy-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .poppy-circle {
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2.5px solid var(--gold);
+      position: relative;
+      transition: transform 0.4s ease, box-shadow 0.4s ease;
+    }
+
+    .poppy-circle:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 50px rgba(232,184,75,0.25);
+    }
+
+    .poppy-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+      filter: saturate(0.9);
+      transition: filter 0.4s;
+    }
+
+    .poppy-circle:hover img { filter: saturate(1.1); }
+
+    .poppy-circle::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 55%, rgba(232,184,75,0.1) 100%);
+      pointer-events: none;
+    }
+
+    .poppy-stem {
+      width: 1.5px;
+      height: 44px;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+      margin-top: 4px;
+    }
+
+    .poppy-label {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--warm-gray);
+      margin-top: 10px;
+      transition: color 0.3s;
+    }
+
+    .poppy-item:hover .poppy-label { color: var(--gold); }
+
+    .poppy-item:nth-child(1) .poppy-circle { width: 200px; height: 200px; }
+    .poppy-item:nth-child(2) .poppy-circle { width: 200px; height: 200px; }
+    .poppy-item:nth-child(3) .poppy-circle { width: 200px; height: 200px; }
+    .poppy-item:nth-child(4) .poppy-circle { width: 200px; height: 200px; }
+
+    /* ─── AI GUIDE ───────────────────────────────────────────── */
+    .ai-guide {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto 28px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .ai-guide-label {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 500;
+      font-style: normal;
+      color: var(--gold);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .ai-guide-input-wrap {
+      display: flex;
+      align-items: center;
+      background: var(--white);
+      border: 1.5px solid rgba(232,184,75,0.5);
+      border-radius: 50px;
+      padding: 12px 18px 12px 26px;
+      box-shadow: 0 4px 30px rgba(232,184,75,0.1);
+      transition: box-shadow 0.3s, border-color 0.3s;
+    }
+
+    .ai-guide-input-wrap:focus-within {
+      border-color: var(--gold);
+      box-shadow: 0 4px 40px rgba(232,184,75,0.2);
+    }
+
+    .ai-guide-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 300;
+      color: var(--charcoal);
+      background: transparent;
+    }
+
+    .ai-guide-input::placeholder { color: #C4BDB5; }
+
+    .ai-guide-btn {
+      background: var(--gold);
+      color: var(--white);
+      border: none;
+      border-radius: 50px;
+      padding: 9px 22px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.3s;
+      white-space: nowrap;
+    }
+
+    .ai-guide-btn:hover { background: #D4A43A; }
+
+    .ai-guide-hints {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .ai-hint-chip {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      color: var(--warm-gray);
+      background: transparent;
+      border: 1px solid rgba(138,130,120,0.3);
+      border-radius: 50px;
+      padding: 5px 13px;
+      cursor: pointer;
+      transition: border-color 0.3s, color 0.3s;
+    }
+
+    .ai-hint-chip:hover { border-color: var(--gold); color: var(--gold); }
+
+    .scroll-hint {
+      position: absolute;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      opacity: 0.4;
+      animation: bounce 2s infinite;
+    }
+
+    .scroll-hint span {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--warm-gray);
+    }
+
+    .scroll-arrow { width: 1px; height: 32px; background: linear-gradient(to bottom, var(--gold), transparent); }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(6px); }
+    }
+
+    /* ─── SECTION HEADER ─────────────────────────────────────── */
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 0 60px;
+      margin-bottom: 36px;
+    }
+
+    .section-line {
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(232,184,75,0.3), transparent);
+    }
+
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 30px;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--charcoal);
+      white-space: nowrap;
+    }
+
+    .section-link {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--warm-gray);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(138,130,120,0.4);
+      padding-bottom: 1px;
+      white-space: nowrap;
+      transition: color 0.3s;
+    }
+
+    .section-link:hover { color: var(--gold); border-color: var(--gold); }
+
+    /* ─── CAROUSEL ───────────────────────────────────────────── */
+    .carousel-wrap {
+      position: relative;
+      padding: 0 60px;
+    }
+
+    .carousel-track {
+      display: flex;
+      gap: 24px;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+      padding-bottom: 8px;
+    }
+
+    .carousel-track::-webkit-scrollbar { display: none; }
+
+    .carousel-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--white);
+      border: 1.5px solid rgba(232,184,75,0.5);
+      color: var(--charcoal);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      box-shadow: 0 4px 16px rgba(58,53,48,0.1);
+      transition: background 0.3s, border-color 0.3s, transform 0.2s;
+    }
+
+    .carousel-btn:hover {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: var(--white);
+      transform: translateY(-50%) scale(1.05);
+    }
+
+    .carousel-btn.prev { left: 12px; }
+    .carousel-btn.next { right: 12px; }
+
+    /* ─── FEED CARDS ─────────────────────────────────────────── */
+    .feed-card {
+      flex: 0 0 300px;
+      background: var(--white);
+      border-radius: 4px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.3s, box-shadow 0.3s;
+      text-decoration: none;
+      color: inherit;
+      position: relative;
+    }
+
+    .feed-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(58,53,48,0.1);
+    }
+
+    .feed-card-img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      display: block;
+      filter: saturate(0.85);
+      transition: filter 0.4s;
+    }
+
+    .feed-card:hover .feed-card-img { filter: saturate(1); }
+
+    .feed-card-body {
+      cursor: url('cursor.png') 16 16, auto; padding: 20px 22px 24px; }
+
+    .feed-card-tag {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+
+    .feed-card-tag.place { color: #7BAE8A; }
+    .feed-card-tag.editors { color: var(--orange); }
+
+    .feed-card-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 500;
+      line-height: 1.3;
+      color: var(--charcoal);
+      margin-bottom: 8px;
+    }
+
+    .feed-card-excerpt {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 300;
+      line-height: 1.7;
+      color: var(--warm-gray);
+      margin-bottom: 16px;
+    }
+
+    .feed-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .feed-card-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1.5px solid var(--gold-light);
+      flex-shrink: 0;
+    }
+
+    .feed-card-author {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--warm-gray);
+    }
+
+    /* Editor's Pick badge */
+    .editors-pick-badge {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: var(--orange);
+      color: var(--white);
+      font-family: 'Inter', sans-serif;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 50px;
+    }
+
+    /* Verified badge on card */
+    .verified-photo-badge {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: var(--white);
+      border-radius: 50px;
+      padding: 3px 8px;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-family: 'Inter', sans-serif;
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--gold);
+      letter-spacing: 0.06em;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+
+    .verified-photo-badge::before { content: '✦'; font-size: 8px; }
+
+    /* ─── PRACTITIONERS STRIP ────────────────────────────────── */
+    .practitioner-card {
+      flex: 0 0 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .practitioner-img-wrap {
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid rgba(232,184,75,0.5);
+      margin-bottom: 14px;
+      position: relative;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    .practitioner-card:hover .practitioner-img-wrap {
+      border-color: var(--gold);
+      transform: scale(1.04);
+    }
+
+    .practitioner-img-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center top;
+    }
+
+    .practitioner-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--charcoal);
+      margin-bottom: 3px;
+    }
+
+    .practitioner-specialty {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 400;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--warm-gray);
+      margin-bottom: 6px;
+    }
+
+    .verified-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--gold);
+      letter-spacing: 0.06em;
+    }
+
+    .verified-badge::before { content: '✦'; font-size: 8px; }
+
+    /* ─── SECTION WRAPPERS ───────────────────────────────────── */
+    .feed-section { padding: 60px 0 72px; }
+    .feed-section.alt { background: var(--gold-pale); }
+
+    /* ─── SOUL TRAVELS BANNER ────────────────────────────────── */
+    .travels-banner {
+      position: relative;
+      height: 440px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .travels-banner-bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: brightness(0.62) saturate(0.8);
+    }
+
+    .travels-banner-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      color: var(--white);
+      padding: 0 40px;
+    }
+
+    .travels-banner-eyebrow {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-bottom: 14px;
+    }
+
+    .travels-banner-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(38px, 5.5vw, 68px);
+      font-weight: 300;
+      font-style: italic;
+      line-height: 1.1;
+      margin-bottom: 18px;
+    }
+
+    .travels-banner-sub {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 300;
+      letter-spacing: 0.03em;
+      opacity: 0.85;
+      margin-bottom: 32px;
+      max-width: 460px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.7;
+    }
+
+    .btn-outline-white {
+      display: inline-block;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--white);
+      border: 1.5px solid rgba(255,255,255,0.6);
+      border-radius: 50px;
+      padding: 13px 32px;
+      text-decoration: none;
+      transition: background 0.3s, border-color 0.3s;
+    }
+
+    .btn-outline-white:hover {
+      background: rgba(255,255,255,0.15);
+      border-color: var(--white);
+    }
+
+    /* ─── TRAVELS BLOG UPDATES ───────────────────────────────── */
+    .travels-updates {
+      padding: 64px 0 72px;
+      background: var(--white);
+    }
+
+    .update-card {
+      flex: 0 0 280px;
+      background: var(--off-white);
+      border-radius: 4px;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .update-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 14px 36px rgba(58,53,48,0.09);
+    }
+
+    .update-card-img {
+      width: 100%;
+      height: 170px;
+      object-fit: cover;
+      filter: saturate(0.8);
+      transition: filter 0.4s;
+    }
+
+    .update-card:hover .update-card-img { filter: saturate(1); }
+
+    .update-card-body {
+      cursor: url('cursor.png') 16 16, auto; padding: 18px 20px 22px; }
+
+    .update-card-dest {
+      font-family: 'Inter', sans-serif;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 7px;
+    }
+
+    .update-card-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 500;
+      line-height: 1.3;
+      color: var(--charcoal);
+      margin-bottom: 7px;
+    }
+
+    .update-card-excerpt {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 300;
+      line-height: 1.65;
+      color: var(--warm-gray);
+      margin-bottom: 14px;
+    }
+
+    .update-card-date {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      color: rgba(138,130,120,0.7);
+      letter-spacing: 0.06em;
+    }
+
+    /* ─── FOOTER ─────────────────────────────────────────────── */
+    footer {
+      background: var(--charcoal);
+      color: rgba(255,255,255,0.6);
+      padding: 56px 60px 36px;
+    }
+
+    .footer-top {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 48px;
+      margin-bottom: 44px;
+    }
+
+    .footer-brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .footer-logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .footer-brand-text .footer-brand-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 400;
+      color: var(--white);
+      display: block;
+    }
+
+    .footer-brand-text .footer-brand-tagline {
+      font-family: 'Inter', sans-serif;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      display: block;
+      margin-top: 2px;
+    }
+
+    .footer-tagline {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 300;
+      line-height: 1.7;
+      color: rgba(255,255,255,0.45);
+    }
+
+    .footer-col-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 9px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--gold-light);
+      margin-bottom: 14px;
+    }
+
+    .footer-links { list-style: none; display: flex; flex-direction: column; gap: 9px; }
+
+    .footer-links a {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.45);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .footer-links a:hover { color: var(--gold-light); }
+
+    .footer-bottom {
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding-top: 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-copy {
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.3);
+    }
+
+    /* ─── HAMBURGER MENU ────────────────────────────────────── */
+    .nav-hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 4px;
+      z-index: 200;
+    }
+
+    .nav-hamburger span {
+      display: block;
+      width: 24px;
+      height: 1.5px;
+      background: var(--charcoal);
+      transition: all 0.3s ease;
+    }
+
+    .nav-hamburger.open span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+    .nav-hamburger.open span:nth-child(2) { opacity: 0; }
+    .nav-hamburger.open span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+
+    .nav-mobile-menu {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(250,250,247,0.98);
+      backdrop-filter: blur(20px);
+      z-index: 150;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 36px;
+    }
+
+    .nav-mobile-menu.open { display: flex; }
+
+    .nav-mobile-menu a {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 32px;
+      font-weight: 400;
+      font-style: italic;
+      color: var(--charcoal);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      transition: color 0.3s;
+    }
+
+    .nav-mobile-menu a:hover { color: var(--gold); }
+
+    .nav-mobile-cta {
+      font-family: 'Inter', sans-serif !important;
+      font-size: 12px !important;
+      font-style: normal !important;
+      letter-spacing: 0.12em !important;
+      text-transform: uppercase;
+      border-bottom: 1.5px solid var(--gold);
+      padding-bottom: 2px;
+    }
+
+    /* ─── RESPONSIVE: TABLET (max 1024px) ───────────────────── */
+    @media (max-width: 1024px) {
+      nav { padding: 14px 32px; }
+      .nav-links { gap: 24px; }
+      .hero { padding: 100px 40px 70px; }
+      .section-header { padding: 0 40px; }
+      .carousel-wrap { padding: 0 40px; }
+      footer { padding: 48px 40px 32px; }
+      .footer-top { grid-template-columns: 2fr 1fr 1fr; gap: 36px; }
+      .footer-top > div:last-child { grid-column: 2; }
+    }
+
+    /* ─── RESPONSIVE: MOBILE (max 768px) ────────────────────── */
+    @media (max-width: 768px) {
+      /* Nav */
+      nav { padding: 12px 20px; }
+      .nav-links { display: none; }
+      .nav-cta { display: none; }
+      .nav-hamburger { display: flex; }
+
+      /* Hero */
+      .hero { padding: 88px 24px 60px; min-height: auto; }
+      .hero-headline { font-size: clamp(36px, 10vw, 56px); margin-bottom: 20px; }
+      .hero-sub { font-size: 11px; margin-bottom: 32px; }
+
+      /* Poppy nav — 2x2 grid on mobile */
+      .poppy-nav {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px 8px;
+        align-items: end;
+        margin-bottom: 40px;
+        width: 100%;
+        max-width: 340px;
+      }
+
+      .poppy-item:nth-child(1) .poppy-circle { width: 110px; height: 110px; }
+      .poppy-item:nth-child(2) .poppy-circle { width: 130px; height: 130px; }
+      .poppy-item:nth-child(3) .poppy-circle { width: 118px; height: 118px; }
+      .poppy-item:nth-child(4) .poppy-circle { width: 124px; height: 124px; }
+
+      .poppy-stem { height: 28px; }
+
+      /* AI Guide */
+      .ai-guide { max-width: 100%; padding: 0 4px; }
+      .ai-guide-input-wrap { padding: 10px 14px 10px 18px; }
+      .ai-guide-input { font-size: 12px; }
+      .ai-guide-btn { padding: 8px 16px; font-size: 10px; }
+      .ai-guide-hints { gap: 6px; }
+      .ai-hint-chip { font-size: 10px; padding: 4px 10px; }
+
+      /* Scroll hint hidden on mobile */
+      .scroll-hint { display: none; }
+
+      /* Section headers */
+      .section-header { padding: 0 20px; }
+      .section-title { font-size: 24px; }
+
+      /* Carousels */
+      .carousel-wrap { padding: 0 20px; }
+      .carousel-btn { width: 34px; height: 34px; font-size: 13px; }
+      .carousel-btn.prev { left: 0; }
+      .carousel-btn.next { right: 0; }
+
+      /* Cards — slightly narrower on mobile */
+      .feed-card { flex: 0 0 260px; }
+      .feed-card-img { height: 170px; }
+      .feed-card-title { font-size: 17px; }
+
+      /* Practitioner cards */
+      .practitioner-card { flex: 0 0 150px; }
+      .practitioner-img-wrap { width: 110px; height: 110px; }
+      .practitioner-name { font-size: 15px; }
+
+      /* Update cards */
+      .update-card { flex: 0 0 240px; }
+      .update-card-img { height: 145px; }
+      .update-card-title { font-size: 16px; }
+
+      /* Soul Travels banner */
+      .travels-banner { height: 320px; }
+      .travels-banner-content { padding: 0 24px; }
+      .travels-banner-sub { font-size: 12px; }
+
+      /* Feed sections */
+      .feed-section { padding: 44px 0 52px; }
+      .travels-updates { padding: 44px 0 52px; }
+
+      /* Footer */
+      footer { padding: 40px 20px 28px; }
+      .footer-top {
+        grid-template-columns: 1fr;
+        gap: 28px;
+      }
+      .footer-top > div:last-child { grid-column: 1; }
+      .footer-bottom {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+      }
+    }
+
+    /* ─── RESPONSIVE: SMALL MOBILE (max 480px) ──────────────── */
+    @media (max-width: 480px) {
+      .hero-headline { font-size: clamp(30px, 9vw, 44px); }
+      .hero-sub { display: none; }
+
+      .poppy-nav { max-width: 300px; gap: 12px 4px; }
+      .poppy-item:nth-child(1) .poppy-circle { width: 96px; height: 96px; }
+      .poppy-item:nth-child(2) .poppy-circle { width: 112px; height: 112px; }
+      .poppy-item:nth-child(3) .poppy-circle { width: 102px; height: 102px; }
+      .poppy-item:nth-child(4) .poppy-circle { width: 108px; height: 108px; }
+
+      .feed-card { flex: 0 0 230px; }
+      .update-card { flex: 0 0 210px; }
+      .practitioner-card { flex: 0 0 130px; }
+      .practitioner-img-wrap { width: 96px; height: 96px; }
+
+      .section-title { font-size: 22px; }
+      .travels-banner { height: 280px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── NAVIGATION ───────────────────────────────────────── -->
+<nav>
+  <a href="#" class="nav-brand">
+    <img src="assets/logo.jpg" alt="Spiritual California Logo" class="nav-logo-img"/>
+    <div class="nav-brand-text">
+      <span class="nav-brand-name">Spiritual California</span>
+      <span class="nav-brand-tagline">mind · body · soul</span>
+    </div>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#practitioners">Practitioners</a></li>
+    <li><a href="#shop">Shop</a></li>
+    <li><a href="#travels">Soul Travels</a></li>
+    <li><a href="#events">Events</a></li>
+  </ul>
+  <a href="practitioner-register.html" class="nav-cta">List Your Practice</a>
+  <button class="nav-hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- Mobile full-screen menu -->
+<div class="nav-mobile-menu" id="mobileMenu">
+  <a href="#practitioners" onclick="toggleMenu()">Practitioners</a>
+  <a href="#shop" onclick="toggleMenu()">Shop</a>
+  <a href="#travels" onclick="toggleMenu()">Soul Travels</a>
+  <a href="#events" onclick="toggleMenu()">Events</a>
+  <a href="practitioner-register.html" class="nav-mobile-cta" onclick="toggleMenu()">List Your Practice</a>
+</div>
+
+<!-- ─── HERO ─────────────────────────────────────────────── -->
+<section class="hero">
+  <svg class="botanical-bg" style="top:-60px;right:-80px;width:460px;" viewBox="0 0 400 500" fill="none">
+    <path d="M200 480 C200 480 180 380 120 300 C60 220 20 160 80 80 C140 0 220 40 240 120 C260 200 200 280 220 360 C240 440 200 480 200 480Z" stroke="#E8B84B" stroke-width="1.5" fill="none"/>
+    <path d="M200 480 C200 480 220 380 280 300 C340 220 380 160 320 80" stroke="#E8B84B" stroke-width="1" fill="none"/>
+    <circle cx="80" cy="80" r="28" stroke="#E8B84B" stroke-width="1.2" fill="none"/>
+    <circle cx="320" cy="80" r="22" stroke="#E8B84B" stroke-width="1" fill="none"/>
+    <circle cx="200" cy="40" r="18" stroke="#E8B84B" stroke-width="1" fill="none"/>
+  </svg>
+  <svg class="botanical-bg" style="bottom:40px;left:-60px;width:300px;" viewBox="0 0 300 400" fill="none">
+    <path d="M150 380 C150 380 100 300 60 220 C20 140 10 80 70 40 C130 0 180 50 170 130 C160 210 150 380 150 380Z" stroke="#E8B84B" stroke-width="1.2" fill="none"/>
+    <circle cx="70" cy="40" r="24" stroke="#E8B84B" stroke-width="1" fill="none"/>
+    <circle cx="150" cy="20" r="16" stroke="#E8B84B" stroke-width="0.8" fill="none"/>
+  </svg>
+
+  <div class="ai-guide" style="margin-bottom:40px;">
+    <p class="ai-guide-label">How Do You Feel Today?</p>
+    <p class="hero-sub" style="margin-bottom:18px;">Ask the AI Guide &nbsp;·&nbsp; Explore Practitioners &nbsp;·&nbsp; Discover Soul Travels</p>
+    <div class="ai-guide-input-wrap">
+      <input class="ai-guide-input" id="heroInput" type="text" placeholder="I feel burnt out and disconnected…"/>
+      <button class="ai-guide-btn" onclick="handleAIGuide()">Guide Me</button>
+    </div>
+    <div class="ai-guide-hints">
+      <span class="ai-hint-chip" onclick="document.getElementById('heroInput').value=this.innerText">Feeling anxious</span>
+      <span class="ai-hint-chip" onclick="document.getElementById('heroInput').value=this.innerText">Low energy</span>
+      <span class="ai-hint-chip" onclick="document.getElementById('heroInput').value=this.innerText">Seeking meaning</span>
+      <span class="ai-hint-chip" onclick="document.getElementById('heroInput').value=this.innerText">Curious about meditation</span>
+      <span class="ai-hint-chip" onclick="document.getElementById('heroInput').value=this.innerText">Burnout</span>
+    </div>
+  </div>
+
+  <h1 class="hero-headline" style="font-size:clamp(40px,6vw,80px); margin-bottom:48px;">Find Your Path.</h1>
+
+  <div class="poppy-nav">
+    <a href="#practitioners" class="poppy-item">
+      <div class="poppy-circle"><img src="assets/hero1.jpg" alt="Practitioners"/></div>
+      <div class="poppy-stem"></div>
+      <span class="poppy-label">Practitioners</span>
+    </a>
+    <a href="#shop" class="poppy-item">
+      <div class="poppy-circle"><img src="assets/ayurveda.jpg" alt="Shop"/></div>
+      <div class="poppy-stem"></div>
+      <span class="poppy-label">Shop</span>
+    </a>
+    <a href="#travels" class="poppy-item">
+      <div class="poppy-circle"><img src="assets/poppy_close.jpg" alt="Soul Travels"/></div>
+      <div class="poppy-stem"></div>
+      <span class="poppy-label">Soul Travels</span>
+    </a>
+    <a href="#events" class="poppy-item">
+      <div class="poppy-circle"><img src="assets/yoga_outdoor.jpg" alt="Events"/></div>
+      <div class="poppy-stem"></div>
+      <span class="poppy-label">Events</span>
+    </a>
+  </div>
+
+
+
+  <div class="scroll-hint">
+    <span>Explore</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- ─── PRACTITIONERS SECTION ────────────────────────────── -->
+<section class="feed-section" id="practitioners">
+  <div class="section-header">
+    <div class="section-line"></div>
+    <h2 class="section-title">Practitioners</h2>
+    <div class="section-line"></div>
+    <a href="#" class="section-link">View All</a>
+  </div>
+
+  <!-- Practitioners carousel -->
+  <div class="carousel-wrap" style="margin-bottom:48px;">
+    <button class="carousel-btn prev" onclick="scroll_carousel('practitioners-strip', -1)">&#8592;</button>
+    <div class="carousel-track" id="practitioners-strip">
+      <a href="#" class="practitioner-card">
+        <div class="practitioner-img-wrap">
+          <img src="assets/hero2.jpg" alt="Maya Rosenberg"/>
+          <div class="verified-photo-badge">Verified</div>
+        </div>
+        <div class="practitioner-name">Maya Rosenberg</div>
+        <div class="practitioner-specialty">Meditation · Energy Healing</div>
+      </a>
+      <a href="#" class="practitioner-card">
+        <div class="practitioner-img-wrap">
+          <img src="assets/hero3.jpg" alt="Priya Nair"/>
+          <div class="verified-photo-badge">Verified</div>
+        </div>
+        <div class="practitioner-name">Priya Nair</div>
+        <div class="practitioner-specialty">Ayurveda · Life Coaching</div>
+      </a>
+      <a href="#" class="practitioner-card">
+        <div class="practitioner-img-wrap">
+          <img src="assets/hero1.jpg" alt="Serena Walsh"/>
+        </div>
+        <div class="practitioner-name">Serena Walsh</div>
+        <div class="practitioner-specialty">Reiki · Sound Healing</div>
+      </a>
+      <a href="#" class="practitioner-card">
+        <div class="practitioner-img-wrap">
+          <img src="assets/yoga_outdoor.jpg" alt="Lena Kovacs"/>
+          <div class="verified-photo-badge">Verified</div>
+        </div>
+        <div class="practitioner-name">Lena Kovacs</div>
+        <div class="practitioner-specialty">Yoga · Breathwork</div>
+      </a>
+      <a href="#" class="practitioner-card">
+        <div class="practitioner-img-wrap">
+          <img src="assets/hero2.jpg" alt="Ananda Silva"/>
+        </div>
+        <div class="practitioner-name">Ananda Silva</div>
+        <div class="practitioner-specialty">TCM · Herbalism</div>
+      </a>
+      <a href="#" class="practitioner-card">
+        <div class="practitioner-img-wrap">
+          <img src="assets/hero3.jpg" alt="Luna Park"/>
+          <div class="verified-photo-badge">Verified</div>
+        </div>
+        <div class="practitioner-name">Luna Park</div>
+        <div class="practitioner-specialty">Tibetan Medicine · QiGong</div>
+      </a>
+    </div>
+    <button class="carousel-btn next" onclick="scroll_carousel('practitioners-strip', 1)">&#8594;</button>
+  </div>
+
+  <!-- Posts carousel — mixed practitioner + editor + place posts -->
+  <div class="carousel-wrap">
+    <button class="carousel-btn prev" onclick="scroll_carousel('practitioners-feed', -1)">&#8592;</button>
+    <div class="carousel-track" id="practitioners-feed">
+
+      <a href="#" class="feed-card">
+        <img class="feed-card-img" src="assets/hero1.jpg" alt="Post"/>
+        <div class="feed-card-body">
+          <div class="feed-card-tag">Mind Healing</div>
+          <div class="feed-card-title">How to Break the Cycle of Burnout Through Somatic Awareness</div>
+          <div class="feed-card-excerpt">When the body holds what the mind cannot process, healing begins not in thought but in sensation...</div>
+          <div class="feed-card-meta">
+            <img class="feed-card-avatar" src="assets/hero2.jpg" alt="Author"/>
+            <span class="feed-card-author">Maya Rosenberg · 5 min read</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="#" class="feed-card">
+        <img class="feed-card-img" src="assets/ayurveda.jpg" alt="Post"/>
+        <div class="feed-card-body">
+          <div class="feed-card-tag">Body Healing</div>
+          <div class="feed-card-title">Ayurvedic Morning Rituals to Restore Your Dosha Balance</div>
+          <div class="feed-card-excerpt">Ancient wisdom meets modern life: five practices you can begin tomorrow to recalibrate your energy...</div>
+          <div class="feed-card-meta">
+            <img class="feed-card-avatar" src="assets/hero3.jpg" alt="Author"/>
+            <span class="feed-card-author">Priya Nair · 7 min read</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Editor's post — Place category -->
+      <a href="#" class="feed-card">
+        <img class="feed-card-img" src="assets/poppy_close.jpg" alt="Post"/>
+        <div class="editors-pick-badge">Editor's Pick</div>
+        <div class="feed-card-body">
+          <div class="feed-card-tag place">Place</div>
+          <div class="feed-card-title">10 Sacred Healing Spots Hidden Across California</div>
+          <div class="feed-card-excerpt">From the hot springs of Big Sur to the crystal caves of the Sierra Nevada — places that restore the soul...</div>
+          <div class="feed-card-meta">
+            <img class="feed-card-avatar" src="assets/logo.jpg" alt="Editor"/>
+            <span class="feed-card-author">Spiritual CA Editors · 8 min read</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="#" class="feed-card">
+        <img class="feed-card-img" src="assets/yoga_outdoor.jpg" alt="Post"/>
+        <div class="feed-card-body">
+          <div class="feed-card-tag">Life Coaching</div>
+          <div class="feed-card-title">Finding Meaning After the Career You Built No Longer Fits</div>
+          <div class="feed-card-excerpt">In a world reshaped by AI and uncertainty, purpose is not found — it is cultivated, one honest question at a time...</div>
+          <div class="feed-card-meta">
+            <img class="feed-card-avatar" src="assets/hero1.jpg" alt="Author"/>
+            <span class="feed-card-author">Serena Walsh · 6 min read</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Editor's post — Place category -->
+      <a href="#" class="feed-card">
+        <img class="feed-card-img" src="assets/hero2.jpg" alt="Post"/>
+        <div class="editors-pick-badge">Editor's Pick</div>
+        <div class="feed-card-body">
+          <div class="feed-card-tag place">Place</div>
+          <div class="feed-card-title">The Esalen Institute: Where Psychology Meets the Pacific</div>
+          <div class="feed-card-excerpt">Perched on the cliffs of Big Sur, Esalen remains one of the world's most transformative healing environments...</div>
+          <div class="feed-card-meta">
+            <img class="feed-card-avatar" src="assets/logo.jpg" alt="Editor"/>
+            <span class="feed-card-author">Spiritual CA Editors · 5 min read</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="#" class="feed-card">
+        <img class="feed-card-img" src="assets/hero3.jpg" alt="Post"/>
+        <div class="feed-card-body">
+          <div class="feed-card-tag">Soul Healing</div>
+          <div class="feed-card-title">What 30 Days of Silence Taught Me About My Own Mind</div>
+          <div class="feed-card-excerpt">A practitioner's personal account of a Vipassana retreat and the unexpected gifts that emerged from stillness...</div>
+          <div class="feed-card-meta">
+            <img class="feed-card-avatar" src="assets/hero3.jpg" alt="Author"/>
+            <span class="feed-card-author">Luna Park · 10 min read</span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+    <button class="carousel-btn next" onclick="scroll_carousel('practitioners-feed', 1)">&#8594;</button>
+  </div>
+</section>
+
+<!-- ─── SOUL TRAVELS BANNER ──────────────────────────────── -->
+<section class="travels-banner" id="travels">
+  <img class="travels-banner-bg" src="assets/poppy_field.jpg" alt="Soul Travels"/>
+  <div class="travels-banner-content">
+    <div class="travels-banner-eyebrow">Soul Travels</div>
+    <h2 class="travels-banner-title">Journey Beyond<br/>the Ordinary</h2>
+    <p class="travels-banner-sub">Immersive trips to Nepal, Cambodia, India & Sri Lanka — where you experience authentic local spiritual traditions far beyond the tourist trail.</p>
+    <a href="#" class="btn-outline-white">Explore Journeys</a>
+  </div>
+</section>
+
+<!-- ─── SOUL TRAVELS BLOG UPDATES ────────────────────────── -->
+<section class="travels-updates">
+  <div class="section-header">
+    <div class="section-line"></div>
+    <h2 class="section-title">From the Road</h2>
+    <div class="section-line"></div>
+    <a href="#" class="section-link">All Updates</a>
+  </div>
+
+  <div class="carousel-wrap">
+    <button class="carousel-btn prev" onclick="scroll_carousel('travels-feed', -1)">&#8592;</button>
+    <div class="carousel-track" id="travels-feed">
+
+      <a href="#" class="update-card">
+        <img class="update-card-img" src="assets/ayurveda.jpg" alt="Nepal"/>
+        <div class="update-card-body">
+          <div class="update-card-dest">Nepal · Kathmandu</div>
+          <div class="update-card-title">Dawn at Pashupatinath: A Morning That Changed Everything</div>
+          <div class="update-card-excerpt">Our guide Karma led us through the ghats before sunrise. What we witnessed was not a ritual — it was a mirror...</div>
+          <div class="update-card-date">March 2, 2026 · By Priya Nair</div>
+        </div>
+      </a>
+
+      <a href="#" class="update-card">
+        <img class="update-card-img" src="assets/hero1.jpg" alt="India"/>
+        <div class="update-card-body">
+          <div class="update-card-dest">India · Rishikesh</div>
+          <div class="update-card-title">The Ganges at Dusk: On Letting Go of What We Cannot Control</div>
+          <div class="update-card-excerpt">Floating a diya on the river, I understood for the first time what surrender actually feels like in the body...</div>
+          <div class="update-card-date">February 18, 2026 · By Maya Rosenberg</div>
+        </div>
+      </a>
+
+      <a href="#" class="update-card">
+        <img class="update-card-img" src="assets/poppy_close.jpg" alt="Cambodia"/>
+        <div class="update-card-body">
+          <div class="update-card-dest">Cambodia · Siem Reap</div>
+          <div class="update-card-title">Angkor Wat at Sunrise: Sacred Geometry and Stillness</div>
+          <div class="update-card-excerpt">We arrived in darkness and waited. When the light came, the stones seemed to breathe. No photograph can hold this...</div>
+          <div class="update-card-date">January 30, 2026 · By Serena Walsh</div>
+        </div>
+      </a>
+
+      <a href="#" class="update-card">
+        <img class="update-card-img" src="assets/yoga_outdoor.jpg" alt="Sri Lanka"/>
+        <div class="update-card-body">
+          <div class="update-card-dest">Sri Lanka · Kandy</div>
+          <div class="update-card-title">Ayurvedic Healing in the Hill Country: A Week of Restoration</div>
+          <div class="update-card-excerpt">Seven days of Panchakarma in the misty mountains above Kandy. I arrived exhausted. I left transformed...</div>
+          <div class="update-card-date">January 12, 2026 · By Lena Kovacs</div>
+        </div>
+      </a>
+
+      <a href="#" class="update-card">
+        <img class="update-card-img" src="assets/hero3.jpg" alt="Nepal"/>
+        <div class="update-card-body">
+          <div class="update-card-dest">Nepal · Pokhara</div>
+          <div class="update-card-title">Meditation at 3,000 Meters: What Altitude Does to the Mind</div>
+          <div class="update-card-excerpt">Above the clouds, the usual noise of thought simply stops. Our group sat in silence for four hours without trying...</div>
+          <div class="update-card-date">December 28, 2025 · By Luna Park</div>
+        </div>
+      </a>
+
+    </div>
+    <button class="carousel-btn next" onclick="scroll_carousel('travels-feed', 1)">&#8594;</button>
+  </div>
+</section>
+
+<!-- ─── SHOP SECTION ─────────────────────────────────────── -->
+<section class="feed-section alt" id="shop">
+  <div class="section-header">
+    <div class="section-line"></div>
+    <h2 class="section-title">From the Shop</h2>
+    <div class="section-line"></div>
+    <a href="#" class="section-link">Browse All</a>
+  </div>
+
+  <div class="carousel-wrap">
+    <button class="carousel-btn prev" onclick="scroll_carousel('shop-feed', -1)">&#8592;</button>
+    <div class="carousel-track" id="shop-feed">
+
+      <!-- Editor's Pick -->
+      <a href="#" class="feed-card">
+        <img class="feed-card-img" src="assets/ayurveda.jpg" alt="Product"/>
+        <div class="editors-pick-badge">Editor's Pick</div>
+        <div class="feed-card-body">
+          <div class="feed-card-tag">Digital · Meditation</div>
+          <div class="feed-card-title">30-Day Awareness Training</div>
+          <div class="feed-card-excerpt">A guided daily practice designed to rebuild your relationship with stillness, breath, and presence.</div>
+          <div class="feed-card-meta">
+            <img class="feed-card-avatar" src="assets/hero1.jpg" alt="Author"/>
+            <span class="feed-card-author">By Maya Rosenberg · $48</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="#" class="feed-card">
+        <img class="feed-card-img" src="assets/poppy_close.jpg" alt="Product"/>
+        <div class="feed-card-body">
+          <div class="feed-card-tag">Physical · Herbalism</div>
+          <div class="feed-card-title">California Wildflower Herbal Blend</div>
+          <div class="feed-card-excerpt">Hand-crafted by a certified herbalist using locally foraged California botanicals to calm the nervous system.</div>
+          <div class="feed-card-meta">
+            <img class="feed-card-avatar" src="assets/hero3.jpg" alt="Author"/>
+            <span class="feed-card-author">By Priya Nair · $36</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="#" class="feed-card">
+        <img class="feed-card-img" src="assets/hero3.jpg" alt="Product"/>
+        <div class="feed-card-body">
+          <div class="feed-card-tag">Digital · Energy Healing</div>
+          <div class="feed-card-title">Chakra Alignment Audio Series</div>
+          <div class="feed-card-excerpt">Seven sessions of guided sound healing, one for each energy center, to restore flow and clarity.</div>
+          <div class="feed-card-meta">
+            <img class="feed-card-avatar" src="assets/hero2.jpg" alt="Author"/>
+            <span class="feed-card-author">By Serena Walsh · $65</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Editor's Pick -->
+      <a href="#" class="feed-card">
+        <img class="feed-card-img" src="assets/hero2.jpg" alt="Product"/>
+        <div class="editors-pick-badge">Editor's Pick</div>
+        <div class="feed-card-body">
+          <div class="feed-card-tag editors">Editor's Choice</div>
+          <div class="feed-card-title">The Spiritual California Gift Set</div>
+          <div class="feed-card-excerpt">A curated collection of our editors' favourite healing tools — crystals, teas, and guided audio — beautifully packaged.</div>
+          <div class="feed-card-meta">
+            <img class="feed-card-avatar" src="assets/logo.jpg" alt="Editor"/>
+            <span class="feed-card-author">Curated by Editors · $120</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="#" class="feed-card">
+        <img class="feed-card-img" src="assets/yoga_outdoor.jpg" alt="Product"/>
+        <div class="feed-card-body">
+          <div class="feed-card-tag">Physical · Art</div>
+          <div class="feed-card-title">Sacred Geometry Silk Print</div>
+          <div class="feed-card-excerpt">Hand-printed on natural silk by a Tibetan artist — a meditation object as much as a piece of art.</div>
+          <div class="feed-card-meta">
+            <img class="feed-card-avatar" src="assets/hero3.jpg" alt="Author"/>
+            <span class="feed-card-author">By Luna Park · $95</span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+    <button class="carousel-btn next" onclick="scroll_carousel('shop-feed', 1)">&#8594;</button>
+  </div>
+</section>
+
+<!-- ─── EVENTS SECTION ───────────────────────────────────── -->
+<section class="feed-section" id="events">
+  <div class="section-header">
+    <div class="section-line"></div>
+    <h2 class="section-title">Upcoming Events</h2>
+    <div class="section-line"></div>
+    <a href="#" class="section-link">All Events</a>
+  </div>
+
+  <div class="carousel-wrap">
+    <button class="carousel-btn prev" onclick="scroll_carousel('events-feed', -1)">&#8592;</button>
+    <div class="carousel-track" id="events-feed">
+
+      <a href="#" class="feed-card">
+        <img class="feed-card-img" src="assets/yoga_outdoor.jpg" alt="Event"/>
+        <div class="feed-card-body">
+          <div class="feed-card-tag">Virtual · Meditation</div>
+          <div class="feed-card-title">New Moon Meditation Circle</div>
+          <div class="feed-card-excerpt">A live guided session to release what no longer serves you and set intentions for the cycle ahead.</div>
+          <div class="feed-card-meta">
+            <img class="feed-card-avatar" src="assets/hero1.jpg" alt="Author"/>
+            <span class="feed-card-author">Mar 29 · Free · 90 min</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="#" class="feed-card">
+        <img class="feed-card-img" src="assets/hero2.jpg" alt="Event"/>
+        <div class="feed-card-body">
+          <div class="feed-card-tag">In-Person · Los Angeles</div>
+          <div class="feed-card-title">Somatic Healing Workshop</div>
+          <div class="feed-card-excerpt">A half-day immersive experience in body-based trauma release, breathwork, and movement.</div>
+          <div class="feed-card-meta">
+            <img class="feed-card-avatar" src="assets/hero2.jpg" alt="Author"/>
+            <span class="feed-card-author">Apr 5 · $120 · 4 hours</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="#" class="feed-card">
+        <img class="feed-card-img" src="assets/poppy_field.jpg" alt="Event"/>
+        <div class="feed-card-body">
+          <div class="feed-card-tag">Soul Travel · Nepal</div>
+          <div class="feed-card-title">Sacred Himalayas Retreat — 10 Days</div>
+          <div class="feed-card-excerpt">Journey to monasteries, sacred lakes, and healing temples in the heart of the Himalayas with a certified guide.</div>
+          <div class="feed-card-meta">
+            <img class="feed-card-avatar" src="assets/hero3.jpg" alt="Author"/>
+            <span class="feed-card-author">May 12 · $3,200 · 10 days</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="#" class="feed-card">
+        <img class="feed-card-img" src="assets/hero3.jpg" alt="Event"/>
+        <div class="feed-card-body">
+          <div class="feed-card-tag">Virtual · Sound Healing</div>
+          <div class="feed-card-title">Tibetan Bowl Sound Bath — Live Stream</div>
+          <div class="feed-card-excerpt">Join from anywhere in the world for a 60-minute live sound healing session with crystal and Tibetan bowls.</div>
+          <div class="feed-card-meta">
+            <img class="feed-card-avatar" src="assets/hero2.jpg" alt="Author"/>
+            <span class="feed-card-author">Apr 18 · $25 · 60 min</span>
+          </div>
+        </div>
+      </a>
+
+      <a href="#" class="feed-card">
+        <img class="feed-card-img" src="assets/ayurveda.jpg" alt="Event"/>
+        <div class="feed-card-body">
+          <div class="feed-card-tag">In-Person · San Francisco</div>
+          <div class="feed-card-title">Ayurveda & Seasonal Eating Workshop</div>
+          <div class="feed-card-excerpt">Learn to align your diet with the seasons and your unique constitution through the lens of Ayurvedic wisdom.</div>
+          <div class="feed-card-meta">
+            <img class="feed-card-avatar" src="assets/hero3.jpg" alt="Author"/>
+            <span class="feed-card-author">May 3 · $85 · 3 hours</span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+    <button class="carousel-btn next" onclick="scroll_carousel('events-feed', 1)">&#8594;</button>
+  </div>
+</section>
+
+<!-- ─── FOOTER ───────────────────────────────────────────── -->
+<footer>
+  <div class="footer-top">
+    <div>
+      <div class="footer-brand-wrap">
+        <img src="assets/logo.jpg" alt="Logo" class="footer-logo"/>
+        <div class="footer-brand-text">
+          <span class="footer-brand-name">Spiritual California</span>
+          <span class="footer-brand-tagline">mind · body · soul</span>
+        </div>
+      </div>
+      <p class="footer-tagline">A trusted marketplace connecting seekers with verified guides — across coaching, therapy, traditional medicine, and spiritual practice.</p>
+    </div>
+    <div>
+      <div class="footer-col-title">Explore</div>
+      <ul class="footer-links">
+        <li><a href="#">Practitioners</a></li>
+        <li><a href="#">Shop</a></li>
+        <li><a href="#">Soul Travels</a></li>
+        <li><a href="#">Events</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">For Guides</div>
+      <ul class="footer-links">
+        <li><a href="practitioner-register.html">List Your Practice</a></li>
+        <li><a href="#">Verification</a></li>
+        <li><a href="#">Guide Dashboard</a></li>
+        <li><a href="#">Community</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Company</div>
+      <ul class="footer-links">
+        <li><a href="#">About</a></li>
+        <li><a href="#">Our Mission</a></li>
+        <li><a href="#">Blog</a></li>
+        <li><a href="#">Contact</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span class="footer-copy">© 2026 Spiritual California. All rights reserved.</span>
+    <span class="footer-copy">Built with conscious intention.</span>
+  </div>
+</footer>
+
+<!-- ─── CAROUSEL JAVASCRIPT ──────────────────────────────── -->
+<script>
+  function scroll_carousel(id, dir) {
+    const track = document.getElementById(id);
+    const cardWidth = track.querySelector('.feed-card, .practitioner-card, .update-card').offsetWidth + 24;
+    track.scrollBy({ left: dir * cardWidth * 2, behavior: 'smooth' });
+  }
+
+  function toggleMenu() {
+    const hamburger = document.getElementById('hamburger');
+    const menu = document.getElementById('mobileMenu');
+    hamburger.classList.toggle('open');
+    menu.classList.toggle('open');
+    document.body.style.overflow = menu.classList.contains('open') ? 'hidden' : '';
+  }
+
+  // Touch swipe support for carousels
+  document.querySelectorAll('.carousel-track').forEach(track => {
+    let startX = 0;
+    track.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
+    track.addEventListener('touchend', e => {
+      const diff = startX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 40) {
+        const card = track.querySelector('.feed-card, .practitioner-card, .update-card');
+        const cardWidth = card ? card.offsetWidth + 24 : 280;
+        track.scrollBy({ left: diff > 0 ? cardWidth : -cardWidth, behavior: 'smooth' });
+      }
+    }, { passive: true });
+  });
+</script>
+
+</body>
+</html>

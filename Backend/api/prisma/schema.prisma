@@ -1,0 +1,848 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum Role {
+  SEEKER
+  GUIDE
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  IN_REVIEW
+  APPROVED
+  REJECTED
+  FLAGGED
+}
+
+enum OnboardingPath {
+  SELF_REGISTRATION
+  PROACTIVE_INVITE
+}
+
+enum ServiceType {
+  IN_PERSON
+  VIRTUAL
+  HYBRID
+}
+
+enum EventType {
+  VIRTUAL
+  IN_PERSON
+  SOUL_TRAVEL
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum ProductType {
+  DIGITAL
+  PHYSICAL
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  BOOKING_REMINDER
+  PAYMENT_RECEIVED
+  PAYOUT_PROCESSED
+  VERIFICATION_APPROVED
+  VERIFICATION_REJECTED
+  REVIEW_RECEIVED
+  TESTIMONIAL_RECEIVED
+  TICKET_PURCHASED
+  ORDER_PLACED
+  NEW_MESSAGE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+  TRIALING
+}
+
+// ─────────────────────────────────────────────
+// USER & AUTH
+// ─────────────────────────────────────────────
+
+model User {
+  id                  String    @id @default(cuid())
+  email               String    @unique
+  passwordHash        String?
+  firstName           String
+  lastName            String
+  avatarUrl           String?
+  phone               String?
+  isEmailVerified     Boolean   @default(false)
+  isActive            Boolean   @default(true)
+  isBanned            Boolean   @default(false)
+  bannedReason        String?
+  googleId            String?   @unique
+  emailVerifyToken    String?
+  emailVerifyExpiry   DateTime?
+  passwordResetToken  String?
+  passwordResetExpiry DateTime?
+  lastLoginAt         DateTime?
+  marketingEmails     Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  roles               UserRole[]
+  seekerProfile       SeekerProfile?
+  guideProfile        GuideProfile?
+  refreshTokens       RefreshToken[]
+  reviewsGiven        Review[]       @relation("ReviewAuthor")
+  reviewsReceived     Review[]       @relation("ReviewTarget")
+  testimonialsGiven   Testimonial[]  @relation("TestimonialAuthor")
+  notifications       Notification[]
+  auditLogs           AuditLog[]
+
+  @@map("users")
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  role      Role
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, role])
+  @@map("user_roles")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  isRevoked Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+// ─────────────────────────────────────────────
+// SEEKER PROFILE
+// ─────────────────────────────────────────────
+
+model SeekerProfile {
+  id                  String   @id @default(cuid())
+  userId              String   @unique
+  bio                 String?
+  location            String?
+  timezone            String?
+  interests           String[]
+  onboardingStep      Int      @default(1)
+  onboardingCompleted Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookings        Booking[]
+  ticketPurchases TicketPurchase[]
+  orders          Order[]
+  favorites       Favorite[]
+
+  @@map("seeker_profiles")
+}
+
+// ─────────────────────────────────────────────
+// GUIDE PROFILE
+// ─────────────────────────────────────────────
+
+model GuideProfile {
+  id                   String             @id @default(cuid())
+  userId               String             @unique
+  slug                 String             @unique
+  displayName          String
+  tagline              String?
+  bio                  String?
+  location             String?
+  timezone             String?
+  websiteUrl           String?
+  instagramUrl         String?
+  youtubeUrl           String?
+  languages            String[]           @default([])
+  modalities           String[]           @default([])
+  issuesHelped         String[]           @default([])
+  calendarType              String?
+  calendarLink              String?
+  sessionPricingJson        String?
+  calendlyConnected         Boolean  @default(false)
+  calendlyAccessToken       String?
+  calendlyRefreshToken      String?
+  calendlyUserUri           String?
+  isPublished          Boolean            @default(false)
+  isVerified           Boolean            @default(false)
+  verificationStatus   VerificationStatus @default(PENDING)
+  onboardingPath       OnboardingPath     @default(SELF_REGISTRATION)
+  stripeAccountId      String?
+  stripeOnboardingDone Boolean            @default(false)
+  algoliaObjectId      String?
+  averageRating        Float              @default(0)
+  totalReviews         Int                @default(0)
+  claimToken           String?            @unique
+  claimTokenExpiry     DateTime?
+  scrapedSourceUrl     String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories      GuideCategory[]
+  services        Service[]
+  credentials     Credential[]
+  media           GuideMedia[]
+  blogPosts       BlogPost[]
+  events          Event[]
+  products        Product[]
+  availability    Availability[]
+  payoutAccount   PayoutAccount?
+  payoutRequests  PayoutRequest[]
+  subscription    GuideSubscription?
+
+  @@index([slug])
+  @@index([isPublished, isVerified])
+  @@map("guide_profiles")
+}
+
+model GuideMedia {
+  id           String       @id @default(cuid())
+  guideId      String
+  type         String       // 'image' | 'video_url' | 'video_s3'
+  url          String
+  thumbnailUrl String?
+  caption      String?
+  sortOrder    Int          @default(0)
+  createdAt    DateTime     @default(now())
+
+  guide        GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@map("guide_media")
+}
+
+// ─────────────────────────────────────────────
+// CATEGORIES
+// ─────────────────────────────────────────────
+
+model Category {
+  id            String        @id @default(cuid())
+  name          String        @unique
+  slug          String        @unique
+  description   String?
+  iconUrl       String?
+  sortOrder     Int           @default(0)
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+
+  subcategories Subcategory[]
+  guides        GuideCategory[]
+
+  @@map("categories")
+}
+
+model Subcategory {
+  id         String          @id @default(cuid())
+  categoryId String
+  name       String
+  slug       String
+  isApproved Boolean         @default(false)
+  isCustom   Boolean         @default(false)
+  createdAt  DateTime        @default(now())
+
+  category   Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  guides     GuideCategory[]
+
+  @@unique([categoryId, slug])
+  @@map("subcategories")
+}
+
+model GuideCategory {
+  id            String       @id @default(cuid())
+  guideId       String
+  categoryId    String
+  subcategoryId String?
+
+  guide         GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  category      Category     @relation(fields: [categoryId], references: [id])
+  subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id])
+
+  @@unique([guideId, categoryId, subcategoryId])
+  @@map("guide_categories")
+}
+
+// ─────────────────────────────────────────────
+// CREDENTIALS & VERIFICATION
+// ─────────────────────────────────────────────
+
+model Credential {
+  id                 String             @id @default(cuid())
+  guideId            String
+  title              String
+  institution        String?
+  issuedYear         Int?
+  documentUrl        String?
+  verificationStatus VerificationStatus @default(PENDING)
+  confidenceScore    Float?
+  extractedData      Json?
+  adminNotes         String?
+  verifiedAt         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  guide              GuideProfile             @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  verificationLog    CredentialVerification[]
+
+  @@map("credentials")
+}
+
+model CredentialVerification {
+  id           String     @id @default(cuid())
+  credentialId String
+  stage        String     // 'textract' | 'claude_nlp' | 'admin_review'
+  status       String
+  result       Json?
+  processedAt  DateTime   @default(now())
+
+  credential   Credential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+
+  @@map("credential_verifications")
+}
+
+model PersonaVerification {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  inquiryId   String    @unique
+  status      String
+  referenceId String?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("persona_verifications")
+}
+
+model InstitutionReference {
+  id        String   @id @default(cuid())
+  name      String
+  aliases   String[]
+  country   String?
+  type      String?  // 'university' | 'certification_body' | 'wellness_school'
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@map("institution_references")
+}
+
+// ─────────────────────────────────────────────
+// SERVICES & AVAILABILITY
+// ─────────────────────────────────────────────
+
+model Service {
+  id          String      @id @default(cuid())
+  guideId     String
+  name        String
+  description String?
+  type        ServiceType @default(IN_PERSON)
+  price       Decimal     @db.Decimal(10, 2)
+  currency    String      @default("USD")
+  durationMin Int
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  guide       GuideProfile  @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  slots       ServiceSlot[]
+  bookings    Booking[]
+
+  @@map("services")
+}
+
+model Availability {
+  id          String       @id @default(cuid())
+  guideId     String
+  dayOfWeek   Int          // 0=Sun … 6=Sat
+  startTime   String       // "09:00"
+  endTime     String       // "17:00"
+  isRecurring Boolean      @default(true)
+  bufferMin   Int          @default(0)
+  createdAt   DateTime     @default(now())
+
+  guide       GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@map("availability")
+}
+
+model ServiceSlot {
+  id        String   @id @default(cuid())
+  serviceId String
+  startTime DateTime
+  endTime   DateTime
+  isBooked  Boolean  @default(false)
+  isBlocked Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  booking   Booking?
+
+  @@index([serviceId, startTime])
+  @@map("service_slots")
+}
+
+// ─────────────────────────────────────────────
+// BOOKINGS
+// ─────────────────────────────────────────────
+
+model Booking {
+  id                 String        @id @default(cuid())
+  seekerId           String
+  serviceId          String
+  slotId             String        @unique
+  status             BookingStatus @default(PENDING)
+  totalAmount        Decimal       @db.Decimal(10, 2)
+  currency           String        @default("USD")
+  notes              String?
+  cancelledAt        DateTime?
+  cancelledBy        String?
+  cancellationReason String?
+  completedAt        DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  seeker    SeekerProfile @relation(fields: [seekerId], references: [id])
+  service   Service       @relation(fields: [serviceId], references: [id])
+  slot      ServiceSlot   @relation(fields: [slotId], references: [id])
+  payment   Payment?
+  review    Review?
+
+  @@index([seekerId])
+  @@index([serviceId])
+  @@map("bookings")
+}
+
+// ─────────────────────────────────────────────
+// PAYMENTS
+// ─────────────────────────────────────────────
+
+model Payment {
+  id                    String        @id @default(cuid())
+  bookingId             String?       @unique
+  orderId               String?       @unique
+  ticketPurchaseId      String?       @unique
+  stripePaymentIntentId String        @unique
+  stripeTransferId      String?
+  amount                Decimal       @db.Decimal(10, 2)
+  currency              String        @default("USD")
+  platformFee           Decimal       @db.Decimal(10, 2)
+  guideAmount           Decimal       @db.Decimal(10, 2)
+  status                PaymentStatus @default(PENDING)
+  refundedAmount        Decimal?      @db.Decimal(10, 2)
+  stripeRefundId        String?
+  metadata              Json?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  booking        Booking?        @relation(fields: [bookingId], references: [id])
+  order          Order?          @relation(fields: [orderId], references: [id])
+  ticketPurchase TicketPurchase? @relation(fields: [ticketPurchaseId], references: [id])
+
+  @@map("payments")
+}
+
+model PayoutAccount {
+  id               String   @id @default(cuid())
+  guideId          String   @unique
+  stripeAccountId  String   @unique
+  availableBalance Decimal  @default(0) @db.Decimal(10, 2)
+  pendingBalance   Decimal  @default(0) @db.Decimal(10, 2)
+  totalEarned      Decimal  @default(0) @db.Decimal(10, 2)
+  totalPaidOut     Decimal  @default(0) @db.Decimal(10, 2)
+  currency         String   @default("USD")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  guide          GuideProfile    @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  payoutRequests PayoutRequest[]
+
+  @@map("payout_accounts")
+}
+
+model PayoutRequest {
+  id              String       @id @default(cuid())
+  guideId         String
+  payoutAccountId String
+  amount          Decimal      @db.Decimal(10, 2)
+  currency        String       @default("USD")
+  status          PayoutStatus @default(PENDING)
+  stripePayoutId  String?
+  processedAt     DateTime?
+  createdAt       DateTime     @default(now())
+
+  guide         GuideProfile  @relation(fields: [guideId], references: [id])
+  payoutAccount PayoutAccount @relation(fields: [payoutAccountId], references: [id])
+
+  @@map("payout_requests")
+}
+
+// ─────────────────────────────────────────────
+// EVENTS & TICKETS
+// ─────────────────────────────────────────────
+
+model Event {
+  id              String    @id @default(cuid())
+  guideId         String
+  title           String
+  description     String?
+  type            EventType
+  startTime       DateTime
+  endTime         DateTime
+  timezone        String    @default("America/Los_Angeles")
+  location        String?
+  onlineUrl       String?
+  zoomMeetingId   String?
+  zoomJoinUrl     String?
+  coverImageUrl   String?
+  isPublished     Boolean   @default(false)
+  isCancelled     Boolean   @default(false)
+  algoliaObjectId String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  guide       GuideProfile      @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  ticketTiers EventTicketTier[]
+
+  @@index([guideId, startTime])
+  @@map("events")
+}
+
+model EventTicketTier {
+  id          String   @id @default(cuid())
+  eventId     String
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  currency    String   @default("USD")
+  capacity    Int
+  sold        Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  event     Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  purchases TicketPurchase[]
+
+  @@map("event_ticket_tiers")
+}
+
+model TicketPurchase {
+  id          String   @id @default(cuid())
+  seekerId    String
+  tierId      String
+  quantity    Int      @default(1)
+  totalAmount Decimal  @db.Decimal(10, 2)
+  qrCode      String?  @unique
+  createdAt   DateTime @default(now())
+
+  seeker  SeekerProfile   @relation(fields: [seekerId], references: [id])
+  tier    EventTicketTier @relation(fields: [tierId], references: [id])
+  payment Payment?
+
+  @@map("ticket_purchases")
+}
+
+// ─────────────────────────────────────────────
+// PRODUCTS & ORDERS
+// ─────────────────────────────────────────────
+
+model Product {
+  id              String      @id @default(cuid())
+  guideId         String
+  name            String
+  description     String?
+  type            ProductType
+  price           Decimal     @db.Decimal(10, 2)
+  currency        String      @default("USD")
+  stockQuantity   Int?
+  imageUrls       String[]
+  fileS3Key       String?
+  shippingInfo    Json?
+  isActive        Boolean     @default(true)
+  algoliaObjectId String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  guide      GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  seekerId        String
+  status          OrderStatus @default(PENDING)
+  totalAmount     Decimal     @db.Decimal(10, 2)
+  currency        String      @default("USD")
+  shippingAddress Json?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  seeker  SeekerProfile @relation(fields: [seekerId], references: [id])
+  items   OrderItem[]
+  payment Payment?
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id            String   @id @default(cuid())
+  orderId       String
+  productId     String
+  quantity      Int      @default(1)
+  unitPrice     Decimal  @db.Decimal(10, 2)
+  downloadUrl   String?
+  downloadCount Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+// ─────────────────────────────────────────────
+// BLOG
+// ─────────────────────────────────────────────
+
+model BlogPost {
+  id              String       @id @default(cuid())
+  guideId         String
+  title           String
+  slug            String
+  content         String
+  excerpt         String?
+  coverImageUrl   String?
+  tags            String[]
+  isPublished     Boolean      @default(false)
+  publishedAt     DateTime?
+  algoliaObjectId String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  guide GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@unique([guideId, slug])
+  @@index([isPublished, publishedAt])
+  @@map("blog_posts")
+}
+
+// ─────────────────────────────────────────────
+// REVIEWS & TESTIMONIALS
+// ─────────────────────────────────────────────
+
+model Review {
+  id         String   @id @default(cuid())
+  authorId   String
+  targetId   String
+  bookingId  String   @unique
+  rating     Int
+  title      String?
+  body       String?
+  isApproved Boolean  @default(true)
+  isFlagged  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  author  User    @relation("ReviewAuthor", fields: [authorId], references: [id])
+  target  User    @relation("ReviewTarget", fields: [targetId], references: [id])
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  @@index([targetId, isApproved])
+  @@map("reviews")
+}
+
+model Testimonial {
+  id            String   @id @default(cuid())
+  authorId      String
+  targetGuideId String
+  body          String
+  isApproved    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  author User @relation("TestimonialAuthor", fields: [authorId], references: [id])
+
+  @@map("testimonials")
+}
+
+// ─────────────────────────────────────────────
+// FAVORITES
+// ─────────────────────────────────────────────
+
+model Favorite {
+  id        String        @id @default(cuid())
+  seekerId  String
+  guideId   String
+  createdAt DateTime      @default(now())
+
+  seeker SeekerProfile @relation(fields: [seekerId], references: [id], onDelete: Cascade)
+
+  @@unique([seekerId, guideId])
+  @@map("favorites")
+}
+
+// ─────────────────────────────────────────────
+// NOTIFICATIONS
+// ─────────────────────────────────────────────
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  data      Json?
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────────
+// PLATFORM SETTINGS & ADMIN
+// ─────────────────────────────────────────────
+
+model PlatformSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  type      String   @default("string")
+  updatedAt DateTime @updatedAt
+
+  @@map("platform_settings")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  entity    String?
+  entityId  String?
+  oldValue  Json?
+  newValue  Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────
+// SUBSCRIPTIONS (Future Phase — Schema Ready)
+// ─────────────────────────────────────────────
+
+model GuideSubscription {
+  id                   String             @id @default(cuid())
+  guideId              String             @unique
+  stripeSubscriptionId String             @unique
+  status               SubscriptionStatus @default(TRIALING)
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelledAt          DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  guide GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@map("guide_subscriptions")
+}
+
+// ─────────────────────────────────────────────
+// SCRAPER (Path A — Proactive Onboarding)
+// ─────────────────────────────────────────────
+
+model ScraperJob {
+  id             String    @id @default(cuid())
+  source         String
+  targetUrl      String
+  status         String    @default("pending")
+  scrapedData    Json?
+  guideProfileId String?
+  errorMessage   String?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([status, createdAt])
+  @@map("scraper_jobs")
+}
+
+// ─────────────────────────────────────────────
+// CONTACT LEADS
+// ─────────────────────────────────────────────
+
+model ContactLead {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  type      String   @default("general")
+  subject   String
+  message   String
+  status    String   @default("new")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([status, createdAt])
+  @@map("contact_leads")
+}
