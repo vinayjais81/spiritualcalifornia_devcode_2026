@@ -5,6 +5,7 @@ import { UpdateGuideProfileDto } from './dto/update-profile.dto';
 import { SetCategoriesDto } from './dto/set-categories.dto';
 import { AddCredentialDto } from './dto/add-credential.dto';
 import { SetCalendarDto } from './dto/set-calendar.dto';
+import { SetAvailabilityDto } from './dto/set-availability.dto';
 export declare class GuidesController {
     private readonly guidesService;
     private readonly verificationService;
@@ -536,4 +537,30 @@ export declare class GuidesController {
         claimTokenExpiry: Date | null;
         scrapedSourceUrl: string | null;
     }>;
+    getAvailability(user: CurrentUserData): Promise<{
+        id: string;
+        createdAt: Date;
+        guideId: string;
+        dayOfWeek: number;
+        startTime: string;
+        endTime: string;
+        isRecurring: boolean;
+        bufferMin: number;
+    }[]>;
+    setAvailability(user: CurrentUserData, dto: SetAvailabilityDto): Promise<{
+        id: string;
+        createdAt: Date;
+        guideId: string;
+        dayOfWeek: number;
+        startTime: string;
+        endTime: string;
+        isRecurring: boolean;
+        bufferMin: number;
+    }[]>;
+    getBookableSlots(user: CurrentUserData): Promise<{
+        date: string;
+        startTime: string;
+        endTime: string;
+        available: boolean;
+    }[]>;
 }

@@ -19,6 +19,7 @@ export declare class GuidesService {
     private readonly blogService;
     private readonly logger;
     constructor(prisma: PrismaService, uploadService: UploadService, servicesService: ServicesService, eventsService: EventsService, productsService: ProductsService, reviewsService: ReviewsService, blogService: BlogService);
+    private requireGuide;
     listCategories(): Promise<({
         subcategories: {
             id: string;
@@ -640,4 +641,38 @@ export declare class GuidesService {
         memberSince: Date;
     }>;
     private ensureUniqueSlug;
+    getAvailability(userId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        guideId: string;
+        dayOfWeek: number;
+        startTime: string;
+        endTime: string;
+        isRecurring: boolean;
+        bufferMin: number;
+    }[]>;
+    setAvailability(userId: string, dto: {
+        slots: Array<{
+            dayOfWeek: number;
+            startTime: string;
+            endTime: string;
+            isRecurring?: boolean;
+            bufferMin?: number;
+        }>;
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        guideId: string;
+        dayOfWeek: number;
+        startTime: string;
+        endTime: string;
+        isRecurring: boolean;
+        bufferMin: number;
+    }[]>;
+    generateBookableSlots(userId: string, daysAhead?: number): Promise<{
+        date: string;
+        startTime: string;
+        endTime: string;
+        available: boolean;
+    }[]>;
 }

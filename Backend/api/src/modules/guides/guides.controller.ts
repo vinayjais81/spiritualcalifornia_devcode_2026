@@ -21,6 +21,7 @@ import { UpdateGuideProfileDto } from './dto/update-profile.dto';
 import { SetCategoriesDto } from './dto/set-categories.dto';
 import { AddCredentialDto } from './dto/add-credential.dto';
 import { SetCalendarDto } from './dto/set-calendar.dto';
+import { SetAvailabilityDto } from './dto/set-availability.dto';
 
 @ApiTags('Guides — Onboarding')
 @Controller('guides')
@@ -141,5 +142,25 @@ export class GuidesController {
     const guide = await this.guidesService.submitOnboarding(user.id);
     await this.verificationService.enqueueGuideVerification(guide.id);
     return guide;
+  }
+
+  // ─── Availability Management ────────────────────────────────────────────────
+
+  @Get('availability')
+  @ApiOperation({ summary: "Get guide's availability slots" })
+  getAvailability(@CurrentUser() user: CurrentUserData) {
+    return this.guidesService.getAvailability(user.id);
+  }
+
+  @Put('availability')
+  @ApiOperation({ summary: "Set guide's weekly availability (replaces all)" })
+  setAvailability(@CurrentUser() user: CurrentUserData, @Body() dto: SetAvailabilityDto) {
+    return this.guidesService.setAvailability(user.id, dto);
+  }
+
+  @Get('availability/slots')
+  @ApiOperation({ summary: 'Get available booking slots for next N days' })
+  getBookableSlots(@CurrentUser() user: CurrentUserData) {
+    return this.guidesService.generateBookableSlots(user.id, 14);
   }
 }

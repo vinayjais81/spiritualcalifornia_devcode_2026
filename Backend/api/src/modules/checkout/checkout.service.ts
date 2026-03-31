@@ -1,17 +1,20 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { CacheService } from '../../database/cache.service';
 
 @Injectable()
 export class CheckoutService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
+  ) {}
 
   // ─── Shipping Methods ──────────────────────────────────────────────────────
 
   async getShippingMethods() {
-    return this.prisma.shippingMethod.findMany({
-      where: { isActive: true },
-      orderBy: { sortOrder: 'asc' },
-    });
+    return this.cache.getOrSet(CacheService.keys.shippingMethods(), () =>
+      this.prisma.shippingMethod.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }),
+    3600); // 1 hour cache
   }
 
   async getShippingMethod(id: string) {

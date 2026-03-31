@@ -18,6 +18,7 @@ import {
 } from '@nestjs/swagger';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
+import { StrictThrottle } from '../../common/throttle.decorator';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -38,6 +39,7 @@ export class AuthController {
 
   @Public()
   @Post('register')
+  @StrictThrottle()
   @ApiOperation({ summary: 'Register a new seeker account' })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   @ApiResponse({ status: 409, description: 'Email already registered' })
@@ -51,6 +53,7 @@ export class AuthController {
 
   @Public()
   @Post('login')
+  @StrictThrottle()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login with email and password' })
   @ApiResponse({ status: 200, description: 'Login successful' })

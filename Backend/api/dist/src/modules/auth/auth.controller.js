@@ -16,6 +16,7 @@ exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const auth_service_1 = require("./auth.service");
+const throttle_decorator_1 = require("../../common/throttle.decorator");
 const register_dto_1 = require("./dto/register.dto");
 const login_dto_1 = require("./dto/login.dto");
 const forgot_password_dto_1 = require("./dto/forgot-password.dto");
@@ -96,6 +97,7 @@ exports.AuthController = AuthController;
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('register'),
+    (0, throttle_decorator_1.StrictThrottle)(),
     (0, swagger_1.ApiOperation)({ summary: 'Register a new seeker account' }),
     (0, swagger_1.ApiResponse)({ status: 201, description: 'User registered successfully' }),
     (0, swagger_1.ApiResponse)({ status: 409, description: 'Email already registered' }),
@@ -108,6 +110,7 @@ __decorate([
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('login'),
+    (0, throttle_decorator_1.StrictThrottle)(),
     (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, swagger_1.ApiOperation)({ summary: 'Login with email and password' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'Login successful' }),

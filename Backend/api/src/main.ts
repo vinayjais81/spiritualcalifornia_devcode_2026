@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import * as express from 'express';
 import { AppModule } from './app.module';
+import { SanitizePipe } from './common/sanitize.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
@@ -20,8 +21,12 @@ async function bootstrap() {
   const frontendUrl = configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
   const nodeEnv = configService.get<string>('NODE_ENV', 'development');
 
-  // Security
-  app.use(helmet());
+  // Security — hardened Helmet config
+  app.use(helmet({
+    contentSecurityPolicy: nodeEnv === 'production' ? undefined : false, // Disable CSP in dev for Swagger
+    crossOriginEmbedderPolicy: false, // Allow Calendly/Stripe embeds
+    hsts: nodeEnv === 'production' ? { maxAge: 31536000, includeSubDomains: true } : false,
+  }));
   app.use(cookieParser());
 
   // CORS — allow localhost and any LAN IP in development
@@ -41,8 +46,9 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 
-  // Global validation pipe
+  // Global pipes: sanitize inputs + validate DTOs
   app.useGlobalPipes(
+    new SanitizePipe(),
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,

@@ -1,11 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { CacheService } from '../../database/cache.service';
 
 @Injectable()
 export class HomeService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
+  ) {}
 
   async getHomePageData() {
+    // Cache home page data for 5 minutes
+    return this.cache.getOrSet(CacheService.keys.homeData(), () => this._fetchHomeData(), 300);
+  }
+
+  private async _fetchHomeData() {
     const [
       featuredGuides,
       recentBlogPosts,

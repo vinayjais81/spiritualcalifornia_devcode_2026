@@ -40,6 +40,12 @@ export class GuidesService {
     private readonly blogService: BlogService,
   ) {}
 
+  private async requireGuide(userId: string) {
+    const guide = await this.prisma.guideProfile.findUnique({ where: { userId } });
+    if (!guide) throw new NotFoundException('Guide profile not found');
+    return guide;
+  }
+
   // ─── Categories ─────────────────────────────────────────────────────────────
 
   async listCategories() {
@@ -491,5 +497,104 @@ export class GuidesService {
       if (!exists) return slug;
       slug = `${base}-${++attempt}`;
     }
+  }
+
+  // ─── Availability Management ───────────────────────────────────────────────
+
+  async getAvailability(userId: string) {
+    const guide = await this.requireGuide(userId);
+    return this.prisma.availability.findMany({
+      where: { guideId: guide.id },
+      orderBy: [{ dayOfWeek: 'asc' }, { startTime: 'asc' }],
+    });
+  }
+
+  async setAvailability(userId: string, dto: { slots: Array<{ dayOfWeek: number; startTime: string; endTime: string; isRecurring?: boolean; bufferMin?: number }> }) {
+    const guide = await this.requireGuide(userId);
+
+    // Replace all existing availability with new slots
+    await this.prisma.availability.deleteMany({ where: { guideId: guide.id } });
+
+    if (dto.slots.length === 0) return [];
+
+    await this.prisma.availability.createMany({
+      data: dto.slots.map(s => ({
+        guideId: guide.id,
+        dayOfWeek: s.dayOfWeek,
+        startTime: s.startTime,
+        endTime: s.endTime,
+        isRecurring: s.isRecurring ?? true,
+        bufferMin: s.bufferMin ?? 0,
+      })),
+    });
+
+    return this.getAvailability(userId);
+  }
+
+  async generateBookableSlots(userId: string, daysAhead = 14) {
+    const guide = await this.requireGuide(userId);
+    const availability = await this.prisma.availability.findMany({ where: { guideId: guide.id } });
+    if (availability.length === 0) return [];
+
+    const services = await this.prisma.service.findMany({
+      where: { guideId: guide.id, isActive: true },
+      select: { id: true, durationMin: true },
+    });
+    const defaultDuration = services[0]?.durationMin ?? 60;
+
+    // Get already-booked slots
+    const now = new Date();
+    const endDate = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
+    const bookedSlots = await this.prisma.serviceSlot.findMany({
+      where: {
+        service: { guideId: guide.id },
+        startTime: { gte: now, lte: endDate },
+        OR: [{ isBooked: true }, { isBlocked: true }],
+      },
+      select: { startTime: true, endTime: true },
+    });
+
+    const bookedRanges = bookedSlots.map(s => ({ start: s.startTime.getTime(), end: s.endTime.getTime() }));
+
+    // Generate slots for each day
+    const slots: Array<{ date: string; startTime: string; endTime: string; available: boolean }> = [];
+
+    for (let d = 0; d < daysAhead; d++) {
+      const date = new Date(now.getTime() + d * 24 * 60 * 60 * 1000);
+      const dayOfWeek = date.getDay();
+      const dayAvailability = availability.filter(a => a.dayOfWeek === dayOfWeek);
+
+      for (const avail of dayAvailability) {
+        const [startH, startM] = avail.startTime.split(':').map(Number);
+        const [endH, endM] = avail.endTime.split(':').map(Number);
+
+        let cursor = startH * 60 + startM;
+        const endMin = endH * 60 + endM;
+
+        while (cursor + defaultDuration <= endMin) {
+          const slotStart = new Date(date);
+          slotStart.setHours(Math.floor(cursor / 60), cursor % 60, 0, 0);
+          const slotEnd = new Date(slotStart.getTime() + defaultDuration * 60 * 1000);
+
+          // Check if this slot overlaps with any booked slot
+          const isBooked = bookedRanges.some(br =>
+            slotStart.getTime() < br.end && slotEnd.getTime() > br.start,
+          );
+
+          if (slotStart.getTime() > now.getTime()) {
+            slots.push({
+              date: date.toISOString().split('T')[0],
+              startTime: slotStart.toISOString(),
+              endTime: slotEnd.toISOString(),
+              available: !isBooked,
+            });
+          }
+
+          cursor += defaultDuration + avail.bufferMin;
+        }
+      }
+    }
+
+    return slots;
   }
 }

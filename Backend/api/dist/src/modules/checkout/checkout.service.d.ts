@@ -1,7 +1,9 @@
 import { PrismaService } from '../../database/prisma.service';
+import { CacheService } from '../../database/cache.service';
 export declare class CheckoutService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly cache;
+    constructor(prisma: PrismaService, cache: CacheService);
     getShippingMethods(): Promise<{
         id: string;
         name: string;

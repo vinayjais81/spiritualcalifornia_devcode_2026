@@ -44,6 +44,7 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const helmet_1 = __importDefault(require("helmet"));
 const express = __importStar(require("express"));
 const app_module_1 = require("./app.module");
+const sanitize_pipe_1 = require("./common/sanitize.pipe");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule, { rawBody: true });
     app.use('/api/v1/payments/webhook', express.raw({ type: 'application/json' }));
@@ -53,7 +54,11 @@ async function bootstrap() {
     const port = configService.get('PORT', 3001);
     const frontendUrl = configService.get('FRONTEND_URL', 'http://localhost:3000');
     const nodeEnv = configService.get('NODE_ENV', 'development');
-    app.use((0, helmet_1.default)());
+    app.use((0, helmet_1.default)({
+        contentSecurityPolicy: nodeEnv === 'production' ? undefined : false,
+        crossOriginEmbedderPolicy: false,
+        hsts: nodeEnv === 'production' ? { maxAge: 31536000, includeSubDomains: true } : false,
+    }));
     app.use((0, cookie_parser_1.default)());
     const allowedOrigins = nodeEnv === 'production'
         ? [frontendUrl]
@@ -66,7 +71,7 @@ async function bootstrap() {
     });
     app.setGlobalPrefix('api');
     app.enableVersioning({ type: common_1.VersioningType.URI, defaultVersion: '1' });
-    app.useGlobalPipes(new common_1.ValidationPipe({
+    app.useGlobalPipes(new sanitize_pipe_1.SanitizePipe(), new common_1.ValidationPipe({
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,

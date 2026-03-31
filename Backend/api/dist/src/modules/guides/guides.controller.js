@@ -25,6 +25,7 @@ const update_profile_dto_1 = require("./dto/update-profile.dto");
 const set_categories_dto_1 = require("./dto/set-categories.dto");
 const add_credential_dto_1 = require("./dto/add-credential.dto");
 const set_calendar_dto_1 = require("./dto/set-calendar.dto");
+const set_availability_dto_1 = require("./dto/set-availability.dto");
 let GuidesController = class GuidesController {
     guidesService;
     verificationService;
@@ -66,6 +67,15 @@ let GuidesController = class GuidesController {
         const guide = await this.guidesService.submitOnboarding(user.id);
         await this.verificationService.enqueueGuideVerification(guide.id);
         return guide;
+    }
+    getAvailability(user) {
+        return this.guidesService.getAvailability(user.id);
+    }
+    setAvailability(user, dto) {
+        return this.guidesService.setAvailability(user.id, dto);
+    }
+    getBookableSlots(user) {
+        return this.guidesService.generateBookableSlots(user.id, 14);
     }
 };
 exports.GuidesController = GuidesController;
@@ -169,6 +179,31 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], GuidesController.prototype, "submitOnboarding", null);
+__decorate([
+    (0, common_1.Get)('availability'),
+    (0, swagger_1.ApiOperation)({ summary: "Get guide's availability slots" }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], GuidesController.prototype, "getAvailability", null);
+__decorate([
+    (0, common_1.Put)('availability'),
+    (0, swagger_1.ApiOperation)({ summary: "Set guide's weekly availability (replaces all)" }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, set_availability_dto_1.SetAvailabilityDto]),
+    __metadata("design:returntype", void 0)
+], GuidesController.prototype, "setAvailability", null);
+__decorate([
+    (0, common_1.Get)('availability/slots'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get available booking slots for next N days' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], GuidesController.prototype, "getBookableSlots", null);
 exports.GuidesController = GuidesController = __decorate([
     (0, swagger_1.ApiTags)('Guides — Onboarding'),
     (0, common_1.Controller)('guides'),

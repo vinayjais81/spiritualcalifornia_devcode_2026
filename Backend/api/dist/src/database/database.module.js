@@ -9,14 +9,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DatabaseModule = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("./prisma.service");
+const cache_service_1 = require("./cache.service");
 let DatabaseModule = class DatabaseModule {
 };
 exports.DatabaseModule = DatabaseModule;
 exports.DatabaseModule = DatabaseModule = __decorate([
     (0, common_1.Global)(),
     (0, common_1.Module)({
-        providers: [prisma_service_1.PrismaService],
-        exports: [prisma_service_1.PrismaService],
+        providers: [prisma_service_1.PrismaService, cache_service_1.CacheService],
+        exports: [prisma_service_1.PrismaService, cache_service_1.CacheService],
     })
 ], DatabaseModule);
 //# sourceMappingURL=database.module.js.map

@@ -12,16 +12,16 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CheckoutService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../database/prisma.service");
+const cache_service_1 = require("../../database/cache.service");
 let CheckoutService = class CheckoutService {
     prisma;
-    constructor(prisma) {
+    cache;
+    constructor(prisma, cache) {
         this.prisma = prisma;
+        this.cache = cache;
     }
     async getShippingMethods() {
-        return this.prisma.shippingMethod.findMany({
-            where: { isActive: true },
-            orderBy: { sortOrder: 'asc' },
-        });
+        return this.cache.getOrSet(cache_service_1.CacheService.keys.shippingMethods(), () => this.prisma.shippingMethod.findMany({ where: { isActive: true }, orderBy: { sortOrder: 'asc' } }), 3600);
     }
     async getShippingMethod(id) {
         const method = await this.prisma.shippingMethod.findUnique({ where: { id } });
@@ -130,6 +130,7 @@ let CheckoutService = class CheckoutService {
 exports.CheckoutService = CheckoutService;
 exports.CheckoutService = CheckoutService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        cache_service_1.CacheService])
 ], CheckoutService);
 //# sourceMappingURL=checkout.service.js.map

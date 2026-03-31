@@ -1,7 +1,9 @@
 import { PrismaService } from '../../database/prisma.service';
+import { CacheService } from '../../database/cache.service';
 export declare class HomeService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly cache;
+    constructor(prisma: PrismaService, cache: CacheService);
     getHomePageData(): Promise<{
         featuredGuides: {
             id: string;
@@ -73,6 +75,7 @@ export declare class HomeService {
             };
         }[];
     }>;
+    private _fetchHomeData;
     private getFeaturedGuides;
     private getRecentBlogPosts;
     private getActiveProducts;
