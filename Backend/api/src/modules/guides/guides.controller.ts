@@ -52,6 +52,15 @@ export class GuidesController {
     return this.guidesService.getPublicProfile(slug);
   }
 
+  // ─── My Profile (authenticated guide's own full profile) ─────────────────────
+
+  @Get('me')
+  @ApiOperation({ summary: "Get the authenticated guide's own editable profile" })
+  @ApiResponse({ status: 200, description: 'Guide profile' })
+  getMyProfile(@CurrentUser() user: CurrentUserData) {
+    return this.guidesService.getMyProfile(user.id);
+  }
+
   // ─── Onboarding Status ───────────────────────────────────────────────────────
 
   @Get('onboarding/status')

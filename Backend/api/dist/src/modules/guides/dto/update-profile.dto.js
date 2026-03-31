@@ -17,6 +17,12 @@ class UpdateGuideProfileDto {
     tagline;
     bio;
     location;
+    studioName;
+    streetAddress;
+    city;
+    state;
+    zipCode;
+    country;
     timezone;
     websiteUrl;
     instagramUrl;
@@ -24,6 +30,8 @@ class UpdateGuideProfileDto {
     avatarS3Key;
     phone;
     languages;
+    yearsExperience;
+    modalities;
 }
 exports.UpdateGuideProfileDto = UpdateGuideProfileDto;
 __decorate([
@@ -54,6 +62,48 @@ __decorate([
     (0, class_validator_1.MaxLength)(100),
     __metadata("design:type", String)
 ], UpdateGuideProfileDto.prototype, "location", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'The Healing Space' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(200),
+    __metadata("design:type", String)
+], UpdateGuideProfileDto.prototype, "studioName", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: '1234 Sunset Blvd' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(300),
+    __metadata("design:type", String)
+], UpdateGuideProfileDto.prototype, "streetAddress", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'Los Angeles' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(100),
+    __metadata("design:type", String)
+], UpdateGuideProfileDto.prototype, "city", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'California' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(100),
+    __metadata("design:type", String)
+], UpdateGuideProfileDto.prototype, "state", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: '90028' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(20),
+    __metadata("design:type", String)
+], UpdateGuideProfileDto.prototype, "zipCode", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'United States' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(100),
+    __metadata("design:type", String)
+], UpdateGuideProfileDto.prototype, "country", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ example: 'America/Los_Angeles' }),
     (0, class_validator_1.IsOptional)(),
@@ -98,4 +148,19 @@ __decorate([
     (0, class_validator_1.IsString)({ each: true }),
     __metadata("design:type", Array)
 ], UpdateGuideProfileDto.prototype, "languages", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 12 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(99),
+    __metadata("design:type", Number)
+], UpdateGuideProfileDto.prototype, "yearsExperience", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ type: [String], example: ['Sound Healing', 'Reiki', 'Breathwork'] }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.IsString)({ each: true }),
+    __metadata("design:type", Array)
+], UpdateGuideProfileDto.prototype, "modalities", void 0);
 //# sourceMappingURL=update-profile.dto.js.map

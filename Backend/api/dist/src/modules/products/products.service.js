@@ -33,6 +33,7 @@ let ProductsService = class ProductsService {
                 price: dto.price,
                 description: dto.description,
                 fileS3Key: dto.fileS3Key,
+                digitalFiles: dto.digitalFiles ?? undefined,
                 imageUrls: dto.imageUrls ?? [],
                 stockQuantity: dto.stockQuantity,
                 isActive: false,
@@ -44,6 +45,43 @@ let ProductsService = class ProductsService {
         return this.prisma.product.findMany({
             where: { guideId: guide.id },
             orderBy: { createdAt: 'desc' },
+        });
+    }
+    async findActiveByGuideId(guideId) {
+        return this.prisma.product.findMany({
+            where: { guideId, isActive: true },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+    async findOne(productId) {
+        const product = await this.prisma.product.findUnique({
+            where: { id: productId },
+            include: {
+                guide: {
+                    select: {
+                        id: true,
+                        slug: true,
+                        displayName: true,
+                        isVerified: true,
+                        user: { select: { avatarUrl: true } },
+                    },
+                },
+            },
+        });
+        if (!product)
+            throw new common_1.NotFoundException('Product not found');
+        return product;
+    }
+    async update(userId, productId, dto) {
+        const guide = await this.requireGuide(userId);
+        const product = await this.prisma.product.findUnique({ where: { id: productId } });
+        if (!product)
+            throw new common_1.NotFoundException('Product not found');
+        if (product.guideId !== guide.id)
+            throw new common_1.ForbiddenException('Not your product');
+        return this.prisma.product.update({
+            where: { id: productId },
+            data: dto,
         });
     }
     async delete(userId, productId) {

@@ -19,23 +19,26 @@ class SetCalendarDto {
 }
 exports.SetCalendarDto = SetCalendarDto;
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ example: 'Calendly' }),
+    (0, swagger_1.ApiPropertyOptional)({ example: 'Calendly', nullable: true }),
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateIf)((o) => o.calendarType !== null),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MaxLength)(50),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], SetCalendarDto.prototype, "calendarType", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ example: 'calendly.com/maya-rosenberg' }),
+    (0, swagger_1.ApiPropertyOptional)({ example: 'calendly.com/maya-rosenberg', nullable: true }),
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateIf)((o) => o.calendarLink !== null),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MaxLength)(200),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], SetCalendarDto.prototype, "calendarLink", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ description: 'JSON-encoded session pricing object' }),
     (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.ValidateIf)((o) => o.sessionPricingJson !== null),
     (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], SetCalendarDto.prototype, "sessionPricingJson", void 0);
 //# sourceMappingURL=set-calendar.dto.js.map

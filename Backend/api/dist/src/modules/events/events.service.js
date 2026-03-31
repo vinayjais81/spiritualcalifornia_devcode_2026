@@ -65,6 +65,67 @@ let EventsService = class EventsService {
             orderBy: { startTime: 'asc' },
         });
     }
+    async findPublishedByGuideId(guideId) {
+        return this.prisma.event.findMany({
+            where: { guideId, isPublished: true, isCancelled: false },
+            include: { ticketTiers: true },
+            orderBy: { startTime: 'asc' },
+        });
+    }
+    async findOne(eventId) {
+        const event = await this.prisma.event.findUnique({
+            where: { id: eventId },
+            include: {
+                ticketTiers: true,
+                guide: {
+                    select: {
+                        id: true,
+                        slug: true,
+                        displayName: true,
+                        isVerified: true,
+                        user: { select: { avatarUrl: true } },
+                    },
+                },
+            },
+        });
+        if (!event)
+            throw new common_1.NotFoundException('Event not found');
+        return event;
+    }
+    async update(userId, eventId, dto) {
+        const guide = await this.requireGuide(userId);
+        const event = await this.prisma.event.findUnique({ where: { id: eventId } });
+        if (!event)
+            throw new common_1.NotFoundException('Event not found');
+        if (event.guideId !== guide.id)
+            throw new common_1.ForbiddenException('Not your event');
+        const data = {};
+        if (dto.title !== undefined)
+            data.title = dto.title;
+        if (dto.type !== undefined)
+            data.type = dto.type;
+        if (dto.startTime !== undefined)
+            data.startTime = new Date(dto.startTime);
+        if (dto.endTime !== undefined)
+            data.endTime = new Date(dto.endTime);
+        if (dto.location !== undefined)
+            data.location = dto.location;
+        if (dto.description !== undefined)
+            data.description = dto.description;
+        if (dto.coverImageUrl !== undefined)
+            data.coverImageUrl = dto.coverImageUrl;
+        if (dto.timezone !== undefined)
+            data.timezone = dto.timezone;
+        if (dto.isPublished !== undefined)
+            data.isPublished = dto.isPublished;
+        if (dto.isCancelled !== undefined)
+            data.isCancelled = dto.isCancelled;
+        return this.prisma.event.update({
+            where: { id: eventId },
+            data,
+            include: { ticketTiers: true },
+        });
+    }
     async delete(userId, eventId) {
         const guide = await this.requireGuide(userId);
         const event = await this.prisma.event.findUnique({ where: { id: eventId } });

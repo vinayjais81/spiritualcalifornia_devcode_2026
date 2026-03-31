@@ -12,12 +12,25 @@ const guides_controller_1 = require("./guides.controller");
 const guides_service_1 = require("./guides.service");
 const verification_module_1 = require("../verification/verification.module");
 const upload_module_1 = require("../upload/upload.module");
+const services_module_1 = require("../services/services.module");
+const events_module_1 = require("../events/events.module");
+const products_module_1 = require("../products/products.module");
+const reviews_module_1 = require("../reviews/reviews.module");
+const blog_module_1 = require("../blog/blog.module");
 let GuidesModule = class GuidesModule {
 };
 exports.GuidesModule = GuidesModule;
 exports.GuidesModule = GuidesModule = __decorate([
     (0, common_1.Module)({
-        imports: [verification_module_1.VerificationModule, upload_module_1.UploadModule],
+        imports: [
+            verification_module_1.VerificationModule,
+            upload_module_1.UploadModule,
+            services_module_1.ServicesModule,
+            events_module_1.EventsModule,
+            products_module_1.ProductsModule,
+            reviews_module_1.ReviewsModule,
+            blog_module_1.BlogModule,
+        ],
         controllers: [guides_controller_1.GuidesController],
         providers: [guides_service_1.GuidesService],
         exports: [guides_service_1.GuidesService],

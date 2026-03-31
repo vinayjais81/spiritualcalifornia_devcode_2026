@@ -21,6 +21,7 @@ class CreateProductDto {
     fileS3Key;
     imageUrls;
     stockQuantity;
+    digitalFiles;
 }
 exports.CreateProductDto = CreateProductDto;
 __decorate([
@@ -67,4 +68,9 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], CreateProductDto.prototype, "stockQuantity", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Array of digital file objects with name, size, url' }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], CreateProductDto.prototype, "digitalFiles", void 0);
 //# sourceMappingURL=create-product.dto.js.map

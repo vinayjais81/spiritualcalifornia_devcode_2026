@@ -8,6 +8,11 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { UploadService } from '../upload/upload.service';
+import { ServicesService } from '../services/services.service';
+import { EventsService } from '../events/events.service';
+import { ProductsService } from '../products/products.service';
+import { ReviewsService } from '../reviews/reviews.service';
+import { BlogService } from '../blog/blog.service';
 import { Role, VerificationStatus } from '@prisma/client';
 import { UpdateGuideProfileDto } from './dto/update-profile.dto';
 import { SetCategoriesDto } from './dto/set-categories.dto';
@@ -28,6 +33,11 @@ export class GuidesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly uploadService: UploadService,
+    private readonly servicesService: ServicesService,
+    private readonly eventsService: EventsService,
+    private readonly productsService: ProductsService,
+    private readonly reviewsService: ReviewsService,
+    private readonly blogService: BlogService,
   ) {}
 
   // ─── Categories ─────────────────────────────────────────────────────────────
@@ -85,13 +95,15 @@ export class GuidesService {
     const guide = await this.findGuideByUserId(userId);
 
     const profileData: Record<string, unknown> = {};
-    const fields = ['displayName', 'tagline', 'bio', 'location', 'timezone',
-                    'websiteUrl', 'instagramUrl', 'youtubeUrl'] as const;
+    const fields = ['displayName', 'tagline', 'bio', 'location', 'studioName',
+                    'streetAddress', 'city', 'state', 'zipCode', 'country', 'timezone',
+                    'websiteUrl', 'instagramUrl', 'youtubeUrl', 'yearsExperience'] as const;
     for (const f of fields) {
       if (dto[f] !== undefined) profileData[f] = dto[f];
     }
 
     if (dto.languages !== undefined) profileData['languages'] = dto.languages;
+    if (dto.modalities !== undefined) profileData['modalities'] = dto.modalities;
 
     const userPatch: Record<string, unknown> = {};
     if (dto.avatarS3Key) userPatch['avatarUrl'] = this.uploadService.getFileUrl(dto.avatarS3Key);
@@ -194,6 +206,15 @@ export class GuidesService {
     if (dto.calendarType !== undefined) data['calendarType'] = dto.calendarType;
     if (dto.calendarLink !== undefined) data['calendarLink'] = dto.calendarLink;
     if (dto.sessionPricingJson !== undefined) data['sessionPricingJson'] = dto.sessionPricingJson;
+
+    // If disconnecting (nulling out), also clear OAuth tokens
+    if (dto.calendarType === null || dto.calendarLink === null) {
+      data['calendlyConnected'] = false;
+      data['calendlyAccessToken'] = null;
+      data['calendlyRefreshToken'] = null;
+      data['calendlyUserUri'] = null;
+    }
+
     return this.prisma.guideProfile.update({ where: { id: guide.id }, data });
   }
 
@@ -273,6 +294,71 @@ export class GuidesService {
     };
   }
 
+  // ─── My Profile (editable fields for dashboard) ────────────────────────────
+
+  async getMyProfile(userId: string) {
+    const guide = await this.prisma.guideProfile.findUnique({
+      where: { userId },
+      include: {
+        user: { select: { firstName: true, lastName: true, avatarUrl: true, phone: true } },
+        categories: {
+          include: {
+            category: { select: { id: true, name: true, slug: true } },
+            subcategory: { select: { id: true, name: true } },
+          },
+        },
+        credentials: true,
+      },
+    });
+
+    if (!guide) throw new NotFoundException('Guide profile not found — start onboarding first');
+
+    // Fetch Persona identity verification status
+    const personaVerification = await this.prisma.personaVerification.findUnique({
+      where: { userId },
+      select: { status: true, completedAt: true },
+    });
+
+    return {
+      id: guide.id,
+      slug: guide.slug,
+      displayName: guide.displayName,
+      tagline: guide.tagline,
+      bio: guide.bio,
+      location: guide.location,
+      studioName: guide.studioName,
+      streetAddress: guide.streetAddress,
+      city: guide.city,
+      state: guide.state,
+      zipCode: guide.zipCode,
+      country: guide.country,
+      timezone: guide.timezone,
+      languages: guide.languages,
+      modalities: guide.modalities,
+      issuesHelped: guide.issuesHelped,
+      yearsExperience: guide.yearsExperience,
+      websiteUrl: guide.websiteUrl,
+      instagramUrl: guide.instagramUrl,
+      youtubeUrl: guide.youtubeUrl,
+      calendarType: guide.calendarType,
+      calendarLink: guide.calendarLink,
+      calendlyConnected: guide.calendlyConnected,
+      sessionPricingJson: guide.sessionPricingJson,
+      isPublished: guide.isPublished,
+      isVerified: guide.isVerified,
+      verificationStatus: guide.verificationStatus,
+      avatarUrl: guide.user.avatarUrl,
+      phone: guide.user.phone,
+      firstName: guide.user.firstName,
+      lastName: guide.user.lastName,
+      categories: guide.categories,
+      credentials: guide.credentials,
+      identityVerification: personaVerification
+        ? { status: personaVerification.status, completedAt: personaVerification.completedAt }
+        : null,
+    };
+  }
+
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
   async findGuideByUserId(userId: string, includeRelations = false) {
@@ -302,13 +388,21 @@ export class GuidesService {
     return steps;
   }
 
-  // ─── Public: Guide Profile by Slug ──────────────────────────────────────────
+  // ─── Public: Guide Profile by Slug (Aggregated) ────────────────────────────
 
   async getPublicProfile(slug: string) {
     const guide = await this.prisma.guideProfile.findUnique({
       where: { slug },
       include: {
-        user: { select: { firstName: true, lastName: true, avatarUrl: true, createdAt: true } },
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatarUrl: true,
+            createdAt: true,
+          },
+        },
         categories: {
           include: {
             category: { select: { id: true, name: true, slug: true } },
@@ -316,38 +410,75 @@ export class GuidesService {
           },
         },
         credentials: {
-          where: { verifiedAt: { not: null } },
-          select: { id: true, title: true, institution: true, issuedYear: true },
+          select: {
+            id: true,
+            title: true,
+            institution: true,
+            issuedYear: true,
+            verificationStatus: true,
+            verifiedAt: true,
+          },
         },
       },
     });
 
     if (!guide) throw new NotFoundException(`Guide not found: ${slug}`);
 
-    // Group category tags for display
+    // Aggregate all related data in parallel
+    const [services, events, products, blogPosts, reviewData, testimonials] =
+      await Promise.all([
+        this.servicesService.findByGuideId(guide.id),
+        this.eventsService.findPublishedByGuideId(guide.id),
+        this.productsService.findActiveByGuideId(guide.id),
+        this.blogService.findPublishedByGuideId(guide.id),
+        this.reviewsService.findByGuideUserId(guide.userId, 1, 5),
+        this.reviewsService.findTestimonialsByGuideId(guide.id),
+      ]);
+
+    // Group category tags
     const tags = guide.categories.map((gc) => ({
       category: gc.category.name,
+      categorySlug: gc.category.slug,
       subcategory: gc.subcategory?.name ?? null,
-      isVerified: guide.verificationStatus === 'APPROVED',
     }));
+
+    // Separate verified/unverified credentials
+    const verifiedCredentials = guide.credentials.filter(
+      (c) => c.verificationStatus === 'APPROVED' || c.verifiedAt,
+    );
 
     return {
       id: guide.id,
+      userId: guide.userId,
       slug: guide.slug,
       displayName: guide.displayName,
       tagline: guide.tagline,
       bio: guide.bio,
       location: guide.location,
+      timezone: guide.timezone,
+      languages: guide.languages,
       avatarUrl: guide.user.avatarUrl,
       websiteUrl: guide.websiteUrl,
       instagramUrl: guide.instagramUrl,
       youtubeUrl: guide.youtubeUrl,
+      calendarType: guide.calendarType,
+      calendarLink: guide.calendarLink,
+      sessionPricingJson: guide.sessionPricingJson,
       verificationStatus: guide.verificationStatus,
-      isVerified: guide.verificationStatus === 'APPROVED',
+      isVerified: guide.isVerified,
       tags,
-      credentials: guide.credentials,
-      // stats placeholders — will be live when booking/review modules are built
-      stats: { rating: null, sessions: 0, reviews: 0, yearsExperience: null },
+      credentials: verifiedCredentials,
+      services,
+      events,
+      products,
+      blogPosts,
+      reviews: reviewData.reviews,
+      reviewStats: {
+        averageRating: guide.averageRating,
+        totalReviews: guide.totalReviews,
+        ratingDistribution: reviewData.ratingDistribution,
+      },
+      testimonials,
       memberSince: guide.user.createdAt,
     };
   }

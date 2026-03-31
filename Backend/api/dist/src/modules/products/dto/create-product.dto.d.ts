@@ -7,4 +7,5 @@ export declare class CreateProductDto {
     fileS3Key?: string;
     imageUrls?: string[];
     stockQuantity?: number;
+    digitalFiles?: any;
 }

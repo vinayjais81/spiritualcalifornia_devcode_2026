@@ -1,5 +1,5 @@
 export declare class SetCalendarDto {
-    calendarType?: string;
-    calendarLink?: string;
-    sessionPricingJson?: string;
+    calendarType?: string | null;
+    calendarLink?: string | null;
+    sessionPricingJson?: string | null;
 }

@@ -38,6 +38,9 @@ let GuidesController = class GuidesController {
     getPublicProfile(slug) {
         return this.guidesService.getPublicProfile(slug);
     }
+    getMyProfile(user) {
+        return this.guidesService.getMyProfile(user.id);
+    }
     getStatus(user) {
         return this.guidesService.getOnboardingStatus(user.id);
     }
@@ -85,6 +88,15 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], GuidesController.prototype, "getPublicProfile", null);
+__decorate([
+    (0, common_1.Get)('me'),
+    (0, swagger_1.ApiOperation)({ summary: "Get the authenticated guide's own editable profile" }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Guide profile' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], GuidesController.prototype, "getMyProfile", null);
 __decorate([
     (0, common_1.Get)('onboarding/status'),
     (0, swagger_1.ApiOperation)({ summary: 'Get onboarding status for the authenticated user' }),

@@ -42,4 +42,9 @@ export class CreateProductDto {
   @Min(0)
   @IsOptional()
   stockQuantity?: number;
+
+  /** Digital files metadata: [{ name, size, url }] */
+  @ApiPropertyOptional({ description: 'Array of digital file objects with name, size, url' })
+  @IsOptional()
+  digitalFiles?: any;
 }

@@ -203,6 +203,12 @@ model GuideProfile {
   tagline              String?
   bio                  String?
   location             String?
+  studioName           String?
+  streetAddress        String?
+  city                 String?
+  state                String?
+  zipCode              String?
+  country              String?          @default("United States")
   timezone             String?
   websiteUrl           String?
   instagramUrl         String?
@@ -210,6 +216,7 @@ model GuideProfile {
   languages            String[]           @default([])
   modalities           String[]           @default([])
   issuesHelped         String[]           @default([])
+  yearsExperience      Int?
   calendarType              String?
   calendarLink              String?
   sessionPricingJson        String?
@@ -608,6 +615,7 @@ model Product {
   stockQuantity   Int?
   imageUrls       String[]
   fileS3Key       String?
+  digitalFiles    Json?           // Array of { name, size, url } for digital downloads
   shippingInfo    Json?
   isActive        Boolean     @default(true)
   algoliaObjectId String?

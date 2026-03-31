@@ -14,6 +14,11 @@ exports.GuidesService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../database/prisma.service");
 const upload_service_1 = require("../upload/upload.service");
+const services_service_1 = require("../services/services.service");
+const events_service_1 = require("../events/events.service");
+const products_service_1 = require("../products/products.service");
+const reviews_service_1 = require("../reviews/reviews.service");
+const blog_service_1 = require("../blog/blog.service");
 const client_1 = require("@prisma/client");
 function slugify(text) {
     return text
@@ -24,10 +29,20 @@ function slugify(text) {
 let GuidesService = GuidesService_1 = class GuidesService {
     prisma;
     uploadService;
+    servicesService;
+    eventsService;
+    productsService;
+    reviewsService;
+    blogService;
     logger = new common_1.Logger(GuidesService_1.name);
-    constructor(prisma, uploadService) {
+    constructor(prisma, uploadService, servicesService, eventsService, productsService, reviewsService, blogService) {
         this.prisma = prisma;
         this.uploadService = uploadService;
+        this.servicesService = servicesService;
+        this.eventsService = eventsService;
+        this.productsService = productsService;
+        this.reviewsService = reviewsService;
+        this.blogService = blogService;
     }
     async listCategories() {
         return this.prisma.category.findMany({
@@ -72,14 +87,17 @@ let GuidesService = GuidesService_1 = class GuidesService {
     async updateProfile(userId, dto) {
         const guide = await this.findGuideByUserId(userId);
         const profileData = {};
-        const fields = ['displayName', 'tagline', 'bio', 'location', 'timezone',
-            'websiteUrl', 'instagramUrl', 'youtubeUrl'];
+        const fields = ['displayName', 'tagline', 'bio', 'location', 'studioName',
+            'streetAddress', 'city', 'state', 'zipCode', 'country', 'timezone',
+            'websiteUrl', 'instagramUrl', 'youtubeUrl', 'yearsExperience'];
         for (const f of fields) {
             if (dto[f] !== undefined)
                 profileData[f] = dto[f];
         }
         if (dto.languages !== undefined)
             profileData['languages'] = dto.languages;
+        if (dto.modalities !== undefined)
+            profileData['modalities'] = dto.modalities;
         const userPatch = {};
         if (dto.avatarS3Key)
             userPatch['avatarUrl'] = this.uploadService.getFileUrl(dto.avatarS3Key);
@@ -168,6 +186,12 @@ let GuidesService = GuidesService_1 = class GuidesService {
             data['calendarLink'] = dto.calendarLink;
         if (dto.sessionPricingJson !== undefined)
             data['sessionPricingJson'] = dto.sessionPricingJson;
+        if (dto.calendarType === null || dto.calendarLink === null) {
+            data['calendlyConnected'] = false;
+            data['calendlyAccessToken'] = null;
+            data['calendlyRefreshToken'] = null;
+            data['calendlyUserUri'] = null;
+        }
         return this.prisma.guideProfile.update({ where: { id: guide.id }, data });
     }
     async saveCalendlyTokens(userId, tokens) {
@@ -224,6 +248,65 @@ let GuidesService = GuidesService_1 = class GuidesService {
             completedSteps: this.resolveCompletedSteps(guide),
         };
     }
+    async getMyProfile(userId) {
+        const guide = await this.prisma.guideProfile.findUnique({
+            where: { userId },
+            include: {
+                user: { select: { firstName: true, lastName: true, avatarUrl: true, phone: true } },
+                categories: {
+                    include: {
+                        category: { select: { id: true, name: true, slug: true } },
+                        subcategory: { select: { id: true, name: true } },
+                    },
+                },
+                credentials: true,
+            },
+        });
+        if (!guide)
+            throw new common_1.NotFoundException('Guide profile not found — start onboarding first');
+        const personaVerification = await this.prisma.personaVerification.findUnique({
+            where: { userId },
+            select: { status: true, completedAt: true },
+        });
+        return {
+            id: guide.id,
+            slug: guide.slug,
+            displayName: guide.displayName,
+            tagline: guide.tagline,
+            bio: guide.bio,
+            location: guide.location,
+            studioName: guide.studioName,
+            streetAddress: guide.streetAddress,
+            city: guide.city,
+            state: guide.state,
+            zipCode: guide.zipCode,
+            country: guide.country,
+            timezone: guide.timezone,
+            languages: guide.languages,
+            modalities: guide.modalities,
+            issuesHelped: guide.issuesHelped,
+            yearsExperience: guide.yearsExperience,
+            websiteUrl: guide.websiteUrl,
+            instagramUrl: guide.instagramUrl,
+            youtubeUrl: guide.youtubeUrl,
+            calendarType: guide.calendarType,
+            calendarLink: guide.calendarLink,
+            calendlyConnected: guide.calendlyConnected,
+            sessionPricingJson: guide.sessionPricingJson,
+            isPublished: guide.isPublished,
+            isVerified: guide.isVerified,
+            verificationStatus: guide.verificationStatus,
+            avatarUrl: guide.user.avatarUrl,
+            phone: guide.user.phone,
+            firstName: guide.user.firstName,
+            lastName: guide.user.lastName,
+            categories: guide.categories,
+            credentials: guide.credentials,
+            identityVerification: personaVerification
+                ? { status: personaVerification.status, completedAt: personaVerification.completedAt }
+                : null,
+        };
+    }
     async findGuideByUserId(userId, includeRelations = false) {
         const guide = await this.prisma.guideProfile.findUnique({
             where: { userId },
@@ -250,7 +333,15 @@ let GuidesService = GuidesService_1 = class GuidesService {
         const guide = await this.prisma.guideProfile.findUnique({
             where: { slug },
             include: {
-                user: { select: { firstName: true, lastName: true, avatarUrl: true, createdAt: true } },
+                user: {
+                    select: {
+                        id: true,
+                        firstName: true,
+                        lastName: true,
+                        avatarUrl: true,
+                        createdAt: true,
+                    },
+                },
                 categories: {
                     include: {
                         category: { select: { id: true, name: true, slug: true } },
@@ -258,34 +349,65 @@ let GuidesService = GuidesService_1 = class GuidesService {
                     },
                 },
                 credentials: {
-                    where: { verifiedAt: { not: null } },
-                    select: { id: true, title: true, institution: true, issuedYear: true },
+                    select: {
+                        id: true,
+                        title: true,
+                        institution: true,
+                        issuedYear: true,
+                        verificationStatus: true,
+                        verifiedAt: true,
+                    },
                 },
             },
         });
         if (!guide)
             throw new common_1.NotFoundException(`Guide not found: ${slug}`);
+        const [services, events, products, blogPosts, reviewData, testimonials] = await Promise.all([
+            this.servicesService.findByGuideId(guide.id),
+            this.eventsService.findPublishedByGuideId(guide.id),
+            this.productsService.findActiveByGuideId(guide.id),
+            this.blogService.findPublishedByGuideId(guide.id),
+            this.reviewsService.findByGuideUserId(guide.userId, 1, 5),
+            this.reviewsService.findTestimonialsByGuideId(guide.id),
+        ]);
         const tags = guide.categories.map((gc) => ({
             category: gc.category.name,
+            categorySlug: gc.category.slug,
             subcategory: gc.subcategory?.name ?? null,
-            isVerified: guide.verificationStatus === 'APPROVED',
         }));
+        const verifiedCredentials = guide.credentials.filter((c) => c.verificationStatus === 'APPROVED' || c.verifiedAt);
         return {
             id: guide.id,
+            userId: guide.userId,
             slug: guide.slug,
             displayName: guide.displayName,
             tagline: guide.tagline,
             bio: guide.bio,
             location: guide.location,
+            timezone: guide.timezone,
+            languages: guide.languages,
             avatarUrl: guide.user.avatarUrl,
             websiteUrl: guide.websiteUrl,
             instagramUrl: guide.instagramUrl,
             youtubeUrl: guide.youtubeUrl,
+            calendarType: guide.calendarType,
+            calendarLink: guide.calendarLink,
+            sessionPricingJson: guide.sessionPricingJson,
             verificationStatus: guide.verificationStatus,
-            isVerified: guide.verificationStatus === 'APPROVED',
+            isVerified: guide.isVerified,
             tags,
-            credentials: guide.credentials,
-            stats: { rating: null, sessions: 0, reviews: 0, yearsExperience: null },
+            credentials: verifiedCredentials,
+            services,
+            events,
+            products,
+            blogPosts,
+            reviews: reviewData.reviews,
+            reviewStats: {
+                averageRating: guide.averageRating,
+                totalReviews: guide.totalReviews,
+                ratingDistribution: reviewData.ratingDistribution,
+            },
+            testimonials,
             memberSince: guide.user.createdAt,
         };
     }
@@ -304,6 +426,11 @@ exports.GuidesService = GuidesService;
 exports.GuidesService = GuidesService = GuidesService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        upload_service_1.UploadService])
+        upload_service_1.UploadService,
+        services_service_1.ServicesService,
+        events_service_1.EventsService,
+        products_service_1.ProductsService,
+        reviews_service_1.ReviewsService,
+        blog_service_1.BlogService])
 ], GuidesService);
 //# sourceMappingURL=guides.service.js.map

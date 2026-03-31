@@ -22,14 +22,14 @@ export declare class ContactService {
         leads: {
             id: string;
             name: string;
+            createdAt: Date;
             email: string;
             phone: string | null;
-            type: string;
-            subject: string;
-            message: string;
-            status: string;
-            createdAt: Date;
             updatedAt: Date;
+            type: string;
+            status: string;
+            message: string;
+            subject: string;
         }[];
         total: number;
         page: number;
@@ -41,14 +41,14 @@ export declare class ContactService {
     updateLeadStatus(id: string, status: string): Promise<{
         id: string;
         name: string;
+        createdAt: Date;
         email: string;
         phone: string | null;
-        type: string;
-        subject: string;
-        message: string;
-        status: string;
-        createdAt: Date;
         updatedAt: Date;
+        type: string;
+        status: string;
+        message: string;
+        subject: string;
     }>;
     submitLead(dto: SubmitContactDto): Promise<{
         success: boolean;

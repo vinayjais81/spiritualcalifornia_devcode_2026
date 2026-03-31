@@ -20,6 +20,8 @@ import { SearchModule } from './modules/search/search.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { SeekersModule } from './modules/seekers/seekers.module';
 import { ContactModule } from './modules/contact/contact.module';
+import { BlogModule } from './modules/blog/blog.module';
+import { HomeModule } from './modules/home/home.module';
 
 @Module({
   imports: [
@@ -58,6 +60,8 @@ import { ContactModule } from './modules/contact/contact.module';
     UploadModule,
     SeekersModule,
     ContactModule,
+    BlogModule,
+    HomeModule,
   ],
 })
 export class AppModule {}

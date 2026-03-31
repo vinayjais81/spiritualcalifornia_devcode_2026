@@ -199,10 +199,14 @@ export class AuthController {
   // ─── Helper ─────────────────────────────────────────────────────────────────
 
   private setRefreshTokenCookie(res: Response, token: string) {
+    const isProd = process.env.NODE_ENV === 'production';
     res.cookie('refresh_token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      // sameSite 'none' + secure required for cross-origin cookies in dev
+      // (localhost:3000 → localhost:3001). In production behind a reverse proxy
+      // (same domain), use 'strict'.
+      secure: isProd ? true : false,
+      sameSite: isProd ? 'strict' : 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       path: '/',
     });

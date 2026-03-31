@@ -138,7 +138,7 @@ async function main() {
     const adminUser = await prisma.user.create({
       data: {
         email: adminEmail,
-        passwordHash: await hash('Admin@123456'),
+        passwordHash: await hash('12345678'),
         firstName: 'Super',
         lastName: 'Admin',
         isEmailVerified: true,
@@ -146,7 +146,7 @@ async function main() {
         roles: { create: [{ role: Role.SUPER_ADMIN }, { role: Role.ADMIN }] },
       },
     });
-    console.log(`  ✓ admin@spiritualcalifornia.com / Admin@123456`);
+    console.log(`  ✓ admin@spiritualcalifornia.com / 12345678`);
   } else {
     console.log('  ✓ Admin already exists, skipping');
   }
@@ -170,7 +170,7 @@ async function main() {
       user = await prisma.user.create({
         data: {
           email: s.email,
-          passwordHash: await hash('Seeker@123'),
+          passwordHash: await hash('12345678'),
           firstName: s.firstName,
           lastName: s.lastName,
           isEmailVerified: true,
@@ -399,6 +399,29 @@ async function main() {
         { name: 'Sound Bath & Meditation Journey', price: 110, durationMin: 90, type: ServiceType.IN_PERSON, description: 'Extended session combining guided meditation, chakra toning, and full sound bath immersion. Ideal for those seeking a profound reset.' },
       ],
     },
+    {
+      email: 'elena.vasquez@gmail.com',
+      firstName: 'Elena',
+      lastName: 'Vasquez',
+      displayName: 'Elena Vasquez, RMT',
+      tagline: 'Registered Music Therapist & Sound Journey Facilitator | Palo Alto',
+      bio: `Elena Vasquez is a Board-Certified Music Therapist (MT-BC) and Registered Music Therapist based in Palo Alto, CA. She holds a Master of Music Therapy from the University of the Pacific and has over 9 years of clinical experience working with diverse populations.\n\nElena specializes in using music and rhythm as therapeutic tools for anxiety, depression, PTSD, and neurological conditions. Her approach combines evidence-based music therapy techniques with elements of sound healing, drum circles, and songwriting for self-expression.\n\nShe works with individuals, groups, and corporate teams across the Peninsula and South Bay. Elena has partnered with Stanford Children's Hospital, the VA Palo Alto, and several tech companies to deliver music-based wellness programs. Her drum circle events at Mitchell Park have become a beloved community gathering.`,
+      location: 'Palo Alto, CA',
+      categorySlug: 'creative-arts',
+      subcategorySlugs: ['music-therapy', 'dance-movement-therapy'],
+      averageRating: 4.8,
+      totalReviews: 37,
+      credentials: [
+        { title: 'Board-Certified Music Therapist (MT-BC)', institution: 'Certification Board for Music Therapists', issuedYear: 2016 },
+        { title: 'Master of Music Therapy', institution: 'University of the Pacific', issuedYear: 2015 },
+        { title: 'HealthRHYTHMS Drumming Facilitator', institution: 'Remo Recreational Music Center', issuedYear: 2018 },
+      ],
+      services: [
+        { name: 'Individual Music Therapy Session', price: 140, durationMin: 60, type: ServiceType.IN_PERSON, description: 'One-on-one music therapy session using live instruments, guided listening, songwriting, and rhythmic exercises tailored to your therapeutic goals.' },
+        { name: 'Group Drum Circle Experience', price: 40, durationMin: 90, type: ServiceType.IN_PERSON, description: 'Community drum circle open to all skill levels. No musical experience needed — drums provided. A joyful, stress-releasing group experience through shared rhythm.' },
+        { name: 'Virtual Music & Mindfulness Session', price: 95, durationMin: 45, type: ServiceType.VIRTUAL, description: 'Online music therapy session combining guided listening, toning exercises, and mindfulness practices. Perfect for remote workers seeking creative stress relief.' },
+      ],
+    },
   ];
 
   const guideUsers: any[] = [];
@@ -408,7 +431,7 @@ async function main() {
       user = await prisma.user.create({
         data: {
           email: g.email,
-          passwordHash: await hash('Guide@123456'),
+          passwordHash: await hash('12345678'),
           firstName: g.firstName,
           lastName: g.lastName,
           isEmailVerified: true,
@@ -514,7 +537,30 @@ async function main() {
 
     guideUsers.push({ user, guideProfile });
   }
-  console.log(`  ✓ ${guideData.length} guides created`);
+
+  // Set professional avatar URLs for guides
+  const avatarUrls = [
+    'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop&crop=face', // Luna
+    'https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face', // Sarah Chen
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face', // Marcus
+    'https://images.unsplash.com/photo-1594824476967-48c8b964f137?w=400&h=400&fit=crop&crop=face', // Priya
+    'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face', // James
+    'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop&crop=face', // Maya W
+    'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop&crop=face', // Carlos
+    'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop&crop=face', // Rebecca
+    'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=400&fit=crop&crop=face', // Michael T
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop&crop=face', // Elena
+  ];
+  for (let i = 0; i < guideUsers.length; i++) {
+    if (guideUsers[i]?.user && avatarUrls[i]) {
+      await prisma.user.update({
+        where: { id: guideUsers[i].user.id },
+        data: { avatarUrl: avatarUrls[i] },
+      });
+    }
+  }
+
+  console.log(`  ✓ ${guideData.length} guides created with avatars`);
 
   // ── 7. Bookings & Payments ─────────────────────────────────────────────────
   console.log('📅 Bookings & payments...');
@@ -643,6 +689,7 @@ async function main() {
       daysFromNow: 8,
       durationHours: 2.5,
       tiers: [{ name: 'General Admission', price: 45, capacity: 40 }],
+      coverImageUrl: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=400&fit=crop',
     },
     {
       guideIdx: 8, // Michael Tanaka
@@ -656,6 +703,7 @@ async function main() {
         { name: 'Individual', price: 25, capacity: 100 },
         { name: 'Corporate (Team of 5)', price: 99, capacity: 20 },
       ],
+      coverImageUrl: 'https://images.unsplash.com/photo-1514533212735-5df27d970db0?w=800&h=400&fit=crop',
     },
     {
       guideIdx: 2, // Marcus Thompson
@@ -669,6 +717,7 @@ async function main() {
         { name: 'Early Bird', price: 197, capacity: 10 },
         { name: 'General', price: 247, capacity: 20 },
       ],
+      coverImageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=400&fit=crop',
     },
     {
       guideIdx: 3, // Priya Sharma
@@ -682,6 +731,7 @@ async function main() {
         { name: 'Glamping Tent (Shared)', price: 425, capacity: 8 },
         { name: 'Glamping Tent (Private)', price: 550, capacity: 4 },
       ],
+      coverImageUrl: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=800&h=400&fit=crop',
     },
     {
       guideIdx: 6, // Carlos Mendez
@@ -695,6 +745,68 @@ async function main() {
         { name: 'Single Class', price: 20, capacity: 20 },
         { name: '4-Week Series (8 classes)', price: 120, capacity: 15 },
       ],
+      coverImageUrl: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&h=400&fit=crop',
+    },
+    {
+      guideIdx: 5, // Maya Williams
+      title: 'Reiki Healing Circle — Los Altos Hills',
+      description: 'A sacred group Reiki healing experience in Maya\'s beautiful hillside studio. Each participant receives individual Reiki energy while held in the collective healing container of the circle. Followed by tea and sharing.',
+      type: EventType.IN_PERSON,
+      location: 'Maya\'s Healing Studio, Los Altos Hills, CA',
+      daysFromNow: 14,
+      durationHours: 2,
+      tiers: [{ name: 'General', price: 55, capacity: 12 }],
+      coverImageUrl: 'https://images.unsplash.com/photo-1600618528240-fb9fc964b853?w=800&h=400&fit=crop',
+    },
+    {
+      guideIdx: 0, // Luna Rivera
+      title: 'Sacred Silence: A Day of Mindful Retreat — Big Sur',
+      description: 'A full-day silent retreat in the breathtaking Big Sur coastline. Immerse yourself in guided meditation, walking meditation through redwood groves, mindful eating, and contemplative journaling. This is a Soul Travel experience — the healing power of nature combined with structured mindfulness practice.',
+      type: EventType.SOUL_TRAVEL,
+      location: 'Esalen Institute, Big Sur, CA',
+      daysFromNow: 28,
+      durationHours: 10,
+      tiers: [{ name: 'Day Pass (includes lunch)', price: 195, capacity: 20 }],
+      coverImageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=400&fit=crop',
+    },
+    {
+      guideIdx: 5, // Maya Williams
+      title: 'Crystal Healing & Reiki Intensive — Mount Shasta',
+      description: 'A transformative 3-day Soul Travel retreat at the base of sacred Mount Shasta. Combine Reiki Level 1 attunement, crystal grid ceremony, forest meditation, and energy healing in one of California\'s most powerful vortex locations.',
+      type: EventType.SOUL_TRAVEL,
+      location: 'Mount Shasta Retreat Center, CA',
+      daysFromNow: 42,
+      durationHours: 72,
+      tiers: [
+        { name: 'Shared Room', price: 650, capacity: 8 },
+        { name: 'Private Room', price: 850, capacity: 4 },
+      ],
+      coverImageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&h=400&fit=crop',
+    },
+    {
+      guideIdx: 9, // Elena Vasquez
+      title: 'Rhythm & Renewal: Drum Journey Through Joshua Tree',
+      description: 'A 2-day immersive drumming and music therapy retreat in the otherworldly landscape of Joshua Tree. Experience sunrise drum circles, guided sound journeys under the stars, rhythmic movement workshops, and deep silence in the desert.',
+      type: EventType.SOUL_TRAVEL,
+      location: 'Joshua Tree Retreat Center, Joshua Tree, CA',
+      daysFromNow: 56,
+      durationHours: 48,
+      tiers: [
+        { name: 'Camping', price: 375, capacity: 15 },
+        { name: 'Private Casita', price: 525, capacity: 6 },
+      ],
+      coverImageUrl: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&h=400&fit=crop',
+    },
+    {
+      guideIdx: 7, // Rebecca Stone
+      title: 'Art & Nature Healing Retreat — Carmel Valley',
+      description: 'A weekend of creative healing immersed in the beauty of Carmel Valley. Combine outdoor art-making, expressive writing, mindful hiking, and group art therapy in a stunning natural setting. All materials provided. No art experience needed.',
+      type: EventType.SOUL_TRAVEL,
+      location: 'Carmel Valley Ranch, CA',
+      daysFromNow: 49,
+      durationHours: 48,
+      tiers: [{ name: 'All-Inclusive', price: 495, capacity: 12 }],
+      coverImageUrl: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=800&h=400&fit=crop',
     },
   ];
 
@@ -719,6 +831,7 @@ async function main() {
         endTime,
         timezone: 'America/Los_Angeles',
         location: ev.location,
+        coverImageUrl: (ev as any).coverImageUrl || null,
         isPublished: true,
         ticketTiers: {
           create: ev.tiers.map((t) => ({
@@ -745,6 +858,7 @@ async function main() {
       description: 'A comprehensive 21-day guided audio meditation program designed specifically for software engineers, product managers, and startup founders dealing with the unique stressors of Silicon Valley. Includes 21 guided meditations (10–20 min each), a PDF workbook, and access to a private community.',
       type: ProductType.DIGITAL,
       price: 67,
+      imageUrls: ['https://images.unsplash.com/photo-1508672019048-805c876b67e2?w=400&h=400&fit=crop'],
     },
     {
       guideIdx: 0,
@@ -752,6 +866,7 @@ async function main() {
       description: '6 guided breathwork sessions ranging from 10 to 30 minutes. Covers calming breath, energizing breath, emotional release breathwork, and sleep preparation. Immediate digital download in MP3 format.',
       type: ProductType.DIGITAL,
       price: 29,
+      imageUrls: ['https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=400&h=400&fit=crop'],
     },
     {
       guideIdx: 2,
@@ -759,6 +874,7 @@ async function main() {
       description: 'A 60-page interactive PDF workbook based on Marcus Thompson\'s signature Purpose Discovery framework used with hundreds of coaching clients. Includes values excavation exercises, strengths mapping tools, vision crafting prompts, and a 90-day action planning template.',
       type: ProductType.DIGITAL,
       price: 37,
+      imageUrls: ['https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&h=400&fit=crop'],
     },
     {
       guideIdx: 4,
@@ -766,6 +882,7 @@ async function main() {
       description: 'A collection of 8 professionally recorded hypnotherapy sessions by James O\'Brien covering: stress relief, confidence building, sleep improvement, overcoming procrastination, public speaking anxiety, morning motivation, breaking bad habits, and releasing perfectionism.',
       type: ProductType.DIGITAL,
       price: 89,
+      imageUrls: ['https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=400&h=400&fit=crop'],
     },
     {
       guideIdx: 5,
@@ -773,6 +890,7 @@ async function main() {
       description: 'Complete 45-page PDF guide to practicing Reiki self-healing at home. Written by Maya Williams (Usui Reiki Master Teacher). Includes hand positions, chakra system overview, setting sacred space, daily self-treatment routine, and troubleshooting common experiences.',
       type: ProductType.DIGITAL,
       price: 24,
+      imageUrls: ['https://images.unsplash.com/photo-1600618528240-fb9fc964b853?w=400&h=400&fit=crop'],
     },
     {
       guideIdx: 8,
@@ -781,6 +899,7 @@ async function main() {
       type: ProductType.PHYSICAL,
       price: 185,
       stockQuantity: 8,
+      imageUrls: ['https://images.unsplash.com/photo-1514533212735-5df27d970db0?w=400&h=400&fit=crop', 'https://images.unsplash.com/photo-1536623975707-c4b3b2af565d?w=400&h=400&fit=crop'],
     },
     {
       guideIdx: 3,
@@ -789,6 +908,25 @@ async function main() {
       type: ProductType.PHYSICAL,
       price: 68,
       stockQuantity: 25,
+      imageUrls: ['https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=400&h=400&fit=crop', 'https://images.unsplash.com/photo-1611072337226-3b3e9a0e0f3f?w=400&h=400&fit=crop'],
+    },
+    {
+      guideIdx: 9,
+      name: 'Community Drum Circle Starter Kit',
+      description: 'Everything you need to start your own healing drum circle: a hand-crafted African djembe drum, shaker, drumming guide booklet by Elena Vasquez, and access to online rhythm tutorials. Perfect for group wellness activities and team building.',
+      type: ProductType.PHYSICAL,
+      price: 145,
+      stockQuantity: 12,
+      imageUrls: ['https://images.unsplash.com/photo-1519892300165-cb5542fb47c7?w=400&h=400&fit=crop'],
+    },
+    {
+      guideIdx: 1,
+      name: 'Traditional Chinese Herbal Tea Collection — Curated by Dr. Chen',
+      description: 'A premium collection of 6 organic Chinese herbal teas hand-selected by Dr. Sarah Chen for common Silicon Valley ailments: stress relief, immune support, digestive harmony, sleep aid, energy boost, and mental clarity. Each tin contains 15 sachets. Includes a beautiful storage box and Dr. Chen\'s brewing guide.',
+      type: ProductType.PHYSICAL,
+      price: 78,
+      stockQuantity: 30,
+      imageUrls: ['https://images.unsplash.com/photo-1564890369478-c89ca6d9cde9?w=400&h=400&fit=crop', 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?w=400&h=400&fit=crop'],
     },
   ];
 
@@ -805,7 +943,7 @@ async function main() {
         type: prod.type,
         price: prod.price,
         stockQuantity: prod.stockQuantity ?? null,
-        imageUrls: [],
+        imageUrls: prod.imageUrls || [],
         isActive: true,
       },
     });
@@ -831,6 +969,7 @@ async function main() {
         ],
       }),
       tags: ['Meditation', 'Tech Wellness', 'Mindfulness', 'Silicon Valley', 'Stress'],
+      coverImageUrl: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=400&fit=crop',
     },
     {
       guideIdx: 2,
@@ -845,6 +984,7 @@ async function main() {
         ],
       }),
       tags: ['Life Coaching', 'Burnout', 'Silicon Valley', 'Purpose', 'Mental Health'],
+      coverImageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=400&fit=crop',
     },
     {
       guideIdx: 8,
@@ -859,6 +999,61 @@ async function main() {
         ],
       }),
       tags: ['Sound Healing', 'Science', 'Meditation', 'Wellness Research', 'San Jose'],
+      coverImageUrl: 'https://images.unsplash.com/photo-1514533212735-5df27d970db0?w=800&h=400&fit=crop',
+    },
+    {
+      guideIdx: 3,
+      title: 'Understanding Your Dosha: An Ayurvedic Guide to Self-Care',
+      slug: 'understanding-your-dosha-ayurvedic-guide',
+      excerpt: 'Ayurveda teaches that each person has a unique constitution. Learning your dosha type is the first step to designing a wellness routine that actually works for your body.',
+      content: '<h2>What Is a Dosha?</h2><p>In Ayurveda, the three doshas — Vata, Pitta, and Kapha — are biological energies found throughout the body and mind. They govern all physical and mental processes and provide every living being with an individual blueprint for health and fulfillment.</p><p>Most people are a combination of two doshas, with one being dominant. Understanding your primary dosha helps you make better choices about diet, exercise, sleep, and even career.</p><h2>Quick Dosha Self-Assessment</h2><ul><li><strong>Vata (Air + Ether):</strong> Thin build, creative, energetic, prone to anxiety and dry skin</li><li><strong>Pitta (Fire + Water):</strong> Medium build, focused, ambitious, prone to inflammation and irritability</li><li><strong>Kapha (Earth + Water):</strong> Sturdy build, calm, loyal, prone to weight gain and lethargy</li></ul>',
+      tags: ['Ayurveda', 'Yoga', 'Self-Care', 'Wellness', 'Dosha'],
+      coverImageUrl: 'https://images.unsplash.com/photo-1545205597-3d9d02c29597?w=800&h=400&fit=crop',
+    },
+    {
+      guideIdx: 5,
+      title: 'Reiki for Beginners: What to Expect in Your First Session',
+      slug: 'reiki-for-beginners-first-session',
+      excerpt: 'Walking into your first Reiki session can feel mysterious. As a Reiki Master with 12 years of practice, here is everything you need to know to feel prepared and at ease.',
+      content: '<h2>What Happens During a Reiki Session?</h2><p>Reiki is a gentle, non-invasive form of energy healing. During a session, you lie fully clothed on a massage table while the practitioner places their hands lightly on or just above your body in a series of positions from head to toe.</p><p>Most people experience deep relaxation, warmth, tingling, or a sense of floating. Some people fall asleep — and that is perfectly fine. The healing happens whether you are awake or asleep.</p><h2>How to Prepare</h2><ul><li>Wear comfortable, loose clothing</li><li>Avoid heavy meals 2 hours before</li><li>Stay hydrated</li><li>Come with an open mind — no specific belief system is required</li></ul><p>After the session, drink plenty of water and give yourself permission to rest. Some people feel energized; others feel deeply peaceful. Both responses are normal.</p>',
+      tags: ['Reiki', 'Energy Healing', 'Beginners Guide', 'Wellness', 'Los Altos'],
+      coverImageUrl: 'https://images.unsplash.com/photo-1600618528240-fb9fc964b853?w=800&h=400&fit=crop',
+    },
+    {
+      guideIdx: 7,
+      title: 'Why Art Therapy Works When Talk Therapy Feels Stuck',
+      slug: 'why-art-therapy-works-when-talk-therapy-stuck',
+      excerpt: 'Sometimes words are not enough. As a board-certified art therapist, I have seen how creative expression can unlock healing that years of traditional therapy could not reach.',
+      content: '<h2>The Limits of Language</h2><p>Talk therapy is powerful. But some experiences — trauma, grief, shame, early childhood wounds — are stored in parts of the brain that language cannot easily access. They live in the body, in images, in feelings that resist being put into words.</p><p>Art therapy works because it bypasses the verbal, analytical brain and speaks directly to the emotional and sensory systems where these experiences are stored.</p><h2>You Do Not Need to Be an Artist</h2><p>This is the most important thing I tell every new client: art therapy is not about making beautiful art. It is about using creative materials as a language for expressing what is inside you. Stick figures are welcome. Scribbles are welcome. The process matters, not the product.</p>',
+      tags: ['Art Therapy', 'Mental Health', 'Trauma', 'Creative Healing', 'Santa Clara'],
+      coverImageUrl: 'https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=800&h=400&fit=crop',
+    },
+    {
+      guideIdx: 4,
+      title: 'Hypnotherapy for Engineers: Debugging Your Subconscious Mind',
+      slug: 'hypnotherapy-for-engineers-debugging-subconscious',
+      excerpt: 'As a hypnotherapist in Silicon Valley, I work with brilliant analytical minds every day. Here is how I explain hypnotherapy in terms that make sense to engineers.',
+      content: '<h2>Your Mind Is Software</h2><p>Think of your subconscious mind as an operating system that was largely programmed before age 7. Most of the "bugs" — anxiety, self-doubt, imposter syndrome, procrastination — are not logic errors. They are deeply installed programs running in the background, consuming resources.</p><p>Hypnotherapy is essentially a debugging tool for the subconscious. In a relaxed, focused state (not sleep, not mind control — just deep focus), we can access and update these outdated programs.</p><h2>Common Myths Debunked</h2><ul><li><strong>Myth:</strong> You lose control. <strong>Reality:</strong> You are fully aware and in control at all times.</li><li><strong>Myth:</strong> Only gullible people can be hypnotized. <strong>Reality:</strong> Intelligent, analytical people are often the best subjects because they can focus deeply.</li><li><strong>Myth:</strong> It is instant magic. <strong>Reality:</strong> Most issues resolve in 3-6 sessions, not one.</li></ul>',
+      tags: ['Hypnotherapy', 'NLP', 'Tech Wellness', 'Anxiety', 'Silicon Valley'],
+      coverImageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=400&fit=crop',
+    },
+    {
+      guideIdx: 6,
+      title: 'QiGong for Desk Workers: 5 Exercises You Can Do at Your Standing Desk',
+      slug: 'qigong-for-desk-workers-standing-desk-exercises',
+      excerpt: 'Spending 8+ hours at a desk is slowly destroying your body. These 5 simple QiGong exercises take less than 10 minutes and can transform how you feel by 3pm.',
+      content: '<h2>The Tech Worker Body</h2><p>After teaching QiGong in San Jose for 7 years, I can spot a tech worker from across the room: rounded shoulders, forward head posture, tight hips, shallow breathing. This is not a character flaw — it is the physical adaptation to desk work. And QiGong is the antidote.</p><h2>5 Desk-Friendly QiGong Exercises</h2><ol><li><strong>Shaking the Tree (2 min):</strong> Stand and gently bounce on your heels while shaking your arms loosely. Releases tension throughout the entire body.</li><li><strong>Lifting the Sky (2 min):</strong> Interlace fingers, push palms up overhead, stretch, release. Repeat 8 times. Opens the chest and shoulders.</li><li><strong>Turning the Waist (2 min):</strong> Feet shoulder-width, twist gently side to side letting arms swing. Mobilizes the spine and aids digestion.</li><li><strong>Golden Rooster Stands on One Leg (2 min):</strong> Balance on each leg for 30 seconds. Improves focus, proprioception, and core stability.</li><li><strong>Three Deep Breaths (1 min):</strong> Inhale through nose for 4 counts, hold for 4, exhale through mouth for 8. Resets the nervous system.</li></ol>',
+      tags: ['QiGong', 'Desk Workers', 'Tech Wellness', 'Exercises', 'San Jose'],
+      coverImageUrl: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&h=400&fit=crop',
+    },
+    {
+      guideIdx: 9,
+      title: 'The Healing Power of Rhythm: How Drumming Reduces Stress',
+      slug: 'healing-power-of-rhythm-drumming-reduces-stress',
+      excerpt: 'Research shows that group drumming reduces cortisol levels and boosts immune function. As a music therapist, I have witnessed its power firsthand in hospitals, offices, and parks.',
+      content: '<h2>Rhythm Is Medicine</h2><p>Humans have been using rhythm for healing for at least 40,000 years. From African djembe circles to Native American powwows to Japanese taiko, every culture on earth has discovered that beating a drum together does something profound to the human body and spirit.</p><p>Modern science is catching up. A landmark study published in the journal Alternative Therapies in Health and Medicine found that group drumming sessions produced significant increases in natural killer cell activity — the immune cells that fight cancer and viruses.</p><h2>Why It Works</h2><ul><li><strong>Entrainment:</strong> Your brainwaves synchronize with the rhythm, inducing a meditative state</li><li><strong>Vagal tone:</strong> Rhythmic vibration stimulates the vagus nerve, activating the relaxation response</li><li><strong>Community:</strong> Group drumming creates social bonding through synchronized activity</li><li><strong>Expression:</strong> Drumming provides a non-verbal outlet for emotions and stress</li></ul>',
+      tags: ['Music Therapy', 'Drumming', 'Stress Relief', 'Community', 'Palo Alto'],
+      coverImageUrl: 'https://images.unsplash.com/photo-1519892300165-cb5542fb47c7?w=800&h=400&fit=crop',
     },
   ];
 
@@ -875,6 +1070,7 @@ async function main() {
         slug: post.slug,
         content: post.content,
         excerpt: post.excerpt,
+        coverImageUrl: (post as any).coverImageUrl || null,
         tags: post.tags,
         isPublished: true,
         publishedAt: past(Math.floor(Math.random() * 30) + 5),
@@ -888,15 +1084,15 @@ async function main() {
   // ── Done ────────────────────────────────────────────────────────────────────
   console.log('\n✅ Seed complete!\n');
   console.log('═══════════════════════════════════════════════════');
-  console.log('  ADMIN LOGIN');
-  console.log('  Email    : admin@spiritualcalifornia.com');
-  console.log('  Password : Admin@123456');
+  console.log('  ALL ACCOUNTS USE PASSWORD: 12345678');
   console.log('───────────────────────────────────────────────────');
-  console.log('  GUIDE LOGINS  (all use password: Guide@123456)');
-  guideData.forEach((g) => console.log(`  ${g.email}`));
+  console.log('  ADMIN:  admin@spiritualcalifornia.com');
   console.log('───────────────────────────────────────────────────');
-  console.log('  SEEKER LOGINS  (all use password: Seeker@123)');
-  seekerData.forEach((s) => console.log(`  ${s.email}`));
+  console.log('  GUIDES:');
+  guideData.forEach((g) => console.log(`    ${g.email.padEnd(35)} → ${g.displayName} (${g.location})`));
+  console.log('───────────────────────────────────────────────────');
+  console.log('  SEEKERS:');
+  seekerData.forEach((s) => console.log(`    ${s.email.padEnd(35)} → ${s.firstName} ${s.lastName}`));
   console.log('═══════════════════════════════════════════════════\n');
 }
 

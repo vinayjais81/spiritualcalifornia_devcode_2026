@@ -18,14 +18,14 @@ export declare class ContactController {
         leads: {
             id: string;
             name: string;
+            createdAt: Date;
             email: string;
             phone: string | null;
-            type: string;
-            subject: string;
-            message: string;
-            status: string;
-            createdAt: Date;
             updatedAt: Date;
+            type: string;
+            status: string;
+            message: string;
+            subject: string;
         }[];
         total: number;
         page: number;
@@ -39,14 +39,14 @@ export declare class ContactController {
     }): Promise<{
         id: string;
         name: string;
+        createdAt: Date;
         email: string;
         phone: string | null;
-        type: string;
-        subject: string;
-        message: string;
-        status: string;
-        createdAt: Date;
         updatedAt: Date;
+        type: string;
+        status: string;
+        message: string;
+        subject: string;
     }>;
 }
 export {};

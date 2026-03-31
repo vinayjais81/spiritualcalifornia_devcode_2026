@@ -1,12 +1,11 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
 export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
-
-  // ── Helpers ───────────────────────────────────────────────────────────────
 
   private async requireGuide(userId: string) {
     const guide = await this.prisma.guideProfile.findUnique({ where: { userId } });
@@ -14,7 +13,7 @@ export class ProductsService {
     return guide;
   }
 
-  // ── Create (draft — isActive:false until guide goes live) ─────────────────
+  // ─── Create (draft) ────────────────────────────────────────────────────────
 
   async create(userId: string, dto: CreateProductDto) {
     const guide = await this.requireGuide(userId);
@@ -26,14 +25,15 @@ export class ProductsService {
         price: dto.price,
         description: dto.description,
         fileS3Key: dto.fileS3Key,
+        digitalFiles: dto.digitalFiles ?? undefined,
         imageUrls: dto.imageUrls ?? [],
         stockQuantity: dto.stockQuantity,
-        isActive: false, // published when guide goes live
+        isActive: false,
       },
     });
   }
 
-  // ── List guide's own products ─────────────────────────────────────────────
+  // ─── List Guide's Products (Dashboard) ─────────────────────────────────────
 
   async findByGuide(userId: string) {
     const guide = await this.requireGuide(userId);
@@ -43,7 +43,52 @@ export class ProductsService {
     });
   }
 
-  // ── Delete ────────────────────────────────────────────────────────────────
+  // ─── List Active Products by Guide ID (Public Profile) ─────────────────────
+
+  async findActiveByGuideId(guideId: string) {
+    return this.prisma.product.findMany({
+      where: { guideId, isActive: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  // ─── Get Single Product (Public) ───────────────────────────────────────────
+
+  async findOne(productId: string) {
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        guide: {
+          select: {
+            id: true,
+            slug: true,
+            displayName: true,
+            isVerified: true,
+            user: { select: { avatarUrl: true } },
+          },
+        },
+      },
+    });
+
+    if (!product) throw new NotFoundException('Product not found');
+    return product;
+  }
+
+  // ─── Update ────────────────────────────────────────────────────────────────
+
+  async update(userId: string, productId: string, dto: UpdateProductDto) {
+    const guide = await this.requireGuide(userId);
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException('Product not found');
+    if (product.guideId !== guide.id) throw new ForbiddenException('Not your product');
+
+    return this.prisma.product.update({
+      where: { id: productId },
+      data: dto,
+    });
+  }
+
+  // ─── Delete ────────────────────────────────────────────────────────────────
 
   async delete(userId: string, productId: string) {
     const guide = await this.requireGuide(userId);
@@ -54,7 +99,7 @@ export class ProductsService {
     return { deleted: true };
   }
 
-  // ── Publish all draft products for a guide (called from Go Live) ──────────
+  // ─── Publish All (Go Live) ─────────────────────────────────────────────────
 
   async publishAll(guideId: string) {
     await this.prisma.product.updateMany({

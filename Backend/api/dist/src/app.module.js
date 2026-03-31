@@ -29,6 +29,8 @@ const search_module_1 = require("./modules/search/search.module");
 const upload_module_1 = require("./modules/upload/upload.module");
 const seekers_module_1 = require("./modules/seekers/seekers.module");
 const contact_module_1 = require("./modules/contact/contact.module");
+const blog_module_1 = require("./modules/blog/blog.module");
+const home_module_1 = require("./modules/home/home.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -63,6 +65,8 @@ exports.AppModule = AppModule = __decorate([
             upload_module_1.UploadModule,
             seekers_module_1.SeekersModule,
             contact_module_1.ContactModule,
+            blog_module_1.BlogModule,
+            home_module_1.HomeModule,
         ],
     })
 ], AppModule);

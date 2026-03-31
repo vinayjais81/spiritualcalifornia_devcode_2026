@@ -82,10 +82,11 @@ let AuthController = class AuthController {
         return res.redirect(redirectUrl);
     }
     setRefreshTokenCookie(res, token) {
+        const isProd = process.env.NODE_ENV === 'production';
         res.cookie('refresh_token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+            secure: isProd ? true : false,
+            sameSite: isProd ? 'strict' : 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000,
             path: '/',
         });
