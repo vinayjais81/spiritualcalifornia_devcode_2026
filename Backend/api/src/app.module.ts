@@ -22,6 +22,10 @@ import { SeekersModule } from './modules/seekers/seekers.module';
 import { ContactModule } from './modules/contact/contact.module';
 import { BlogModule } from './modules/blog/blog.module';
 import { HomeModule } from './modules/home/home.module';
+import { CartModule } from './modules/cart/cart.module';
+import { SoulToursModule } from './modules/soul-tours/soul-tours.module';
+import { OrdersModule } from './modules/orders/orders.module';
+import { CheckoutModule } from './modules/checkout/checkout.module';
 
 @Module({
   imports: [
@@ -62,6 +66,10 @@ import { HomeModule } from './modules/home/home.module';
     ContactModule,
     BlogModule,
     HomeModule,
+    CartModule,
+    SoulToursModule,
+    OrdersModule,
+    CheckoutModule,
   ],
 })
 export class AppModule {}

@@ -53,6 +53,28 @@ let ProductsService = class ProductsService {
             orderBy: { createdAt: 'desc' },
         });
     }
+    async findPublic(limit = 50, page = 1, type) {
+        const skip = (page - 1) * limit;
+        const where = { isActive: true };
+        if (type === 'DIGITAL' || type === 'PHYSICAL')
+            where.type = type;
+        const [products, total] = await Promise.all([
+            this.prisma.product.findMany({
+                where,
+                include: {
+                    guide: {
+                        select: { id: true, slug: true, displayName: true, isVerified: true, user: { select: { avatarUrl: true } } },
+                    },
+                    variants: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } },
+                },
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: limit,
+            }),
+            this.prisma.product.count({ where }),
+        ]);
+        return { products, total, page, totalPages: Math.ceil(total / limit) };
+    }
     async findOne(productId) {
         const product = await this.prisma.product.findUnique({
             where: { id: productId },
@@ -63,9 +85,11 @@ let ProductsService = class ProductsService {
                         slug: true,
                         displayName: true,
                         isVerified: true,
+                        tagline: true,
                         user: { select: { avatarUrl: true } },
                     },
                 },
+                variants: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } },
             },
         });
         if (!product)

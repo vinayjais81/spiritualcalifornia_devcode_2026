@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { EventsService } from './events.service';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -29,6 +29,13 @@ export class EventsController {
   @ApiOperation({ summary: "List the authenticated guide's events" })
   findMine(@CurrentUser() user: CurrentUserData) {
     return this.eventsService.findByGuide(user.id);
+  }
+
+  @Public()
+  @Get('public')
+  @ApiOperation({ summary: 'List upcoming public events' })
+  findPublic(@Query('limit') limit?: string, @Query('page') page?: string) {
+    return this.eventsService.findPublished(Number(page) || 1, Number(limit) || 20);
   }
 
   @Public()

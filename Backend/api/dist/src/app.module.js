@@ -31,6 +31,10 @@ const seekers_module_1 = require("./modules/seekers/seekers.module");
 const contact_module_1 = require("./modules/contact/contact.module");
 const blog_module_1 = require("./modules/blog/blog.module");
 const home_module_1 = require("./modules/home/home.module");
+const cart_module_1 = require("./modules/cart/cart.module");
+const soul_tours_module_1 = require("./modules/soul-tours/soul-tours.module");
+const orders_module_1 = require("./modules/orders/orders.module");
+const checkout_module_1 = require("./modules/checkout/checkout.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -67,6 +71,10 @@ exports.AppModule = AppModule = __decorate([
             contact_module_1.ContactModule,
             blog_module_1.BlogModule,
             home_module_1.HomeModule,
+            cart_module_1.CartModule,
+            soul_tours_module_1.SoulToursModule,
+            orders_module_1.OrdersModule,
+            checkout_module_1.CheckoutModule,
         ],
     })
 ], AppModule);

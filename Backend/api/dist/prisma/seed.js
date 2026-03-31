@@ -1042,6 +1042,70 @@ async function main() {
         blogCount++;
     }
     console.log(`  ✓ ${blogCount} blog posts created`);
+    console.log('\n📦 Seeding shipping methods...');
+    const shippingMethods = [
+        { name: 'Standard Shipping', description: 'Delivered via USPS Ground', price: 12.00, estimatedDaysMin: 7, estimatedDaysMax: 14, sortOrder: 0 },
+        { name: 'Express Shipping', description: 'Priority delivery via USPS/UPS', price: 28.00, estimatedDaysMin: 3, estimatedDaysMax: 5, sortOrder: 1 },
+        { name: 'International Priority', description: 'International delivery via DHL/FedEx', price: 45.00, estimatedDaysMin: 5, estimatedDaysMax: 10, sortOrder: 2 },
+    ];
+    for (const sm of shippingMethods) {
+        await prisma.shippingMethod.upsert({
+            where: { id: slug(sm.name) },
+            update: sm,
+            create: { id: slug(sm.name), ...sm, updatedAt: new Date() },
+        });
+    }
+    console.log(`  ✓ ${shippingMethods.length} shipping methods created`);
+    console.log('💰 Seeding tax rates...');
+    const taxRates = [
+        { state: 'CA', rate: 0.0863, name: 'California State Tax' },
+        { state: 'NY', rate: 0.08, name: 'New York State Tax' },
+        { state: 'TX', rate: 0.0625, name: 'Texas State Tax' },
+        { state: 'FL', rate: 0.06, name: 'Florida State Tax' },
+        { state: 'WA', rate: 0.065, name: 'Washington State Tax' },
+        { state: 'CO', rate: 0.029, name: 'Colorado State Tax' },
+        { state: 'AZ', rate: 0.056, name: 'Arizona State Tax' },
+        { state: 'OR', rate: 0.0, name: 'Oregon (No Sales Tax)' },
+        { state: 'NV', rate: 0.0685, name: 'Nevada State Tax' },
+        { state: 'HI', rate: 0.04, name: 'Hawaii General Excise Tax' },
+    ];
+    for (const tr of taxRates) {
+        await prisma.taxRate.upsert({
+            where: { state_country: { state: tr.state, country: 'US' } },
+            update: { rate: tr.rate, name: tr.name },
+            create: { state: tr.state, country: 'US', rate: tr.rate, name: tr.name, updatedAt: new Date() },
+        });
+    }
+    console.log(`  ✓ ${taxRates.length} tax rates created`);
+    console.log('🎟️  Seeding demo promo codes...');
+    await prisma.promoCode.upsert({
+        where: { code: 'WELCOME40' },
+        update: {},
+        create: {
+            code: 'WELCOME40',
+            type: 'PERCENTAGE',
+            amount: 40,
+            maxDiscountAmount: 250,
+            maxUses: 1000,
+            isActive: true,
+            expiresAt: future(180),
+            updatedAt: new Date(),
+        },
+    });
+    await prisma.promoCode.upsert({
+        where: { code: 'SPIRIT10' },
+        update: {},
+        create: {
+            code: 'SPIRIT10',
+            type: 'FIXED_AMOUNT',
+            amount: 10,
+            minOrderAmount: 50,
+            isActive: true,
+            expiresAt: future(365),
+            updatedAt: new Date(),
+        },
+    });
+    console.log('  ✓ 2 promo codes created (WELCOME40, SPIRIT10)');
     console.log('\n✅ Seed complete!\n');
     console.log('═══════════════════════════════════════════════════');
     console.log('  ALL ACCOUNTS USE PASSWORD: 12345678');

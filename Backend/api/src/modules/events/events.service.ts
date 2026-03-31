@@ -74,6 +74,28 @@ export class EventsService {
     });
   }
 
+  // ─── List All Published Upcoming Events (Public) ────────────────────────────
+
+  async findPublished(page = 1, limit = 20) {
+    const skip = (page - 1) * limit;
+    const [events, total] = await Promise.all([
+      this.prisma.event.findMany({
+        where: { isPublished: true, isCancelled: false, startTime: { gte: new Date() } },
+        include: {
+          ticketTiers: { where: { isActive: true } },
+          guide: { select: { displayName: true, slug: true, user: { select: { avatarUrl: true } } } },
+        },
+        orderBy: { startTime: 'asc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.event.count({
+        where: { isPublished: true, isCancelled: false, startTime: { gte: new Date() } },
+      }),
+    ]);
+    return { events, total, page, totalPages: Math.ceil(total / limit) };
+  }
+
   // ─── Get Single Event (Public) ─────────────────────────────────────────────
 
   async findOne(eventId: string) {

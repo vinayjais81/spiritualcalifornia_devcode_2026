@@ -101,6 +101,33 @@ enum SubscriptionStatus {
   TRIALING
 }
 
+enum CartItemType {
+  PRODUCT
+  EVENT_TICKET
+  SOUL_TOUR
+  SERVICE_BOOKING
+}
+
+enum PaymentType {
+  FULL
+  DEPOSIT
+  BALANCE
+}
+
+enum TourBookingStatus {
+  PENDING
+  DEPOSIT_PAID
+  FULLY_PAID
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PromoCodeType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
 // ─────────────────────────────────────────────
 // USER & AUTH
 // ─────────────────────────────────────────────
@@ -186,6 +213,7 @@ model SeekerProfile {
   bookings        Booking[]
   ticketPurchases TicketPurchase[]
   orders          Order[]
+  tourBookings    TourBooking[]
   favorites       Favorite[]
 
   @@map("seeker_profiles")
@@ -247,6 +275,7 @@ model GuideProfile {
   blogPosts       BlogPost[]
   events          Event[]
   products        Product[]
+  soulTours       SoulTour[]
   availability    Availability[]
   payoutAccount   PayoutAccount?
   payoutRequests  PayoutRequest[]
@@ -480,15 +509,19 @@ model Payment {
   bookingId             String?       @unique
   orderId               String?       @unique
   ticketPurchaseId      String?       @unique
+  tourBookingId         String?
   stripePaymentIntentId String        @unique
+  stripeCheckoutSessionId String?
   stripeTransferId      String?
   amount                Decimal       @db.Decimal(10, 2)
   currency              String        @default("USD")
   platformFee           Decimal       @db.Decimal(10, 2)
   guideAmount           Decimal       @db.Decimal(10, 2)
+  paymentType           PaymentType   @default(FULL)
   status                PaymentStatus @default(PENDING)
   refundedAmount        Decimal?      @db.Decimal(10, 2)
   stripeRefundId        String?
+  paymentMethod         String?       // "card", "apple_pay", "google_pay", "bank_transfer"
   metadata              Json?
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
@@ -496,7 +529,9 @@ model Payment {
   booking        Booking?        @relation(fields: [bookingId], references: [id])
   order          Order?          @relation(fields: [orderId], references: [id])
   ticketPurchase TicketPurchase? @relation(fields: [ticketPurchaseId], references: [id])
+  tourBooking    TourBooking?    @relation("TourBookingPayments", fields: [tourBookingId], references: [id])
 
+  @@index([status, createdAt])
   @@map("payments")
 }
 
@@ -593,6 +628,12 @@ model TicketPurchase {
   qrCode      String?  @unique
   createdAt   DateTime @default(now())
 
+  // Per-attendee details (from checkout-event.html design)
+  attendeeName          String?
+  attendeeEmail         String?
+  dietaryNeeds          String?
+  accessibilityNeeds    String?
+
   seeker  SeekerProfile   @relation(fields: [seekerId], references: [id])
   tier    EventTicketTier @relation(fields: [tierId], references: [id])
   payment Payment?
@@ -622,9 +663,12 @@ model Product {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
-  guide      GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  guide      GuideProfile     @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  variants   ProductVariant[]
   orderItems OrderItem[]
 
+  @@index([guideId])
+  @@index([type, isActive])
   @@map("products")
 }
 
@@ -632,16 +676,32 @@ model Order {
   id              String      @id @default(cuid())
   seekerId        String
   status          OrderStatus @default(PENDING)
+  subtotal        Decimal     @db.Decimal(10, 2) @default(0)
+  discountAmount  Decimal     @db.Decimal(10, 2) @default(0)
+  shippingCost    Decimal     @db.Decimal(10, 2) @default(0)
+  taxAmount       Decimal     @db.Decimal(10, 2) @default(0)
+  taxRate         Decimal?    @db.Decimal(6, 4)   // Snapshot of rate at time of order
   totalAmount     Decimal     @db.Decimal(10, 2)
   currency        String      @default("USD")
   shippingAddress Json?
+  contactEmail    String?
+  contactFirstName String?
+  contactLastName  String?
+  contactPhone    String?
+  promoCodeId     String?
+  shippingMethodId String?
+  notes           String?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
-  seeker  SeekerProfile @relation(fields: [seekerId], references: [id])
-  items   OrderItem[]
-  payment Payment?
+  seeker         SeekerProfile   @relation(fields: [seekerId], references: [id])
+  promoCode      PromoCode?      @relation("OrderPromoCode", fields: [promoCodeId], references: [id])
+  shippingMethod ShippingMethod? @relation("OrderShippingMethod", fields: [shippingMethodId], references: [id])
+  items          OrderItem[]
+  payment        Payment?
 
+  @@index([seekerId])
+  @@index([status, createdAt])
   @@map("orders")
 }
 
@@ -649,6 +709,7 @@ model OrderItem {
   id            String   @id @default(cuid())
   orderId       String
   productId     String
+  variantId     String?  // Which ProductVariant was selected (if applicable)
   quantity      Int      @default(1)
   unitPrice     Decimal  @db.Decimal(10, 2)
   downloadUrl   String?
@@ -853,4 +914,221 @@ model ContactLead {
   @@index([email])
   @@index([status, createdAt])
   @@map("contact_leads")
+}
+
+// ─────────────────────────────────────────────
+// CART (Hybrid: client-side for guests, DB-synced on login)
+// ─────────────────────────────────────────────
+
+model Cart {
+  id        String   @id @default(cuid())
+  userId    String?  @unique
+  sessionId String?  @unique // For guest carts before login
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items CartItem[]
+
+  @@index([sessionId])
+  @@map("carts")
+}
+
+model CartItem {
+  id        String       @id @default(cuid())
+  cartId    String
+  itemType  CartItemType
+  itemId    String       // Polymorphic: productId, tierId, tourId, serviceId
+  variantId String?      // For ProductVariant selection
+  quantity  Int          @default(1)
+  metadata  Json?        // Extra data (e.g., selected date for service, room type for tour)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, itemType, itemId, variantId])
+  @@map("cart_items")
+}
+
+// ─────────────────────────────────────────────
+// SOUL TOURS (Multi-day retreats & journeys)
+// ─────────────────────────────────────────────
+
+model SoulTour {
+  id            String   @id @default(cuid())
+  guideId       String
+  title         String
+  slug          String   @unique
+  description   String?
+  shortDesc     String?
+  startDate     DateTime
+  endDate       DateTime
+  timezone      String   @default("America/Los_Angeles")
+  location      String?
+  address       String?
+  city          String?
+  state         String?
+  country       String?  @default("United States")
+  basePrice     Decimal  @db.Decimal(10, 2)
+  currency      String   @default("USD")
+  capacity      Int
+  spotsRemaining Int
+  coverImageUrl String?
+  imageUrls     String[]
+  highlights    String[] // Key selling points
+  included      String[] // What's included in the price
+  notIncluded   String[] // What's NOT included
+  requirements  String?  // Participation requirements
+  depositMin    Decimal? @db.Decimal(10, 2) // Minimum deposit amount
+  isPublished   Boolean  @default(false)
+  isCancelled   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  guide     GuideProfile   @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  roomTypes TourRoomType[]
+  bookings  TourBooking[]
+
+  @@index([guideId, startDate])
+  @@index([slug])
+  @@index([isPublished, startDate])
+  @@map("soul_tours")
+}
+
+model TourRoomType {
+  id            String  @id @default(cuid())
+  tourId        String
+  name          String  // "Standard", "Deluxe", "Premium"
+  description   String?
+  pricePerNight Decimal @db.Decimal(10, 2)
+  totalPrice    Decimal @db.Decimal(10, 2) // Pre-calculated for full stay
+  capacity      Int
+  available     Int
+  amenities     String[]
+  sortOrder     Int     @default(0)
+  createdAt     DateTime @default(now())
+
+  tour     SoulTour      @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  bookings TourBooking[]
+
+  @@map("tour_room_types")
+}
+
+model TourBooking {
+  id               String            @id @default(cuid())
+  tourId           String
+  seekerId         String
+  roomTypeId       String
+  travelers        Int               @default(1)
+  totalAmount      Decimal           @db.Decimal(10, 2)
+  depositAmount    Decimal?          @db.Decimal(10, 2)
+  depositPaidAt    DateTime?
+  balanceAmount    Decimal?          @db.Decimal(10, 2)
+  balancePaidAt    DateTime?
+  currency         String            @default("USD")
+  status           TourBookingStatus @default(PENDING)
+  specialRequests  String?
+  contactFirstName String
+  contactLastName  String
+  contactEmail     String
+  contactPhone     String?
+  cancelledAt      DateTime?
+  cancellationReason String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  tour     SoulTour      @relation(fields: [tourId], references: [id])
+  seeker   SeekerProfile @relation(fields: [seekerId], references: [id])
+  roomType TourRoomType  @relation(fields: [roomTypeId], references: [id])
+  payments Payment[]     @relation("TourBookingPayments")
+
+  @@index([tourId])
+  @@index([seekerId])
+  @@map("tour_bookings")
+}
+
+// ─────────────────────────────────────────────
+// PRODUCT VARIANTS (Sizes, Colors, SKUs)
+// ─────────────────────────────────────────────
+
+model ProductVariant {
+  id            String   @id @default(cuid())
+  productId     String
+  name          String   // "Size 7", "Blue - Large"
+  sku           String?  @unique
+  price         Decimal? @db.Decimal(10, 2) // Override product price if set
+  stockQuantity Int      @default(0)
+  attributes    Json?    // { "size": "7", "color": "Silver" }
+  sortOrder     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@map("product_variants")
+}
+
+// ─────────────────────────────────────────────
+// PROMO CODES (Discount Engine)
+// ─────────────────────────────────────────────
+
+model PromoCode {
+  id              String        @id @default(cuid())
+  code            String        @unique
+  type            PromoCodeType
+  amount          Decimal       @db.Decimal(10, 2) // Percentage (0-100) or fixed dollar amount
+  minOrderAmount  Decimal?      @db.Decimal(10, 2)
+  maxDiscountAmount Decimal?    @db.Decimal(10, 2) // Cap for percentage discounts
+  maxUses         Int?          // null = unlimited
+  usedCount       Int           @default(0)
+  appliesToType   String?       // null = all, "DIGITAL", "PHYSICAL", "EVENT", "TOUR"
+  startsAt        DateTime?
+  expiresAt       DateTime?
+  isActive        Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  orders Order[] @relation("OrderPromoCode")
+
+  @@index([code])
+  @@index([isActive, expiresAt])
+  @@map("promo_codes")
+}
+
+// ─────────────────────────────────────────────
+// SHIPPING & TAX
+// ─────────────────────────────────────────────
+
+model ShippingMethod {
+  id              String   @id @default(cuid())
+  name            String   // "Standard", "Express", "International Priority"
+  description     String?
+  price           Decimal  @db.Decimal(10, 2)
+  currency        String   @default("USD")
+  estimatedDaysMin Int     // 7
+  estimatedDaysMax Int     // 14
+  isActive        Boolean  @default(true)
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  orders Order[] @relation("OrderShippingMethod")
+
+  @@map("shipping_methods")
+}
+
+model TaxRate {
+  id        String   @id @default(cuid())
+  state     String   // "CA", "NY"
+  country   String   @default("US")
+  rate      Decimal  @db.Decimal(6, 4) // 0.0863 = 8.63%
+  name      String   // "California State Tax"
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([state, country])
+  @@map("tax_rates")
 }

@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -29,6 +29,13 @@ export class ProductsController {
   @ApiOperation({ summary: "List the authenticated guide's products" })
   findMine(@CurrentUser() user: CurrentUserData) {
     return this.productsService.findByGuide(user.id);
+  }
+
+  @Public()
+  @Get('public')
+  @ApiOperation({ summary: 'List all active products (public storefront)' })
+  findPublic(@Query('limit') limit?: string, @Query('page') page?: string, @Query('type') type?: string) {
+    return this.productsService.findPublic(Number(limit) || 50, Number(page) || 1, type);
   }
 
   @Public()

@@ -59,6 +59,52 @@ export declare class ProductsService {
         digitalFiles: import("@prisma/client/runtime/client").JsonValue | null;
         shippingInfo: import("@prisma/client/runtime/client").JsonValue | null;
     }[]>;
+    findPublic(limit?: number, page?: number, type?: string): Promise<{
+        products: ({
+            guide: {
+                id: string;
+                slug: string;
+                user: {
+                    avatarUrl: string | null;
+                };
+                displayName: string;
+                isVerified: boolean;
+            };
+            variants: {
+                id: string;
+                name: string;
+                sortOrder: number;
+                isActive: boolean;
+                createdAt: Date;
+                updatedAt: Date;
+                price: import("@prisma/client-runtime-utils").Decimal | null;
+                stockQuantity: number;
+                productId: string;
+                sku: string | null;
+                attributes: import("@prisma/client/runtime/client").JsonValue | null;
+            }[];
+        } & {
+            id: string;
+            name: string;
+            description: string | null;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            algoliaObjectId: string | null;
+            guideId: string;
+            type: import(".prisma/client").$Enums.ProductType;
+            price: import("@prisma/client-runtime-utils").Decimal;
+            currency: string;
+            stockQuantity: number | null;
+            imageUrls: string[];
+            fileS3Key: string | null;
+            digitalFiles: import("@prisma/client/runtime/client").JsonValue | null;
+            shippingInfo: import("@prisma/client/runtime/client").JsonValue | null;
+        })[];
+        total: number;
+        page: number;
+        totalPages: number;
+    }>;
     findOne(productId: string): Promise<{
         guide: {
             id: string;
@@ -67,8 +113,22 @@ export declare class ProductsService {
                 avatarUrl: string | null;
             };
             displayName: string;
+            tagline: string | null;
             isVerified: boolean;
         };
+        variants: {
+            id: string;
+            name: string;
+            sortOrder: number;
+            isActive: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+            price: import("@prisma/client-runtime-utils").Decimal | null;
+            stockQuantity: number;
+            productId: string;
+            sku: string | null;
+            attributes: import("@prisma/client/runtime/client").JsonValue | null;
+        }[];
     } & {
         id: string;
         name: string;

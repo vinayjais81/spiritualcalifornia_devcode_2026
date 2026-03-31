@@ -35,6 +35,9 @@ let EventsController = class EventsController {
     findMine(user) {
         return this.eventsService.findByGuide(user.id);
     }
+    findPublic(limit, page) {
+        return this.eventsService.findPublished(Number(page) || 1, Number(limit) || 20);
+    }
     findOne(id) {
         return this.eventsService.findOne(id);
     }
@@ -65,6 +68,16 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], EventsController.prototype, "findMine", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Get)('public'),
+    (0, swagger_1.ApiOperation)({ summary: 'List upcoming public events' }),
+    __param(0, (0, common_1.Query)('limit')),
+    __param(1, (0, common_1.Query)('page')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], EventsController.prototype, "findPublic", null);
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Get)(':id'),

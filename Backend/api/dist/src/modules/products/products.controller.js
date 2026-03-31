@@ -35,6 +35,9 @@ let ProductsController = class ProductsController {
     findMine(user) {
         return this.productsService.findByGuide(user.id);
     }
+    findPublic(limit, page, type) {
+        return this.productsService.findPublic(Number(limit) || 50, Number(page) || 1, type);
+    }
     findOne(id) {
         return this.productsService.findOne(id);
     }
@@ -65,6 +68,17 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], ProductsController.prototype, "findMine", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Get)('public'),
+    (0, swagger_1.ApiOperation)({ summary: 'List all active products (public storefront)' }),
+    __param(0, (0, common_1.Query)('limit')),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('type')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:returntype", void 0)
+], ProductsController.prototype, "findPublic", null);
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Get)(':id'),

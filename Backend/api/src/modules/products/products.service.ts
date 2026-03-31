@@ -52,6 +52,32 @@ export class ProductsService {
     });
   }
 
+  // ─── List All Active Products (Public Storefront) ──────────────────────────
+
+  async findPublic(limit = 50, page = 1, type?: string) {
+    const skip = (page - 1) * limit;
+    const where: any = { isActive: true };
+    if (type === 'DIGITAL' || type === 'PHYSICAL') where.type = type;
+
+    const [products, total] = await Promise.all([
+      this.prisma.product.findMany({
+        where,
+        include: {
+          guide: {
+            select: { id: true, slug: true, displayName: true, isVerified: true, user: { select: { avatarUrl: true } } },
+          },
+          variants: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    return { products, total, page, totalPages: Math.ceil(total / limit) };
+  }
+
   // ─── Get Single Product (Public) ───────────────────────────────────────────
 
   async findOne(productId: string) {
@@ -64,9 +90,11 @@ export class ProductsService {
             slug: true,
             displayName: true,
             isVerified: true,
+            tagline: true,
             user: { select: { avatarUrl: true } },
           },
         },
+        variants: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } },
       },
     });
 

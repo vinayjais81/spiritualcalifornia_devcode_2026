@@ -72,6 +72,25 @@ let EventsService = class EventsService {
             orderBy: { startTime: 'asc' },
         });
     }
+    async findPublished(page = 1, limit = 20) {
+        const skip = (page - 1) * limit;
+        const [events, total] = await Promise.all([
+            this.prisma.event.findMany({
+                where: { isPublished: true, isCancelled: false, startTime: { gte: new Date() } },
+                include: {
+                    ticketTiers: { where: { isActive: true } },
+                    guide: { select: { displayName: true, slug: true, user: { select: { avatarUrl: true } } } },
+                },
+                orderBy: { startTime: 'asc' },
+                skip,
+                take: limit,
+            }),
+            this.prisma.event.count({
+                where: { isPublished: true, isCancelled: false, startTime: { gte: new Date() } },
+            }),
+        ]);
+        return { events, total, page, totalPages: Math.ceil(total / limit) };
+    }
     async findOne(eventId) {
         const event = await this.prisma.event.findUnique({
             where: { id: eventId },

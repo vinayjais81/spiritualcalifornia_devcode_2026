@@ -5,12 +5,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
+import { useCartStore } from '@/store/cart.store';
 
 const navLinks = [
   { label: 'Practitioners', href: '/practitioners' },
   { label: 'Events', href: '/events' },
   { label: 'Journal', href: '/journal' },
   { label: 'Soul Travels', href: '/travels' },
+  { label: 'Shop', href: '/shop' },
 ];
 
 export function Navbar() {
@@ -18,6 +20,7 @@ export function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
+  const cartItemCount = useCartStore((s) => s.getItemCount());
 
   // Hide "List Your Practice" for authenticated seekers (no GUIDE / ADMIN role)
   const isGuide = (user?.roles ?? []).includes('GUIDE');
@@ -363,6 +366,41 @@ export function Navbar() {
               {practiceCtaLabel}
             </Link>
           )}
+          {/* Cart icon */}
+          <Link
+            href="/cart"
+            style={{
+              position: 'relative',
+              fontSize: '20px',
+              color: '#3A3530',
+              textDecoration: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            🛍️
+            {cartItemCount > 0 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '-6px',
+                  right: '-8px',
+                  background: '#E8B84B',
+                  color: '#fff',
+                  fontSize: '10px',
+                  fontWeight: 600,
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                {cartItemCount}
+              </span>
+            )}
+          </Link>
+
           {isAuthenticated ? (
             <button
               onClick={() => { closeMenu(); handleLogout(); }}
