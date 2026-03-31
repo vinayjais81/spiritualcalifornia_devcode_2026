@@ -14,7 +14,7 @@ import { Step4Identity } from './steps/Step4Identity';
 import { Step5Calendar } from './steps/Step5Calendar';
 import { Step6Products } from './steps/Step6Products';
 import { Step7GoLive } from './steps/Step7GoLive';
-import type { Categoryaaaa } from '@/types/onboarding';
+import type { Category } from '@/types/onboarding';
 
 export function OnboardingWizard() {
   const { step, status, categories, setCategories, setStatus, setStep } = useOnboardingStore();
