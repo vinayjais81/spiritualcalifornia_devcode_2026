@@ -10,14 +10,15 @@ exports.SearchModule = void 0;
 const common_1 = require("@nestjs/common");
 const search_controller_1 = require("./search.controller");
 const search_service_1 = require("./search.service");
+const algolia_service_1 = require("./algolia.service");
 let SearchModule = class SearchModule {
 };
 exports.SearchModule = SearchModule;
 exports.SearchModule = SearchModule = __decorate([
     (0, common_1.Module)({
         controllers: [search_controller_1.SearchController],
-        providers: [search_service_1.SearchService],
-        exports: [search_service_1.SearchService],
+        providers: [search_service_1.SearchService, algolia_service_1.AlgoliaService],
+        exports: [search_service_1.SearchService, algolia_service_1.AlgoliaService],
     })
 ], SearchModule);
 //# sourceMappingURL=search.module.js.map

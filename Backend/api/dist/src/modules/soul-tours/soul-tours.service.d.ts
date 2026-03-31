@@ -15,11 +15,11 @@ export declare class SoulToursService {
             sortOrder: number;
             createdAt: Date;
             capacity: number;
+            available: number;
             tourId: string;
             pricePerNight: import("@prisma/client-runtime-utils").Decimal;
             totalPrice: import("@prisma/client-runtime-utils").Decimal;
             amenities: string[];
-            available: number;
         }[];
     } & {
         id: string;
@@ -63,11 +63,11 @@ export declare class SoulToursService {
             sortOrder: number;
             createdAt: Date;
             capacity: number;
+            available: number;
             tourId: string;
             pricePerNight: import("@prisma/client-runtime-utils").Decimal;
             totalPrice: import("@prisma/client-runtime-utils").Decimal;
             amenities: string[];
-            available: number;
         }[];
     } & {
         id: string;
@@ -118,11 +118,11 @@ export declare class SoulToursService {
             sortOrder: number;
             createdAt: Date;
             capacity: number;
+            available: number;
             tourId: string;
             pricePerNight: import("@prisma/client-runtime-utils").Decimal;
             totalPrice: import("@prisma/client-runtime-utils").Decimal;
             amenities: string[];
-            available: number;
         }[];
     } & {
         id: string;
@@ -171,11 +171,11 @@ export declare class SoulToursService {
                 sortOrder: number;
                 createdAt: Date;
                 capacity: number;
+                available: number;
                 tourId: string;
                 pricePerNight: import("@prisma/client-runtime-utils").Decimal;
                 totalPrice: import("@prisma/client-runtime-utils").Decimal;
                 amenities: string[];
-                available: number;
             }[];
         } & {
             id: string;
@@ -220,11 +220,11 @@ export declare class SoulToursService {
             sortOrder: number;
             createdAt: Date;
             capacity: number;
+            available: number;
             tourId: string;
             pricePerNight: import("@prisma/client-runtime-utils").Decimal;
             totalPrice: import("@prisma/client-runtime-utils").Decimal;
             amenities: string[];
-            available: number;
         }[];
     } & {
         id: string;
@@ -277,10 +277,6 @@ export declare class SoulToursService {
         cancelledAt: Date | null;
         cancellationReason: string | null;
         seekerId: string;
-        contactEmail: string;
-        contactFirstName: string;
-        contactLastName: string;
-        contactPhone: string | null;
         tourId: string;
         roomTypeId: string;
         travelers: number;
@@ -289,6 +285,10 @@ export declare class SoulToursService {
         balanceAmount: import("@prisma/client-runtime-utils").Decimal | null;
         balancePaidAt: Date | null;
         specialRequests: string | null;
+        contactFirstName: string;
+        contactLastName: string;
+        contactEmail: string;
+        contactPhone: string | null;
     }>;
     findMyBookings(userId: string): Promise<({
         tour: {
@@ -311,10 +311,6 @@ export declare class SoulToursService {
         cancelledAt: Date | null;
         cancellationReason: string | null;
         seekerId: string;
-        contactEmail: string;
-        contactFirstName: string;
-        contactLastName: string;
-        contactPhone: string | null;
         tourId: string;
         roomTypeId: string;
         travelers: number;
@@ -323,5 +319,9 @@ export declare class SoulToursService {
         balanceAmount: import("@prisma/client-runtime-utils").Decimal | null;
         balancePaidAt: Date | null;
         specialRequests: string | null;
+        contactFirstName: string;
+        contactLastName: string;
+        contactEmail: string;
+        contactPhone: string | null;
     })[]>;
 }

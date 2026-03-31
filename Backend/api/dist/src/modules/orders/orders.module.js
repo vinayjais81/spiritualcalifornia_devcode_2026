@@ -10,17 +10,19 @@ exports.OrdersModule = void 0;
 const common_1 = require("@nestjs/common");
 const orders_controller_1 = require("./orders.controller");
 const orders_service_1 = require("./orders.service");
+const downloads_service_1 = require("./downloads.service");
 const payments_module_1 = require("../payments/payments.module");
 const checkout_module_1 = require("../checkout/checkout.module");
+const upload_module_1 = require("../upload/upload.module");
 let OrdersModule = class OrdersModule {
 };
 exports.OrdersModule = OrdersModule;
 exports.OrdersModule = OrdersModule = __decorate([
     (0, common_1.Module)({
-        imports: [payments_module_1.PaymentsModule, checkout_module_1.CheckoutModule],
+        imports: [payments_module_1.PaymentsModule, checkout_module_1.CheckoutModule, upload_module_1.UploadModule],
         controllers: [orders_controller_1.OrdersController],
-        providers: [orders_service_1.OrdersService],
-        exports: [orders_service_1.OrdersService],
+        providers: [orders_service_1.OrdersService, downloads_service_1.DownloadsService],
+        exports: [orders_service_1.OrdersService, downloads_service_1.DownloadsService],
     })
 ], OrdersModule);
 //# sourceMappingURL=orders.module.js.map

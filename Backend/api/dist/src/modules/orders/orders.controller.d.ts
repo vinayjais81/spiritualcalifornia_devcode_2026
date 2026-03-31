@@ -1,9 +1,11 @@
 import { OrdersService } from './orders.service';
+import { DownloadsService } from './downloads.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { CurrentUserData } from '../auth/decorators/current-user.decorator';
 export declare class OrdersController {
     private readonly ordersService;
-    constructor(ordersService: OrdersService);
+    private readonly downloadsService;
+    constructor(ordersService: OrdersService, downloadsService: DownloadsService);
     create(user: CurrentUserData, dto: CreateOrderDto): Promise<{
         order: {
             items: ({
@@ -33,21 +35,22 @@ export declare class OrdersController {
             notes: string | null;
             seekerId: string;
             taxRate: import("@prisma/client-runtime-utils").Decimal | null;
+            contactFirstName: string | null;
+            contactLastName: string | null;
+            contactEmail: string | null;
+            contactPhone: string | null;
             subtotal: import("@prisma/client-runtime-utils").Decimal;
             discountAmount: import("@prisma/client-runtime-utils").Decimal;
             shippingCost: import("@prisma/client-runtime-utils").Decimal;
             taxAmount: import("@prisma/client-runtime-utils").Decimal;
             shippingAddress: import("@prisma/client/runtime/client").JsonValue | null;
-            contactEmail: string | null;
-            contactFirstName: string | null;
-            contactLastName: string | null;
-            contactPhone: string | null;
             promoCodeId: string | null;
             shippingMethodId: string | null;
         };
         paymentIntent: {
             paymentId: string;
             clientSecret: string;
+            paymentIntentId: string;
             amount: number;
             currency: string;
         };
@@ -84,18 +87,31 @@ export declare class OrdersController {
         notes: string | null;
         seekerId: string;
         taxRate: import("@prisma/client-runtime-utils").Decimal | null;
+        contactFirstName: string | null;
+        contactLastName: string | null;
+        contactEmail: string | null;
+        contactPhone: string | null;
         subtotal: import("@prisma/client-runtime-utils").Decimal;
         discountAmount: import("@prisma/client-runtime-utils").Decimal;
         shippingCost: import("@prisma/client-runtime-utils").Decimal;
         taxAmount: import("@prisma/client-runtime-utils").Decimal;
         shippingAddress: import("@prisma/client/runtime/client").JsonValue | null;
-        contactEmail: string | null;
-        contactFirstName: string | null;
-        contactLastName: string | null;
-        contactPhone: string | null;
         promoCodeId: string | null;
         shippingMethodId: string | null;
     })[]>;
+    getMyDownloads(user: CurrentUserData): Promise<{
+        orderId: string;
+        orderItemId: string;
+        productId: string;
+        productName: string;
+        guideName: string;
+        guideSlug: string;
+        imageUrl: string;
+        digitalFiles: import("@prisma/client/runtime/client").JsonValue;
+        downloadCount: number;
+        purchasedAt: Date;
+        hasFile: boolean;
+    }[]>;
     findOne(user: CurrentUserData, id: string): Promise<{
         payment: {
             id: string;
@@ -169,16 +185,22 @@ export declare class OrdersController {
         notes: string | null;
         seekerId: string;
         taxRate: import("@prisma/client-runtime-utils").Decimal | null;
+        contactFirstName: string | null;
+        contactLastName: string | null;
+        contactEmail: string | null;
+        contactPhone: string | null;
         subtotal: import("@prisma/client-runtime-utils").Decimal;
         discountAmount: import("@prisma/client-runtime-utils").Decimal;
         shippingCost: import("@prisma/client-runtime-utils").Decimal;
         taxAmount: import("@prisma/client-runtime-utils").Decimal;
         shippingAddress: import("@prisma/client/runtime/client").JsonValue | null;
-        contactEmail: string | null;
-        contactFirstName: string | null;
-        contactLastName: string | null;
-        contactPhone: string | null;
         promoCodeId: string | null;
         shippingMethodId: string | null;
+    }>;
+    getDownloadUrl(user: CurrentUserData, orderId: string, itemId: string): Promise<{
+        downloadUrl: string;
+        fileName: string;
+        fileKey: string;
+        downloadCount: number;
     }>;
 }

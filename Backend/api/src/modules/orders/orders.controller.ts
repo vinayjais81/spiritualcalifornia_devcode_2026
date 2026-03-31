@@ -1,6 +1,7 @@
 import { Controller, Post, Get, Param, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
+import { DownloadsService } from './downloads.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -13,7 +14,10 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly downloadsService: DownloadsService,
+  ) {}
 
   @Post()
   @Roles(Role.SEEKER)
@@ -29,9 +33,27 @@ export class OrdersController {
     return this.ordersService.findMyOrders(user.id);
   }
 
+  @Get('downloads')
+  @Roles(Role.SEEKER)
+  @ApiOperation({ summary: "List all downloadable digital products from paid orders" })
+  getMyDownloads(@CurrentUser() user: CurrentUserData) {
+    return this.downloadsService.getMyDownloads(user.id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get order details' })
   findOne(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
     return this.ordersService.findOne(user.id, id);
+  }
+
+  @Get(':orderId/download/:itemId')
+  @Roles(Role.SEEKER)
+  @ApiOperation({ summary: 'Get a signed download URL for a purchased digital product' })
+  getDownloadUrl(
+    @CurrentUser() user: CurrentUserData,
+    @Param('orderId') orderId: string,
+    @Param('itemId') itemId: string,
+  ) {
+    return this.downloadsService.getDownloadUrl(user.id, orderId, itemId);
   }
 }

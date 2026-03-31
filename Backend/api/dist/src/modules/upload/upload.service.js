@@ -74,6 +74,20 @@ let UploadService = UploadService_1 = class UploadService {
             ? `${this.cloudfrontUrl}/${key}`
             : `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
     }
+    async getPresignedDownloadUrl(key, expiresInSeconds = 3600, downloadFilename) {
+        if (this.isStub) {
+            this.logger.warn(`[STUB] Mock download URL for key: ${key}`);
+            return `https://stub-cdn.example.com/${key}?download=true&stub=true`;
+        }
+        const command = new client_s3_1.GetObjectCommand({
+            Bucket: this.bucket,
+            Key: key,
+            ...(downloadFilename
+                ? { ResponseContentDisposition: `attachment; filename="${downloadFilename}"` }
+                : {}),
+        });
+        return (0, s3_request_presigner_1.getSignedUrl)(this.s3, command, { expiresIn: expiresInSeconds });
+    }
 };
 exports.UploadService = UploadService;
 exports.UploadService = UploadService = UploadService_1 = __decorate([

@@ -15,4 +15,5 @@ export declare class UploadService {
         fileUrl: string;
     }>;
     getFileUrl(key: string): string;
+    getPresignedDownloadUrl(key: string, expiresInSeconds?: number, downloadFilename?: string): Promise<string>;
 }

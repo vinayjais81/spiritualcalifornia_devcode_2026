@@ -46,6 +46,7 @@ const express = __importStar(require("express"));
 const app_module_1 = require("./app.module");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule, { rawBody: true });
+    app.use('/api/v1/payments/webhook', express.raw({ type: 'application/json' }));
     app.use(express.json({ limit: '10mb' }));
     app.use(express.urlencoded({ extended: true, limit: '10mb' }));
     const configService = app.get(config_1.ConfigService);
@@ -61,7 +62,7 @@ async function bootstrap() {
         origin: allowedOrigins,
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'x-session-id', 'stripe-signature'],
     });
     app.setGlobalPrefix('api');
     app.enableVersioning({ type: common_1.VersioningType.URI, defaultVersion: '1' });

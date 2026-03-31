@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 // Note: PrismaService not needed in upload service — S3 only
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 
@@ -81,5 +81,30 @@ export class UploadService {
     return this.cloudfrontUrl
       ? `${this.cloudfrontUrl}/${key}`
       : `https://${this.bucket}.s3.${this.region}.amazonaws.com/${key}`;
+  }
+
+  /**
+   * Generate a time-limited signed GET URL for downloading a file from S3.
+   * Used for purchased digital product delivery.
+   */
+  async getPresignedDownloadUrl(
+    key: string,
+    expiresInSeconds = 3600, // 1 hour default
+    downloadFilename?: string,
+  ): Promise<string> {
+    if (this.isStub) {
+      this.logger.warn(`[STUB] Mock download URL for key: ${key}`);
+      return `https://stub-cdn.example.com/${key}?download=true&stub=true`;
+    }
+
+    const command = new GetObjectCommand({
+      Bucket: this.bucket,
+      Key: key,
+      ...(downloadFilename
+        ? { ResponseContentDisposition: `attachment; filename="${downloadFilename}"` }
+        : {}),
+    });
+
+    return getSignedUrl(this.s3!, command, { expiresIn: expiresInSeconds });
   }
 }

@@ -14,3 +14,6 @@ node_modules/
 .next/
 .env.local
 .env
+Frontend/web/.env.local
+Frontend/web/.env.local
+Frontend/web/.env.local
