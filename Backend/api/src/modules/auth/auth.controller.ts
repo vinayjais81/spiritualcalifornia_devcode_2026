@@ -178,8 +178,11 @@ export class AuthController {
   @Get('calendly/auth-url')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get Calendly OAuth authorization URL' })
-  async calendlyAuthUrl(@CurrentUser() user: CurrentUserData) {
-    return this.authService.getCalendlyAuthUrl(user.id);
+  async calendlyAuthUrl(
+    @CurrentUser() user: CurrentUserData,
+    @Query('redirectTo') redirectTo?: string,
+  ) {
+    return this.authService.getCalendlyAuthUrl(user.id, redirectTo);
   }
 
   /**

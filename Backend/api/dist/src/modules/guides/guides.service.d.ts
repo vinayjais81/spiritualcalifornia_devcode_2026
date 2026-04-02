@@ -641,6 +641,19 @@ export declare class GuidesService {
         memberSince: Date;
     }>;
     private ensureUniqueSlug;
+    getPublicServices(slug: string): Promise<{
+        id: string;
+        name: string;
+        description: string | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        guideId: string;
+        type: import(".prisma/client").$Enums.ServiceType;
+        price: import("@prisma/client-runtime-utils").Decimal;
+        currency: string;
+        durationMin: number;
+    }[]>;
     getAvailability(userId: string): Promise<{
         id: string;
         createdAt: Date;

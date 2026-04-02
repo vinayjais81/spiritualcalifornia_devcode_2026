@@ -14,9 +14,9 @@ export declare class CartService {
             updatedAt: Date;
             metadata: import("@prisma/client/runtime/client").JsonValue | null;
             quantity: number;
+            variantId: string | null;
             itemType: import(".prisma/client").$Enums.CartItemType;
             itemId: string;
-            variantId: string | null;
             cartId: string;
         }[];
         itemCount: number;
@@ -27,9 +27,9 @@ export declare class CartService {
         updatedAt: Date;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
         quantity: number;
+        variantId: string | null;
         itemType: import(".prisma/client").$Enums.CartItemType;
         itemId: string;
-        variantId: string | null;
         cartId: string;
     }>;
     updateItem(itemId: string, dto: UpdateCartItemDto, userId?: string, sessionId?: string): Promise<{
@@ -38,9 +38,9 @@ export declare class CartService {
         updatedAt: Date;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
         quantity: number;
+        variantId: string | null;
         itemType: import(".prisma/client").$Enums.CartItemType;
         itemId: string;
-        variantId: string | null;
         cartId: string;
     }>;
     removeItem(itemId: string, userId?: string, sessionId?: string): Promise<{

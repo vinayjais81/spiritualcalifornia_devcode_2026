@@ -352,7 +352,7 @@ export default function GuideProfilePage() {
 
             {/* Right side CTAs */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', paddingTop: '8px', minWidth: '200px' }} className="profile-ctas">
-              <a href="#booking" style={{
+              <a href={`/book/${guide.slug}`} style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                 padding: '14px 28px', background: C.gold, color: C.white,
                 fontFamily: font, fontSize: '12px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -435,7 +435,7 @@ export default function GuideProfilePage() {
                         <div style={{ fontFamily: serif, fontSize: '24px', fontWeight: 500, color: C.charcoal, whiteSpace: 'nowrap' }}>
                           {formatPrice(s.price)}
                         </div>
-                        <a href="#booking" style={{
+                        <a href={`/book/${guide.slug}`} style={{
                           padding: '8px 16px', background: C.gold, color: C.white,
                           fontFamily: font, fontSize: '11px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase',
                           border: 'none', borderRadius: '8px', cursor: 'pointer', textDecoration: 'none', transition: 'background 0.3s',
@@ -701,20 +701,14 @@ export default function GuideProfilePage() {
               <p style={{ fontFamily: font, fontSize: '13px', color: C.warmGray, lineHeight: 1.6, marginBottom: '14px' }}>
                 View {guide.displayName.split(' ')[0]}&apos;s real-time availability and book a session directly.
               </p>
-              {guide.calendarLink ? (
-                <a href={guide.calendarLink} target="_blank" rel="noopener noreferrer" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: '8px',
-                  padding: '11px 22px', background: C.gold, color: C.white,
-                  fontFamily: font, fontSize: '12px', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase',
-                  border: 'none', borderRadius: '6px', textDecoration: 'none', transition: 'background 0.3s',
-                }}>
-                  View Available Times
-                </a>
-              ) : (
-                <p style={{ fontFamily: font, fontSize: '12px', color: C.warmGray, fontStyle: 'italic' }}>
-                  Booking coming soon
-                </p>
-              )}
+              <a href={`/book/${guide.slug}`} style={{
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                padding: '11px 22px', background: C.gold, color: C.white,
+                fontFamily: font, fontSize: '12px', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase',
+                border: 'none', borderRadius: '6px', textDecoration: 'none', transition: 'background 0.3s',
+              }}>
+                Book a Session
+              </a>
             </div>
           </Widget>
 

@@ -47,7 +47,7 @@ export declare class AuthService {
     resetPassword(token: string, newPassword: string): Promise<{
         message: string;
     }>;
-    getCalendlyAuthUrl(userId: string): Promise<{
+    getCalendlyAuthUrl(userId: string, redirectTo?: string): Promise<{
         url: string;
     }>;
     handleCalendlyCallback(code: string, state: string): Promise<string>;

@@ -143,6 +143,13 @@ function SignInContent() {
           {/* Google OAuth */}
           <a
             href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`}
+            onClick={() => {
+              // Save redirect target so Google OAuth success page can return here
+              const redirectTo = searchParams.get('redirect');
+              if (redirectTo) {
+                try { sessionStorage.setItem('sc-auth-redirect', redirectTo); } catch {}
+              }
+            }}
             style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
               width: '100%', padding: 13,

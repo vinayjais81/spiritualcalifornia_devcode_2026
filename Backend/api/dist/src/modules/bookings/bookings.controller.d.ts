@@ -1,9 +1,30 @@
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
+import { CreateServiceBookingDto } from './dto/create-service-booking.dto';
 import { CurrentUserData } from '../auth/decorators/current-user.decorator';
 export declare class BookingsController {
     private readonly bookingsService;
     constructor(bookingsService: BookingsService);
+    createServiceBooking(user: CurrentUserData, dto: CreateServiceBookingDto): Promise<{
+        bookingId: string;
+        clientSecret: string;
+        paymentIntentId: string;
+        service: {
+            name: string;
+            type: import(".prisma/client").$Enums.ServiceType;
+            durationMin: number;
+            price: number;
+            currency: string;
+        };
+        guide: {
+            displayName: string;
+            slug: string;
+        };
+        slot: {
+            startTime: string;
+            endTime: string;
+        };
+    }>;
     create(user: CurrentUserData, dto: CreateBookingDto): Promise<{
         service: {
             name: string;

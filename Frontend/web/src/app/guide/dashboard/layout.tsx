@@ -47,6 +47,7 @@ const sidebarSections = [
   ]},
   { label: 'Offerings', items: [
     { href: '/guide/dashboard/services', icon: '✨', name: 'Services & Prices' },
+    { href: '/guide/dashboard/availability', icon: '🕐', name: 'Availability' },
     { href: '/guide/dashboard/products', icon: '🛍️', name: 'Products' },
     { href: '/guide/dashboard/events', icon: '📅', name: 'Events' },
     { href: '/guide/dashboard/calendar', icon: '🗓️', name: 'Calendar / Booking' },

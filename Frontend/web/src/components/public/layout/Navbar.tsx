@@ -210,6 +210,26 @@ export function Navbar() {
                         {user.email}
                       </div>
                     </div>
+                    <Link
+                      href={(user?.roles ?? []).includes('GUIDE') ? '/guide/dashboard' : '/seeker/dashboard'}
+                      onClick={() => setUserMenuOpen(false)}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        padding: '11px 16px',
+                        fontFamily: 'var(--font-inter), sans-serif',
+                        fontSize: '11px',
+                        fontWeight: 500,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        color: '#3A3530',
+                        background: 'none',
+                        textDecoration: 'none',
+                        borderBottom: '1px solid rgba(232,184,75,0.08)',
+                      }}
+                    >
+                      My Dashboard
+                    </Link>
                     <button
                       onClick={handleLogout}
                       style={{

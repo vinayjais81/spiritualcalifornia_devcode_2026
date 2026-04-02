@@ -22,6 +22,10 @@ function GoogleSuccessContent() {
       return;
     }
 
+    // Check if there's a pending redirect (e.g., from booking flow)
+    let pendingRedirect: string | null = null;
+    try { pendingRedirect = sessionStorage.getItem('sc-auth-redirect'); sessionStorage.removeItem('sc-auth-redirect'); } catch {}
+
     // Fetch the full user profile using the access token
     api.get('/auth/me', { headers: { Authorization: `Bearer ${token}` } })
       .then(async ({ data }) => {
@@ -29,6 +33,13 @@ function GoogleSuccessContent() {
         const isAdmin = roles.includes('ADMIN') || roles.includes('SUPER_ADMIN');
         const isGuide = roles.includes('GUIDE');
         const isSeeker = roles.includes('SEEKER');
+
+        // If there's a pending redirect (e.g., booking page), go there first
+        if (pendingRedirect && !isNewUser) {
+          router.replace(pendingRedirect);
+          return;
+        }
+
         if (isAdmin) { router.replace('/dashboard'); return; }
         if (isGuide) { router.replace('/onboarding/guide'); return; }
         if (isNewUser) {

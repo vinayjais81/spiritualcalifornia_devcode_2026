@@ -1,10 +1,125 @@
-import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { PaymentsService } from '../payments/payments.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
+import { CreateServiceBookingDto } from './dto/create-service-booking.dto';
 
 @Injectable()
 export class BookingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(BookingsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly paymentsService: PaymentsService,
+  ) {}
+
+  // ─── Service Booking Checkout (Calendly-first flow) ─────────────────────────
+
+  async createServiceBooking(userId: string, dto: CreateServiceBookingDto) {
+    const seeker = await this.prisma.seekerProfile.findUnique({ where: { userId } });
+    if (!seeker) throw new ForbiddenException('Seeker profile not found');
+
+    const service = await this.prisma.service.findUnique({
+      where: { id: dto.serviceId },
+      include: { guide: { select: { id: true, displayName: true, slug: true, stripeAccountId: true } } },
+    });
+    if (!service || !service.isActive) throw new NotFoundException('Service not found or inactive');
+
+    const startTime = new Date(dto.startTime);
+    const endTime = new Date(dto.endTime);
+
+    if (startTime >= endTime) throw new BadRequestException('Invalid time range');
+    if (startTime <= new Date()) throw new BadRequestException('Cannot book in the past');
+
+    // Check for overlapping booked slots for this guide
+    const existingSlot = await this.prisma.serviceSlot.findFirst({
+      where: {
+        service: { guideId: service.guideId },
+        isBooked: true,
+        startTime: { lt: endTime },
+        endTime: { gt: startTime },
+      },
+    });
+    if (existingSlot) throw new BadRequestException('This time slot is no longer available');
+
+    // Create slot + booking in a transaction
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Create the service slot for this Calendly-selected time
+      const slot = await tx.serviceSlot.create({
+        data: {
+          serviceId: service.id,
+          startTime,
+          endTime,
+          isBooked: true,
+        },
+      });
+
+      // Create the booking
+      const booking = await tx.booking.create({
+        data: {
+          seekerId: seeker.id,
+          serviceId: service.id,
+          slotId: slot.id,
+          totalAmount: service.price,
+          currency: service.currency,
+          status: 'PENDING',
+          notes: [
+            dto.sessionNotes ? `Session notes: ${dto.sessionNotes}` : '',
+            dto.experienceLevel ? `Experience: ${dto.experienceLevel}` : '',
+            dto.healthConditions ? `Health: ${dto.healthConditions}` : '',
+            dto.referralSource ? `Found via: ${dto.referralSource}` : '',
+          ].filter(Boolean).join('\n') || undefined,
+        },
+      });
+
+      return { slot, booking };
+    });
+
+    // Create Stripe PaymentIntent
+    const priceInCents = Math.round(Number(service.price) * 100);
+    const paymentResult = await this.paymentsService.createPaymentIntent({
+      amount: priceInCents,
+      currency: service.currency.toLowerCase(),
+      bookingId: result.booking.id,
+      metadata: {
+        serviceId: service.id,
+        serviceName: service.name,
+        guideName: service.guide.displayName,
+        guideSlug: service.guide.slug,
+        seekerEmail: dto.email,
+        seekerName: `${dto.firstName} ${dto.lastName}`,
+        calendlyEventUri: dto.calendlyEventUri || '',
+        startTime: dto.startTime,
+        endTime: dto.endTime,
+      },
+    });
+
+    this.logger.log(
+      `Service booking created: ${result.booking.id} for ${dto.firstName} ${dto.lastName} ` +
+      `→ ${service.name} with ${service.guide.displayName}`,
+    );
+
+    return {
+      bookingId: result.booking.id,
+      clientSecret: paymentResult.clientSecret,
+      paymentIntentId: paymentResult.paymentIntentId,
+      service: {
+        name: service.name,
+        type: service.type,
+        durationMin: service.durationMin,
+        price: Number(service.price),
+        currency: service.currency,
+      },
+      guide: {
+        displayName: service.guide.displayName,
+        slug: service.guide.slug,
+      },
+      slot: {
+        startTime: result.slot.startTime.toISOString(),
+        endTime: result.slot.endTime.toISOString(),
+      },
+    };
+  }
 
   // ─── Create Booking (Seeker) ───────────────────────────────────────────────
 

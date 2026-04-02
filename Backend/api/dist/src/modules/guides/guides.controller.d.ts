@@ -563,4 +563,17 @@ export declare class GuidesController {
         endTime: string;
         available: boolean;
     }[]>;
+    getGuideServices(slug: string): Promise<{
+        id: string;
+        name: string;
+        description: string | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        guideId: string;
+        type: import(".prisma/client").$Enums.ServiceType;
+        price: import("@prisma/client-runtime-utils").Decimal;
+        currency: string;
+        durationMin: number;
+    }[]>;
 }

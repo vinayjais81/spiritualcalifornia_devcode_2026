@@ -26,6 +26,7 @@ import { CartModule } from './modules/cart/cart.module';
 import { SoulToursModule } from './modules/soul-tours/soul-tours.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { CheckoutModule } from './modules/checkout/checkout.module';
+import { CalendlyModule } from './modules/calendly/calendly.module';
 
 @Module({
   imports: [
@@ -70,6 +71,7 @@ import { CheckoutModule } from './modules/checkout/checkout.module';
     SoulToursModule,
     OrdersModule,
     CheckoutModule,
+    CalendlyModule,
   ],
 })
 export class AppModule {}

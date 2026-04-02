@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const bookings_service_1 = require("./bookings.service");
 const create_booking_dto_1 = require("./dto/create-booking.dto");
+const create_service_booking_dto_1 = require("./dto/create-service-booking.dto");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/decorators/roles.decorator");
@@ -26,6 +27,9 @@ let BookingsController = class BookingsController {
     bookingsService;
     constructor(bookingsService) {
         this.bookingsService = bookingsService;
+    }
+    createServiceBooking(user, dto) {
+        return this.bookingsService.createServiceBooking(user.id, dto);
     }
     create(user, dto) {
         return this.bookingsService.create(user.id, dto);
@@ -50,6 +54,17 @@ let BookingsController = class BookingsController {
     }
 };
 exports.BookingsController = BookingsController;
+__decorate([
+    (0, common_1.Post)('service-checkout'),
+    (0, roles_decorator_1.Roles)(client_1.Role.SEEKER),
+    (0, swagger_1.ApiOperation)({ summary: 'Create service booking with Stripe payment intent (Calendly flow)' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'Booking + PaymentIntent created' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, create_service_booking_dto_1.CreateServiceBookingDto]),
+    __metadata("design:returntype", void 0)
+], BookingsController.prototype, "createServiceBooking", null);
 __decorate([
     (0, common_1.Post)(),
     (0, roles_decorator_1.Roles)(client_1.Role.SEEKER),

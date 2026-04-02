@@ -1,8 +1,32 @@
 import { PrismaService } from '../../database/prisma.service';
+import { PaymentsService } from '../payments/payments.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
+import { CreateServiceBookingDto } from './dto/create-service-booking.dto';
 export declare class BookingsService {
     private readonly prisma;
-    constructor(prisma: PrismaService);
+    private readonly paymentsService;
+    private readonly logger;
+    constructor(prisma: PrismaService, paymentsService: PaymentsService);
+    createServiceBooking(userId: string, dto: CreateServiceBookingDto): Promise<{
+        bookingId: string;
+        clientSecret: string;
+        paymentIntentId: string;
+        service: {
+            name: string;
+            type: import(".prisma/client").$Enums.ServiceType;
+            durationMin: number;
+            price: number;
+            currency: string;
+        };
+        guide: {
+            displayName: string;
+            slug: string;
+        };
+        slot: {
+            startTime: string;
+            endTime: string;
+        };
+    }>;
     create(userId: string, dto: CreateBookingDto): Promise<{
         service: {
             name: string;

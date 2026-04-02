@@ -75,8 +75,8 @@ let AuthController = class AuthController {
         const redirect = `${frontendUrl}/auth/google/success?token=${encodeURIComponent(result.accessToken)}&roles=${encodeURIComponent(result.user.roles.join(','))}${newFlag}`;
         return res.redirect(redirect);
     }
-    async calendlyAuthUrl(user) {
-        return this.authService.getCalendlyAuthUrl(user.id);
+    async calendlyAuthUrl(user, redirectTo) {
+        return this.authService.getCalendlyAuthUrl(user.id, redirectTo);
     }
     async calendlyCallback(code, state, res) {
         const redirectUrl = await this.authService.handleCalendlyCallback(code, state);
@@ -208,8 +208,9 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, swagger_1.ApiOperation)({ summary: 'Get Calendly OAuth authorization URL' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)('redirectTo')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "calendlyAuthUrl", null);
 __decorate([

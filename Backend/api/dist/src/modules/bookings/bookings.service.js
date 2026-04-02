@@ -8,14 +8,112 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var BookingsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BookingsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../database/prisma.service");
-let BookingsService = class BookingsService {
+const payments_service_1 = require("../payments/payments.service");
+let BookingsService = BookingsService_1 = class BookingsService {
     prisma;
-    constructor(prisma) {
+    paymentsService;
+    logger = new common_1.Logger(BookingsService_1.name);
+    constructor(prisma, paymentsService) {
         this.prisma = prisma;
+        this.paymentsService = paymentsService;
+    }
+    async createServiceBooking(userId, dto) {
+        const seeker = await this.prisma.seekerProfile.findUnique({ where: { userId } });
+        if (!seeker)
+            throw new common_1.ForbiddenException('Seeker profile not found');
+        const service = await this.prisma.service.findUnique({
+            where: { id: dto.serviceId },
+            include: { guide: { select: { id: true, displayName: true, slug: true, stripeAccountId: true } } },
+        });
+        if (!service || !service.isActive)
+            throw new common_1.NotFoundException('Service not found or inactive');
+        const startTime = new Date(dto.startTime);
+        const endTime = new Date(dto.endTime);
+        if (startTime >= endTime)
+            throw new common_1.BadRequestException('Invalid time range');
+        if (startTime <= new Date())
+            throw new common_1.BadRequestException('Cannot book in the past');
+        const existingSlot = await this.prisma.serviceSlot.findFirst({
+            where: {
+                service: { guideId: service.guideId },
+                isBooked: true,
+                startTime: { lt: endTime },
+                endTime: { gt: startTime },
+            },
+        });
+        if (existingSlot)
+            throw new common_1.BadRequestException('This time slot is no longer available');
+        const result = await this.prisma.$transaction(async (tx) => {
+            const slot = await tx.serviceSlot.create({
+                data: {
+                    serviceId: service.id,
+                    startTime,
+                    endTime,
+                    isBooked: true,
+                },
+            });
+            const booking = await tx.booking.create({
+                data: {
+                    seekerId: seeker.id,
+                    serviceId: service.id,
+                    slotId: slot.id,
+                    totalAmount: service.price,
+                    currency: service.currency,
+                    status: 'PENDING',
+                    notes: [
+                        dto.sessionNotes ? `Session notes: ${dto.sessionNotes}` : '',
+                        dto.experienceLevel ? `Experience: ${dto.experienceLevel}` : '',
+                        dto.healthConditions ? `Health: ${dto.healthConditions}` : '',
+                        dto.referralSource ? `Found via: ${dto.referralSource}` : '',
+                    ].filter(Boolean).join('\n') || undefined,
+                },
+            });
+            return { slot, booking };
+        });
+        const priceInCents = Math.round(Number(service.price) * 100);
+        const paymentResult = await this.paymentsService.createPaymentIntent({
+            amount: priceInCents,
+            currency: service.currency.toLowerCase(),
+            bookingId: result.booking.id,
+            metadata: {
+                serviceId: service.id,
+                serviceName: service.name,
+                guideName: service.guide.displayName,
+                guideSlug: service.guide.slug,
+                seekerEmail: dto.email,
+                seekerName: `${dto.firstName} ${dto.lastName}`,
+                calendlyEventUri: dto.calendlyEventUri || '',
+                startTime: dto.startTime,
+                endTime: dto.endTime,
+            },
+        });
+        this.logger.log(`Service booking created: ${result.booking.id} for ${dto.firstName} ${dto.lastName} ` +
+            `→ ${service.name} with ${service.guide.displayName}`);
+        return {
+            bookingId: result.booking.id,
+            clientSecret: paymentResult.clientSecret,
+            paymentIntentId: paymentResult.paymentIntentId,
+            service: {
+                name: service.name,
+                type: service.type,
+                durationMin: service.durationMin,
+                price: Number(service.price),
+                currency: service.currency,
+            },
+            guide: {
+                displayName: service.guide.displayName,
+                slug: service.guide.slug,
+            },
+            slot: {
+                startTime: result.slot.startTime.toISOString(),
+                endTime: result.slot.endTime.toISOString(),
+            },
+        };
     }
     async create(userId, dto) {
         const seeker = await this.prisma.seekerProfile.findUnique({ where: { userId } });
@@ -151,8 +249,9 @@ let BookingsService = class BookingsService {
     }
 };
 exports.BookingsService = BookingsService;
-exports.BookingsService = BookingsService = __decorate([
+exports.BookingsService = BookingsService = BookingsService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        payments_service_1.PaymentsService])
 ], BookingsService);
 //# sourceMappingURL=bookings.service.js.map

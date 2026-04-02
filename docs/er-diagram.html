@@ -1,0 +1,1304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spiritual California — ER Diagram</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #0f1117;
+    color: #e0e0e0;
+    overflow: auto;
+  }
+  h1 {
+    text-align: center;
+    padding: 24px;
+    font-size: 22px;
+    color: #E8B84B;
+    background: #181a20;
+    border-bottom: 1px solid #2a2d35;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  h1 span { color: #888; font-weight: 400; font-size: 14px; margin-left: 12px; }
+  .controls {
+    position: sticky;
+    top: 68px;
+    z-index: 99;
+    background: #181a20;
+    padding: 10px 24px;
+    border-bottom: 1px solid #2a2d35;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .controls label { color: #aaa; font-size: 13px; margin-right: 4px; }
+  .controls input[type="text"] {
+    background: #23262f;
+    border: 1px solid #3a3d45;
+    color: #e0e0e0;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    width: 220px;
+  }
+  .controls button {
+    background: #23262f;
+    border: 1px solid #3a3d45;
+    color: #ccc;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.15s;
+  }
+  .controls button:hover { background: #2d3040; border-color: #E8B84B; color: #E8B84B; }
+  .controls button.active { background: #E8B84B22; border-color: #E8B84B; color: #E8B84B; }
+  .canvas {
+    padding: 30px;
+    min-height: calc(100vh - 120px);
+  }
+  .domain-section {
+    margin-bottom: 36px;
+  }
+  .domain-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #E8B84B;
+    margin-bottom: 14px;
+    padding: 6px 14px;
+    background: #E8B84B12;
+    border-left: 3px solid #E8B84B;
+    border-radius: 0 6px 6px 0;
+    display: inline-block;
+  }
+  .tables-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .table-card {
+    background: #1a1d25;
+    border: 1px solid #2a2d35;
+    border-radius: 10px;
+    width: 280px;
+    overflow: hidden;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+  .table-card:hover { border-color: #E8B84B55; box-shadow: 0 0 20px #E8B84B11; }
+  .table-card.highlight { border-color: #E8B84B; box-shadow: 0 0 24px #E8B84B22; }
+  .table-card.dimmed { opacity: 0.3; }
+  .table-header {
+    background: #22252e;
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: 14px;
+    color: #fff;
+    border-bottom: 1px solid #2a2d35;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .table-header .badge {
+    font-size: 10px;
+    background: #E8B84B22;
+    color: #E8B84B;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+  }
+  .table-body { padding: 6px 0; max-height: 320px; overflow-y: auto; }
+  .table-body::-webkit-scrollbar { width: 4px; }
+  .table-body::-webkit-scrollbar-thumb { background: #3a3d45; border-radius: 2px; }
+  .field-row {
+    display: flex;
+    align-items: center;
+    padding: 3px 14px;
+    font-size: 12px;
+    gap: 6px;
+    line-height: 1.6;
+  }
+  .field-row:hover { background: #ffffff08; }
+  .field-name { flex: 1; color: #ccc; }
+  .field-type { color: #7B8EC8; font-size: 11px; font-family: 'Cascadia Code', 'Fira Code', monospace; }
+  .field-badge {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+  .badge-pk { background: #E8B84B33; color: #E8B84B; }
+  .badge-fk { background: #5B8AF033; color: #5B8AF0; }
+  .badge-uk { background: #8B5CF633; color: #8B5CF6; }
+  .badge-idx { background: #10B98133; color: #10B981; }
+
+  /* Relationship lines section */
+  .relations-section {
+    margin: 30px 30px 0;
+    padding: 20px;
+    background: #1a1d25;
+    border: 1px solid #2a2d35;
+    border-radius: 10px;
+  }
+  .relations-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #E8B84B;
+    margin-bottom: 14px;
+  }
+  .rel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+    gap: 6px;
+  }
+  .rel-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 4px;
+  }
+  .rel-row:hover { background: #ffffff08; }
+  .rel-from, .rel-to {
+    font-weight: 600;
+    color: #E8B84B;
+    min-width: 120px;
+  }
+  .rel-card { color: #666; font-size: 11px; }
+  .rel-label { color: #888; flex: 1; font-style: italic; }
+  .rel-arrow { color: #5B8AF0; font-weight: 700; font-size: 14px; }
+
+  /* Enums */
+  .enum-section {
+    margin: 30px 30px;
+  }
+  .enum-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .enum-card {
+    background: #1a1d25;
+    border: 1px solid #2a2d35;
+    border-radius: 8px;
+    width: 200px;
+    overflow: hidden;
+  }
+  .enum-header {
+    background: #8B5CF622;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #8B5CF6;
+    border-bottom: 1px solid #2a2d35;
+  }
+  .enum-values { padding: 6px 12px; }
+  .enum-val {
+    font-size: 11px;
+    color: #aaa;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    line-height: 1.8;
+  }
+
+  /* Stats bar */
+  .stats {
+    display: flex;
+    gap: 24px;
+    padding: 16px 30px;
+    font-size: 13px;
+    color: #888;
+  }
+  .stats strong { color: #E8B84B; }
+</style>
+</head>
+<body>
+
+<h1>Spiritual California — Entity Relationship Diagram <span>PostgreSQL via Prisma ORM</span></h1>
+
+<div class="controls">
+  <label>Search:</label>
+  <input type="text" id="search" placeholder="Filter tables or fields..." oninput="filterTables(this.value)">
+  <button onclick="showAll()">Show All</button>
+  <button onclick="filterDomain('user')" data-domain="user">User & Auth</button>
+  <button onclick="filterDomain('profile')" data-domain="profile">Profiles</button>
+  <button onclick="filterDomain('category')" data-domain="category">Categories</button>
+  <button onclick="filterDomain('verification')" data-domain="verification">Verification</button>
+  <button onclick="filterDomain('service')" data-domain="service">Services</button>
+  <button onclick="filterDomain('booking')" data-domain="booking">Bookings</button>
+  <button onclick="filterDomain('payment')" data-domain="payment">Payments</button>
+  <button onclick="filterDomain('event')" data-domain="event">Events</button>
+  <button onclick="filterDomain('product')" data-domain="product">Products</button>
+  <button onclick="filterDomain('tour')" data-domain="tour">Soul Tours</button>
+  <button onclick="filterDomain('commerce')" data-domain="commerce">Commerce</button>
+  <button onclick="filterDomain('social')" data-domain="social">Social</button>
+  <button onclick="filterDomain('platform')" data-domain="platform">Platform</button>
+</div>
+
+<div class="stats">
+  <div><strong>38</strong> Models</div>
+  <div><strong>17</strong> Enums</div>
+  <div><strong>15</strong> Indexes</div>
+  <div><strong>~280</strong> Fields</div>
+</div>
+
+<div class="canvas" id="canvas"></div>
+
+<div class="relations-section">
+  <div class="relations-title">Relationships</div>
+  <div class="rel-grid" id="relGrid"></div>
+</div>
+
+<div class="enum-section">
+  <div class="domain-title">Enums</div>
+  <div class="enum-grid" id="enumGrid"></div>
+</div>
+
+<script>
+const schema = {
+  domains: [
+    {
+      name: "User & Auth",
+      domain: "user",
+      tables: [
+        {
+          name: "User",
+          dbName: "users",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "email", t: "String", uk: true },
+            { n: "passwordHash", t: "String?" },
+            { n: "firstName", t: "String" },
+            { n: "lastName", t: "String" },
+            { n: "avatarUrl", t: "String?" },
+            { n: "phone", t: "String?" },
+            { n: "isEmailVerified", t: "Boolean" },
+            { n: "isActive", t: "Boolean" },
+            { n: "isBanned", t: "Boolean" },
+            { n: "bannedReason", t: "String?" },
+            { n: "googleId", t: "String?", uk: true },
+            { n: "emailVerifyToken", t: "String?" },
+            { n: "emailVerifyExpiry", t: "DateTime?" },
+            { n: "passwordResetToken", t: "String?" },
+            { n: "passwordResetExpiry", t: "DateTime?" },
+            { n: "lastLoginAt", t: "DateTime?" },
+            { n: "marketingEmails", t: "Boolean" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "UserRole",
+          dbName: "user_roles",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "userId", t: "String", fk: "User" },
+            { n: "role", t: "Role" },
+            { n: "createdAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "RefreshToken",
+          dbName: "refresh_tokens",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "userId", t: "String", fk: "User" },
+            { n: "token", t: "String", uk: true, idx: true },
+            { n: "expiresAt", t: "DateTime" },
+            { n: "isRevoked", t: "Boolean" },
+            { n: "createdAt", t: "DateTime" },
+          ]
+        },
+      ]
+    },
+    {
+      name: "Profiles",
+      domain: "profile",
+      tables: [
+        {
+          name: "SeekerProfile",
+          dbName: "seeker_profiles",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "userId", t: "String", fk: "User", uk: true },
+            { n: "bio", t: "String?" },
+            { n: "location", t: "String?" },
+            { n: "timezone", t: "String?" },
+            { n: "interests", t: "String[]" },
+            { n: "onboardingStep", t: "Int" },
+            { n: "onboardingCompleted", t: "Boolean" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "GuideProfile",
+          dbName: "guide_profiles",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "userId", t: "String", fk: "User", uk: true },
+            { n: "slug", t: "String", uk: true, idx: true },
+            { n: "displayName", t: "String" },
+            { n: "tagline", t: "String?" },
+            { n: "bio", t: "String?" },
+            { n: "location", t: "String?" },
+            { n: "studioName", t: "String?" },
+            { n: "streetAddress", t: "String?" },
+            { n: "city", t: "String?" },
+            { n: "state", t: "String?" },
+            { n: "zipCode", t: "String?" },
+            { n: "country", t: "String?" },
+            { n: "timezone", t: "String?" },
+            { n: "websiteUrl", t: "String?" },
+            { n: "instagramUrl", t: "String?" },
+            { n: "youtubeUrl", t: "String?" },
+            { n: "languages", t: "String[]" },
+            { n: "modalities", t: "String[]" },
+            { n: "issuesHelped", t: "String[]" },
+            { n: "yearsExperience", t: "Int?" },
+            { n: "calendarType", t: "String?" },
+            { n: "calendarLink", t: "String?" },
+            { n: "sessionPricingJson", t: "String?" },
+            { n: "calendlyConnected", t: "Boolean" },
+            { n: "isPublished", t: "Boolean", idx: true },
+            { n: "isVerified", t: "Boolean", idx: true },
+            { n: "verificationStatus", t: "VerificationStatus" },
+            { n: "onboardingPath", t: "OnboardingPath" },
+            { n: "stripeAccountId", t: "String?" },
+            { n: "stripeOnboardingDone", t: "Boolean" },
+            { n: "algoliaObjectId", t: "String?" },
+            { n: "averageRating", t: "Float" },
+            { n: "totalReviews", t: "Int" },
+            { n: "claimToken", t: "String?", uk: true },
+            { n: "claimTokenExpiry", t: "DateTime?" },
+            { n: "scrapedSourceUrl", t: "String?" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "GuideMedia",
+          dbName: "guide_media",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "guideId", t: "String", fk: "GuideProfile" },
+            { n: "type", t: "String" },
+            { n: "url", t: "String" },
+            { n: "thumbnailUrl", t: "String?" },
+            { n: "caption", t: "String?" },
+            { n: "sortOrder", t: "Int" },
+            { n: "createdAt", t: "DateTime" },
+          ]
+        },
+      ]
+    },
+    {
+      name: "Categories",
+      domain: "category",
+      tables: [
+        {
+          name: "Category",
+          dbName: "categories",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "name", t: "String", uk: true },
+            { n: "slug", t: "String", uk: true },
+            { n: "description", t: "String?" },
+            { n: "iconUrl", t: "String?" },
+            { n: "sortOrder", t: "Int" },
+            { n: "isActive", t: "Boolean" },
+            { n: "createdAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "Subcategory",
+          dbName: "subcategories",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "categoryId", t: "String", fk: "Category" },
+            { n: "name", t: "String" },
+            { n: "slug", t: "String" },
+            { n: "isApproved", t: "Boolean" },
+            { n: "isCustom", t: "Boolean" },
+            { n: "createdAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "GuideCategory",
+          dbName: "guide_categories",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "guideId", t: "String", fk: "GuideProfile" },
+            { n: "categoryId", t: "String", fk: "Category" },
+            { n: "subcategoryId", t: "String?", fk: "Subcategory" },
+          ]
+        },
+      ]
+    },
+    {
+      name: "Credentials & Verification",
+      domain: "verification",
+      tables: [
+        {
+          name: "Credential",
+          dbName: "credentials",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "guideId", t: "String", fk: "GuideProfile" },
+            { n: "title", t: "String" },
+            { n: "institution", t: "String?" },
+            { n: "issuedYear", t: "Int?" },
+            { n: "documentUrl", t: "String?" },
+            { n: "verificationStatus", t: "VerificationStatus" },
+            { n: "confidenceScore", t: "Float?" },
+            { n: "extractedData", t: "Json?" },
+            { n: "adminNotes", t: "String?" },
+            { n: "verifiedAt", t: "DateTime?" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "CredentialVerification",
+          dbName: "credential_verifications",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "credentialId", t: "String", fk: "Credential" },
+            { n: "stage", t: "String" },
+            { n: "status", t: "String" },
+            { n: "result", t: "Json?" },
+            { n: "processedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "PersonaVerification",
+          dbName: "persona_verifications",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "userId", t: "String", uk: true },
+            { n: "inquiryId", t: "String", uk: true },
+            { n: "status", t: "String" },
+            { n: "referenceId", t: "String?" },
+            { n: "completedAt", t: "DateTime?" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "InstitutionReference",
+          dbName: "institution_references",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "name", t: "String" },
+            { n: "aliases", t: "String[]" },
+            { n: "country", t: "String?" },
+            { n: "type", t: "String?" },
+            { n: "isActive", t: "Boolean" },
+            { n: "createdAt", t: "DateTime" },
+          ]
+        },
+      ]
+    },
+    {
+      name: "Services & Availability",
+      domain: "service",
+      tables: [
+        {
+          name: "Service",
+          dbName: "services",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "guideId", t: "String", fk: "GuideProfile" },
+            { n: "name", t: "String" },
+            { n: "description", t: "String?" },
+            { n: "type", t: "ServiceType" },
+            { n: "price", t: "Decimal(10,2)" },
+            { n: "currency", t: "String" },
+            { n: "durationMin", t: "Int" },
+            { n: "isActive", t: "Boolean" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "Availability",
+          dbName: "availability",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "guideId", t: "String", fk: "GuideProfile" },
+            { n: "dayOfWeek", t: "Int" },
+            { n: "startTime", t: "String" },
+            { n: "endTime", t: "String" },
+            { n: "isRecurring", t: "Boolean" },
+            { n: "bufferMin", t: "Int" },
+            { n: "createdAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "ServiceSlot",
+          dbName: "service_slots",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "serviceId", t: "String", fk: "Service", idx: true },
+            { n: "startTime", t: "DateTime", idx: true },
+            { n: "endTime", t: "DateTime" },
+            { n: "isBooked", t: "Boolean" },
+            { n: "isBlocked", t: "Boolean" },
+            { n: "createdAt", t: "DateTime" },
+          ]
+        },
+      ]
+    },
+    {
+      name: "Bookings",
+      domain: "booking",
+      tables: [
+        {
+          name: "Booking",
+          dbName: "bookings",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "seekerId", t: "String", fk: "SeekerProfile", idx: true },
+            { n: "serviceId", t: "String", fk: "Service", idx: true },
+            { n: "slotId", t: "String", fk: "ServiceSlot", uk: true },
+            { n: "status", t: "BookingStatus" },
+            { n: "totalAmount", t: "Decimal(10,2)" },
+            { n: "currency", t: "String" },
+            { n: "notes", t: "String?" },
+            { n: "cancelledAt", t: "DateTime?" },
+            { n: "cancelledBy", t: "String?" },
+            { n: "cancellationReason", t: "String?" },
+            { n: "completedAt", t: "DateTime?" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+      ]
+    },
+    {
+      name: "Payments & Payouts",
+      domain: "payment",
+      tables: [
+        {
+          name: "Payment",
+          dbName: "payments",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "bookingId", t: "String?", fk: "Booking", uk: true },
+            { n: "orderId", t: "String?", fk: "Order", uk: true },
+            { n: "ticketPurchaseId", t: "String?", fk: "TicketPurchase", uk: true },
+            { n: "tourBookingId", t: "String?", fk: "TourBooking" },
+            { n: "stripePaymentIntentId", t: "String", uk: true },
+            { n: "stripeCheckoutSessionId", t: "String?" },
+            { n: "stripeTransferId", t: "String?" },
+            { n: "amount", t: "Decimal(10,2)" },
+            { n: "currency", t: "String" },
+            { n: "platformFee", t: "Decimal(10,2)" },
+            { n: "guideAmount", t: "Decimal(10,2)" },
+            { n: "paymentType", t: "PaymentType" },
+            { n: "status", t: "PaymentStatus", idx: true },
+            { n: "refundedAmount", t: "Decimal?" },
+            { n: "stripeRefundId", t: "String?" },
+            { n: "paymentMethod", t: "String?" },
+            { n: "metadata", t: "Json?" },
+            { n: "createdAt", t: "DateTime", idx: true },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "PayoutAccount",
+          dbName: "payout_accounts",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "guideId", t: "String", fk: "GuideProfile", uk: true },
+            { n: "stripeAccountId", t: "String", uk: true },
+            { n: "availableBalance", t: "Decimal(10,2)" },
+            { n: "pendingBalance", t: "Decimal(10,2)" },
+            { n: "totalEarned", t: "Decimal(10,2)" },
+            { n: "totalPaidOut", t: "Decimal(10,2)" },
+            { n: "currency", t: "String" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "PayoutRequest",
+          dbName: "payout_requests",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "guideId", t: "String", fk: "GuideProfile" },
+            { n: "payoutAccountId", t: "String", fk: "PayoutAccount" },
+            { n: "amount", t: "Decimal(10,2)" },
+            { n: "currency", t: "String" },
+            { n: "status", t: "PayoutStatus" },
+            { n: "stripePayoutId", t: "String?" },
+            { n: "processedAt", t: "DateTime?" },
+            { n: "createdAt", t: "DateTime" },
+          ]
+        },
+      ]
+    },
+    {
+      name: "Events & Tickets",
+      domain: "event",
+      tables: [
+        {
+          name: "Event",
+          dbName: "events",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "guideId", t: "String", fk: "GuideProfile", idx: true },
+            { n: "title", t: "String" },
+            { n: "description", t: "String?" },
+            { n: "type", t: "EventType" },
+            { n: "startTime", t: "DateTime", idx: true },
+            { n: "endTime", t: "DateTime" },
+            { n: "timezone", t: "String" },
+            { n: "location", t: "String?" },
+            { n: "onlineUrl", t: "String?" },
+            { n: "zoomMeetingId", t: "String?" },
+            { n: "zoomJoinUrl", t: "String?" },
+            { n: "coverImageUrl", t: "String?" },
+            { n: "isPublished", t: "Boolean" },
+            { n: "isCancelled", t: "Boolean" },
+            { n: "algoliaObjectId", t: "String?" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "EventTicketTier",
+          dbName: "event_ticket_tiers",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "eventId", t: "String", fk: "Event" },
+            { n: "name", t: "String" },
+            { n: "description", t: "String?" },
+            { n: "price", t: "Decimal(10,2)" },
+            { n: "currency", t: "String" },
+            { n: "capacity", t: "Int" },
+            { n: "sold", t: "Int" },
+            { n: "isActive", t: "Boolean" },
+            { n: "createdAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "TicketPurchase",
+          dbName: "ticket_purchases",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "seekerId", t: "String", fk: "SeekerProfile" },
+            { n: "tierId", t: "String", fk: "EventTicketTier" },
+            { n: "quantity", t: "Int" },
+            { n: "totalAmount", t: "Decimal(10,2)" },
+            { n: "qrCode", t: "String?", uk: true },
+            { n: "attendeeName", t: "String?" },
+            { n: "attendeeEmail", t: "String?" },
+            { n: "dietaryNeeds", t: "String?" },
+            { n: "accessibilityNeeds", t: "String?" },
+            { n: "createdAt", t: "DateTime" },
+          ]
+        },
+      ]
+    },
+    {
+      name: "Products & Orders",
+      domain: "product",
+      tables: [
+        {
+          name: "Product",
+          dbName: "products",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "guideId", t: "String", fk: "GuideProfile", idx: true },
+            { n: "name", t: "String" },
+            { n: "description", t: "String?" },
+            { n: "type", t: "ProductType", idx: true },
+            { n: "price", t: "Decimal(10,2)" },
+            { n: "currency", t: "String" },
+            { n: "stockQuantity", t: "Int?" },
+            { n: "imageUrls", t: "String[]" },
+            { n: "fileS3Key", t: "String?" },
+            { n: "digitalFiles", t: "Json?" },
+            { n: "shippingInfo", t: "Json?" },
+            { n: "isActive", t: "Boolean", idx: true },
+            { n: "algoliaObjectId", t: "String?" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "ProductVariant",
+          dbName: "product_variants",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "productId", t: "String", fk: "Product", idx: true },
+            { n: "name", t: "String" },
+            { n: "sku", t: "String?", uk: true },
+            { n: "price", t: "Decimal?" },
+            { n: "stockQuantity", t: "Int" },
+            { n: "attributes", t: "Json?" },
+            { n: "sortOrder", t: "Int" },
+            { n: "isActive", t: "Boolean" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "Order",
+          dbName: "orders",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "seekerId", t: "String", fk: "SeekerProfile", idx: true },
+            { n: "status", t: "OrderStatus", idx: true },
+            { n: "subtotal", t: "Decimal(10,2)" },
+            { n: "discountAmount", t: "Decimal(10,2)" },
+            { n: "shippingCost", t: "Decimal(10,2)" },
+            { n: "taxAmount", t: "Decimal(10,2)" },
+            { n: "taxRate", t: "Decimal(6,4)?" },
+            { n: "totalAmount", t: "Decimal(10,2)" },
+            { n: "currency", t: "String" },
+            { n: "shippingAddress", t: "Json?" },
+            { n: "contactEmail", t: "String?" },
+            { n: "contactFirstName", t: "String?" },
+            { n: "contactLastName", t: "String?" },
+            { n: "contactPhone", t: "String?" },
+            { n: "promoCodeId", t: "String?", fk: "PromoCode" },
+            { n: "shippingMethodId", t: "String?", fk: "ShippingMethod" },
+            { n: "notes", t: "String?" },
+            { n: "createdAt", t: "DateTime", idx: true },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "OrderItem",
+          dbName: "order_items",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "orderId", t: "String", fk: "Order" },
+            { n: "productId", t: "String", fk: "Product" },
+            { n: "variantId", t: "String?" },
+            { n: "quantity", t: "Int" },
+            { n: "unitPrice", t: "Decimal(10,2)" },
+            { n: "downloadUrl", t: "String?" },
+            { n: "downloadCount", t: "Int" },
+            { n: "createdAt", t: "DateTime" },
+          ]
+        },
+      ]
+    },
+    {
+      name: "Soul Tours",
+      domain: "tour",
+      tables: [
+        {
+          name: "SoulTour",
+          dbName: "soul_tours",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "guideId", t: "String", fk: "GuideProfile", idx: true },
+            { n: "title", t: "String" },
+            { n: "slug", t: "String", uk: true, idx: true },
+            { n: "description", t: "String?" },
+            { n: "shortDesc", t: "String?" },
+            { n: "startDate", t: "DateTime", idx: true },
+            { n: "endDate", t: "DateTime" },
+            { n: "timezone", t: "String" },
+            { n: "location", t: "String?" },
+            { n: "address", t: "String?" },
+            { n: "city", t: "String?" },
+            { n: "state", t: "String?" },
+            { n: "country", t: "String?" },
+            { n: "basePrice", t: "Decimal(10,2)" },
+            { n: "currency", t: "String" },
+            { n: "capacity", t: "Int" },
+            { n: "spotsRemaining", t: "Int" },
+            { n: "coverImageUrl", t: "String?" },
+            { n: "imageUrls", t: "String[]" },
+            { n: "highlights", t: "String[]" },
+            { n: "included", t: "String[]" },
+            { n: "notIncluded", t: "String[]" },
+            { n: "requirements", t: "String?" },
+            { n: "depositMin", t: "Decimal?" },
+            { n: "isPublished", t: "Boolean", idx: true },
+            { n: "isCancelled", t: "Boolean" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "TourRoomType",
+          dbName: "tour_room_types",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "tourId", t: "String", fk: "SoulTour" },
+            { n: "name", t: "String" },
+            { n: "description", t: "String?" },
+            { n: "pricePerNight", t: "Decimal(10,2)" },
+            { n: "totalPrice", t: "Decimal(10,2)" },
+            { n: "capacity", t: "Int" },
+            { n: "available", t: "Int" },
+            { n: "amenities", t: "String[]" },
+            { n: "sortOrder", t: "Int" },
+            { n: "createdAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "TourBooking",
+          dbName: "tour_bookings",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "tourId", t: "String", fk: "SoulTour", idx: true },
+            { n: "seekerId", t: "String", fk: "SeekerProfile", idx: true },
+            { n: "roomTypeId", t: "String", fk: "TourRoomType" },
+            { n: "travelers", t: "Int" },
+            { n: "totalAmount", t: "Decimal(10,2)" },
+            { n: "depositAmount", t: "Decimal?" },
+            { n: "depositPaidAt", t: "DateTime?" },
+            { n: "balanceAmount", t: "Decimal?" },
+            { n: "balancePaidAt", t: "DateTime?" },
+            { n: "currency", t: "String" },
+            { n: "status", t: "TourBookingStatus" },
+            { n: "specialRequests", t: "String?" },
+            { n: "contactFirstName", t: "String" },
+            { n: "contactLastName", t: "String" },
+            { n: "contactEmail", t: "String" },
+            { n: "contactPhone", t: "String?" },
+            { n: "cancelledAt", t: "DateTime?" },
+            { n: "cancellationReason", t: "String?" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+      ]
+    },
+    {
+      name: "Commerce (Promo, Shipping, Tax)",
+      domain: "commerce",
+      tables: [
+        {
+          name: "PromoCode",
+          dbName: "promo_codes",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "code", t: "String", uk: true, idx: true },
+            { n: "type", t: "PromoCodeType" },
+            { n: "amount", t: "Decimal(10,2)" },
+            { n: "minOrderAmount", t: "Decimal?" },
+            { n: "maxDiscountAmount", t: "Decimal?" },
+            { n: "maxUses", t: "Int?" },
+            { n: "usedCount", t: "Int" },
+            { n: "appliesToType", t: "String?" },
+            { n: "startsAt", t: "DateTime?" },
+            { n: "expiresAt", t: "DateTime?" },
+            { n: "isActive", t: "Boolean", idx: true },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "ShippingMethod",
+          dbName: "shipping_methods",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "name", t: "String" },
+            { n: "description", t: "String?" },
+            { n: "price", t: "Decimal(10,2)" },
+            { n: "currency", t: "String" },
+            { n: "estimatedDaysMin", t: "Int" },
+            { n: "estimatedDaysMax", t: "Int" },
+            { n: "isActive", t: "Boolean" },
+            { n: "sortOrder", t: "Int" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "TaxRate",
+          dbName: "tax_rates",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "state", t: "String" },
+            { n: "country", t: "String" },
+            { n: "rate", t: "Decimal(6,4)" },
+            { n: "name", t: "String" },
+            { n: "isActive", t: "Boolean" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+      ]
+    },
+    {
+      name: "Social (Reviews, Favorites, Blog)",
+      domain: "social",
+      tables: [
+        {
+          name: "Review",
+          dbName: "reviews",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "authorId", t: "String", fk: "User" },
+            { n: "targetId", t: "String", fk: "User", idx: true },
+            { n: "bookingId", t: "String", fk: "Booking", uk: true },
+            { n: "rating", t: "Int" },
+            { n: "title", t: "String?" },
+            { n: "body", t: "String?" },
+            { n: "isApproved", t: "Boolean", idx: true },
+            { n: "isFlagged", t: "Boolean" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "Testimonial",
+          dbName: "testimonials",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "authorId", t: "String", fk: "User" },
+            { n: "targetGuideId", t: "String" },
+            { n: "body", t: "String" },
+            { n: "isApproved", t: "Boolean" },
+            { n: "createdAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "Favorite",
+          dbName: "favorites",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "seekerId", t: "String", fk: "SeekerProfile" },
+            { n: "guideId", t: "String" },
+            { n: "createdAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "BlogPost",
+          dbName: "blog_posts",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "guideId", t: "String", fk: "GuideProfile" },
+            { n: "title", t: "String" },
+            { n: "slug", t: "String" },
+            { n: "content", t: "String" },
+            { n: "excerpt", t: "String?" },
+            { n: "coverImageUrl", t: "String?" },
+            { n: "tags", t: "String[]" },
+            { n: "isPublished", t: "Boolean", idx: true },
+            { n: "publishedAt", t: "DateTime?", idx: true },
+            { n: "algoliaObjectId", t: "String?" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+      ]
+    },
+    {
+      name: "Platform & Admin",
+      domain: "platform",
+      tables: [
+        {
+          name: "Notification",
+          dbName: "notifications",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "userId", t: "String", fk: "User", idx: true },
+            { n: "type", t: "NotificationType" },
+            { n: "title", t: "String" },
+            { n: "body", t: "String" },
+            { n: "data", t: "Json?" },
+            { n: "isRead", t: "Boolean", idx: true },
+            { n: "createdAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "AuditLog",
+          dbName: "audit_logs",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "userId", t: "String?", fk: "User", idx: true },
+            { n: "action", t: "String" },
+            { n: "entity", t: "String?", idx: true },
+            { n: "entityId", t: "String?", idx: true },
+            { n: "oldValue", t: "Json?" },
+            { n: "newValue", t: "Json?" },
+            { n: "ipAddress", t: "String?" },
+            { n: "userAgent", t: "String?" },
+            { n: "createdAt", t: "DateTime", idx: true },
+          ]
+        },
+        {
+          name: "PlatformSetting",
+          dbName: "platform_settings",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "key", t: "String", uk: true },
+            { n: "value", t: "String" },
+            { n: "type", t: "String" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "GuideSubscription",
+          dbName: "guide_subscriptions",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "guideId", t: "String", fk: "GuideProfile", uk: true },
+            { n: "stripeSubscriptionId", t: "String", uk: true },
+            { n: "status", t: "SubscriptionStatus" },
+            { n: "currentPeriodStart", t: "DateTime" },
+            { n: "currentPeriodEnd", t: "DateTime" },
+            { n: "cancelledAt", t: "DateTime?" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "ScraperJob",
+          dbName: "scraper_jobs",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "source", t: "String" },
+            { n: "targetUrl", t: "String" },
+            { n: "status", t: "String", idx: true },
+            { n: "scrapedData", t: "Json?" },
+            { n: "guideProfileId", t: "String?" },
+            { n: "errorMessage", t: "String?" },
+            { n: "startedAt", t: "DateTime?" },
+            { n: "completedAt", t: "DateTime?" },
+            { n: "createdAt", t: "DateTime", idx: true },
+          ]
+        },
+        {
+          name: "ContactLead",
+          dbName: "contact_leads",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "name", t: "String" },
+            { n: "email", t: "String", idx: true },
+            { n: "phone", t: "String?" },
+            { n: "type", t: "String" },
+            { n: "subject", t: "String" },
+            { n: "message", t: "String" },
+            { n: "status", t: "String", idx: true },
+            { n: "createdAt", t: "DateTime", idx: true },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "Cart",
+          dbName: "carts",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "userId", t: "String?", uk: true },
+            { n: "sessionId", t: "String?", uk: true, idx: true },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+        {
+          name: "CartItem",
+          dbName: "cart_items",
+          fields: [
+            { n: "id", t: "String", pk: true },
+            { n: "cartId", t: "String", fk: "Cart" },
+            { n: "itemType", t: "CartItemType" },
+            { n: "itemId", t: "String" },
+            { n: "variantId", t: "String?" },
+            { n: "quantity", t: "Int" },
+            { n: "metadata", t: "Json?" },
+            { n: "createdAt", t: "DateTime" },
+            { n: "updatedAt", t: "DateTime" },
+          ]
+        },
+      ]
+    },
+  ],
+
+  relationships: [
+    { from: "User", to: "UserRole", card: "1:N", label: "has roles" },
+    { from: "User", to: "RefreshToken", card: "1:N", label: "has refresh tokens" },
+    { from: "User", to: "SeekerProfile", card: "1:1", label: "has seeker profile" },
+    { from: "User", to: "GuideProfile", card: "1:1", label: "has guide profile" },
+    { from: "User", to: "Review", card: "1:N", label: "writes/receives reviews" },
+    { from: "User", to: "Testimonial", card: "1:N", label: "writes testimonials" },
+    { from: "User", to: "Notification", card: "1:N", label: "receives notifications" },
+    { from: "User", to: "AuditLog", card: "1:N", label: "audit trail" },
+    { from: "GuideProfile", to: "GuideMedia", card: "1:N", label: "has media" },
+    { from: "GuideProfile", to: "GuideCategory", card: "1:N", label: "tagged categories" },
+    { from: "GuideProfile", to: "Credential", card: "1:N", label: "has credentials" },
+    { from: "GuideProfile", to: "Service", card: "1:N", label: "offers services" },
+    { from: "GuideProfile", to: "Availability", card: "1:N", label: "sets availability" },
+    { from: "GuideProfile", to: "Event", card: "1:N", label: "hosts events" },
+    { from: "GuideProfile", to: "Product", card: "1:N", label: "sells products" },
+    { from: "GuideProfile", to: "SoulTour", card: "1:N", label: "organizes tours" },
+    { from: "GuideProfile", to: "BlogPost", card: "1:N", label: "writes blog posts" },
+    { from: "GuideProfile", to: "PayoutAccount", card: "1:1", label: "has payout account" },
+    { from: "GuideProfile", to: "PayoutRequest", card: "1:N", label: "requests payouts" },
+    { from: "GuideProfile", to: "GuideSubscription", card: "1:1", label: "has subscription" },
+    { from: "Category", to: "Subcategory", card: "1:N", label: "has subcategories" },
+    { from: "Category", to: "GuideCategory", card: "1:N", label: "categorizes guides" },
+    { from: "Subcategory", to: "GuideCategory", card: "1:N", label: "sub-categorizes" },
+    { from: "Credential", to: "CredentialVerification", card: "1:N", label: "verification log" },
+    { from: "Service", to: "ServiceSlot", card: "1:N", label: "has time slots" },
+    { from: "Service", to: "Booking", card: "1:N", label: "booked for" },
+    { from: "ServiceSlot", to: "Booking", card: "1:1", label: "assigned to booking" },
+    { from: "SeekerProfile", to: "Booking", card: "1:N", label: "makes bookings" },
+    { from: "SeekerProfile", to: "TicketPurchase", card: "1:N", label: "buys tickets" },
+    { from: "SeekerProfile", to: "Order", card: "1:N", label: "places orders" },
+    { from: "SeekerProfile", to: "TourBooking", card: "1:N", label: "books tours" },
+    { from: "SeekerProfile", to: "Favorite", card: "1:N", label: "favorites guides" },
+    { from: "Booking", to: "Payment", card: "1:1", label: "has payment" },
+    { from: "Booking", to: "Review", card: "1:1", label: "has review" },
+    { from: "Order", to: "Payment", card: "1:1", label: "has payment" },
+    { from: "Order", to: "OrderItem", card: "1:N", label: "contains items" },
+    { from: "TicketPurchase", to: "Payment", card: "1:1", label: "has payment" },
+    { from: "TourBooking", to: "Payment", card: "1:N", label: "has payments (deposit+balance)" },
+    { from: "Product", to: "ProductVariant", card: "1:N", label: "has variants" },
+    { from: "Product", to: "OrderItem", card: "1:N", label: "ordered as" },
+    { from: "Event", to: "EventTicketTier", card: "1:N", label: "has ticket tiers" },
+    { from: "EventTicketTier", to: "TicketPurchase", card: "1:N", label: "purchased" },
+    { from: "SoulTour", to: "TourRoomType", card: "1:N", label: "has room types" },
+    { from: "SoulTour", to: "TourBooking", card: "1:N", label: "has bookings" },
+    { from: "TourRoomType", to: "TourBooking", card: "1:N", label: "selected room" },
+    { from: "PayoutAccount", to: "PayoutRequest", card: "1:N", label: "pays out from" },
+    { from: "PromoCode", to: "Order", card: "1:N", label: "applied to orders" },
+    { from: "ShippingMethod", to: "Order", card: "1:N", label: "ships orders" },
+    { from: "Cart", to: "CartItem", card: "1:N", label: "contains items" },
+  ],
+
+  enums: [
+    { name: "Role", values: ["SEEKER", "GUIDE", "ADMIN", "SUPER_ADMIN"] },
+    { name: "VerificationStatus", values: ["PENDING", "IN_REVIEW", "APPROVED", "REJECTED", "FLAGGED"] },
+    { name: "OnboardingPath", values: ["SELF_REGISTRATION", "PROACTIVE_INVITE"] },
+    { name: "ServiceType", values: ["IN_PERSON", "VIRTUAL", "HYBRID"] },
+    { name: "EventType", values: ["VIRTUAL", "IN_PERSON", "SOUL_TRAVEL"] },
+    { name: "BookingStatus", values: ["PENDING", "CONFIRMED", "CANCELLED", "COMPLETED", "NO_SHOW"] },
+    { name: "PaymentStatus", values: ["PENDING", "SUCCEEDED", "FAILED", "REFUNDED", "PARTIALLY_REFUNDED"] },
+    { name: "PayoutStatus", values: ["PENDING", "PROCESSING", "COMPLETED", "FAILED"] },
+    { name: "ProductType", values: ["DIGITAL", "PHYSICAL"] },
+    { name: "OrderStatus", values: ["PENDING", "PAID", "SHIPPED", "DELIVERED", "CANCELLED", "REFUNDED"] },
+    { name: "NotificationType", values: ["BOOKING_CONFIRMED", "BOOKING_CANCELLED", "BOOKING_REMINDER", "PAYMENT_RECEIVED", "PAYOUT_PROCESSED", "VERIFICATION_APPROVED", "VERIFICATION_REJECTED", "REVIEW_RECEIVED", "TESTIMONIAL_RECEIVED", "TICKET_PURCHASED", "ORDER_PLACED", "NEW_MESSAGE"] },
+    { name: "SubscriptionStatus", values: ["ACTIVE", "CANCELLED", "PAST_DUE", "TRIALING"] },
+    { name: "CartItemType", values: ["PRODUCT", "EVENT_TICKET", "SOUL_TOUR", "SERVICE_BOOKING"] },
+    { name: "PaymentType", values: ["FULL", "DEPOSIT", "BALANCE"] },
+    { name: "TourBookingStatus", values: ["PENDING", "DEPOSIT_PAID", "FULLY_PAID", "CONFIRMED", "CANCELLED", "COMPLETED"] },
+    { name: "PromoCodeType", values: ["PERCENTAGE", "FIXED_AMOUNT"] },
+  ]
+};
+
+// Render tables
+const canvas = document.getElementById('canvas');
+schema.domains.forEach(domain => {
+  const section = document.createElement('div');
+  section.className = 'domain-section';
+  section.dataset.domain = domain.domain;
+
+  const title = document.createElement('div');
+  title.className = 'domain-title';
+  title.textContent = domain.name;
+  section.appendChild(title);
+
+  const grid = document.createElement('div');
+  grid.className = 'tables-grid';
+
+  domain.tables.forEach(table => {
+    const card = document.createElement('div');
+    card.className = 'table-card';
+    card.dataset.table = table.name.toLowerCase();
+    card.dataset.domain = domain.domain;
+
+    const header = document.createElement('div');
+    header.className = 'table-header';
+    header.innerHTML = `${table.name} <span class="badge">${table.dbName}</span>`;
+    card.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'table-body';
+
+    table.fields.forEach(f => {
+      const row = document.createElement('div');
+      row.className = 'field-row';
+      let badges = '';
+      if (f.pk) badges += '<span class="field-badge badge-pk">PK</span>';
+      if (f.fk) badges += '<span class="field-badge badge-fk">FK</span>';
+      if (f.uk) badges += '<span class="field-badge badge-uk">UQ</span>';
+      if (f.idx && !f.pk && !f.uk) badges += '<span class="field-badge badge-idx">IDX</span>';
+      row.innerHTML = `<span class="field-name">${f.n}</span><span class="field-type">${f.t}</span>${badges}`;
+      body.appendChild(row);
+    });
+    card.appendChild(body);
+    grid.appendChild(card);
+  });
+
+  section.appendChild(grid);
+  canvas.appendChild(section);
+});
+
+// Render relationships
+const relGrid = document.getElementById('relGrid');
+schema.relationships.forEach(r => {
+  const row = document.createElement('div');
+  row.className = 'rel-row';
+  row.innerHTML = `<span class="rel-from">${r.from}</span><span class="rel-card">${r.card}</span><span class="rel-arrow">\u2192</span><span class="rel-to">${r.to}</span><span class="rel-label">${r.label}</span>`;
+  relGrid.appendChild(row);
+});
+
+// Render enums
+const enumGrid = document.getElementById('enumGrid');
+schema.enums.forEach(e => {
+  const card = document.createElement('div');
+  card.className = 'enum-card';
+  card.innerHTML = `<div class="enum-header">${e.name}</div><div class="enum-values">${e.values.map(v => `<div class="enum-val">${v}</div>`).join('')}</div>`;
+  enumGrid.appendChild(card);
+});
+
+// Filter functions
+function showAll() {
+  document.querySelectorAll('.table-card').forEach(c => { c.classList.remove('highlight', 'dimmed'); });
+  document.querySelectorAll('.domain-section').forEach(s => { s.style.display = ''; });
+  document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+  document.getElementById('search').value = '';
+}
+
+function filterDomain(domain) {
+  document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`[data-domain="${domain}"]`);
+  if (btn) btn.classList.add('active');
+
+  document.querySelectorAll('.table-card').forEach(card => {
+    if (card.dataset.domain === domain) {
+      card.classList.add('highlight');
+      card.classList.remove('dimmed');
+    } else {
+      card.classList.remove('highlight');
+      card.classList.add('dimmed');
+    }
+  });
+  document.querySelectorAll('.domain-section').forEach(s => { s.style.display = ''; });
+}
+
+function filterTables(query) {
+  document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
+  if (!query.trim()) { showAll(); return; }
+  const q = query.toLowerCase();
+  document.querySelectorAll('.table-card').forEach(card => {
+    const text = card.textContent.toLowerCase();
+    if (text.includes(q)) {
+      card.classList.add('highlight');
+      card.classList.remove('dimmed');
+    } else {
+      card.classList.remove('highlight');
+      card.classList.add('dimmed');
+    }
+  });
+}
+</script>
+</body>
+</html>

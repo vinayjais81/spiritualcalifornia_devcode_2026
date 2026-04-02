@@ -49,7 +49,7 @@ export function Step7GoLive() {
           Your profile has already been submitted and is currently under review by our team. You will receive an email once it has been approved. There is nothing more you need to do right now.
         </p>
         <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link href="/dashboard" style={{ padding: '14px 32px', borderRadius: '8px', background: '#3A3530', color: '#FFFFFF', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', textDecoration: 'none', fontFamily: 'var(--font-inter), sans-serif' }}>
+          <Link href="/guide/dashboard" style={{ padding: '14px 32px', borderRadius: '8px', background: '#3A3530', color: '#FFFFFF', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', textDecoration: 'none', fontFamily: 'var(--font-inter), sans-serif' }}>
             Go to Dashboard →
           </Link>
           <Link href="/" style={{ padding: '14px 32px', borderRadius: '8px', background: 'transparent', color: '#3A3530', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', border: '1.5px solid rgba(58,53,48,0.3)', textDecoration: 'none', fontFamily: 'var(--font-inter), sans-serif' }}>
@@ -100,7 +100,7 @@ export function Step7GoLive() {
             View My Profile →
           </Link>
         ) : (
-          <Link href="/dashboard" style={{ padding: '14px 32px', borderRadius: '8px', background: '#3A3530', color: '#FFFFFF', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', textDecoration: 'none', fontFamily: 'var(--font-inter), sans-serif', transition: 'background 0.3s' }}>
+          <Link href="/guide/dashboard" style={{ padding: '14px 32px', borderRadius: '8px', background: '#3A3530', color: '#FFFFFF', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', textDecoration: 'none', fontFamily: 'var(--font-inter), sans-serif', transition: 'background 0.3s' }}>
             Go to Dashboard →
           </Link>
         )}

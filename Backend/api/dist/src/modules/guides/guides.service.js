@@ -427,6 +427,15 @@ let GuidesService = GuidesService_1 = class GuidesService {
             slug = `${base}-${++attempt}`;
         }
     }
+    async getPublicServices(slug) {
+        const guide = await this.prisma.guideProfile.findUnique({
+            where: { slug },
+            select: { id: true, isPublished: true },
+        });
+        if (!guide)
+            throw new common_1.NotFoundException(`Guide not found: ${slug}`);
+        return this.servicesService.findByGuideId(guide.id);
+    }
     async getAvailability(userId) {
         const guide = await this.requireGuide(userId);
         return this.prisma.availability.findMany({

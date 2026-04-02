@@ -1,7 +1,8 @@
 import { Controller, Post, Get, Patch, Param, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
+import { CreateServiceBookingDto } from './dto/create-service-booking.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -14,6 +15,19 @@ import { Role } from '@prisma/client';
 @ApiBearerAuth()
 export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
+
+  // ─── Service Booking Checkout (Calendly-first flow) ────────────────────────
+
+  @Post('service-checkout')
+  @Roles(Role.SEEKER)
+  @ApiOperation({ summary: 'Create service booking with Stripe payment intent (Calendly flow)' })
+  @ApiResponse({ status: 201, description: 'Booking + PaymentIntent created' })
+  createServiceBooking(
+    @CurrentUser() user: CurrentUserData,
+    @Body() dto: CreateServiceBookingDto,
+  ) {
+    return this.bookingsService.createServiceBooking(user.id, dto);
+  }
 
   @Post()
   @Roles(Role.SEEKER)

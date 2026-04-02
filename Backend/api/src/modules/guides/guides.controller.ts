@@ -163,4 +163,14 @@ export class GuidesController {
   getBookableSlots(@CurrentUser() user: CurrentUserData) {
     return this.guidesService.generateBookableSlots(user.id, 14);
   }
+
+  // ─── Public: Guide Services by Slug ─────────────────────────────────────────
+
+  @Public()
+  @Get(':slug/services')
+  @ApiOperation({ summary: 'List active services for a guide (public)' })
+  @ApiResponse({ status: 200, description: 'Guide services' })
+  getGuideServices(@Param('slug') slug: string) {
+    return this.guidesService.getPublicServices(slug);
+  }
 }

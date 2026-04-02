@@ -130,12 +130,12 @@ export default function SettingsPage() {
                   { phase: 'Admin Panel', label: 'Admin Panel', done: true },
                   { phase: 'Public Site', label: 'Public Home Page', done: true },
                   { phase: 'Phase 2', label: 'Onboarding + Verification', done: true },
-                  { phase: 'Phase 3', label: 'Guide Hub', done: false },
-                  { phase: 'Phase 4', label: 'Seeker + AI Chatbot', done: false },
-                  { phase: 'Phase 5', label: 'Booking + Stripe Payments', done: false },
-                  { phase: 'Phase 6', label: 'Events + E-commerce', done: false },
-                  { phase: 'Phase 7', label: 'Reviews + Community', done: false },
-                  { phase: 'Phase 8', label: 'Security + Performance', done: false },
+                  { phase: 'Phase 3', label: 'Guide Hub (Blog, Profile, Calendar, Services)', done: true },
+                  { phase: 'Phase 4', label: 'Seeker + AI Chatbot + Search', done: true },
+                  { phase: 'Phase 5', label: 'Booking + Stripe Payments', done: true },
+                  { phase: 'Phase 6', label: 'Events + E-commerce + Cart + Checkout', done: true },
+                  { phase: 'Phase 7', label: 'Reviews + Community', done: true },
+                  { phase: 'Phase 8', label: 'Security + Performance', done: true },
                   { phase: 'Phase 9', label: 'Testing + QA + Deploy', done: false },
                 ].map(({ phase, label, done }) => (
                   <div key={phase} className="flex items-center gap-3">

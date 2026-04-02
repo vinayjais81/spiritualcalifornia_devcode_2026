@@ -77,6 +77,9 @@ let GuidesController = class GuidesController {
     getBookableSlots(user) {
         return this.guidesService.generateBookableSlots(user.id, 14);
     }
+    getGuideServices(slug) {
+        return this.guidesService.getPublicServices(slug);
+    }
 };
 exports.GuidesController = GuidesController;
 __decorate([
@@ -204,6 +207,16 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], GuidesController.prototype, "getBookableSlots", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Get)(':slug/services'),
+    (0, swagger_1.ApiOperation)({ summary: 'List active services for a guide (public)' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Guide services' }),
+    __param(0, (0, common_1.Param)('slug')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], GuidesController.prototype, "getGuideServices", null);
 exports.GuidesController = GuidesController = __decorate([
     (0, swagger_1.ApiTags)('Guides — Onboarding'),
     (0, common_1.Controller)('guides'),

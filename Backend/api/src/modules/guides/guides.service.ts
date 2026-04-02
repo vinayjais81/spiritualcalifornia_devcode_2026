@@ -499,6 +499,19 @@ export class GuidesService {
     }
   }
 
+  // ─── Public: Guide Services by Slug ─────────────────────────────────────────
+
+  async getPublicServices(slug: string) {
+    const guide = await this.prisma.guideProfile.findUnique({
+      where: { slug },
+      select: { id: true, isPublished: true },
+    });
+
+    if (!guide) throw new NotFoundException(`Guide not found: ${slug}`);
+
+    return this.servicesService.findByGuideId(guide.id);
+  }
+
   // ─── Availability Management ───────────────────────────────────────────────
 
   async getAvailability(userId: string) {

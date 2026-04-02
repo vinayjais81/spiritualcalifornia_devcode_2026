@@ -236,10 +236,10 @@ let AuthService = AuthService_1 = class AuthService {
         });
         return { message: 'Password reset successfully' };
     }
-    async getCalendlyAuthUrl(userId) {
+    async getCalendlyAuthUrl(userId, redirectTo) {
         const clientId = this.configService.get('CALENDLY_CLIENT_ID', '');
         const redirectUri = this.configService.get('CALENDLY_REDIRECT_URI', '');
-        const state = await this.jwtService.signAsync({ sub: userId, purpose: 'calendly_oauth' }, { secret: this.configService.getOrThrow('JWT_ACCESS_SECRET'), expiresIn: '10m' });
+        const state = await this.jwtService.signAsync({ sub: userId, purpose: 'calendly_oauth', redirectTo: redirectTo || '/onboarding/guide' }, { secret: this.configService.getOrThrow('JWT_ACCESS_SECRET'), expiresIn: '10m' });
         const params = new URLSearchParams({
             client_id: clientId,
             response_type: 'code',
@@ -251,6 +251,7 @@ let AuthService = AuthService_1 = class AuthService {
     async handleCalendlyCallback(code, state) {
         const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:3000');
         let userId;
+        let redirectTo = '/onboarding/guide';
         try {
             const payload = await this.jwtService.verifyAsync(state, {
                 secret: this.configService.getOrThrow('JWT_ACCESS_SECRET'),
@@ -258,6 +259,7 @@ let AuthService = AuthService_1 = class AuthService {
             if (payload.purpose !== 'calendly_oauth')
                 throw new Error('Invalid state purpose');
             userId = payload.sub;
+            redirectTo = payload.redirectTo || '/onboarding/guide';
         }
         catch {
             this.logger.warn('[Calendly] Invalid OAuth state — rejecting callback');
@@ -280,7 +282,7 @@ let AuthService = AuthService_1 = class AuthService {
         if (!tokenRes.ok) {
             const errText = await tokenRes.text();
             this.logger.error(`[Calendly] Token exchange failed: ${tokenRes.status} ${errText}`);
-            return `${frontendUrl}/onboarding/guide?calendly=error`;
+            return `${frontendUrl}${redirectTo}?calendly=error`;
         }
         const tokens = await tokenRes.json();
         const accessToken = tokens.access_token;
@@ -293,18 +295,32 @@ let AuthService = AuthService_1 = class AuthService {
             const me = await meRes.json();
             userUri = me.resource?.uri ?? '';
         }
+        let schedulingUrl = '';
+        if (userUri) {
+            try {
+                const etRes = await fetch(`https://api.calendly.com/event_types?user=${userUri}&active=true`, { headers: { Authorization: `Bearer ${accessToken}` } });
+                if (etRes.ok) {
+                    const etData = await etRes.json();
+                    schedulingUrl = etData.collection?.[0]?.scheduling_url ?? '';
+                }
+            }
+            catch {
+                this.logger.warn('[Calendly] Failed to fetch event types for scheduling URL');
+            }
+        }
         await this.prisma.guideProfile.update({
             where: { userId },
             data: {
                 calendarType: 'Calendly',
+                calendarLink: schedulingUrl || undefined,
                 calendlyConnected: true,
                 calendlyAccessToken: accessToken,
                 calendlyRefreshToken: refreshToken,
                 calendlyUserUri: userUri,
             },
         });
-        this.logger.log(`[Calendly] Connected for userId=${userId}`);
-        return `${frontendUrl}/onboarding/guide?calendly=connected`;
+        this.logger.log(`[Calendly] Connected for userId=${userId}, schedulingUrl=${schedulingUrl}`);
+        return `${frontendUrl}${redirectTo}?calendly=connected`;
     }
     async generateTokens(userId, email, roles) {
         const payload = { sub: userId, email, roles };

@@ -38,7 +38,7 @@ export declare class AuthController {
     me(user: CurrentUserData): Promise<CurrentUserData>;
     googleAuth(): void;
     googleCallback(googleUser: any, res: Response): Promise<any>;
-    calendlyAuthUrl(user: CurrentUserData): Promise<{
+    calendlyAuthUrl(user: CurrentUserData, redirectTo?: string): Promise<{
         url: string;
     }>;
     calendlyCallback(code: string, state: string, res: Response): Promise<void>;
