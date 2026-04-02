@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
-import { C, font, PageHeader, Panel, Btn, EmptyState } from '@/components/guide/dashboard-ui';
+import { C, font, PageHeader, Panel, EmptyState } from '@/components/guide/dashboard-ui';
 
 type BookingStatus = 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
 
@@ -76,17 +76,16 @@ export default function MyBookingsPage() {
             const s = statusStyles[b.status as BookingStatus] || statusStyles.PENDING;
             const canCancel = ['PENDING', 'CONFIRMED'].includes(b.status) && start && start > now;
             return (
-              <div key={b.id} style={{
+              <a key={b.id} href={`/seeker/dashboard/bookings/${b.id}`} style={{
                 display: 'grid', gridTemplateColumns: '1fr 160px 100px 80px',
                 gap: '12px', alignItems: 'center', padding: '16px 0',
                 borderBottom: '1px solid rgba(232,184,75,0.08)',
+                textDecoration: 'none', cursor: 'pointer',
               }}>
                 <div>
                   <div style={{ fontFamily: font, fontSize: '14px', fontWeight: 500, color: C.charcoal }}>{b.service?.name}</div>
                   <div style={{ fontFamily: font, fontSize: '12px', color: C.warmGray, marginTop: '2px' }}>with {b.service?.guide?.displayName}</div>
-                  {b.service?.guide?.slug && (
-                    <a href={`/guides/${b.service.guide.slug}`} style={{ fontFamily: font, fontSize: '11px', color: C.gold, textDecoration: 'none' }}>View profile →</a>
-                  )}
+                  <span style={{ fontFamily: font, fontSize: '11px', color: C.gold }}>View details →</span>
                 </div>
                 <div>
                   {start ? (
@@ -104,8 +103,8 @@ export default function MyBookingsPage() {
                   padding: '3px 10px', borderRadius: '20px', fontFamily: font, fontSize: '11px',
                   background: s.bg, color: s.color, border: `1px solid ${s.border}`, textAlign: 'center',
                 }}>{s.label}</span>
-                <div>{canCancel && <Btn variant="danger" size="sm" onClick={() => cancelBooking(b.id)}>Cancel</Btn>}</div>
-              </div>
+                <div>{canCancel && <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); cancelBooking(b.id); }} style={{ padding: '5px 12px', borderRadius: '4px', fontFamily: font, fontSize: '11px', background: 'transparent', color: C.red, border: `1px solid rgba(192,57,43,0.3)`, cursor: 'pointer' }}>Cancel</button>}</div>
+              </a>
             );
           })
         )}

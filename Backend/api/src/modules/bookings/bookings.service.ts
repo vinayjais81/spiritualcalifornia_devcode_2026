@@ -75,10 +75,10 @@ export class BookingsService {
       return { slot, booking };
     });
 
-    // Create Stripe PaymentIntent
-    const priceInCents = Math.round(Number(service.price) * 100);
+    // Create Stripe PaymentIntent (paymentsService expects dollars, not cents)
+    const priceInDollars = Number(service.price);
     const paymentResult = await this.paymentsService.createPaymentIntent({
-      amount: priceInCents,
+      amount: priceInDollars,
       currency: service.currency.toLowerCase(),
       bookingId: result.booking.id,
       metadata: {
@@ -214,7 +214,12 @@ export class BookingsService {
   async cancel(userId: string, bookingId: string, reason?: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { seeker: { select: { userId: true } }, service: { select: { guide: { select: { userId: true } } } } },
+      include: {
+        seeker: { select: { userId: true } },
+        service: { select: { guide: { select: { userId: true } } } },
+        slot: { select: { startTime: true } },
+        payment: true,
+      },
     });
     if (!booking) throw new NotFoundException('Booking not found');
 
@@ -223,7 +228,8 @@ export class BookingsService {
     if (!isSeeker && !isGuide) throw new ForbiddenException('Access denied');
     if (booking.status === 'CANCELLED') throw new BadRequestException('Already cancelled');
 
-    return this.prisma.$transaction(async (tx) => {
+    // Cancel booking + release slot
+    const cancelled = await this.prisma.$transaction(async (tx) => {
       await tx.serviceSlot.update({ where: { id: booking.slotId }, data: { isBooked: false } });
 
       return tx.booking.update({
@@ -236,6 +242,40 @@ export class BookingsService {
         },
       });
     });
+
+    // Process Stripe refund if payment was successful
+    if (booking.payment && booking.payment.status === 'SUCCEEDED') {
+      try {
+        const now = new Date();
+        const sessionStart = booking.slot?.startTime;
+        const hoursUntilSession = sessionStart
+          ? (new Date(sessionStart).getTime() - now.getTime()) / (1000 * 60 * 60)
+          : Infinity;
+
+        // Refund policy: 48+ hours = full, <48 hours = 50%, no-show = 0
+        let refundPercent = 0;
+        if (hoursUntilSession >= 48) {
+          refundPercent = 100;
+        } else if (hoursUntilSession > 0) {
+          refundPercent = 50;
+        }
+
+        if (refundPercent > 0) {
+          const refundAmount = Math.round(Number(booking.payment.amount) * (refundPercent / 100));
+          await this.paymentsService.refund(booking.payment.id, refundAmount);
+          this.logger.log(
+            `Booking ${bookingId} cancelled — ${refundPercent}% refund ($${refundAmount.toFixed(2)}) processed`,
+          );
+        } else {
+          this.logger.log(`Booking ${bookingId} cancelled — no refund (past session time)`);
+        }
+      } catch (err) {
+        this.logger.error(`Failed to process refund for booking ${bookingId}: ${err}`);
+        // Don't throw — cancellation succeeded, refund failure is logged
+      }
+    }
+
+    return cancelled;
   }
 
   // ─── Confirm Booking (Guide) ───────────────────────────────────────────────

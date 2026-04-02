@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
@@ -74,7 +74,9 @@ function formatDuration(min: number) {
 }
 
 function formatDateTime(iso: string) {
+  if (!iso) return 'Time pending...';
   const d = new Date(iso);
+  if (isNaN(d.getTime())) return 'Time pending...';
   return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
     + ' · ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZoneName: 'short' });
 }
@@ -120,6 +122,18 @@ export default function BookPractitionerPage() {
   const [creatingBooking, setCreatingBooking] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [bookingRef, setBookingRef] = useState('');
+
+  // ─── Auto-fill seeker details from logged-in profile ─────────────────────
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setDetails(prev => ({
+        ...prev,
+        firstName: prev.firstName || user.firstName || '',
+        lastName: prev.lastName || user.lastName || '',
+        email: prev.email || user.email || '',
+      }));
+    }
+  }, [isAuthenticated, user]);
 
   // ─── Save booking state to sessionStorage (survives login redirect) ────
   const saveBookingState = useCallback(() => {
@@ -170,23 +184,73 @@ export default function BookPractitionerPage() {
   }, [slug]);
 
   // ─── Listen for Calendly postMessage events ─────────────────────────────
+  // Track selected date/time from date_and_time_selected, confirm on event_scheduled
+  const pendingTimeRef = React.useRef<{ startTime: string; endTime: string } | null>(null);
+
   useEffect(() => {
     const handler = (e: MessageEvent) => {
-      if (e.data?.event === 'calendly.event_scheduled') {
-        const payload = e.data.payload;
-        setCalendlyEvent({
-          uri: payload?.event?.uri || '',
-          inviteeUri: payload?.invitee?.uri || '',
-          startTime: payload?.event?.start_time || '',
-          endTime: payload?.event?.end_time || '',
-          eventName: payload?.event_type?.name || '',
-        });
-        toast.success('Time selected!');
+      const data = e.data;
+      if (!data) return;
+
+      // Log all Calendly messages for debugging
+      if (typeof data === 'object' && data.event && String(data.event).startsWith('calendly.')) {
+        console.log('[Calendly postMessage]', data.event, JSON.stringify(data.payload, null, 2));
+      }
+
+      if (typeof data !== 'object') return;
+
+      // calendly.date_and_time_selected — capture selected slot time
+      if (data.event === 'calendly.date_and_time_selected') {
+        const p = data.payload || {};
+        // Try multiple known payload paths
+        const startTime = p.start_time || p.startTime || p.date_time || p.spot?.start_time || '';
+        if (startTime) {
+          const start = new Date(startTime);
+          const duration = selectedService?.durationMin || 30;
+          const end = new Date(start.getTime() + duration * 60 * 1000);
+          pendingTimeRef.current = { startTime: start.toISOString(), endTime: end.toISOString() };
+        }
+        return;
+      }
+
+      // calendly.event_scheduled — booking confirmed
+      if (data.event === 'calendly.event_scheduled') {
+        const p = data.payload || {};
+        const eventUri = p.event?.uri || '';
+        const inviteeUri = p.invitee?.uri || '';
+
+        // Try all known payload paths for time
+        let startTime = p.event?.start_time || p.event?.startTime || '';
+        let endTime = p.event?.end_time || p.event?.endTime || '';
+
+        // Fall back to the time captured from date_and_time_selected
+        if (!startTime && pendingTimeRef.current) {
+          startTime = pendingTimeRef.current.startTime;
+          endTime = pendingTimeRef.current.endTime;
+        }
+
+        // Only set calendlyEvent if we have a valid time
+        if (startTime) {
+          setCalendlyEvent({
+            uri: eventUri,
+            inviteeUri,
+            startTime,
+            endTime,
+            eventName: p.event_type?.name || '',
+          });
+          pendingTimeRef.current = null;
+          toast.success('Time confirmed!');
+        } else {
+          // Calendly confirmed but no time data — store URIs for reference,
+          // user will confirm time manually
+          pendingTimeRef.current = null;
+          toast.info('Booking confirmed in Calendly! Please enter the date and time below.');
+        }
       }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, []);
+  }, [selectedService?.durationMin]);
 
   // ─── Step Navigation ────────────────────────────────────────────────────
   const goToStep = useCallback((n: number) => {
@@ -254,7 +318,9 @@ export default function BookPractitionerPage() {
   };
 
   // ─── Payment Success ───────────────────────────────────────────────────
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = (paymentIntentId: string) => {
+    // Confirm payment in our backend (updates status to SUCCEEDED + booking to CONFIRMED)
+    api.post('/payments/confirm-payment', { paymentIntentId }).catch(() => {});
     setShowSuccess(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -467,100 +533,85 @@ export default function BookPractitionerPage() {
                 {guide.displayName}&apos;s calendar is managed through Calendly. Select a time that works for you — your spot is held for 15 minutes while you complete the booking.
               </p>
 
-              {/* Calendly Embed */}
-              <div style={{ border: '1px solid rgba(232,184,75,0.2)', borderRadius: '8px', overflow: 'hidden', background: C.white }}>
-                <div style={{ padding: '12px 18px', background: C.offWhite, borderBottom: '1px solid rgba(232,184,75,0.1)', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: font, fontSize: '13px', color: C.charcoal }}>
-                  📅 {guide.displayName} — Calendly Booking
+              {/* Step A: Book in Calendly */}
+              <div style={{ marginBottom: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: C.gold, color: C.white, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: font, fontSize: '13px', fontWeight: 600 }}>1</div>
+                  <span style={{ fontFamily: font, fontSize: '14px', fontWeight: 500, color: C.charcoal }}>Book a slot in Calendly</span>
                 </div>
-                {guide.calendarLink ? (
-                  <iframe src={guide.calendarLink} style={{ width: '100%', height: '500px', border: 'none' }} title="Select a time" />
+                <div style={{ border: '1px solid rgba(232,184,75,0.2)', borderRadius: '8px', overflow: 'hidden', background: C.white }}>
+                  <div style={{ padding: '12px 18px', background: C.offWhite, borderBottom: '1px solid rgba(232,184,75,0.1)', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: font, fontSize: '13px', color: C.charcoal }}>
+                    📅 {guide.displayName} — Calendly Booking
+                  </div>
+                  {guide.calendarLink ? (
+                    <CalendlyEmbed url={guide.calendarLink} prefill={isAuthenticated && user ? { name: `${user.firstName} ${user.lastName}`, email: user.email } : undefined} />
+                  ) : (
+                    <div style={{ height: '500px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', fontFamily: font, fontSize: '13px', color: C.warmGray }}>
+                      <span style={{ fontSize: '48px' }}>📆</span>
+                      <span>Calendar not available. Please contact the practitioner directly.</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Step B: Confirm selected date/time */}
+              <div style={{ marginBottom: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: calendlyEvent ? C.green : C.gold, color: C.white, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: font, fontSize: '13px', fontWeight: 600 }}>
+                    {calendlyEvent ? '✓' : '2'}
+                  </div>
+                  <span style={{ fontFamily: font, fontSize: '14px', fontWeight: 500, color: C.charcoal }}>Confirm your selected date & time</span>
+                </div>
+
+                {calendlyEvent ? (
+                  <div style={{ padding: '16px 20px', background: '#E8F5E9', border: '1px solid #A5D6A7', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: font, fontSize: '13px', color: '#2E7D32' }}>
+                      ✅ <strong>{formatDateTime(calendlyEvent.startTime)}</strong>
+                    </div>
+                    <button onClick={() => setCalendlyEvent(null)} style={{ fontFamily: font, fontSize: '11px', color: C.warmGray, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+                      Change
+                    </button>
+                  </div>
                 ) : (
-                  <div style={{ height: '500px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', fontFamily: font, fontSize: '13px', color: C.warmGray }}>
-                    <span style={{ fontSize: '48px' }}>📆</span>
-                    <span>Calendar not available. Please contact the practitioner directly.</span>
+                  <div style={{ padding: '20px', background: C.white, border: '1px solid rgba(232,184,75,0.2)', borderRadius: '8px' }}>
+                    <p style={{ fontFamily: font, fontSize: '12px', color: C.warmGray, marginBottom: '14px', lineHeight: 1.5 }}>
+                      After scheduling in Calendly above, enter the date and time you booked:
+                    </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                        <label style={{ fontFamily: font, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: C.warmGray, fontWeight: 500 }}>Date *</label>
+                        <input type="date" id="manual-date" min={new Date().toISOString().split('T')[0]} style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.offWhite, border: '1px solid rgba(232,184,75,0.25)', borderRadius: '6px', padding: '11px 14px', outline: 'none', width: '100%' }} />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                        <label style={{ fontFamily: font, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: C.warmGray, fontWeight: 500 }}>Time *</label>
+                        <input type="time" id="manual-time" style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.offWhite, border: '1px solid rgba(232,184,75,0.25)', borderRadius: '6px', padding: '11px 14px', outline: 'none', width: '100%' }} />
+                      </div>
+                    </div>
+                    <button onClick={() => {
+                      const dateInput = document.getElementById('manual-date') as HTMLInputElement;
+                      const timeInput = document.getElementById('manual-time') as HTMLInputElement;
+                      if (!dateInput?.value || !timeInput?.value) { toast.error('Please enter the date and time you booked'); return; }
+                      const start = new Date(`${dateInput.value}T${timeInput.value}:00`);
+                      if (isNaN(start.getTime()) || start <= new Date()) { toast.error('Please enter a valid future date and time'); return; }
+                      const duration = selectedService?.durationMin || 60;
+                      const end = new Date(start.getTime() + duration * 60 * 1000);
+                      setCalendlyEvent({ uri: '', inviteeUri: '', startTime: start.toISOString(), endTime: end.toISOString(), eventName: selectedService?.name || '' });
+                      toast.success('Time confirmed!');
+                    }} style={{ marginTop: '14px', padding: '10px 24px', borderRadius: '6px', border: 'none', background: C.gold, color: C.white, fontFamily: font, fontSize: '12px', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase' as const, cursor: 'pointer' }}>
+                      Confirm Time
+                    </button>
                   </div>
                 )}
               </div>
 
-              {/* Calendly postMessage auto-capture confirmation */}
-              {calendlyEvent && (
-                <div style={{ marginTop: '16px', padding: '14px 18px', background: '#E8F5E9', border: '1px solid #A5D6A7', borderRadius: '8px', fontFamily: font, fontSize: '13px', color: '#2E7D32', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  ✅ Time selected: <strong>{formatDateTime(calendlyEvent.startTime)}</strong>
-                </div>
-              )}
-
-              {/* Manual date/time confirmation — fallback when postMessage doesn't fire */}
-              {!calendlyEvent && (
-                <div style={{ marginTop: '20px', padding: '20px', background: C.white, border: '1px solid rgba(232,184,75,0.2)', borderRadius: '8px' }}>
-                  <div style={{ fontFamily: font, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: C.warmGray, marginBottom: '12px', fontWeight: 500 }}>
-                    Confirm Your Selected Time
-                  </div>
-                  <p style={{ fontFamily: font, fontSize: '12px', color: C.warmGray, marginBottom: '14px', lineHeight: 1.5 }}>
-                    After booking in Calendly above, enter the date and time you selected:
-                  </p>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                      <label style={{ fontFamily: font, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: C.warmGray, fontWeight: 500 }}>Date *</label>
-                      <input
-                        type="date"
-                        id="manual-date"
-                        min={new Date().toISOString().split('T')[0]}
-                        style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.white, border: '1px solid rgba(232,184,75,0.25)', borderRadius: '4px', padding: '11px 14px', outline: 'none', width: '100%' }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                      <label style={{ fontFamily: font, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: C.warmGray, fontWeight: 500 }}>Time *</label>
-                      <input
-                        type="time"
-                        id="manual-time"
-                        style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.white, border: '1px solid rgba(232,184,75,0.25)', borderRadius: '4px', padding: '11px 14px', outline: 'none', width: '100%' }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <div style={{ marginTop: '16px', padding: '14px 18px', background: C.goldPale, border: '1px solid rgba(232,184,75,0.2)', borderRadius: '8px', fontFamily: font, fontSize: '12px', color: C.charcoal, lineHeight: 1.6 }}>
-                Book a time slot in the Calendly calendar above, then confirm the date and time below to proceed.
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '28px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <button onClick={() => goToStep(1)} style={btnSecondary}>← Back</button>
                 <button onClick={() => {
-                  // If Calendly postMessage already captured the event, proceed
-                  if (calendlyEvent) {
-                    goToStep(3);
-                    return;
-                  }
-                  // Otherwise read from manual inputs
-                  const dateInput = document.getElementById('manual-date') as HTMLInputElement;
-                  const timeInput = document.getElementById('manual-time') as HTMLInputElement;
-                  const dateVal = dateInput?.value;
-                  const timeVal = timeInput?.value;
-
-                  if (!dateVal || !timeVal) {
-                    toast.error('Please select a date and time');
-                    return;
-                  }
-
-                  const startTime = new Date(`${dateVal}T${timeVal}:00`);
-                  const duration = selectedService?.durationMin || 60;
-                  const endTime = new Date(startTime.getTime() + duration * 60 * 1000);
-
-                  if (startTime <= new Date()) {
-                    toast.error('Please select a future date and time');
-                    return;
-                  }
-
-                  setCalendlyEvent({
-                    uri: '',
-                    inviteeUri: '',
-                    startTime: startTime.toISOString(),
-                    endTime: endTime.toISOString(),
-                    eventName: selectedService?.name || '',
-                  });
-                  goToStep(3);
-                }} style={btnPrimary}>I&apos;ve Selected a Time →</button>
+                  if (calendlyEvent && calendlyEvent.startTime) { goToStep(3); }
+                  else { toast.error('Please confirm your selected date and time above'); }
+                }} style={{ ...btnPrimary, opacity: calendlyEvent ? 1 : 0.5 }}>
+                  Continue →
+                </button>
               </div>
             </div>
           )}
@@ -737,6 +788,47 @@ export default function BookPractitionerPage() {
 // ═════════════════════════════════════════════════════════════════════════════
 // SUB-COMPONENTS
 // ═════════════════════════════════════════════════════════════════════════════
+
+function CalendlyEmbed({ url, prefill }: { url: string; prefill?: { name: string; email: string } }) {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    // Load Calendly widget CSS
+    const link = document.createElement('link');
+    link.href = 'https://assets.calendly.com/assets/external/widget.css';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+
+    // Load Calendly widget SDK
+    const script = document.createElement('script');
+    script.src = 'https://assets.calendly.com/assets/external/widget.js';
+    script.async = true;
+    script.onload = () => {
+      if (containerRef.current && (window as any).Calendly) {
+        containerRef.current.innerHTML = '';
+        (window as any).Calendly.initInlineWidget({
+          url: prefill
+            ? `${url}?hide_gdpr_banner=1&name=${encodeURIComponent(prefill.name)}&email=${encodeURIComponent(prefill.email)}`
+            : `${url}?hide_gdpr_banner=1`,
+          parentElement: containerRef.current,
+        });
+      }
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      try { document.head.removeChild(script); } catch {}
+      try { document.head.removeChild(link); } catch {}
+    };
+  }, [url, prefill]);
+
+  return (
+    <div
+      ref={containerRef}
+      style={{ minWidth: '320px', height: '660px' }}
+    />
+  );
+}
 
 function FormField({ label, value, onChange, placeholder, type, multiline, select, options }: {
   label: string; value: string; onChange: (v: string) => void; placeholder?: string;

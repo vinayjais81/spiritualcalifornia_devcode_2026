@@ -97,4 +97,12 @@ export class PaymentsController {
   }) {
     return this.paymentsService.createPaymentIntent(data);
   }
+
+  // ─── Confirm Payment (called by frontend after Stripe.confirmPayment) ─────
+
+  @Post('confirm-payment')
+  @ApiOperation({ summary: 'Confirm payment after successful Stripe charge (fallback for webhook)' })
+  confirmPayment(@Body() data: { paymentIntentId: string }) {
+    return this.paymentsService.confirmPayment(data.paymentIntentId);
+  }
 }

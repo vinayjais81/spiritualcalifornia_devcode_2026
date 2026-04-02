@@ -132,4 +132,28 @@ export declare class PaymentsController {
         amount: number;
         currency: string;
     }>;
+    confirmPayment(data: {
+        paymentIntentId: string;
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        currency: string;
+        status: import(".prisma/client").$Enums.PaymentStatus;
+        stripePaymentIntentId: string;
+        stripeCheckoutSessionId: string | null;
+        stripeTransferId: string | null;
+        amount: import("@prisma/client-runtime-utils").Decimal;
+        platformFee: import("@prisma/client-runtime-utils").Decimal;
+        guideAmount: import("@prisma/client-runtime-utils").Decimal;
+        paymentType: import(".prisma/client").$Enums.PaymentType;
+        refundedAmount: import("@prisma/client-runtime-utils").Decimal | null;
+        stripeRefundId: string | null;
+        paymentMethod: string | null;
+        metadata: import("@prisma/client/runtime/client").JsonValue | null;
+        bookingId: string | null;
+        orderId: string | null;
+        ticketPurchaseId: string | null;
+        tourBookingId: string | null;
+    } | undefined>;
 }

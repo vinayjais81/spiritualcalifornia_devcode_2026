@@ -56,6 +56,9 @@ let PaymentsController = class PaymentsController {
     createIntent(data) {
         return this.paymentsService.createPaymentIntent(data);
     }
+    confirmPayment(data) {
+        return this.paymentsService.confirmPayment(data.paymentIntentId);
+    }
 };
 exports.PaymentsController = PaymentsController;
 __decorate([
@@ -131,6 +134,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], PaymentsController.prototype, "createIntent", null);
+__decorate([
+    (0, common_1.Post)('confirm-payment'),
+    (0, swagger_1.ApiOperation)({ summary: 'Confirm payment after successful Stripe charge (fallback for webhook)' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], PaymentsController.prototype, "confirmPayment", null);
 exports.PaymentsController = PaymentsController = __decorate([
     (0, swagger_1.ApiTags)('Payments'),
     (0, common_1.Controller)('payments'),

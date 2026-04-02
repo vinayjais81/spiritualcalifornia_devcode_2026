@@ -75,9 +75,9 @@ let BookingsService = BookingsService_1 = class BookingsService {
             });
             return { slot, booking };
         });
-        const priceInCents = Math.round(Number(service.price) * 100);
+        const priceInDollars = Number(service.price);
         const paymentResult = await this.paymentsService.createPaymentIntent({
-            amount: priceInCents,
+            amount: priceInDollars,
             currency: service.currency.toLowerCase(),
             bookingId: result.booking.id,
             metadata: {
@@ -196,7 +196,12 @@ let BookingsService = BookingsService_1 = class BookingsService {
     async cancel(userId, bookingId, reason) {
         const booking = await this.prisma.booking.findUnique({
             where: { id: bookingId },
-            include: { seeker: { select: { userId: true } }, service: { select: { guide: { select: { userId: true } } } } },
+            include: {
+                seeker: { select: { userId: true } },
+                service: { select: { guide: { select: { userId: true } } } },
+                slot: { select: { startTime: true } },
+                payment: true,
+            },
         });
         if (!booking)
             throw new common_1.NotFoundException('Booking not found');
@@ -206,7 +211,7 @@ let BookingsService = BookingsService_1 = class BookingsService {
             throw new common_1.ForbiddenException('Access denied');
         if (booking.status === 'CANCELLED')
             throw new common_1.BadRequestException('Already cancelled');
-        return this.prisma.$transaction(async (tx) => {
+        const cancelled = await this.prisma.$transaction(async (tx) => {
             await tx.serviceSlot.update({ where: { id: booking.slotId }, data: { isBooked: false } });
             return tx.booking.update({
                 where: { id: bookingId },
@@ -218,6 +223,34 @@ let BookingsService = BookingsService_1 = class BookingsService {
                 },
             });
         });
+        if (booking.payment && booking.payment.status === 'SUCCEEDED') {
+            try {
+                const now = new Date();
+                const sessionStart = booking.slot?.startTime;
+                const hoursUntilSession = sessionStart
+                    ? (new Date(sessionStart).getTime() - now.getTime()) / (1000 * 60 * 60)
+                    : Infinity;
+                let refundPercent = 0;
+                if (hoursUntilSession >= 48) {
+                    refundPercent = 100;
+                }
+                else if (hoursUntilSession > 0) {
+                    refundPercent = 50;
+                }
+                if (refundPercent > 0) {
+                    const refundAmount = Math.round(Number(booking.payment.amount) * (refundPercent / 100));
+                    await this.paymentsService.refund(booking.payment.id, refundAmount);
+                    this.logger.log(`Booking ${bookingId} cancelled — ${refundPercent}% refund ($${refundAmount.toFixed(2)}) processed`);
+                }
+                else {
+                    this.logger.log(`Booking ${bookingId} cancelled — no refund (past session time)`);
+                }
+            }
+            catch (err) {
+                this.logger.error(`Failed to process refund for booking ${bookingId}: ${err}`);
+            }
+        }
+        return cancelled;
     }
     async confirm(userId, bookingId) {
         const booking = await this.prisma.booking.findUnique({

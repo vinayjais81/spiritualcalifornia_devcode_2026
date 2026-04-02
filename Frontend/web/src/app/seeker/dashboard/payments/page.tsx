@@ -33,7 +33,7 @@ export default function PaymentHistoryPage() {
 
   if (loading) return <div style={{ fontFamily: font, fontSize: '13px', color: C.warmGray, padding: '40px' }}>Loading...</div>;
 
-  const totalSpent = payments.filter(p => p.status === 'SUCCEEDED').reduce((sum: number, p: any) => sum + Number(p.amount) / 100, 0);
+  const totalSpent = payments.filter(p => p.status === 'SUCCEEDED').reduce((sum: number, p: any) => sum + Number(p.amount), 0);
 
   return (
     <div>
@@ -53,7 +53,7 @@ export default function PaymentHistoryPage() {
               const { type, name } = getPaymentLabel(p);
               const date = new Date(p.createdAt);
               const s = statusColors[p.status] || statusColors.PENDING;
-              const amount = (Number(p.amount) / 100).toFixed(2);
+              const amount = Number(p.amount).toFixed(2);
               return (
                 <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px 100px 100px', gap: '10px', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(232,184,75,0.06)' }}>
                   <div>
