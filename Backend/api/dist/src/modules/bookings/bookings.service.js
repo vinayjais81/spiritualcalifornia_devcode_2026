@@ -168,9 +168,10 @@ let BookingsService = BookingsService_1 = class BookingsService {
         return this.prisma.booking.findMany({
             where: { service: { guideId: guide.id } },
             include: {
-                service: { select: { name: true, type: true, durationMin: true } },
+                service: { select: { id: true, name: true, type: true, durationMin: true, price: true } },
                 slot: { select: { startTime: true, endTime: true } },
-                seeker: { select: { user: { select: { firstName: true, lastName: true, email: true, avatarUrl: true } } } },
+                seeker: { select: { user: { select: { firstName: true, lastName: true, email: true, phone: true, avatarUrl: true } } } },
+                payment: { select: { id: true, status: true, amount: true, paymentMethod: true, createdAt: true } },
             },
             orderBy: { createdAt: 'desc' },
         });

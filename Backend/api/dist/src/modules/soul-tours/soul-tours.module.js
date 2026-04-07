@@ -10,13 +10,17 @@ exports.SoulToursModule = void 0;
 const common_1 = require("@nestjs/common");
 const soul_tours_controller_1 = require("./soul-tours.controller");
 const soul_tours_service_1 = require("./soul-tours.service");
+const tour_tasks_queue_1 = require("./tour-tasks.queue");
+const payments_module_1 = require("../payments/payments.module");
+const notifications_module_1 = require("../notifications/notifications.module");
 let SoulToursModule = class SoulToursModule {
 };
 exports.SoulToursModule = SoulToursModule;
 exports.SoulToursModule = SoulToursModule = __decorate([
     (0, common_1.Module)({
+        imports: [payments_module_1.PaymentsModule, notifications_module_1.NotificationsModule],
         controllers: [soul_tours_controller_1.SoulToursController],
-        providers: [soul_tours_service_1.SoulToursService],
+        providers: [soul_tours_service_1.SoulToursService, tour_tasks_queue_1.TourTasksQueue],
         exports: [soul_tours_service_1.SoulToursService],
     })
 ], SoulToursModule);

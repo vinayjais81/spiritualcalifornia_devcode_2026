@@ -32,4 +32,55 @@ export declare class EmailService {
     }): Promise<import("resend").CreateEmailResponse | null>;
     sendWelcome(to: string, name: string): Promise<import("resend").CreateEmailResponse | null>;
     sendVerificationApproved(to: string, guideName: string): Promise<import("resend").CreateEmailResponse | null>;
+    private tourEmailShell;
+    sendTourDepositConfirmation(to: string, data: {
+        seekerName: string;
+        tourTitle: string;
+        bookingReference: string;
+        departureDates: string;
+        location: string;
+        travelers: number;
+        roomType: string;
+        depositPaid: string;
+        balanceDue: string;
+        balanceDueDate: string;
+        guideName: string;
+        bookingId: string;
+        isPaidInFull: boolean;
+    }): Promise<import("resend").CreateEmailResponse | null>;
+    sendTourBalancePaid(to: string, data: {
+        seekerName: string;
+        tourTitle: string;
+        bookingReference: string;
+        departureDates: string;
+        totalPaid: string;
+        bookingId: string;
+    }): Promise<import("resend").CreateEmailResponse | null>;
+    sendTourBalanceReminder(to: string, data: {
+        seekerName: string;
+        tourTitle: string;
+        bookingReference: string;
+        departureDates: string;
+        balanceDue: string;
+        balanceDueDate: string;
+        daysUntilDue: number;
+        bookingId: string;
+    }): Promise<import("resend").CreateEmailResponse | null>;
+    sendTourDepartureReminder(to: string, data: {
+        seekerName: string;
+        tourTitle: string;
+        bookingReference: string;
+        departureDates: string;
+        meetingPoint: string;
+        daysUntilDeparture: number;
+        bookingId: string;
+    }): Promise<import("resend").CreateEmailResponse | null>;
+    sendTourCancellation(to: string, data: {
+        seekerName: string;
+        tourTitle: string;
+        bookingReference: string;
+        refundAmount: string;
+        refundTier: 'FULL' | 'HALF' | 'NONE';
+        cancellationReason: string | null;
+    }): Promise<import("resend").CreateEmailResponse | null>;
 }

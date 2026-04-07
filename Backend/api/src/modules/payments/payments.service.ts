@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, Logger } from '@nes
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service';
 import { StripeService } from './stripe.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class PaymentsService {
@@ -12,6 +13,7 @@ export class PaymentsService {
     private readonly prisma: PrismaService,
     private readonly stripeService: StripeService,
     private readonly config: ConfigService,
+    private readonly notifications: NotificationsService,
   ) {
     this.commissionPercent = Number(this.config.get('STRIPE_PLATFORM_COMMISSION_PERCENT', '15'));
   }
@@ -146,13 +148,23 @@ export class PaymentsService {
       });
     }
     if (payment.tourBookingId) {
+      // Clear holdExpiresAt so the hold reaper doesn't release this seat;
+      // promote PENDING → DEPOSIT_PAID (or FULLY_PAID if user paid in full).
       await this.prisma.tourBooking.update({
         where: { id: payment.tourBookingId },
         data: {
           status: payment.paymentType === 'DEPOSIT' ? 'DEPOSIT_PAID' : 'FULLY_PAID',
-          ...(payment.paymentType === 'DEPOSIT' ? { depositPaidAt: new Date() } : { balancePaidAt: new Date() }),
+          holdExpiresAt: null,
+          ...(payment.paymentType === 'DEPOSIT'
+            ? { depositPaidAt: new Date() }
+            : { balancePaidAt: new Date() }),
         },
       });
+
+      // Fire-and-forget tour notification (deposit/balance/full)
+      this.sendTourPaymentNotification(payment.tourBookingId, payment.paymentType).catch((err) =>
+        this.logger.error(`Tour notification failed for booking ${payment.tourBookingId}: ${err.message}`),
+      );
     }
 
     // Update guide payout account balance
@@ -160,6 +172,66 @@ export class PaymentsService {
 
     this.logger.log(`Payment confirmed: ${payment.id}`);
     return updated;
+  }
+
+  // ─── Tour: dispatch confirmation/balance-paid email ────────────────────────
+
+  private async sendTourPaymentNotification(tourBookingId: string, paymentType: string) {
+    const booking = await this.prisma.tourBooking.findUnique({
+      where: { id: tourBookingId },
+      include: {
+        tour: { select: { title: true, location: true, guide: { select: { displayName: true } } } },
+        roomType: { select: { name: true } },
+        departure: { select: { startDate: true, endDate: true } },
+        seeker: { select: { userId: true } },
+      },
+    });
+    if (!booking || !booking.seeker) return;
+
+    const fmt = (d: Date | null | undefined) =>
+      d ? new Date(d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '—';
+    const dep = booking.departure;
+    const departureDates = dep ? `${fmt(dep.startDate)} – ${fmt(dep.endDate)}` : 'TBD';
+    const reference = booking.bookingReference || booking.id.slice(-8).toUpperCase();
+    const seekerName = booking.contactFirstName || 'there';
+    const seekerEmail = booking.contactEmail;
+    if (!seekerEmail) return;
+
+    if (paymentType === 'BALANCE') {
+      // Balance payment → "balance paid" email
+      await this.notifications.notifyTourBalancePaid({
+        seekerUserId: booking.seeker.userId,
+        seekerEmail,
+        seekerName,
+        tourTitle: booking.tour.title,
+        bookingReference: reference,
+        bookingId: booking.id,
+        departureDates,
+        totalPaid: `$${Number(booking.totalAmount).toLocaleString()}`,
+      });
+    } else {
+      // Deposit or Full payment → "deposit/booking confirmed" email
+      const deposit = Number(booking.depositAmount ?? booking.totalAmount);
+      const balance = Number(booking.balanceAmount ?? 0);
+      const isPaidInFull = paymentType === 'FULL' || balance === 0;
+      await this.notifications.notifyTourDepositConfirmed({
+        seekerUserId: booking.seeker.userId,
+        seekerEmail,
+        seekerName,
+        tourTitle: booking.tour.title,
+        bookingReference: reference,
+        bookingId: booking.id,
+        departureDates,
+        location: booking.tour.location || 'TBD',
+        travelers: booking.travelers,
+        roomType: booking.roomType.name,
+        depositPaid: `$${deposit.toLocaleString()}`,
+        balanceDue: `$${balance.toLocaleString()}`,
+        balanceDueDate: booking.balanceDueAt ? fmt(booking.balanceDueAt) : 'TBD',
+        guideName: booking.tour.guide.displayName,
+        isPaidInFull,
+      });
+    }
   }
 
   // ─── Update Guide Balance ──────────────────────────────────────────────────

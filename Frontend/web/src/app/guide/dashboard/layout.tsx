@@ -47,10 +47,12 @@ const sidebarSections = [
   ]},
   { label: 'Offerings', items: [
     { href: '/guide/dashboard/services', icon: '✨', name: 'Services & Prices' },
+    { href: '/guide/dashboard/bookings', icon: '📋', name: 'Client Bookings' },
     { href: '/guide/dashboard/availability', icon: '🕐', name: 'Availability' },
+    { href: '/guide/dashboard/calendar', icon: '🗓️', name: 'Calendar / Booking' },
     { href: '/guide/dashboard/products', icon: '🛍️', name: 'Products' },
     { href: '/guide/dashboard/events', icon: '📅', name: 'Events' },
-    { href: '/guide/dashboard/calendar', icon: '🗓️', name: 'Calendar / Booking' },
+    { href: '/guide/dashboard/tours', icon: '🌍', name: 'Soul Tours' },
   ]},
   { label: 'Content', items: [
     { href: '/guide/dashboard/blog', icon: '✍️', name: 'My Blog' },
@@ -140,7 +142,7 @@ export default function GuideDashboardLayout({ children }: { children: React.Rea
 
         {/* ── SIDEBAR ──────────────────────────────────────────── */}
         <aside style={{
-          width: '240px', minHeight: 'calc(100vh - 69px)', background: C.white,
+          width: '240px', height: 'calc(100vh - 69px)', background: C.white,
           borderRight: '1px solid rgba(232,184,75,0.12)', position: 'fixed',
           top: '69px', left: 0, overflowY: 'auto', zIndex: 100,
         }}>

@@ -298,6 +298,7 @@ let GuidesService = GuidesService_1 = class GuidesService {
             calendarType: guide.calendarType,
             calendarLink: guide.calendarLink,
             calendlyConnected: guide.calendlyConnected,
+            calendlyUserUri: guide.calendlyUserUri,
             sessionPricingJson: guide.sessionPricingJson,
             isPublished: guide.isPublished,
             isVerified: guide.isVerified,

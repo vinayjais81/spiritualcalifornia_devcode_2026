@@ -123,6 +123,13 @@ enum TourBookingStatus {
   COMPLETED
 }
 
+enum DepartureStatus {
+  SCHEDULED
+  FULL
+  CANCELLED
+  COMPLETED
+}
+
 enum PromoCodeType {
   PERCENTAGE
   FIXED_AMOUNT
@@ -961,6 +968,8 @@ model SoulTour {
   slug          String   @unique
   description   String?
   shortDesc     String?
+  // startDate/endDate kept for back-compat with existing data + as the
+  // tour's "primary" departure summary; bookings always reference TourDeparture.
   startDate     DateTime
   endDate       DateTime
   timezone      String   @default("America/Los_Angeles")
@@ -979,20 +988,78 @@ model SoulTour {
   included      String[] // What's included in the price
   notIncluded   String[] // What's NOT included
   requirements  String?  // Participation requirements
-  depositMin    Decimal? @db.Decimal(10, 2) // Minimum deposit amount
+  depositMin    Decimal? @db.Decimal(10, 2) // Legacy: total min deposit (kept for back-compat)
+  // ── Phase A additions ──
+  difficultyLevel       String?   // EASY | MODERATE | CHALLENGING
+  languages             String[]  // ["English", "Spanish"]
+  meetingPoint          String?   // "Kathmandu Tribhuvan International Airport (KTM)"
+  cancellationPolicy    Json?     // { fullRefundDaysBefore: 90, halfRefundDaysBefore: 60 } — falls back to platform default
+  balanceDueDaysBefore  Int       @default(60)
+  minDepositPerPerson   Decimal?  @db.Decimal(10, 2)
+  // ─────────────────────
   isPublished   Boolean  @default(false)
   isCancelled   Boolean  @default(false)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  guide     GuideProfile   @relation(fields: [guideId], references: [id], onDelete: Cascade)
-  roomTypes TourRoomType[]
-  bookings  TourBooking[]
+  guide      GuideProfile       @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  roomTypes  TourRoomType[]
+  bookings   TourBooking[]
+  departures TourDeparture[]
+  itinerary  TourItineraryDay[]
 
   @@index([guideId, startDate])
   @@index([slug])
   @@index([isPublished, startDate])
   @@map("soul_tours")
+}
+
+// ─────────────────────────────────────────────
+// TOUR DEPARTURES — bookable instances of a tour template
+// ─────────────────────────────────────────────
+
+model TourDeparture {
+  id              String          @id @default(cuid())
+  tourId          String
+  startDate       DateTime
+  endDate         DateTime
+  capacity        Int
+  spotsRemaining  Int
+  status          DepartureStatus @default(SCHEDULED)
+  priceOverride   Decimal?        @db.Decimal(10, 2)
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  tour     SoulTour      @relation(fields: [tourId], references: [id], onDelete: Cascade)
+  bookings TourBooking[]
+
+  @@index([tourId, startDate])
+  @@index([status, startDate])
+  @@map("tour_departures")
+}
+
+// ─────────────────────────────────────────────
+// TOUR ITINERARY — day-by-day schedule
+// ─────────────────────────────────────────────
+
+model TourItineraryDay {
+  id            String   @id @default(cuid())
+  tourId        String
+  dayNumber     Int
+  title         String
+  description   String
+  location      String?
+  meals         String[] // ["breakfast", "lunch", "dinner"]
+  accommodation String?
+  activities    String[]
+  imageUrl      String?
+  createdAt     DateTime @default(now())
+
+  tour SoulTour @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@unique([tourId, dayNumber])
+  @@map("tour_itinerary_days")
 }
 
 model TourRoomType {
@@ -1017,17 +1084,31 @@ model TourRoomType {
 model TourBooking {
   id               String            @id @default(cuid())
   tourId           String
+  departureId      String?           // Phase A: bookings now reference a specific departure
   seekerId         String
   roomTypeId       String
   travelers        Int               @default(1)
   totalAmount      Decimal           @db.Decimal(10, 2)
   depositAmount    Decimal?          @db.Decimal(10, 2)
+  chosenDepositAmount Decimal?       @db.Decimal(10, 2) // What the user actually picked in checkout
   depositPaidAt    DateTime?
   balanceAmount    Decimal?          @db.Decimal(10, 2)
+  balanceDueAt     DateTime?
+  balanceReminderSentAt DateTime?
   balancePaidAt    DateTime?
+  holdExpiresAt    DateTime?         // 24h hold; cleared on DEPOSIT_PAID
+  bookingReference String?           @unique // Short human code e.g. "SCT-NEPAL-A1B2"
+  paymentMethod    String?           // STRIPE_CARD (Phase 2: BANK_TRANSFER, CRYPTO)
   currency         String            @default("USD")
   status           TourBookingStatus @default(PENDING)
+  // Booking-level health & preference fields (per design Step 3)
+  dietaryRequirements String?        // e.g. "vegetarian"
+  dietaryNotes        String?
+  healthConditions    String?
+  intentions          String?
+  // Legacy free-text catch-all
   specialRequests  String?
+  // Primary contact (kept for back-compat; now mirrors first traveler in TourBookingTraveler)
   contactFirstName String
   contactLastName  String
   contactEmail     String
@@ -1037,14 +1118,44 @@ model TourBooking {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
-  tour     SoulTour      @relation(fields: [tourId], references: [id])
-  seeker   SeekerProfile @relation(fields: [seekerId], references: [id])
-  roomType TourRoomType  @relation(fields: [roomTypeId], references: [id])
-  payments Payment[]     @relation("TourBookingPayments")
+  tour      SoulTour              @relation(fields: [tourId], references: [id])
+  departure TourDeparture?        @relation(fields: [departureId], references: [id])
+  seeker    SeekerProfile         @relation(fields: [seekerId], references: [id])
+  roomType  TourRoomType          @relation(fields: [roomTypeId], references: [id])
+  payments  Payment[]             @relation("TourBookingPayments")
+  travelers_rel TourBookingTraveler[]
 
   @@index([tourId])
+  @@index([departureId])
   @@index([seekerId])
+  @@index([status, holdExpiresAt])
+  @@index([status, balanceDueAt])
   @@map("tour_bookings")
+}
+
+// ─────────────────────────────────────────────
+// TOUR BOOKING TRAVELER — per-person manifest
+// passportNumber is AES-256-GCM encrypted at rest (see common/crypto/passport-cipher.ts)
+// ─────────────────────────────────────────────
+
+model TourBookingTraveler {
+  id              String   @id @default(cuid())
+  bookingId       String
+  isPrimary       Boolean  @default(false)
+  firstName       String
+  lastName        String
+  dateOfBirth     DateTime
+  nationality     String
+  passportNumber  String   // AES-256-GCM encrypted
+  passportExpiry  DateTime
+  email           String?
+  phone           String?
+  createdAt       DateTime @default(now())
+
+  booking TourBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@map("tour_booking_travelers")
 }
 
 // ─────────────────────────────────────────────

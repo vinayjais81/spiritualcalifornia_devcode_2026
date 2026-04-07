@@ -4,6 +4,15 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 
+interface Departure {
+  id: string;
+  startDate: string;
+  endDate: string;
+  capacity: number;
+  spotsRemaining: number;
+  status: string;
+}
+
 interface Tour {
   id: string;
   title: string;
@@ -11,38 +20,34 @@ interface Tour {
   startDate: string;
   endDate: string;
   location: string | null;
-  basePrice: number;
+  basePrice: number | string;
   capacity: number;
   spotsRemaining: number;
   coverImageUrl: string | null;
   shortDesc: string | null;
   highlights: string[];
+  difficultyLevel: string | null;
   guide: { displayName: string; slug: string; user: { avatarUrl: string | null } };
-  roomTypes: Array<{ name: string; totalPrice: number }>;
+  roomTypes: Array<{ name: string; totalPrice: number | string }>;
+  departures: Departure[];
 }
 
-const fallbackTours: Tour[] = [
-  { id: 't1', title: 'Nepal — Himalayan Awakening', slug: 'nepal-himalayan-awakening', startDate: '2026-05-09', endDate: '2026-05-18', location: 'Kathmandu, Pokhara, Lumbini', basePrice: 3800, capacity: 12, spotsRemaining: 5, coverImageUrl: null, shortDesc: 'A transformative 10-day journey through sacred sites, ancient monasteries, and meditation retreats in the Himalayan foothills.', highlights: ['Temple visits', 'Meditation retreat', 'Mountain trekking'], guide: { displayName: 'Luna Rivera', slug: 'luna-rivera', user: { avatarUrl: null } }, roomTypes: [{ name: 'Shared', totalPrice: 3800 }] },
-  { id: 't2', title: 'Bali — Sacred Waters Journey', slug: 'bali-sacred-waters', startDate: '2026-06-14', endDate: '2026-06-22', location: 'Ubud, Tirta Empul, Uluwatu', basePrice: 2900, capacity: 16, spotsRemaining: 9, coverImageUrl: null, shortDesc: 'Immerse yourself in Balinese healing traditions — water purification ceremonies, rice terrace meditation, and temple offerings.', highlights: ['Water ceremonies', 'Rice terrace walks', 'Temple rituals'], guide: { displayName: 'Priya Sharma', slug: 'priya-sharma', user: { avatarUrl: null } }, roomTypes: [{ name: 'Shared', totalPrice: 2900 }] },
-  { id: 't3', title: 'Sedona — Vortex & Vision Quest', slug: 'sedona-vortex-quest', startDate: '2026-07-05', endDate: '2026-07-10', location: 'Sedona, Arizona', basePrice: 1800, capacity: 10, spotsRemaining: 3, coverImageUrl: null, shortDesc: 'Five days exploring Sedona\'s legendary energy vortexes, with guided vision quests and sweat lodge ceremonies.', highlights: ['Vortex hikes', 'Vision quest', 'Sweat lodge'], guide: { displayName: 'James O\'Brien', slug: 'james-obrien', user: { avatarUrl: null } }, roomTypes: [{ name: 'Shared', totalPrice: 1800 }] },
-];
-
-function fmtDate(d: string) { return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
-function daysBetween(a: string, b: string) { return Math.ceil((new Date(b).getTime() - new Date(a).getTime()) / 86400000); }
+function fmtDate(d: string) {
+  return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+function daysBetween(a: string, b: string) {
+  return Math.ceil((new Date(b).getTime() - new Date(a).getTime()) / 86400000);
+}
 
 export default function TravelsPage() {
-  const [tours, setTours] = useState<Tour[]>(fallbackTours);
+  const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetch = async () => {
-      try {
-        const res = await api.get('/soul-tours');
-        if (res.data?.tours?.length) setTours(res.data.tours);
-      } catch { /* keep fallback */ }
-      finally { setLoading(false); }
-    };
-    fetch();
+    api.get('/soul-tours')
+      .then((res) => setTours(res.data?.tours || []))
+      .catch(() => setTours([]))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -58,87 +63,163 @@ export default function TravelsPage() {
         </p>
       </div>
 
-      {/* Tour cards */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
-        {tours.map(tour => {
-          const days = daysBetween(tour.startDate, tour.endDate);
-          return (
-            <div key={tour.id} style={{
-              background: '#fff', border: '1px solid rgba(232,184,75,0.1)', borderRadius: 16,
-              overflow: 'hidden', display: 'grid', gridTemplateColumns: '380px 1fr',
-              transition: 'box-shadow 0.3s',
-            }}>
-              {/* Image */}
-              <div style={{ background: 'linear-gradient(135deg, #2C2420, #3A3530)', minHeight: 280, position: 'relative', overflow: 'hidden' }}>
-                {tour.coverImageUrl ? (
-                  <img src={tour.coverImageUrl} alt={tour.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 64 }}>🏔️</div>
-                )}
-                {tour.spotsRemaining <= 5 && (
-                  <span style={{
-                    position: 'absolute', top: 16, right: 16, padding: '5px 12px', borderRadius: 20,
-                    background: '#C0392B', color: '#fff', fontSize: 10, fontWeight: 600,
-                  }}>
-                    {tour.spotsRemaining} spots left
-                  </span>
-                )}
-              </div>
+      {/* Loading */}
+      {loading && (
+        <div style={{ textAlign: 'center', padding: 80, color: '#8A8278', fontSize: 14 }}>
+          Loading journeys…
+        </div>
+      )}
 
-              {/* Content */}
-              <div style={{ padding: '32px 36px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-                  <span style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#E8B84B', fontWeight: 600 }}>
-                    {fmtDate(tour.startDate)} – {fmtDate(tour.endDate)}, {new Date(tour.startDate).getFullYear()}
-                  </span>
-                  <span style={{ padding: '3px 10px', borderRadius: 12, background: 'rgba(232,184,75,0.1)', color: '#B8960F', fontSize: 10, fontWeight: 600 }}>
-                    {days} days
-                  </span>
-                </div>
-                <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 400, color: '#3A3530', lineHeight: 1.2, marginBottom: 10 }}>
-                  {tour.title}
-                </h2>
-                {tour.shortDesc && (
-                  <p style={{ fontSize: 14, color: '#8A8278', lineHeight: 1.65, marginBottom: 16 }}>{tour.shortDesc}</p>
-                )}
-                {tour.location && <div style={{ fontSize: 12, color: '#8A8278', marginBottom: 12 }}>📍 {tour.location}</div>}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
-                  {tour.highlights.slice(0, 4).map(h => (
-                    <span key={h} style={{ padding: '4px 12px', borderRadius: 20, background: '#FDF6E3', border: '1px solid rgba(232,184,75,0.2)', fontSize: 11, color: '#3A3530' }}>
-                      {h}
-                    </span>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: '#FDF6E3', border: '2px solid #E8B84B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#E8B84B' }}>
-                      {tour.guide.displayName.split(' ').map(w => w[0]).join('').slice(0, 2)}
+      {/* Empty */}
+      {!loading && tours.length === 0 && (
+        <div style={{
+          textAlign: 'center', padding: 80,
+          background: '#fff', border: '1px dashed rgba(232,184,75,0.3)', borderRadius: 16,
+        }}>
+          <div style={{ fontSize: 48, marginBottom: 16 }}>🏔️</div>
+          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 28, color: '#3A3530', marginBottom: 8 }}>
+            New journeys coming soon
+          </h2>
+          <p style={{ color: '#8A8278', fontSize: 14, maxWidth: 480, margin: '0 auto' }}>
+            Our verified guides are crafting transformative tours. Check back soon, or sign up to be notified when new journeys are published.
+          </p>
+        </div>
+      )}
+
+      {/* Tour cards */}
+      {!loading && tours.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+          {tours.map((tour) => {
+            // Find the next upcoming departure (already filtered by backend, but defensive)
+            const upcomingDepartures = (tour.departures || []).filter(
+              (d) => d.status === 'SCHEDULED' && new Date(d.startDate) >= new Date(),
+            );
+            const nextDeparture = upcomingDepartures
+              .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())[0];
+
+            const departureStart = nextDeparture?.startDate || tour.startDate;
+            const departureEnd = nextDeparture?.endDate || tour.endDate;
+            const days = daysBetween(departureStart, departureEnd);
+            const spotsLeft = nextDeparture?.spotsRemaining ?? tour.spotsRemaining;
+            const totalDeparturesCount = upcomingDepartures.length;
+
+            return (
+              <Link
+                key={tour.id}
+                href={`/tours/${tour.slug}`}
+                style={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <div style={{
+                  background: '#fff', border: '1px solid rgba(232,184,75,0.1)', borderRadius: 16,
+                  overflow: 'hidden', display: 'grid', gridTemplateColumns: '380px 1fr',
+                  transition: 'box-shadow 0.3s, transform 0.3s',
+                  cursor: 'pointer',
+                }}
+                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 12px 40px rgba(58,53,48,0.1)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
+                >
+                  {/* Image */}
+                  <div style={{ background: 'linear-gradient(135deg, #2C2420, #3A3530)', minHeight: 280, position: 'relative', overflow: 'hidden' }}>
+                    {tour.coverImageUrl ? (
+                      <img src={tour.coverImageUrl} alt={tour.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 64 }}>🏔️</div>
+                    )}
+                    {spotsLeft <= 5 && spotsLeft > 0 && (
+                      <span style={{
+                        position: 'absolute', top: 16, right: 16, padding: '5px 12px', borderRadius: 20,
+                        background: '#C0392B', color: '#fff', fontSize: 10, fontWeight: 600,
+                      }}>
+                        {spotsLeft} spots left
+                      </span>
+                    )}
+                    {totalDeparturesCount > 1 && (
+                      <span style={{
+                        position: 'absolute', top: 16, left: 16, padding: '5px 12px', borderRadius: 20,
+                        background: 'rgba(255,255,255,0.95)', color: '#3A3530',
+                        fontSize: 10, fontWeight: 600,
+                      }}>
+                        {totalDeparturesCount} departures
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div style={{ padding: '32px 36px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+                      {nextDeparture ? (
+                        <span style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#E8B84B', fontWeight: 600 }}>
+                          NEXT: {fmtDate(departureStart)} – {fmtDate(departureEnd)}, {new Date(departureStart).getFullYear()}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#C0392B', fontWeight: 600 }}>
+                          Dates coming soon
+                        </span>
+                      )}
+                      <span style={{ padding: '3px 10px', borderRadius: 12, background: 'rgba(232,184,75,0.1)', color: '#B8960F', fontSize: 10, fontWeight: 600 }}>
+                        {days} days
+                      </span>
+                      {tour.difficultyLevel && (
+                        <span style={{ padding: '3px 10px', borderRadius: 12, background: '#FAFAF7', color: '#8A8278', fontSize: 10, fontWeight: 600, border: '1px solid rgba(232,184,75,0.15)' }}>
+                          {tour.difficultyLevel}
+                        </span>
+                      )}
                     </div>
-                    <div>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: '#3A3530' }}>{tour.guide.displayName}</div>
-                      <div style={{ fontSize: 11, color: '#8A8278' }}>Trip Leader</div>
+                    <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 400, color: '#3A3530', lineHeight: 1.2, marginBottom: 10 }}>
+                      {tour.title}
+                    </h2>
+                    {tour.shortDesc && (
+                      <p style={{ fontSize: 14, color: '#8A8278', lineHeight: 1.65, marginBottom: 16 }}>{tour.shortDesc}</p>
+                    )}
+                    {tour.location && <div style={{ fontSize: 12, color: '#8A8278', marginBottom: 12 }}>📍 {tour.location}</div>}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
+                      {tour.highlights.slice(0, 4).map((h) => (
+                        <span key={h} style={{ padding: '4px 12px', borderRadius: 20, background: '#FDF6E3', border: '1px solid rgba(232,184,75,0.2)', fontSize: 11, color: '#3A3530' }}>
+                          {h}
+                        </span>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{
+                          width: 36, height: 36, borderRadius: '50%',
+                          background: '#FDF6E3', border: '2px solid #E8B84B',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 12, fontWeight: 600, color: '#E8B84B', overflow: 'hidden',
+                        }}>
+                          {tour.guide.user.avatarUrl ? (
+                            <img src={tour.guide.user.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            tour.guide.displayName.split(' ').map((w) => w[0]).join('').slice(0, 2)
+                          )}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 500, color: '#3A3530' }}>{tour.guide.displayName}</div>
+                          <div style={{ fontSize: 11, color: '#8A8278' }}>Trip Leader</div>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 10, color: '#8A8278', letterSpacing: '0.06em', textTransform: 'uppercase' }}>From</div>
+                        <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, fontWeight: 500, color: '#3A3530' }}>
+                          ${Number(tour.basePrice).toLocaleString()}
+                        </div>
+                        <div style={{ fontSize: 11, color: '#8A8278' }}>per person</div>
+                      </div>
+                    </div>
+                    <div style={{
+                      display: 'block', width: '100%', padding: 14, borderRadius: 8, marginTop: 20,
+                      background: '#E8B84B', color: '#3A3530', textAlign: 'center',
+                      fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
+                    }}>
+                      View Journey →
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, fontWeight: 500, color: '#3A3530' }}>
-                      ${tour.basePrice.toLocaleString()}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#8A8278' }}>per person</div>
-                  </div>
                 </div>
-                <Link href={`/tours/${tour.slug}/book`} style={{
-                  display: 'block', width: '100%', padding: 14, borderRadius: 8, marginTop: 20,
-                  background: '#E8B84B', color: '#3A3530', textAlign: 'center',
-                  fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
-                  textDecoration: 'none',
-                }}>
-                  Book This Journey
-                </Link>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

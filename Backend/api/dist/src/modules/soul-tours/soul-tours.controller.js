@@ -36,8 +36,23 @@ let SoulToursController = class SoulToursController {
     findMine(user) {
         return this.soulToursService.findByGuide(user.id);
     }
-    findMyBookings(user) {
-        return this.soulToursService.findMyBookings(user.id);
+    update(user, id, dto) {
+        return this.soulToursService.update(user.id, id, dto);
+    }
+    remove(user, id) {
+        return this.soulToursService.delete(user.id, id);
+    }
+    addDeparture(user, tourId, dto) {
+        return this.soulToursService.addDeparture(user.id, tourId, dto);
+    }
+    cancelDeparture(user, tourId, departureId) {
+        return this.soulToursService.cancelDeparture(user.id, tourId, departureId);
+    }
+    replaceItinerary(user, tourId, body) {
+        return this.soulToursService.replaceItinerary(user.id, tourId, body.days);
+    }
+    getManifest(user, tourId, departureId) {
+        return this.soulToursService.getManifest(user.id, tourId, departureId);
     }
     findPublished(page, limit) {
         return this.soulToursService.findPublished(Number(page) || 1, Number(limit) || 12);
@@ -45,14 +60,20 @@ let SoulToursController = class SoulToursController {
     findOne(slugOrId) {
         return this.soulToursService.findOne(slugOrId);
     }
-    update(user, id, dto) {
-        return this.soulToursService.update(user.id, id, dto);
-    }
-    remove(user, id) {
-        return this.soulToursService.delete(user.id, id);
+    findMyBookings(user) {
+        return this.soulToursService.findMyBookings(user.id);
     }
     bookTour(user, dto) {
         return this.soulToursService.bookTour(user.id, dto);
+    }
+    getBooking(user, bookingId) {
+        return this.soulToursService.getBookingForSeeker(user.id, bookingId);
+    }
+    getBalanceDue(user, bookingId) {
+        return this.soulToursService.getBalanceDue(user.id, bookingId);
+    }
+    cancelBooking(user, bookingId, dto) {
+        return this.soulToursService.cancelBooking(user.id, bookingId, dto);
     }
 };
 exports.SoulToursController = SoulToursController;
@@ -76,14 +97,71 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], SoulToursController.prototype, "findMine", null);
 __decorate([
-    (0, common_1.Get)('my-bookings'),
-    (0, roles_decorator_1.Roles)(client_1.Role.SEEKER),
-    (0, swagger_1.ApiOperation)({ summary: "List seeker's tour bookings" }),
+    (0, common_1.Put)(':id'),
+    (0, roles_decorator_1.Roles)(client_1.Role.GUIDE),
+    (0, swagger_1.ApiOperation)({ summary: 'Update a tour' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, String, update_tour_dto_1.UpdateTourDto]),
     __metadata("design:returntype", void 0)
-], SoulToursController.prototype, "findMyBookings", null);
+], SoulToursController.prototype, "update", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, roles_decorator_1.Roles)(client_1.Role.GUIDE),
+    (0, swagger_1.ApiOperation)({ summary: 'Delete a tour' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], SoulToursController.prototype, "remove", null);
+__decorate([
+    (0, common_1.Post)(':id/departures'),
+    (0, roles_decorator_1.Roles)(client_1.Role.GUIDE),
+    (0, swagger_1.ApiOperation)({ summary: 'Add a departure to a tour' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, create_tour_dto_1.CreateDepartureDto]),
+    __metadata("design:returntype", void 0)
+], SoulToursController.prototype, "addDeparture", null);
+__decorate([
+    (0, common_1.Delete)(':id/departures/:departureId'),
+    (0, roles_decorator_1.Roles)(client_1.Role.GUIDE),
+    (0, swagger_1.ApiOperation)({ summary: 'Cancel a departure' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Param)('departureId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", void 0)
+], SoulToursController.prototype, "cancelDeparture", null);
+__decorate([
+    (0, common_1.Post)(':id/itinerary'),
+    (0, roles_decorator_1.Roles)(client_1.Role.GUIDE),
+    (0, swagger_1.ApiOperation)({ summary: 'Replace tour itinerary (full overwrite)' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", void 0)
+], SoulToursController.prototype, "replaceItinerary", null);
+__decorate([
+    (0, common_1.Get)(':id/manifest'),
+    (0, roles_decorator_1.Roles)(client_1.Role.GUIDE),
+    (0, swagger_1.ApiOperation)({ summary: 'Traveler manifest for a tour (decrypted passports)' }),
+    (0, swagger_1.ApiQuery)({ name: 'departureId', required: false }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Query)('departureId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", void 0)
+], SoulToursController.prototype, "getManifest", null);
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Get)(),
@@ -106,26 +184,14 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], SoulToursController.prototype, "findOne", null);
 __decorate([
-    (0, common_1.Put)(':id'),
-    (0, roles_decorator_1.Roles)(client_1.Role.GUIDE),
-    (0, swagger_1.ApiOperation)({ summary: 'Update a tour' }),
+    (0, common_1.Get)('my-bookings'),
+    (0, roles_decorator_1.Roles)(client_1.Role.SEEKER),
+    (0, swagger_1.ApiOperation)({ summary: "List seeker's tour bookings" }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __param(1, (0, common_1.Param)('id')),
-    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, update_tour_dto_1.UpdateTourDto]),
+    __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
-], SoulToursController.prototype, "update", null);
-__decorate([
-    (0, common_1.Delete)(':id'),
-    (0, roles_decorator_1.Roles)(client_1.Role.GUIDE),
-    (0, swagger_1.ApiOperation)({ summary: 'Delete a tour' }),
-    __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __param(1, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String]),
-    __metadata("design:returntype", void 0)
-], SoulToursController.prototype, "remove", null);
+], SoulToursController.prototype, "findMyBookings", null);
 __decorate([
     (0, common_1.Post)('book'),
     (0, roles_decorator_1.Roles)(client_1.Role.SEEKER),
@@ -136,6 +202,37 @@ __decorate([
     __metadata("design:paramtypes", [Object, book_tour_dto_1.BookTourDto]),
     __metadata("design:returntype", void 0)
 ], SoulToursController.prototype, "bookTour", null);
+__decorate([
+    (0, common_1.Get)('bookings/:bookingId'),
+    (0, roles_decorator_1.Roles)(client_1.Role.SEEKER),
+    (0, swagger_1.ApiOperation)({ summary: 'Get a single tour booking (seeker view, scrubbed)' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('bookingId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], SoulToursController.prototype, "getBooking", null);
+__decorate([
+    (0, common_1.Get)('bookings/:bookingId/balance-due'),
+    (0, roles_decorator_1.Roles)(client_1.Role.SEEKER),
+    (0, swagger_1.ApiOperation)({ summary: 'Get remaining balance for a booking (used by pay-balance page)' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('bookingId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], SoulToursController.prototype, "getBalanceDue", null);
+__decorate([
+    (0, common_1.Post)('bookings/:bookingId/cancel'),
+    (0, roles_decorator_1.Roles)(client_1.Role.SEEKER),
+    (0, swagger_1.ApiOperation)({ summary: 'Cancel a tour booking (seeker)' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('bookingId')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, book_tour_dto_1.CancelBookingDto]),
+    __metadata("design:returntype", void 0)
+], SoulToursController.prototype, "cancelBooking", null);
 exports.SoulToursController = SoulToursController = __decorate([
     (0, swagger_1.ApiTags)('Soul Tours'),
     (0, common_1.Controller)('soul-tours'),

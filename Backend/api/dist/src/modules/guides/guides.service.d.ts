@@ -398,6 +398,7 @@ export declare class GuidesService {
         calendarType: string | null;
         calendarLink: string | null;
         calendlyConnected: boolean;
+        calendlyUserUri: string | null;
         sessionPricingJson: string | null;
         isPublished: boolean;
         isVerified: boolean;

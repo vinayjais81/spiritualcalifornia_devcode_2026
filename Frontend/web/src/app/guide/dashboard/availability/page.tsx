@@ -1,158 +1,58 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { toast } from 'sonner';
 import {
-  C, font, serif, PageHeader, Panel, Btn, FormGroup, Select,
+  C, font, serif, PageHeader, Panel, Btn, EmptyState,
 } from '@/components/guide/dashboard-ui';
 
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const DAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAYS_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-// Generate time options in 15-min increments (06:00 – 22:00)
-function timeOptions() {
-  const opts: string[] = [];
-  for (let h = 6; h <= 22; h++) {
-    for (let m = 0; m < 60; m += 15) {
-      if (h === 22 && m > 0) break;
-      opts.push(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
-    }
-  }
-  return opts;
+interface CalendlyEventType {
+  name: string;
+  slug: string;
+  duration: number;
+  schedulingUrl: string;
+  active: boolean;
+  kind: string;
 }
 
-const TIMES = timeOptions();
-
-function formatTime12(t: string) {
-  const [h, m] = t.split(':').map(Number);
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-  return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
-}
-
-interface AvailSlot {
-  dayOfWeek: number;
+interface ScheduledEvent {
+  name: string;
   startTime: string;
   endTime: string;
-  bufferMin: number;
+  status: string;
+  inviteesCounter: { total: number; active: number };
 }
 
 export default function AvailabilityPage() {
-  const [slots, setSlots] = useState<AvailSlot[]>([]);
+  const [profile, setProfile] = useState<any>(null);
+  const [eventTypes, setEventTypes] = useState<CalendlyEventType[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<ScheduledEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [bufferMin, setBufferMin] = useState(15);
+  const [connected, setConnected] = useState(false);
 
-  const load = useCallback(() => {
-    api.get('/guides/availability')
-      .then(r => {
-        const data: AvailSlot[] = r.data || [];
-        setSlots(data);
-        if (data.length > 0) {
-          setBufferMin(data[0].bufferMin || 15);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const profileRes = await api.get('/guides/me');
+        setProfile(profileRes.data);
+        const isConnected = profileRes.data?.calendlyConnected && !!profileRes.data?.calendlyUserUri;
+        setConnected(isConnected);
+
+        if (isConnected) {
+          const [etRes, evRes] = await Promise.all([
+            api.get('/calendly/event-types').catch(() => ({ data: [] })),
+            api.get('/calendly/events').catch(() => ({ data: [] })),
+          ]);
+          setEventTypes(etRes.data || []);
+          setUpcomingEvents(evRes.data || []);
         }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      } catch {}
+      setLoading(false);
+    };
+    load();
   }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  const addSlot = (day: number) => {
-    // Default: 9 AM – 5 PM
-    setSlots(prev => [...prev, { dayOfWeek: day, startTime: '09:00', endTime: '17:00', bufferMin }]);
-  };
-
-  const removeSlot = (day: number, idx: number) => {
-    const daySlots = slots.filter(s => s.dayOfWeek === day);
-    const target = daySlots[idx];
-    setSlots(prev => {
-      let count = 0;
-      return prev.filter(s => {
-        if (s.dayOfWeek === day && s.startTime === target.startTime && s.endTime === target.endTime) {
-          return count++ !== idx ? true : false;
-        }
-        return true;
-      });
-    });
-  };
-
-  const updateSlot = (day: number, idx: number, field: 'startTime' | 'endTime', value: string) => {
-    const daySlots = slots.filter(s => s.dayOfWeek === day);
-    const target = daySlots[idx];
-    setSlots(prev => {
-      let count = 0;
-      return prev.map(s => {
-        if (s.dayOfWeek === day && s.startTime === target.startTime && s.endTime === target.endTime) {
-          if (count === idx) {
-            count++;
-            return { ...s, [field]: value };
-          }
-          count++;
-        }
-        return s;
-      });
-    });
-  };
-
-  const copyToAll = (sourceDay: number) => {
-    const sourceSlots = slots.filter(s => s.dayOfWeek === sourceDay);
-    if (sourceSlots.length === 0) return;
-
-    const newSlots: AvailSlot[] = [];
-    for (let d = 0; d < 7; d++) {
-      if (d === sourceDay) {
-        newSlots.push(...sourceSlots);
-      } else {
-        newSlots.push(...sourceSlots.map(s => ({ ...s, dayOfWeek: d, bufferMin })));
-      }
-    }
-    setSlots(newSlots);
-    toast.success(`Copied ${DAYS[sourceDay]}'s schedule to all days`);
-  };
-
-  const copyToWeekdays = (sourceDay: number) => {
-    const sourceSlots = slots.filter(s => s.dayOfWeek === sourceDay);
-    if (sourceSlots.length === 0) return;
-
-    // Keep weekend slots, replace weekdays
-    const weekendSlots = slots.filter(s => s.dayOfWeek === 0 || s.dayOfWeek === 6);
-    const newSlots: AvailSlot[] = [...weekendSlots];
-    for (let d = 1; d <= 5; d++) {
-      newSlots.push(...sourceSlots.map(s => ({ ...s, dayOfWeek: d, bufferMin })));
-    }
-    setSlots(newSlots);
-    toast.success('Applied to weekdays (Mon–Fri)');
-  };
-
-  const handleSave = async () => {
-    // Validate: endTime must be after startTime
-    for (const slot of slots) {
-      if (slot.endTime <= slot.startTime) {
-        toast.error(`${DAYS[slot.dayOfWeek]}: End time must be after start time`);
-        return;
-      }
-    }
-
-    setSaving(true);
-    try {
-      await api.put('/guides/availability', {
-        slots: slots.map(s => ({
-          dayOfWeek: s.dayOfWeek,
-          startTime: s.startTime,
-          endTime: s.endTime,
-          isRecurring: true,
-          bufferMin,
-        })),
-      });
-      toast.success('Availability saved');
-    } catch {
-      toast.error('Failed to save availability');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   if (loading) {
     return <div style={{ fontFamily: font, fontSize: '13px', color: C.warmGray, padding: '40px' }}>Loading...</div>;
@@ -160,209 +60,126 @@ export default function AvailabilityPage() {
 
   return (
     <div>
-      <PageHeader title="Weekly Availability" subtitle="Set your regular working hours. Seekers can book during these times." />
+      <PageHeader title="Availability" subtitle="Your availability is managed through Calendly." />
 
-      {/* Buffer Time Setting */}
-      <Panel title="Session Settings" icon="⚙️">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <FormGroup label="Buffer Between Sessions">
-            <Select
-              value={String(bufferMin)}
-              onChange={e => setBufferMin(parseInt(e.target.value))}
-              style={{ width: '160px' }}
-            >
-              <option value="0">No buffer</option>
-              <option value="5">5 minutes</option>
-              <option value="10">10 minutes</option>
-              <option value="15">15 minutes</option>
-              <option value="30">30 minutes</option>
-              <option value="60">1 hour</option>
-            </Select>
-          </FormGroup>
-          <p style={{ fontFamily: font, fontSize: '12px', color: C.warmGray, marginTop: '20px' }}>
-            Buffer time is added after each session to give you a break before the next one.
-          </p>
-        </div>
-      </Panel>
+      {/* Not connected */}
+      {!connected && (
+        <Panel title="Calendly Not Connected" icon="📅">
+          <div style={{ textAlign: 'center', padding: '32px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '12px' }}>🗓️</div>
+            <p style={{ fontFamily: font, fontSize: '14px', color: C.charcoal, marginBottom: '8px' }}>
+              Connect Calendly to manage your availability
+            </p>
+            <p style={{ fontFamily: font, fontSize: '13px', color: C.warmGray, lineHeight: 1.6, maxWidth: '420px', margin: '0 auto 20px' }}>
+              Your availability and booking schedule are managed through Calendly. Connect your account to see your event types and upcoming sessions here.
+            </p>
+            <Btn onClick={() => window.location.href = '/guide/dashboard/calendar'}>
+              Go to Calendar Settings
+            </Btn>
+          </div>
+        </Panel>
+      )}
 
-      {/* Weekly Schedule */}
-      <Panel title="Weekly Schedule" icon="📅">
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-          {DAYS.map((dayName, dayIdx) => {
-            const daySlots = slots.filter(s => s.dayOfWeek === dayIdx);
-            const isActive = daySlots.length > 0;
-
-            return (
-              <div
-                key={dayIdx}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: '120px 1fr auto',
-                  gap: '16px',
-                  alignItems: 'start',
-                  padding: '16px 0',
-                  borderBottom: dayIdx < 6 ? '1px solid rgba(232,184,75,0.1)' : 'none',
-                }}
-              >
-                {/* Day label + toggle */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', paddingTop: '6px' }}>
-                  <button
-                    onClick={() => {
-                      if (isActive) {
-                        setSlots(prev => prev.filter(s => s.dayOfWeek !== dayIdx));
-                      } else {
-                        addSlot(dayIdx);
-                      }
-                    }}
-                    style={{
-                      width: '36px',
-                      height: '20px',
-                      borderRadius: '10px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      background: isActive ? C.gold : '#ddd',
-                      position: 'relative',
-                      transition: 'background 0.2s',
-                    }}
-                  >
-                    <span style={{
-                      position: 'absolute',
-                      top: '2px',
-                      left: isActive ? '18px' : '2px',
-                      width: '16px',
-                      height: '16px',
-                      borderRadius: '50%',
-                      background: C.white,
-                      transition: 'left 0.2s',
-                      boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-                    }} />
-                  </button>
-                  <span style={{
-                    fontFamily: font,
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    color: isActive ? C.charcoal : C.warmGray,
-                    minWidth: '40px',
+      {/* Connected — Event Types */}
+      {connected && (
+        <>
+          <Panel title="Your Event Types" icon="✨">
+            {eventTypes.length === 0 ? (
+              <EmptyState message="No event types found in your Calendly account." />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                {eventTypes.map((et, i) => (
+                  <div key={et.slug || i} style={{
+                    display: 'grid', gridTemplateColumns: '1fr 100px 100px 120px',
+                    gap: '12px', alignItems: 'center', padding: '14px 0',
+                    borderBottom: i < eventTypes.length - 1 ? '1px solid rgba(232,184,75,0.08)' : 'none',
                   }}>
-                    {DAYS_SHORT[dayIdx]}
-                  </span>
-                </div>
-
-                {/* Time slots */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {isActive ? daySlots.map((slot, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <select
-                        value={slot.startTime}
-                        onChange={e => updateSlot(dayIdx, idx, 'startTime', e.target.value)}
-                        style={{
-                          fontFamily: font, fontSize: '13px', color: C.charcoal,
-                          background: C.offWhite, border: '1.5px solid rgba(232,184,75,0.3)',
-                          borderRadius: '6px', padding: '6px 10px', outline: 'none',
-                        }}
-                      >
-                        {TIMES.map(t => (
-                          <option key={t} value={t}>{formatTime12(t)}</option>
-                        ))}
-                      </select>
-                      <span style={{ fontFamily: font, fontSize: '12px', color: C.warmGray }}>to</span>
-                      <select
-                        value={slot.endTime}
-                        onChange={e => updateSlot(dayIdx, idx, 'endTime', e.target.value)}
-                        style={{
-                          fontFamily: font, fontSize: '13px', color: C.charcoal,
-                          background: C.offWhite, border: '1.5px solid rgba(232,184,75,0.3)',
-                          borderRadius: '6px', padding: '6px 10px', outline: 'none',
-                        }}
-                      >
-                        {TIMES.map(t => (
-                          <option key={t} value={t}>{formatTime12(t)}</option>
-                        ))}
-                      </select>
-                      <button
-                        onClick={() => removeSlot(dayIdx, idx)}
-                        style={{
-                          background: 'none', border: 'none', cursor: 'pointer',
-                          color: C.warmGray, fontSize: '16px', padding: '4px',
-                        }}
-                        title="Remove this time block"
-                      >
-                        ×
-                      </button>
+                    <div>
+                      <div style={{ fontFamily: font, fontSize: '14px', fontWeight: 500, color: C.charcoal }}>{et.name}</div>
+                      <div style={{ fontFamily: font, fontSize: '11px', color: C.warmGray, marginTop: '2px' }}>{et.schedulingUrl}</div>
                     </div>
-                  )) : (
-                    <span style={{ fontFamily: font, fontSize: '12px', color: C.warmGray, paddingTop: '6px' }}>
-                      Unavailable
+                    <div style={{ fontFamily: font, fontSize: '13px', color: C.charcoal }}>{et.duration} min</div>
+                    <span style={{
+                      padding: '3px 10px', borderRadius: '20px', fontFamily: font, fontSize: '11px', textAlign: 'center',
+                      background: et.active ? '#E8F5E9' : '#F5F5F5',
+                      color: et.active ? '#2E7D32' : '#757575',
+                      border: et.active ? '1px solid #A5D6A7' : '1px solid #E0E0E0',
+                    }}>
+                      {et.active ? 'Active' : 'Inactive'}
                     </span>
-                  )}
-
-                  {isActive && (
-                    <button
-                      onClick={() => addSlot(dayIdx)}
-                      style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        fontFamily: font, fontSize: '11px', color: C.gold,
-                        textAlign: 'left', padding: '2px 0', fontWeight: 500,
-                      }}
-                    >
-                      + Add another time block
-                    </button>
-                  )}
-                </div>
-
-                {/* Copy actions */}
-                <div style={{ display: 'flex', gap: '4px', paddingTop: '6px' }}>
-                  {isActive && (
-                    <>
-                      <button
-                        onClick={() => copyToWeekdays(dayIdx)}
-                        title="Copy to weekdays"
-                        style={{
-                          background: 'none', border: '1px solid rgba(232,184,75,0.3)',
-                          borderRadius: '4px', padding: '4px 8px', cursor: 'pointer',
-                          fontFamily: font, fontSize: '10px', color: C.warmGray,
-                        }}
-                      >
-                        Mon–Fri
-                      </button>
-                      <button
-                        onClick={() => copyToAll(dayIdx)}
-                        title="Copy to all days"
-                        style={{
-                          background: 'none', border: '1px solid rgba(232,184,75,0.3)',
-                          borderRadius: '4px', padding: '4px 8px', cursor: 'pointer',
-                          fontFamily: font, fontSize: '10px', color: C.warmGray,
-                        }}
-                      >
-                        All
-                      </button>
-                    </>
-                  )}
-                </div>
+                    <a href={et.schedulingUrl} target="_blank" rel="noopener noreferrer" style={{
+                      fontFamily: font, fontSize: '11px', color: C.gold, textDecoration: 'none',
+                    }}>
+                      Open in Calendly →
+                    </a>
+                  </div>
+                ))}
               </div>
-            );
-          })}
-        </div>
-      </Panel>
+            )}
+          </Panel>
 
-      {/* Save */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginTop: '8px' }}>
-        <Btn variant="secondary" onClick={load}>Reset</Btn>
-        <Btn onClick={handleSave} style={saving ? { opacity: 0.6 } : {}}>
-          {saving ? 'Saving...' : 'Save Availability'}
-        </Btn>
-      </div>
+          {/* Upcoming Events */}
+          <Panel title="Upcoming Sessions" icon="📋">
+            {upcomingEvents.length === 0 ? (
+              <EmptyState message="No upcoming sessions. When seekers book through Calendly, they'll appear here." />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                {upcomingEvents.map((ev, i) => {
+                  const start = new Date(ev.startTime);
+                  const end = new Date(ev.endTime);
+                  return (
+                    <div key={i} style={{
+                      display: 'grid', gridTemplateColumns: '140px 1fr 80px',
+                      gap: '16px', alignItems: 'center', padding: '12px 0',
+                      borderBottom: i < upcomingEvents.length - 1 ? '1px solid rgba(232,184,75,0.08)' : 'none',
+                    }}>
+                      <div>
+                        <div style={{ fontFamily: font, fontSize: '12px', fontWeight: 500, color: C.charcoal }}>
+                          {start.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                        </div>
+                        <div style={{ fontFamily: font, fontSize: '11px', color: C.warmGray }}>
+                          {start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })} – {end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                        </div>
+                      </div>
+                      <div style={{ fontFamily: font, fontSize: '13px', fontWeight: 500, color: C.charcoal }}>{ev.name}</div>
+                      <span style={{
+                        padding: '3px 10px', borderRadius: '20px', fontFamily: font, fontSize: '11px', textAlign: 'center',
+                        background: ev.status === 'active' ? '#E8F5E9' : '#FFEBEE',
+                        color: ev.status === 'active' ? '#2E7D32' : '#C62828',
+                        border: ev.status === 'active' ? '1px solid #A5D6A7' : '1px solid #EF9A9A',
+                      }}>
+                        {ev.status === 'active' ? 'Confirmed' : 'Canceled'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Panel>
 
-      {/* Info */}
-      <div style={{
-        marginTop: '28px', fontFamily: font, fontSize: '13px', color: C.warmGray,
-        lineHeight: 1.6, padding: '16px', background: C.offWhite, borderRadius: '8px',
-        borderLeft: `3px solid ${C.gold}`,
-      }}>
-        <strong style={{ color: C.charcoal }}>How availability works:</strong> Set your regular weekly hours here.
-        When Calendly is connected, seekers will see available slots based on both your weekly hours and your Calendly schedule.
-        Blocked or booked slots are automatically excluded.
-      </div>
+          {/* Manage in Calendly */}
+          <div style={{
+            padding: '20px', background: C.goldPale, border: '1px solid rgba(232,184,75,0.2)',
+            borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <div>
+              <div style={{ fontFamily: font, fontSize: '13px', fontWeight: 500, color: C.charcoal, marginBottom: '4px' }}>
+                Manage your availability
+              </div>
+              <p style={{ fontFamily: font, fontSize: '12px', color: C.warmGray, lineHeight: 1.5, margin: 0 }}>
+                Set your working hours, buffer times, and date overrides directly in Calendly. Changes are reflected automatically on your booking page.
+              </p>
+            </div>
+            <a href="https://calendly.com/event_types" target="_blank" rel="noopener noreferrer" style={{
+              padding: '10px 22px', borderRadius: '6px', fontFamily: font, fontSize: '12px', fontWeight: 500,
+              letterSpacing: '0.08em', textTransform: 'uppercase' as const,
+              background: C.charcoal, color: C.gold, textDecoration: 'none', whiteSpace: 'nowrap',
+            }}>
+              Open Calendly
+            </a>
+          </div>
+        </>
+      )}
     </div>
   );
 }

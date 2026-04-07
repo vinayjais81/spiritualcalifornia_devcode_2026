@@ -28,8 +28,8 @@ export declare class ContactService {
             updatedAt: Date;
             type: string;
             status: string;
-            message: string;
             subject: string;
+            message: string;
         }[];
         total: number;
         page: number;
@@ -47,8 +47,8 @@ export declare class ContactService {
         updatedAt: Date;
         type: string;
         status: string;
-        message: string;
         subject: string;
+        message: string;
     }>;
     submitLead(dto: SubmitContactDto): Promise<{
         success: boolean;

@@ -82,4 +82,136 @@ export class NotificationsService {
     await this.create(data.userId, 'VERIFICATION_APPROVED', 'Profile Verified!', 'Your profile is now live on Spiritual California.');
     await this.emailService.sendVerificationApproved(data.email, data.guideName);
   }
+
+  // ─── Soul Tour: Deposit / Booking Confirmed ────────────────────────────────
+
+  async notifyTourDepositConfirmed(data: {
+    seekerUserId: string;
+    seekerEmail: string;
+    seekerName: string;
+    tourTitle: string;
+    bookingReference: string;
+    bookingId: string;
+    departureDates: string;
+    location: string;
+    travelers: number;
+    roomType: string;
+    depositPaid: string;
+    balanceDue: string;
+    balanceDueDate: string;
+    guideName: string;
+    isPaidInFull: boolean;
+  }) {
+    const title = data.isPaidInFull ? 'Tour Booking Confirmed' : 'Tour Spot Reserved';
+    const body = data.isPaidInFull
+      ? `Your spot on "${data.tourTitle}" is fully paid and confirmed.`
+      : `Your deposit for "${data.tourTitle}" was received. Balance of ${data.balanceDue} due by ${data.balanceDueDate}.`;
+
+    await this.create(data.seekerUserId, 'BOOKING_CONFIRMED', title, body, {
+      tourBookingId: data.bookingId,
+      bookingReference: data.bookingReference,
+    });
+    await this.emailService.sendTourDepositConfirmation(data.seekerEmail, data);
+  }
+
+  // ─── Soul Tour: Balance Paid ───────────────────────────────────────────────
+
+  async notifyTourBalancePaid(data: {
+    seekerUserId: string;
+    seekerEmail: string;
+    seekerName: string;
+    tourTitle: string;
+    bookingReference: string;
+    bookingId: string;
+    departureDates: string;
+    totalPaid: string;
+  }) {
+    await this.create(
+      data.seekerUserId,
+      'PAYMENT_RECEIVED',
+      'Tour Balance Paid',
+      `Your booking for "${data.tourTitle}" is now fully paid.`,
+      { tourBookingId: data.bookingId },
+    );
+    await this.emailService.sendTourBalancePaid(data.seekerEmail, data);
+  }
+
+  // ─── Soul Tour: Balance Reminder ───────────────────────────────────────────
+
+  async notifyTourBalanceReminder(data: {
+    seekerUserId: string;
+    seekerEmail: string;
+    seekerName: string;
+    tourTitle: string;
+    bookingReference: string;
+    bookingId: string;
+    departureDates: string;
+    balanceDue: string;
+    balanceDueDate: string;
+    daysUntilDue: number;
+  }) {
+    await this.create(
+      data.seekerUserId,
+      'BOOKING_REMINDER',
+      `Balance Due in ${data.daysUntilDue} Day${data.daysUntilDue === 1 ? '' : 's'}`,
+      `Your remaining balance for "${data.tourTitle}" of ${data.balanceDue} is due ${data.balanceDueDate}.`,
+      { tourBookingId: data.bookingId },
+    );
+    await this.emailService.sendTourBalanceReminder(data.seekerEmail, data);
+  }
+
+  // ─── Soul Tour: Departure Reminder ─────────────────────────────────────────
+
+  async notifyTourDepartureReminder(data: {
+    seekerUserId: string;
+    seekerEmail: string;
+    seekerName: string;
+    tourTitle: string;
+    bookingReference: string;
+    bookingId: string;
+    departureDates: string;
+    meetingPoint: string;
+    daysUntilDeparture: number;
+  }) {
+    const title =
+      data.daysUntilDeparture <= 1
+        ? 'Your Journey Begins Tomorrow!'
+        : `Your Journey Begins in ${data.daysUntilDeparture} Days`;
+    await this.create(
+      data.seekerUserId,
+      'BOOKING_REMINDER',
+      title,
+      `${data.tourTitle} departs ${data.departureDates}. Meeting at ${data.meetingPoint}.`,
+      { tourBookingId: data.bookingId },
+    );
+    await this.emailService.sendTourDepartureReminder(data.seekerEmail, data);
+  }
+
+  // ─── Soul Tour: Cancellation ───────────────────────────────────────────────
+
+  async notifyTourCancelled(data: {
+    seekerUserId: string;
+    seekerEmail: string;
+    seekerName: string;
+    tourTitle: string;
+    bookingReference: string;
+    refundAmount: string;
+    refundTier: 'FULL' | 'HALF' | 'NONE';
+    cancellationReason: string | null;
+  }) {
+    const refundLabel =
+      data.refundTier === 'FULL'
+        ? `Full refund of ${data.refundAmount} will be processed.`
+        : data.refundTier === 'HALF'
+          ? `50% refund of ${data.refundAmount} will be processed.`
+          : 'No refund is available per the cancellation policy.';
+    await this.create(
+      data.seekerUserId,
+      'BOOKING_CANCELLED',
+      'Tour Booking Cancelled',
+      `Your booking for "${data.tourTitle}" has been cancelled. ${refundLabel}`,
+      { bookingReference: data.bookingReference },
+    );
+    await this.emailService.sendTourCancellation(data.seekerEmail, data);
+  }
 }

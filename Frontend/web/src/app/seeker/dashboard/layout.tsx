@@ -11,6 +11,7 @@ const sidebarSections = [
   { label: 'Overview', items: [{ href: '/seeker/dashboard', icon: '🏠', name: 'Dashboard' }] },
   { label: 'My Activity', items: [
     { href: '/seeker/dashboard/bookings', icon: '📅', name: 'My Bookings' },
+    { href: '/seeker/dashboard/tours', icon: '🌍', name: 'My Tours' },
     { href: '/seeker/dashboard/payments', icon: '💳', name: 'Payment History' },
     { href: '/seeker/dashboard/favorites', icon: '❤️', name: 'Favorite Guides' },
   ]},
@@ -94,7 +95,7 @@ export default function SeekerDashboardLayout({ children }: { children: React.Re
 
         {/* ── SIDEBAR ──────────────────────────────────────────── */}
         <aside style={{
-          width: '240px', minHeight: 'calc(100vh - 69px)', background: C.white,
+          width: '240px', height: 'calc(100vh - 69px)', background: C.white,
           borderRight: '1px solid rgba(232,184,75,0.12)', position: 'fixed',
           top: '69px', left: 0, overflowY: 'auto', zIndex: 100,
         }}>

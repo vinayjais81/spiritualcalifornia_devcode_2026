@@ -9,23 +9,23 @@ export declare class NotificationsService {
     create(userId: string, type: NotificationType, title: string, body: string, data?: Record<string, any>): Promise<{
         data: import("@prisma/client/runtime/client").JsonValue | null;
         id: string;
-        createdAt: Date;
-        userId: string;
-        title: string;
         type: import(".prisma/client").$Enums.NotificationType;
+        title: string;
         body: string;
         isRead: boolean;
+        createdAt: Date;
+        userId: string;
     }>;
     findByUser(userId: string, page?: number, limit?: number): Promise<{
         notifications: {
             data: import("@prisma/client/runtime/client").JsonValue | null;
             id: string;
-            createdAt: Date;
-            userId: string;
-            title: string;
             type: import(".prisma/client").$Enums.NotificationType;
+            title: string;
             body: string;
             isRead: boolean;
+            createdAt: Date;
+            userId: string;
         }[];
         unreadCount: number;
         pagination: {
@@ -71,5 +71,65 @@ export declare class NotificationsService {
         userId: string;
         email: string;
         guideName: string;
+    }): Promise<void>;
+    notifyTourDepositConfirmed(data: {
+        seekerUserId: string;
+        seekerEmail: string;
+        seekerName: string;
+        tourTitle: string;
+        bookingReference: string;
+        bookingId: string;
+        departureDates: string;
+        location: string;
+        travelers: number;
+        roomType: string;
+        depositPaid: string;
+        balanceDue: string;
+        balanceDueDate: string;
+        guideName: string;
+        isPaidInFull: boolean;
+    }): Promise<void>;
+    notifyTourBalancePaid(data: {
+        seekerUserId: string;
+        seekerEmail: string;
+        seekerName: string;
+        tourTitle: string;
+        bookingReference: string;
+        bookingId: string;
+        departureDates: string;
+        totalPaid: string;
+    }): Promise<void>;
+    notifyTourBalanceReminder(data: {
+        seekerUserId: string;
+        seekerEmail: string;
+        seekerName: string;
+        tourTitle: string;
+        bookingReference: string;
+        bookingId: string;
+        departureDates: string;
+        balanceDue: string;
+        balanceDueDate: string;
+        daysUntilDue: number;
+    }): Promise<void>;
+    notifyTourDepartureReminder(data: {
+        seekerUserId: string;
+        seekerEmail: string;
+        seekerName: string;
+        tourTitle: string;
+        bookingReference: string;
+        bookingId: string;
+        departureDates: string;
+        meetingPoint: string;
+        daysUntilDeparture: number;
+    }): Promise<void>;
+    notifyTourCancelled(data: {
+        seekerUserId: string;
+        seekerEmail: string;
+        seekerName: string;
+        tourTitle: string;
+        bookingReference: string;
+        refundAmount: string;
+        refundTier: 'FULL' | 'HALF' | 'NONE';
+        cancellationReason: string | null;
     }): Promise<void>;
 }
