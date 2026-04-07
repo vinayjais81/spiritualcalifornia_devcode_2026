@@ -370,9 +370,23 @@ let SoulToursService = SoulToursService_1 = class SoulToursService {
         const holdExpiresAt = new Date(Date.now() + HOLD_DURATION_MS);
         const bookingReference = this.generateBookingReference(tour.title);
         const primary = dto.travelersDetails.find((t) => t.isPrimary);
+        dto.travelersDetails.forEach((t, i) => {
+            if (!t.firstName?.trim())
+                throw new common_1.BadRequestException(`Traveler ${i + 1}: first name is required`);
+            if (!t.lastName?.trim())
+                throw new common_1.BadRequestException(`Traveler ${i + 1}: last name is required`);
+            if (!t.dateOfBirth)
+                throw new common_1.BadRequestException(`Traveler ${i + 1}: date of birth is required`);
+            if (!t.nationality?.trim())
+                throw new common_1.BadRequestException(`Traveler ${i + 1}: nationality is required`);
+            if (!t.passportNumber?.trim())
+                throw new common_1.BadRequestException(`Traveler ${i + 1}: passport number is required`);
+            if (!t.passportExpiry)
+                throw new common_1.BadRequestException(`Traveler ${i + 1}: passport expiry is required`);
+        });
         const encryptedTravelers = dto.travelersDetails.map((t) => ({
             ...t,
-            passportNumberEncrypted: (0, passport_cipher_1.encryptPassport)(t.passportNumber),
+            passportNumberEncrypted: (0, passport_cipher_1.encryptPassport)(t.passportNumber.trim()),
         }));
         const booking = await this.prisma.$transaction(async (tx) => {
             const freshDeparture = await tx.tourDeparture.findUnique({

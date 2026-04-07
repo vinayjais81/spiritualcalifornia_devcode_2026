@@ -5,6 +5,7 @@ import { BookTourDto, CancelBookingDto } from './dto/book-tour.dto';
 import { CurrentUserData } from '../auth/decorators/current-user.decorator';
 export declare class SoulToursController {
     private readonly soulToursService;
+    private readonly logger;
     constructor(soulToursService: SoulToursService);
     create(user: CurrentUserData, dto: CreateTourDto): Promise<{
         roomTypes: {
@@ -375,93 +376,6 @@ export declare class SoulToursController {
         page: number;
         totalPages: number;
     }>;
-    findOne(slugOrId: string): Promise<{
-        guide: {
-            id: string;
-            slug: string;
-            displayName: string;
-            isVerified: boolean;
-            averageRating: number;
-            user: {
-                avatarUrl: string | null;
-            };
-        };
-        roomTypes: {
-            id: string;
-            description: string | null;
-            capacity: number;
-            createdAt: Date;
-            name: string;
-            pricePerNight: import("@prisma/client-runtime-utils").Decimal;
-            totalPrice: import("@prisma/client-runtime-utils").Decimal;
-            available: number;
-            amenities: string[];
-            sortOrder: number;
-            tourId: string;
-        }[];
-        departures: {
-            id: string;
-            startDate: Date;
-            endDate: Date;
-            capacity: number;
-            spotsRemaining: number;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import(".prisma/client").$Enums.DepartureStatus;
-            tourId: string;
-            priceOverride: import("@prisma/client-runtime-utils").Decimal | null;
-            notes: string | null;
-        }[];
-        itinerary: {
-            id: string;
-            title: string;
-            description: string;
-            location: string | null;
-            createdAt: Date;
-            tourId: string;
-            dayNumber: number;
-            meals: string[];
-            accommodation: string | null;
-            activities: string[];
-            imageUrl: string | null;
-        }[];
-    } & {
-        id: string;
-        title: string;
-        slug: string;
-        description: string | null;
-        shortDesc: string | null;
-        startDate: Date;
-        endDate: Date;
-        timezone: string;
-        location: string | null;
-        address: string | null;
-        city: string | null;
-        state: string | null;
-        country: string | null;
-        basePrice: import("@prisma/client-runtime-utils").Decimal;
-        currency: string;
-        capacity: number;
-        spotsRemaining: number;
-        coverImageUrl: string | null;
-        imageUrls: string[];
-        highlights: string[];
-        included: string[];
-        notIncluded: string[];
-        requirements: string | null;
-        depositMin: import("@prisma/client-runtime-utils").Decimal | null;
-        difficultyLevel: string | null;
-        languages: string[];
-        meetingPoint: string | null;
-        cancellationPolicy: import("@prisma/client/runtime/client").JsonValue | null;
-        balanceDueDaysBefore: number;
-        minDepositPerPerson: import("@prisma/client-runtime-utils").Decimal | null;
-        isPublished: boolean;
-        isCancelled: boolean;
-        createdAt: Date;
-        updatedAt: Date;
-        guideId: string;
-    }>;
     findMyBookings(user: CurrentUserData): Promise<({
         tour: {
             title: string;
@@ -522,16 +436,16 @@ export declare class SoulToursController {
         travelers_rel: {
             id: string;
             createdAt: Date;
-            email: string | null;
+            bookingId: string;
+            isPrimary: boolean;
             firstName: string;
             lastName: string;
-            phone: string | null;
-            isPrimary: boolean;
             dateOfBirth: Date;
             nationality: string;
             passportNumber: string;
             passportExpiry: Date;
-            bookingId: string;
+            email: string | null;
+            phone: string | null;
         }[];
         roomType: {
             name: string;
@@ -602,16 +516,16 @@ export declare class SoulToursController {
         travelers_rel: {
             id: string;
             createdAt: Date;
-            email: string | null;
+            bookingId: string;
+            isPrimary: boolean;
             firstName: string;
             lastName: string;
-            phone: string | null;
-            isPrimary: boolean;
             dateOfBirth: Date;
             nationality: string;
             passportNumber: string;
             passportExpiry: Date;
-            bookingId: string;
+            email: string | null;
+            phone: string | null;
         }[];
         roomType: {
             description: string | null;
@@ -709,5 +623,92 @@ export declare class SoulToursController {
             refundPercent: number;
             tier: "NONE";
         };
+    }>;
+    findOne(slugOrId: string): Promise<{
+        guide: {
+            id: string;
+            slug: string;
+            displayName: string;
+            isVerified: boolean;
+            averageRating: number;
+            user: {
+                avatarUrl: string | null;
+            };
+        };
+        roomTypes: {
+            id: string;
+            description: string | null;
+            capacity: number;
+            createdAt: Date;
+            name: string;
+            pricePerNight: import("@prisma/client-runtime-utils").Decimal;
+            totalPrice: import("@prisma/client-runtime-utils").Decimal;
+            available: number;
+            amenities: string[];
+            sortOrder: number;
+            tourId: string;
+        }[];
+        departures: {
+            id: string;
+            startDate: Date;
+            endDate: Date;
+            capacity: number;
+            spotsRemaining: number;
+            createdAt: Date;
+            updatedAt: Date;
+            status: import(".prisma/client").$Enums.DepartureStatus;
+            tourId: string;
+            priceOverride: import("@prisma/client-runtime-utils").Decimal | null;
+            notes: string | null;
+        }[];
+        itinerary: {
+            id: string;
+            title: string;
+            description: string;
+            location: string | null;
+            createdAt: Date;
+            tourId: string;
+            dayNumber: number;
+            meals: string[];
+            accommodation: string | null;
+            activities: string[];
+            imageUrl: string | null;
+        }[];
+    } & {
+        id: string;
+        title: string;
+        slug: string;
+        description: string | null;
+        shortDesc: string | null;
+        startDate: Date;
+        endDate: Date;
+        timezone: string;
+        location: string | null;
+        address: string | null;
+        city: string | null;
+        state: string | null;
+        country: string | null;
+        basePrice: import("@prisma/client-runtime-utils").Decimal;
+        currency: string;
+        capacity: number;
+        spotsRemaining: number;
+        coverImageUrl: string | null;
+        imageUrls: string[];
+        highlights: string[];
+        included: string[];
+        notIncluded: string[];
+        requirements: string | null;
+        depositMin: import("@prisma/client-runtime-utils").Decimal | null;
+        difficultyLevel: string | null;
+        languages: string[];
+        meetingPoint: string | null;
+        cancellationPolicy: import("@prisma/client/runtime/client").JsonValue | null;
+        balanceDueDaysBefore: number;
+        minDepositPerPerson: import("@prisma/client-runtime-utils").Decimal | null;
+        isPublished: boolean;
+        isCancelled: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        guideId: string;
     }>;
 }

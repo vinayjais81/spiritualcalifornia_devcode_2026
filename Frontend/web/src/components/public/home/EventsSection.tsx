@@ -54,8 +54,8 @@ export function EventsSection({ events }: Props) {
       <SectionHeader title="Upcoming Events" linkLabel="All Events" linkHref="/events" />
 
       <Carousel id="events-feed">
-        {cards.map(event => (
-          <div key={event.title} data-card>
+        {cards.map((event, i) => (
+          <div key={`${event.title}-${i}`} data-card>
             <FeedCard {...event} />
           </div>
         ))}

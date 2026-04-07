@@ -1,5 +1,6 @@
 import {
   Controller, Post, Get, Put, Delete, Param, Body, Query, UseGuards,
+  Logger, HttpException, InternalServerErrorException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { SoulToursService } from './soul-tours.service';
@@ -20,6 +21,8 @@ import { Role } from '@prisma/client';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class SoulToursController {
+  private readonly logger = new Logger(SoulToursController.name);
+
   constructor(private readonly soulToursService: SoulToursService) {}
 
   // ─── Tour CRUD (Guide) ─────────────────────────────────────────────────────
@@ -103,7 +106,7 @@ export class SoulToursController {
     return this.soulToursService.getManifest(user.id, tourId, departureId);
   }
 
-  // ─── Public ────────────────────────────────────────────────────────────────
+  // ─── Public listing ────────────────────────────────────────────────────────
 
   @Public()
   @Get()
@@ -113,14 +116,10 @@ export class SoulToursController {
     return this.soulToursService.findPublished(Number(page) || 1, Number(limit) || 12);
   }
 
-  @Public()
-  @Get(':slugOrId')
-  @ApiOperation({ summary: 'Get tour details by slug or ID (public)' })
-  findOne(@Param('slugOrId') slugOrId: string) {
-    return this.soulToursService.findOne(slugOrId);
-  }
-
   // ─── Bookings (Seeker) ─────────────────────────────────────────────────────
+  // NOTE: keep these BEFORE the catch-all `@Get(':slugOrId')` further down,
+  // otherwise NestJS routes literal paths like /my-bookings or /bookings/...
+  // through the slug handler and they 404.
 
   @Get('my-bookings')
   @Roles(Role.SEEKER)
@@ -132,8 +131,38 @@ export class SoulToursController {
   @Post('book')
   @Roles(Role.SEEKER)
   @ApiOperation({ summary: 'Book a soul tour (seeker)' })
-  bookTour(@CurrentUser() user: CurrentUserData, @Body() dto: BookTourDto) {
-    return this.soulToursService.bookTour(user.id, dto);
+  async bookTour(@CurrentUser() user: CurrentUserData, @Body() dto: BookTourDto) {
+    this.logger.log(`bookTour called by user=${user.id} with payload: ${JSON.stringify({
+      tourId: dto.tourId,
+      departureId: dto.departureId,
+      roomTypeId: dto.roomTypeId,
+      travelers: dto.travelers,
+      chosenDepositAmount: dto.chosenDepositAmount,
+      paymentMethod: dto.paymentMethod,
+      travelersDetailsCount: dto.travelersDetails?.length,
+      travelersDetails: dto.travelersDetails,
+    })}`);
+    try {
+      const result = await this.soulToursService.bookTour(user.id, dto);
+      this.logger.log(`bookTour SUCCESS: bookingId=${(result as any)?.id}`);
+      return result;
+    } catch (err: any) {
+      // Re-throw HTTP exceptions (BadRequest, NotFound, Forbidden) untouched
+      if (err instanceof HttpException) {
+        this.logger.warn(`bookTour rejected: ${err.message}`);
+        throw err;
+      }
+      // For everything else, log the full stack and surface the actual message
+      // (development-friendly — production should hide details behind a generic 500)
+      this.logger.error(`bookTour CRASHED: ${err?.message}`, err?.stack);
+      throw new InternalServerErrorException({
+        statusCode: 500,
+        message: err?.message || 'Internal server error',
+        error: err?.name || 'Error',
+        // Include first 5 lines of the stack so we can see it in DevTools
+        stackPreview: err?.stack?.split('\n').slice(0, 6).join('\n'),
+      });
+    }
   }
 
   @Get('bookings/:bookingId')
@@ -165,5 +194,16 @@ export class SoulToursController {
     @Body() dto: CancelBookingDto,
   ) {
     return this.soulToursService.cancelBooking(user.id, bookingId, dto);
+  }
+
+  // ─── Public detail (CATCH-ALL — must remain LAST) ──────────────────────────
+  // Any literal route under /soul-tours (my-bookings, book, bookings/...) must
+  // appear above this method, otherwise NestJS will match `:slugOrId` first.
+
+  @Public()
+  @Get(':slugOrId')
+  @ApiOperation({ summary: 'Get tour details by slug or ID (public)' })
+  findOne(@Param('slugOrId') slugOrId: string) {
+    return this.soulToursService.findOne(slugOrId);
   }
 }

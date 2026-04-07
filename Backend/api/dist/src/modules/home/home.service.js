@@ -167,16 +167,23 @@ let HomeService = class HomeService {
         }));
     }
     async getSoulTravelEvents() {
-        const events = await this.prisma.event.findMany({
+        const tours = await this.prisma.soulTour.findMany({
             where: {
                 isPublished: true,
                 isCancelled: false,
-                type: 'SOUL_TRAVEL',
+                departures: {
+                    some: { status: 'SCHEDULED', startDate: { gte: new Date() } },
+                },
             },
-            orderBy: { startTime: 'asc' },
+            orderBy: { startDate: 'asc' },
             take: 6,
             include: {
-                ticketTiers: { take: 1, orderBy: { price: 'asc' } },
+                roomTypes: { orderBy: { totalPrice: 'asc' }, take: 1 },
+                departures: {
+                    where: { status: 'SCHEDULED', startDate: { gte: new Date() } },
+                    orderBy: { startDate: 'asc' },
+                    take: 1,
+                },
                 guide: {
                     select: {
                         slug: true,
@@ -186,20 +193,25 @@ let HomeService = class HomeService {
                 },
             },
         });
-        return events.map((e) => ({
-            id: e.id,
-            title: e.title,
-            startTime: e.startTime,
-            endTime: e.endTime,
-            location: e.location,
-            coverImageUrl: e.coverImageUrl,
-            startingPrice: e.ticketTiers[0]?.price || 0,
-            guide: {
-                slug: e.guide.slug,
-                displayName: e.guide.displayName,
-                avatarUrl: e.guide.user.avatarUrl,
-            },
-        }));
+        return tours.map((t) => {
+            const nextDeparture = t.departures[0];
+            const cheapestRoom = t.roomTypes[0];
+            return {
+                id: t.id,
+                slug: t.slug,
+                title: t.title,
+                startTime: nextDeparture?.startDate ?? t.startDate,
+                endTime: nextDeparture?.endDate ?? t.endDate,
+                location: t.location,
+                coverImageUrl: t.coverImageUrl,
+                startingPrice: cheapestRoom ? Number(cheapestRoom.totalPrice) : Number(t.basePrice),
+                guide: {
+                    slug: t.guide.slug,
+                    displayName: t.guide.displayName,
+                    avatarUrl: t.guide.user.avatarUrl,
+                },
+            };
+        });
     }
 };
 exports.HomeService = HomeService;

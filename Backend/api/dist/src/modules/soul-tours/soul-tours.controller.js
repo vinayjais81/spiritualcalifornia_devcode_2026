@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var SoulToursController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SoulToursController = void 0;
 const common_1 = require("@nestjs/common");
@@ -25,8 +26,9 @@ const roles_decorator_1 = require("../auth/decorators/roles.decorator");
 const public_decorator_1 = require("../auth/decorators/public.decorator");
 const current_user_decorator_1 = require("../auth/decorators/current-user.decorator");
 const client_1 = require("@prisma/client");
-let SoulToursController = class SoulToursController {
+let SoulToursController = SoulToursController_1 = class SoulToursController {
     soulToursService;
+    logger = new common_1.Logger(SoulToursController_1.name);
     constructor(soulToursService) {
         this.soulToursService = soulToursService;
     }
@@ -57,14 +59,38 @@ let SoulToursController = class SoulToursController {
     findPublished(page, limit) {
         return this.soulToursService.findPublished(Number(page) || 1, Number(limit) || 12);
     }
-    findOne(slugOrId) {
-        return this.soulToursService.findOne(slugOrId);
-    }
     findMyBookings(user) {
         return this.soulToursService.findMyBookings(user.id);
     }
-    bookTour(user, dto) {
-        return this.soulToursService.bookTour(user.id, dto);
+    async bookTour(user, dto) {
+        this.logger.log(`bookTour called by user=${user.id} with payload: ${JSON.stringify({
+            tourId: dto.tourId,
+            departureId: dto.departureId,
+            roomTypeId: dto.roomTypeId,
+            travelers: dto.travelers,
+            chosenDepositAmount: dto.chosenDepositAmount,
+            paymentMethod: dto.paymentMethod,
+            travelersDetailsCount: dto.travelersDetails?.length,
+            travelersDetails: dto.travelersDetails,
+        })}`);
+        try {
+            const result = await this.soulToursService.bookTour(user.id, dto);
+            this.logger.log(`bookTour SUCCESS: bookingId=${result?.id}`);
+            return result;
+        }
+        catch (err) {
+            if (err instanceof common_1.HttpException) {
+                this.logger.warn(`bookTour rejected: ${err.message}`);
+                throw err;
+            }
+            this.logger.error(`bookTour CRASHED: ${err?.message}`, err?.stack);
+            throw new common_1.InternalServerErrorException({
+                statusCode: 500,
+                message: err?.message || 'Internal server error',
+                error: err?.name || 'Error',
+                stackPreview: err?.stack?.split('\n').slice(0, 6).join('\n'),
+            });
+        }
     }
     getBooking(user, bookingId) {
         return this.soulToursService.getBookingForSeeker(user.id, bookingId);
@@ -74,6 +100,9 @@ let SoulToursController = class SoulToursController {
     }
     cancelBooking(user, bookingId, dto) {
         return this.soulToursService.cancelBooking(user.id, bookingId, dto);
+    }
+    findOne(slugOrId) {
+        return this.soulToursService.findOne(slugOrId);
     }
 };
 exports.SoulToursController = SoulToursController;
@@ -175,15 +204,6 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], SoulToursController.prototype, "findPublished", null);
 __decorate([
-    (0, public_decorator_1.Public)(),
-    (0, common_1.Get)(':slugOrId'),
-    (0, swagger_1.ApiOperation)({ summary: 'Get tour details by slug or ID (public)' }),
-    __param(0, (0, common_1.Param)('slugOrId')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
-], SoulToursController.prototype, "findOne", null);
-__decorate([
     (0, common_1.Get)('my-bookings'),
     (0, roles_decorator_1.Roles)(client_1.Role.SEEKER),
     (0, swagger_1.ApiOperation)({ summary: "List seeker's tour bookings" }),
@@ -200,7 +220,7 @@ __decorate([
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, book_tour_dto_1.BookTourDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:returntype", Promise)
 ], SoulToursController.prototype, "bookTour", null);
 __decorate([
     (0, common_1.Get)('bookings/:bookingId'),
@@ -233,7 +253,16 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, book_tour_dto_1.CancelBookingDto]),
     __metadata("design:returntype", void 0)
 ], SoulToursController.prototype, "cancelBooking", null);
-exports.SoulToursController = SoulToursController = __decorate([
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Get)(':slugOrId'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get tour details by slug or ID (public)' }),
+    __param(0, (0, common_1.Param)('slugOrId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], SoulToursController.prototype, "findOne", null);
+exports.SoulToursController = SoulToursController = SoulToursController_1 = __decorate([
     (0, swagger_1.ApiTags)('Soul Tours'),
     (0, common_1.Controller)('soul-tours'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

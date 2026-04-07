@@ -1,4 +1,6 @@
 import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * AES-256-GCM cipher for passport numbers and other sensitive PII.
@@ -21,9 +23,56 @@ const AUTH_TAG_LENGTH = 16;
 
 let cachedKey: Buffer | null = null;
 
+/**
+ * Read PASSPORT_ENCRYPTION_KEY directly from the .env file on disk.
+ * Used as a fallback when the running process was started before the env
+ * var was added (so process.env doesn't have it yet) — avoids forcing a
+ * full backend restart for a config change.
+ */
+function readKeyFromEnvFile(): string | undefined {
+  // Walk up from the compiled file location looking for a .env
+  // (works whether the code is at src/... in dev or dist/... in prod build)
+  const candidates = [
+    path.resolve(process.cwd(), '.env'),
+    path.resolve(__dirname, '../../../.env'),
+    path.resolve(__dirname, '../../../../.env'),
+  ];
+  for (const p of candidates) {
+    try {
+      if (!fs.existsSync(p)) continue;
+      const content = fs.readFileSync(p, 'utf8');
+      for (const rawLine of content.split('\n')) {
+        const line = rawLine.trim();
+        if (!line || line.startsWith('#')) continue;
+        const eq = line.indexOf('=');
+        if (eq === -1) continue;
+        const key = line.slice(0, eq).trim();
+        if (key !== 'PASSPORT_ENCRYPTION_KEY') continue;
+        // Strip optional surrounding quotes
+        let value = line.slice(eq + 1).trim();
+        if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+          value = value.slice(1, -1);
+        }
+        return value;
+      }
+    } catch {
+      // Try next candidate
+    }
+  }
+  return undefined;
+}
+
 function getKey(): Buffer {
   if (cachedKey) return cachedKey;
-  const hex = process.env.PASSPORT_ENCRYPTION_KEY;
+  // 1. Prefer process.env (NestJS ConfigModule loads it on startup)
+  // 2. Fall back to reading .env directly (handles "added env after process started")
+  let hex = process.env.PASSPORT_ENCRYPTION_KEY;
+  if (!hex) {
+    hex = readKeyFromEnvFile();
+    if (hex) {
+      process.env.PASSPORT_ENCRYPTION_KEY = hex; // hydrate for subsequent calls
+    }
+  }
   if (!hex) {
     throw new Error(
       'PASSPORT_ENCRYPTION_KEY env var is not set. Generate one with: openssl rand -hex 32',

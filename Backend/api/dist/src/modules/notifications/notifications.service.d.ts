@@ -9,23 +9,23 @@ export declare class NotificationsService {
     create(userId: string, type: NotificationType, title: string, body: string, data?: Record<string, any>): Promise<{
         data: import("@prisma/client/runtime/client").JsonValue | null;
         id: string;
-        type: import(".prisma/client").$Enums.NotificationType;
-        title: string;
-        body: string;
-        isRead: boolean;
         createdAt: Date;
         userId: string;
+        title: string;
+        type: import(".prisma/client").$Enums.NotificationType;
+        body: string;
+        isRead: boolean;
     }>;
     findByUser(userId: string, page?: number, limit?: number): Promise<{
         notifications: {
             data: import("@prisma/client/runtime/client").JsonValue | null;
             id: string;
-            type: import(".prisma/client").$Enums.NotificationType;
-            title: string;
-            body: string;
-            isRead: boolean;
             createdAt: Date;
             userId: string;
+            title: string;
+            type: import(".prisma/client").$Enums.NotificationType;
+            body: string;
+            isRead: boolean;
         }[];
         unreadCount: number;
         pagination: {

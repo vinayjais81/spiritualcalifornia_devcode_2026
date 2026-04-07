@@ -384,10 +384,21 @@ export class SoulToursService {
 
     const primary = dto.travelersDetails.find((t) => t.isPrimary)!;
 
+    // Validate every traveler has the required identity fields filled in
+    // (frontend should already enforce, but `@IsString()` allows empty strings).
+    dto.travelersDetails.forEach((t, i) => {
+      if (!t.firstName?.trim()) throw new BadRequestException(`Traveler ${i + 1}: first name is required`);
+      if (!t.lastName?.trim()) throw new BadRequestException(`Traveler ${i + 1}: last name is required`);
+      if (!t.dateOfBirth) throw new BadRequestException(`Traveler ${i + 1}: date of birth is required`);
+      if (!t.nationality?.trim()) throw new BadRequestException(`Traveler ${i + 1}: nationality is required`);
+      if (!t.passportNumber?.trim()) throw new BadRequestException(`Traveler ${i + 1}: passport number is required`);
+      if (!t.passportExpiry) throw new BadRequestException(`Traveler ${i + 1}: passport expiry is required`);
+    });
+
     // Encrypt all passport numbers up front (outside the transaction)
     const encryptedTravelers = dto.travelersDetails.map((t) => ({
       ...t,
-      passportNumberEncrypted: encryptPassport(t.passportNumber),
+      passportNumberEncrypted: encryptPassport(t.passportNumber.trim()),
     }));
 
     // Transactional create + inventory decrement

@@ -566,6 +566,20 @@ export declare class GuidesService {
             coverImageUrl: string | null;
             isCancelled: boolean;
         })[];
+        soulTours: {
+            id: string;
+            slug: string;
+            title: string;
+            shortDesc: string | null;
+            location: string | null;
+            coverImageUrl: string | null;
+            difficultyLevel: string | null;
+            nextDepartureStart: Date;
+            nextDepartureEnd: Date;
+            spotsRemaining: number;
+            startingPrice: number;
+            currency: string;
+        }[];
         products: {
             id: string;
             name: string;
@@ -641,6 +655,7 @@ export declare class GuidesService {
         })[];
         memberSince: Date;
     }>;
+    private findPublishedSoulToursByGuideId;
     private ensureUniqueSlug;
     getPublicServices(slug: string): Promise<{
         id: string;

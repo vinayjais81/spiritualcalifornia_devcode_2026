@@ -51,6 +51,21 @@ interface GuideEvent {
   ticketTiers: EventTier[];
 }
 
+interface GuideSoulTour {
+  id: string;
+  slug: string;
+  title: string;
+  shortDesc: string | null;
+  location: string | null;
+  coverImageUrl: string | null;
+  difficultyLevel: string | null;
+  nextDepartureStart: string;
+  nextDepartureEnd: string;
+  spotsRemaining: number;
+  startingPrice: number | string;
+  currency: string;
+}
+
 interface Product {
   id: string;
   name: string;
@@ -105,6 +120,7 @@ interface GuideProfile {
   credentials: Credential[];
   services: Service[];
   events: GuideEvent[];
+  soulTours: GuideSoulTour[];
   products: Product[];
   blogPosts: BlogPost[];
   reviews: Review[];
@@ -510,6 +526,79 @@ export default function GuideProfilePage() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* ── SOUL TOURS ─────────────────────────────────────────── */}
+          {guide.soulTours && guide.soulTours.length > 0 && (
+            <div style={{ marginBottom: '40px' }}>
+              <SectionTitle>Soul Tours with {guide.displayName.split(' ')[0]}</SectionTitle>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {guide.soulTours.map((t) => (
+                  <Link
+                    key={t.id}
+                    href={`/tours/${t.slug}`}
+                    style={{
+                      background: C.white, border: '1px solid rgba(232,184,75,0.15)',
+                      borderRadius: '10px', overflow: 'hidden', display: 'flex', gap: 0,
+                      textDecoration: 'none', color: 'inherit', transition: 'box-shadow 0.3s',
+                    }}
+                  >
+                    <div style={{
+                      width: '180px', flexShrink: 0,
+                      background: t.coverImageUrl
+                        ? `url(${t.coverImageUrl}) center/cover`
+                        : 'linear-gradient(135deg, #2C2420, #3A3530)',
+                      position: 'relative', minHeight: '160px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '48px', color: 'rgba(255,255,255,0.4)',
+                    }}>
+                      {!t.coverImageUrl && '🏔️'}
+                      <div style={{
+                        position: 'absolute', top: '12px', left: '12px',
+                        background: 'rgba(232,184,75,0.95)', color: C.charcoal, borderRadius: '6px',
+                        padding: '5px 10px', fontFamily: font, fontSize: '10px', fontWeight: 600,
+                        letterSpacing: '0.08em', textTransform: 'uppercase',
+                      }}>
+                        Soul Tour
+                      </div>
+                    </div>
+                    <div style={{ padding: '18px 22px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ fontFamily: serif, fontSize: '20px', fontWeight: 500, color: C.charcoal, marginBottom: '4px' }}>
+                          {t.title}
+                        </div>
+                        {t.shortDesc && (
+                          <div style={{ fontFamily: font, fontSize: '12px', color: C.warmGray, lineHeight: 1.6, marginBottom: '10px' }}>
+                            {t.shortDesc}
+                          </div>
+                        )}
+                        <div style={{ fontFamily: font, fontSize: '12px', color: C.warmGray, lineHeight: 1.7 }}>
+                          📅 {formatDate(t.nextDepartureStart)} – {formatDate(t.nextDepartureEnd)}<br />
+                          {t.location && <>📍 {t.location}<br /></>}
+                          👥 {t.spotsRemaining > 0 ? `${t.spotsRemaining} spots remaining` : 'Sold out'}
+                          {t.difficultyLevel && <> · <span style={{ textTransform: 'capitalize' }}>{t.difficultyLevel.toLowerCase()}</span></>}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '14px' }}>
+                        <div>
+                          <div style={{ fontFamily: font, fontSize: '10px', color: C.warmGray, letterSpacing: '0.06em', textTransform: 'uppercase' }}>From</div>
+                          <div style={{ fontFamily: serif, fontSize: '22px', fontWeight: 500, color: C.charcoal }}>
+                            ${Number(t.startingPrice).toLocaleString()} <span style={{ fontSize: '11px', fontFamily: font, color: C.warmGray, fontWeight: 400 }}>/ person</span>
+                          </div>
+                        </div>
+                        <span style={{
+                          padding: '8px 18px', background: C.gold, color: C.white,
+                          fontFamily: font, fontSize: '11px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase',
+                          borderRadius: '8px',
+                        }}>
+                          View Journey →
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
             </div>
           )}

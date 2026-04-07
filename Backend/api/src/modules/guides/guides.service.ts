@@ -432,7 +432,7 @@ export class GuidesService {
     if (!guide) throw new NotFoundException(`Guide not found: ${slug}`);
 
     // Aggregate all related data in parallel
-    const [services, events, products, blogPosts, reviewData, testimonials] =
+    const [services, events, products, blogPosts, reviewData, testimonials, soulTours] =
       await Promise.all([
         this.servicesService.findByGuideId(guide.id),
         this.eventsService.findPublishedByGuideId(guide.id),
@@ -440,6 +440,7 @@ export class GuidesService {
         this.blogService.findPublishedByGuideId(guide.id),
         this.reviewsService.findByGuideUserId(guide.userId, 1, 5),
         this.reviewsService.findTestimonialsByGuideId(guide.id),
+        this.findPublishedSoulToursByGuideId(guide.id),
       ]);
 
     // Group category tags
@@ -477,6 +478,7 @@ export class GuidesService {
       credentials: verifiedCredentials,
       services,
       events,
+      soulTours,
       products,
       blogPosts,
       reviews: reviewData.reviews,
@@ -488,6 +490,49 @@ export class GuidesService {
       testimonials,
       memberSince: guide.user.createdAt,
     };
+  }
+
+  // ─── Public: published Soul Tours for a guide (for profile page) ──────────
+
+  private async findPublishedSoulToursByGuideId(guideId: string) {
+    const tours = await this.prisma.soulTour.findMany({
+      where: {
+        guideId,
+        isPublished: true,
+        isCancelled: false,
+        departures: {
+          some: { status: 'SCHEDULED', startDate: { gte: new Date() } },
+        },
+      },
+      orderBy: { startDate: 'asc' },
+      include: {
+        roomTypes: { orderBy: { totalPrice: 'asc' }, take: 1 },
+        departures: {
+          where: { status: 'SCHEDULED', startDate: { gte: new Date() } },
+          orderBy: { startDate: 'asc' },
+          take: 1,
+        },
+      },
+    });
+
+    return tours.map((t) => {
+      const next = t.departures[0];
+      const cheapestRoom = t.roomTypes[0];
+      return {
+        id: t.id,
+        slug: t.slug,
+        title: t.title,
+        shortDesc: t.shortDesc,
+        location: t.location,
+        coverImageUrl: t.coverImageUrl,
+        difficultyLevel: t.difficultyLevel,
+        nextDepartureStart: next?.startDate ?? t.startDate,
+        nextDepartureEnd: next?.endDate ?? t.endDate,
+        spotsRemaining: next?.spotsRemaining ?? t.spotsRemaining,
+        startingPrice: cheapestRoom ? Number(cheapestRoom.totalPrice) : Number(t.basePrice),
+        currency: t.currency,
+      };
+    });
   }
 
   private async ensureUniqueSlug(base: string): Promise<string> {

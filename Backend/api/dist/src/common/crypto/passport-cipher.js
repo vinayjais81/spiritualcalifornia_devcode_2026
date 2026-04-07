@@ -37,15 +37,56 @@ exports.encryptPassport = encryptPassport;
 exports.decryptPassport = decryptPassport;
 exports.maskPassport = maskPassport;
 const crypto = __importStar(require("crypto"));
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
 const VERSION = 'v1';
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
 const AUTH_TAG_LENGTH = 16;
 let cachedKey = null;
+function readKeyFromEnvFile() {
+    const candidates = [
+        path.resolve(process.cwd(), '.env'),
+        path.resolve(__dirname, '../../../.env'),
+        path.resolve(__dirname, '../../../../.env'),
+    ];
+    for (const p of candidates) {
+        try {
+            if (!fs.existsSync(p))
+                continue;
+            const content = fs.readFileSync(p, 'utf8');
+            for (const rawLine of content.split('\n')) {
+                const line = rawLine.trim();
+                if (!line || line.startsWith('#'))
+                    continue;
+                const eq = line.indexOf('=');
+                if (eq === -1)
+                    continue;
+                const key = line.slice(0, eq).trim();
+                if (key !== 'PASSPORT_ENCRYPTION_KEY')
+                    continue;
+                let value = line.slice(eq + 1).trim();
+                if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+                    value = value.slice(1, -1);
+                }
+                return value;
+            }
+        }
+        catch {
+        }
+    }
+    return undefined;
+}
 function getKey() {
     if (cachedKey)
         return cachedKey;
-    const hex = process.env.PASSPORT_ENCRYPTION_KEY;
+    let hex = process.env.PASSPORT_ENCRYPTION_KEY;
+    if (!hex) {
+        hex = readKeyFromEnvFile();
+        if (hex) {
+            process.env.PASSPORT_ENCRYPTION_KEY = hex;
+        }
+    }
     if (!hex) {
         throw new Error('PASSPORT_ENCRYPTION_KEY env var is not set. Generate one with: openssl rand -hex 32');
     }

@@ -108,6 +108,20 @@ export declare class GuidesController {
             coverImageUrl: string | null;
             isCancelled: boolean;
         })[];
+        soulTours: {
+            id: string;
+            slug: string;
+            title: string;
+            shortDesc: string | null;
+            location: string | null;
+            coverImageUrl: string | null;
+            difficultyLevel: string | null;
+            nextDepartureStart: Date;
+            nextDepartureEnd: Date;
+            spotsRemaining: number;
+            startingPrice: number;
+            currency: string;
+        }[];
         products: {
             id: string;
             name: string;

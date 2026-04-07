@@ -60,12 +60,13 @@ export declare class HomeController {
         }[];
         soulTravelEvents: {
             id: string;
+            slug: string;
             title: string;
             startTime: Date;
             endTime: Date;
             location: string | null;
             coverImageUrl: string | null;
-            startingPrice: import("@prisma/client-runtime-utils").Decimal;
+            startingPrice: number;
             guide: {
                 slug: string;
                 displayName: string;

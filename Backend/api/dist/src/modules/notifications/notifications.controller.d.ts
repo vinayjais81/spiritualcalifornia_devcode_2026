@@ -7,12 +7,12 @@ export declare class NotificationsController {
         notifications: {
             data: import("@prisma/client/runtime/client").JsonValue | null;
             id: string;
-            type: import(".prisma/client").$Enums.NotificationType;
-            title: string;
-            body: string;
-            isRead: boolean;
             createdAt: Date;
             userId: string;
+            title: string;
+            type: import(".prisma/client").$Enums.NotificationType;
+            body: string;
+            isRead: boolean;
         }[];
         unreadCount: number;
         pagination: {

@@ -29,21 +29,21 @@ export declare class PaymentsService {
     }>;
     confirmPayment(paymentIntentId: string, paymentMethodType?: string): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        currency: string;
+        status: import(".prisma/client").$Enums.PaymentStatus;
         stripePaymentIntentId: string;
         stripeCheckoutSessionId: string | null;
         stripeTransferId: string | null;
         amount: import("@prisma/client-runtime-utils").Decimal;
-        currency: string;
         platformFee: import("@prisma/client-runtime-utils").Decimal;
         guideAmount: import("@prisma/client-runtime-utils").Decimal;
         paymentType: import(".prisma/client").$Enums.PaymentType;
-        status: import(".prisma/client").$Enums.PaymentStatus;
         refundedAmount: import("@prisma/client-runtime-utils").Decimal | null;
         stripeRefundId: string | null;
         paymentMethod: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
-        createdAt: Date;
-        updatedAt: Date;
         bookingId: string | null;
         orderId: string | null;
         ticketPurchaseId: string | null;
@@ -54,21 +54,21 @@ export declare class PaymentsService {
     failPayment(paymentIntentId: string): Promise<void>;
     findOne(paymentId: string): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        currency: string;
+        status: import(".prisma/client").$Enums.PaymentStatus;
         stripePaymentIntentId: string;
         stripeCheckoutSessionId: string | null;
         stripeTransferId: string | null;
         amount: import("@prisma/client-runtime-utils").Decimal;
-        currency: string;
         platformFee: import("@prisma/client-runtime-utils").Decimal;
         guideAmount: import("@prisma/client-runtime-utils").Decimal;
         paymentType: import(".prisma/client").$Enums.PaymentType;
-        status: import(".prisma/client").$Enums.PaymentStatus;
         refundedAmount: import("@prisma/client-runtime-utils").Decimal | null;
         stripeRefundId: string | null;
         paymentMethod: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
-        createdAt: Date;
-        updatedAt: Date;
         bookingId: string | null;
         orderId: string | null;
         ticketPurchaseId: string | null;
@@ -76,21 +76,21 @@ export declare class PaymentsService {
     }>;
     refund(paymentId: string, amount?: number): Promise<{
         id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        currency: string;
+        status: import(".prisma/client").$Enums.PaymentStatus;
         stripePaymentIntentId: string;
         stripeCheckoutSessionId: string | null;
         stripeTransferId: string | null;
         amount: import("@prisma/client-runtime-utils").Decimal;
-        currency: string;
         platformFee: import("@prisma/client-runtime-utils").Decimal;
         guideAmount: import("@prisma/client-runtime-utils").Decimal;
         paymentType: import(".prisma/client").$Enums.PaymentType;
-        status: import(".prisma/client").$Enums.PaymentStatus;
         refundedAmount: import("@prisma/client-runtime-utils").Decimal | null;
         stripeRefundId: string | null;
         paymentMethod: string | null;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
-        createdAt: Date;
-        updatedAt: Date;
         bookingId: string | null;
         orderId: string | null;
         ticketPurchaseId: string | null;
@@ -134,13 +134,13 @@ export declare class PaymentsService {
     }>;
     requestPayout(userId: string, amount: number): Promise<{
         id: string;
-        amount: import("@prisma/client-runtime-utils").Decimal;
+        createdAt: Date;
+        guideId: string;
         currency: string;
         status: import(".prisma/client").$Enums.PayoutStatus;
-        createdAt: Date;
-        stripePayoutId: string | null;
+        amount: import("@prisma/client-runtime-utils").Decimal;
         processedAt: Date | null;
-        guideId: string;
+        stripePayoutId: string | null;
         payoutAccountId: string;
     }>;
     getGuideEarnings(userId: string): Promise<{
@@ -152,13 +152,13 @@ export declare class PaymentsService {
         };
         recentPayments: {
             id: string;
+            createdAt: Date;
+            status: import(".prisma/client").$Enums.PaymentStatus;
             amount: import("@prisma/client-runtime-utils").Decimal;
             platformFee: import("@prisma/client-runtime-utils").Decimal;
             guideAmount: import("@prisma/client-runtime-utils").Decimal;
             paymentType: import(".prisma/client").$Enums.PaymentType;
-            status: import(".prisma/client").$Enums.PaymentStatus;
             paymentMethod: string | null;
-            createdAt: Date;
         }[];
         stripeConnected: boolean;
     }>;
