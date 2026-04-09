@@ -1,0 +1,56 @@
+name: Deploy to QA EC2
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-qa
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to spiritualcalifornia.nityo.in
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          command_timeout: 15m
+          script: |
+            set -e
+            echo "==> Deploy started at $(date)"
+
+            cd /var/www/spiritual-california
+
+            echo "==> Pulling latest from origin/main"
+            git fetch --all
+            git reset --hard origin/main
+
+            echo "==> Backend: install + migrate + build"
+            cd Backend/api
+            npm ci
+            npx prisma generate
+            npx prisma migrate deploy
+            npm run build
+
+            echo "==> Frontend: install + build"
+            cd ../../Frontend/web
+            unset NODE_ENV
+            npm ci
+            rm -rf .next
+            npm run build
+
+            echo "==> Restart PM2 processes"
+            pm2 reload sc-api --update-env
+            pm2 reload sc-web --update-env
+            pm2 save
+
+            echo "==> Deploy completed at $(date)"
+            pm2 list
