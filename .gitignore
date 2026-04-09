@@ -22,3 +22,4 @@ Backend/api/.env.example
 Backend/api/.env.example
 Backend/api/.env.example
 Frontend/web/.env.local
+Frontend/web/.env.local
