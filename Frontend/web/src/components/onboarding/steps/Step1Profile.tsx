@@ -16,7 +16,9 @@ const LANGUAGES = [
 ];
 
 const iBase: React.CSSProperties = {
-  border: '1px solid rgba(138,130,120,0.25)',
+  borderWidth: '1px',
+  borderStyle: 'solid',
+  borderColor: 'rgba(138,130,120,0.25)',
   borderRadius: '8px',
   padding: '12px 16px',
   fontFamily: 'var(--font-inter), sans-serif',

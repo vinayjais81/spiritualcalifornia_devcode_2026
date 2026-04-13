@@ -19,8 +19,6 @@ class TravelerDto {
     lastName;
     dateOfBirth;
     nationality;
-    passportNumber;
-    passportExpiry;
     email;
     phone;
 }
@@ -31,12 +29,12 @@ __decorate([
     __metadata("design:type", Boolean)
 ], TravelerDto.prototype, "isPrimary", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: 'First name as on passport' }),
+    (0, swagger_1.ApiProperty)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], TravelerDto.prototype, "firstName", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ description: 'Last name as on passport' }),
+    (0, swagger_1.ApiProperty)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], TravelerDto.prototype, "lastName", void 0);
@@ -50,16 +48,6 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], TravelerDto.prototype, "nationality", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], TravelerDto.prototype, "passportNumber", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)(),
-    (0, class_validator_1.IsDateString)(),
-    __metadata("design:type", String)
-], TravelerDto.prototype, "passportExpiry", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)(),
     (0, class_validator_1.IsOptional)(),

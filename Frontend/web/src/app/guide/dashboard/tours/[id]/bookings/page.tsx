@@ -15,9 +15,6 @@ interface Traveler {
   lastName: string;
   dateOfBirth: string;
   nationality: string;
-  passportNumber: string;
-  passportMasked: string;
-  passportExpiry: string;
   email: string | null;
   phone: string | null;
 }
@@ -71,7 +68,6 @@ export default function TourBookingsPage() {
   const [departureFilter, setDepartureFilter] = useState<string>('all');
   const [rows, setRows] = useState<ManifestRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [revealedPassports, setRevealedPassports] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!tourId) return;
@@ -107,21 +103,13 @@ export default function TourBookingsPage() {
       .catch((err) => toast.error(err?.response?.data?.message || 'Failed to filter'));
   }, [departureFilter]);
 
-  const toggleReveal = (key: string) => {
-    setRevealedPassports((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return next;
-    });
-  };
 
   // ─── CSV Export ────────────────────────────────────────────────────────────
   const exportCsv = () => {
     const headers = [
       'Booking Ref', 'Status', 'Departure Start', 'Departure End', 'Room Type',
       'Traveler #', 'Primary?', 'First Name', 'Last Name', 'DOB', 'Nationality',
-      'Passport #', 'Passport Expiry', 'Email', 'Phone',
+      'Email', 'Phone',
       'Dietary', 'Dietary Notes', 'Health Conditions',
     ];
     const lines: string[] = [headers.join(',')];
@@ -139,8 +127,6 @@ export default function TourBookingsPage() {
           t.lastName,
           new Date(t.dateOfBirth).toISOString().slice(0, 10),
           t.nationality,
-          t.passportNumber, // full plaintext (guide only)
-          new Date(t.passportExpiry).toISOString().slice(0, 10),
           t.email || row.contactEmail,
           t.phone || row.contactPhone || '',
           row.dietaryRequirements || '',
@@ -197,7 +183,7 @@ export default function TourBookingsPage() {
         Bookings & Manifest
       </h1>
       <p style={{ fontFamily: font, fontSize: 13, color: C.warmGray, marginBottom: 32 }}>
-        {tour?.title} — confirmed travelers with passport details, dietary needs, and health flags
+        {tour?.title} — confirmed travelers with dietary needs and health flags
       </p>
 
       {/* Stats */}
@@ -246,7 +232,7 @@ export default function TourBookingsPage() {
       {/* Bookings list */}
       {rows.length === 0 ? (
         <Panel title="No bookings yet" icon="📋">
-          <EmptyState message="When seekers book this tour, their details and passport information will appear here." />
+          <EmptyState message="When seekers book this tour, their details will appear here." />
         </Panel>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -297,7 +283,7 @@ export default function TourBookingsPage() {
               <div style={{ padding: 20 }}>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: '40px 1.4fr 1fr 1fr 1.6fr 1fr auto',
+                  gridTemplateColumns: '40px 1.4fr 1fr 1fr 1.2fr 1fr',
                   gap: 12, padding: '0 0 8px',
                   fontFamily: font, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.warmGray,
                   borderBottom: '1px solid rgba(232,184,75,0.1)',
@@ -306,19 +292,15 @@ export default function TourBookingsPage() {
                   <div>Name</div>
                   <div>DOB</div>
                   <div>Nationality</div>
-                  <div>Passport</div>
-                  <div>Expiry</div>
-                  <div></div>
+                  <div>Email</div>
+                  <div>Phone</div>
                 </div>
-                {row.manifest.map((t, i) => {
-                  const key = `${row.bookingId}:${i}`;
-                  const isRevealed = revealedPassports.has(key);
-                  return (
+                {row.manifest.map((t, i) => (
                     <div
-                      key={key}
+                      key={`${row.bookingId}:${i}`}
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: '40px 1.4fr 1fr 1fr 1.6fr 1fr auto',
+                        gridTemplateColumns: '40px 1.4fr 1fr 1fr 1.2fr 1fr',
                         gap: 12, padding: '12px 0',
                         fontFamily: font, fontSize: 12, color: C.charcoal,
                         borderBottom: i < row.manifest.length - 1 ? '1px solid rgba(232,184,75,0.06)' : 'none',
@@ -338,27 +320,10 @@ export default function TourBookingsPage() {
                         {new Date(t.dateOfBirth).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
                       </div>
                       <div style={{ color: C.warmGray }}>{t.nationality}</div>
-                      <div style={{ fontFamily: 'monospace', fontSize: 12 }}>
-                        {isRevealed ? t.passportNumber : t.passportMasked}
-                      </div>
-                      <div style={{ color: C.warmGray }}>
-                        {new Date(t.passportExpiry).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}
-                      </div>
-                      <div>
-                        <button
-                          onClick={() => toggleReveal(key)}
-                          style={{
-                            background: 'none', border: `1px solid rgba(232,184,75,0.3)`,
-                            borderRadius: 4, padding: '4px 10px', cursor: 'pointer',
-                            fontSize: 10, color: C.warmGray, fontFamily: font,
-                          }}
-                        >
-                          {isRevealed ? 'Hide' : 'Show'}
-                        </button>
-                      </div>
+                      <div style={{ color: C.warmGray }}>{t.email || '—'}</div>
+                      <div style={{ color: C.warmGray }}>{t.phone || '—'}</div>
                     </div>
-                  );
-                })}
+                ))}
 
                 {/* Contact strip */}
                 <div style={{

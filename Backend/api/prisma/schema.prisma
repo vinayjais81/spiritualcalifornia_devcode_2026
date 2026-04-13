@@ -1146,8 +1146,8 @@ model TourBookingTraveler {
   lastName        String
   dateOfBirth     DateTime
   nationality     String
-  passportNumber  String   // AES-256-GCM encrypted
-  passportExpiry  DateTime
+  passportNumber  String?  // AES-256-GCM encrypted (optional)
+  passportExpiry  DateTime?
   email           String?
   phone           String?
   createdAt       DateTime @default(now())

@@ -16,7 +16,6 @@ interface Traveler {
   lastName: string;
   dateOfBirth: string;
   nationality: string;
-  passportExpiry: string;
   email: string | null;
   phone: string | null;
 }
@@ -299,16 +298,12 @@ export default function SeekerTourBookingDetailPage() {
                   }}>
                     <div>🎂 DOB: {new Date(t.dateOfBirth).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
                     <div>🌍 {t.nationality}</div>
-                    <div>🛂 Passport expires: {new Date(t.passportExpiry).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}</div>
                     {t.email && <div>✉ {t.email}</div>}
                     {t.phone && <div>📞 {t.phone}</div>}
                   </div>
                 </div>
               ))}
             </div>
-            <p style={{ fontFamily: font, fontSize: 11, color: C.warmGray, marginTop: 12, lineHeight: 1.5 }}>
-              🔒 Passport numbers are encrypted at rest and only visible to your trip leader.
-            </p>
           </Panel>
 
           {/* Health & preferences */}

@@ -47,7 +47,6 @@ exports.SoulToursService = void 0;
 const common_1 = require("@nestjs/common");
 const crypto = __importStar(require("crypto"));
 const prisma_service_1 = require("../../database/prisma.service");
-const passport_cipher_1 = require("../../common/crypto/passport-cipher");
 const stripe_service_1 = require("../payments/stripe.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const HOLD_DURATION_MS = 24 * 60 * 60 * 1000;
@@ -379,15 +378,7 @@ let SoulToursService = SoulToursService_1 = class SoulToursService {
                 throw new common_1.BadRequestException(`Traveler ${i + 1}: date of birth is required`);
             if (!t.nationality?.trim())
                 throw new common_1.BadRequestException(`Traveler ${i + 1}: nationality is required`);
-            if (!t.passportNumber?.trim())
-                throw new common_1.BadRequestException(`Traveler ${i + 1}: passport number is required`);
-            if (!t.passportExpiry)
-                throw new common_1.BadRequestException(`Traveler ${i + 1}: passport expiry is required`);
         });
-        const encryptedTravelers = dto.travelersDetails.map((t) => ({
-            ...t,
-            passportNumberEncrypted: (0, passport_cipher_1.encryptPassport)(t.passportNumber.trim()),
-        }));
         const booking = await this.prisma.$transaction(async (tx) => {
             const freshDeparture = await tx.tourDeparture.findUnique({
                 where: { id: departure.id },
@@ -438,14 +429,12 @@ let SoulToursService = SoulToursService_1 = class SoulToursService {
                     contactEmail: primary.email ?? '',
                     contactPhone: primary.phone,
                     travelers_rel: {
-                        create: encryptedTravelers.map((t) => ({
+                        create: dto.travelersDetails.map((t) => ({
                             isPrimary: t.isPrimary,
                             firstName: t.firstName,
                             lastName: t.lastName,
                             dateOfBirth: new Date(t.dateOfBirth),
                             nationality: t.nationality,
-                            passportNumber: t.passportNumberEncrypted,
-                            passportExpiry: new Date(t.passportExpiry),
                             email: t.email,
                             phone: t.phone,
                         })),
@@ -460,7 +449,7 @@ let SoulToursService = SoulToursService_1 = class SoulToursService {
             });
         });
         this.logger.log(`TourBooking created: ${booking.id} (${bookingReference}) — ${dto.travelers} travelers, deposit $${dto.chosenDepositAmount}`);
-        return this.scrubBooking(booking);
+        return booking;
     }
     async getBalanceDue(userId, bookingId) {
         const seeker = await this.prisma.seekerProfile.findUnique({ where: { userId } });
@@ -612,7 +601,7 @@ let SoulToursService = SoulToursService_1 = class SoulToursService {
             throw new common_1.NotFoundException('Booking not found');
         if (booking.seekerId !== seeker.id)
             throw new common_1.ForbiddenException('Not your booking');
-        return this.scrubBooking(booking);
+        return booking;
     }
     async getManifest(userId, tourId, departureId) {
         const guide = await this.requireGuide(userId);
@@ -646,30 +635,15 @@ let SoulToursService = SoulToursService_1 = class SoulToursService {
             healthConditions: b.healthConditions,
             contactEmail: b.contactEmail,
             contactPhone: b.contactPhone,
-            manifest: b.travelers_rel.map((t) => {
-                let passportNumber = '';
-                let passportMasked = '';
-                try {
-                    passportNumber = (0, passport_cipher_1.decryptPassport)(t.passportNumber);
-                    passportMasked = (0, passport_cipher_1.maskPassport)(passportNumber);
-                }
-                catch (err) {
-                    this.logger.error(`Failed to decrypt passport for traveler ${t.id}`);
-                    passportMasked = '<decrypt-failed>';
-                }
-                return {
-                    isPrimary: t.isPrimary,
-                    firstName: t.firstName,
-                    lastName: t.lastName,
-                    dateOfBirth: t.dateOfBirth,
-                    nationality: t.nationality,
-                    passportNumber,
-                    passportMasked,
-                    passportExpiry: t.passportExpiry,
-                    email: t.email,
-                    phone: t.phone,
-                };
-            }),
+            manifest: b.travelers_rel.map((t) => ({
+                isPrimary: t.isPrimary,
+                firstName: t.firstName,
+                lastName: t.lastName,
+                dateOfBirth: t.dateOfBirth,
+                nationality: t.nationality,
+                email: t.email,
+                phone: t.phone,
+            })),
         }));
     }
     async findMyBookings(userId) {
@@ -735,15 +709,6 @@ let SoulToursService = SoulToursService_1 = class SoulToursService {
             this.logger.log(`Released ${released} expired tour booking holds`);
         }
         return { released };
-    }
-    scrubBooking(booking) {
-        if (booking.travelers_rel) {
-            booking.travelers_rel = booking.travelers_rel.map((t) => ({
-                ...t,
-                passportNumber: undefined,
-            }));
-        }
-        return booking;
     }
 };
 exports.SoulToursService = SoulToursService;

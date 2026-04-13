@@ -10,18 +10,10 @@ export class TravelerDto {
   @IsBoolean()
   isPrimary!: boolean;
 
-  @ApiProperty({ description: 'First name as on passport' })
-  @IsString()
-  firstName!: string;
-
-  @ApiProperty({ description: 'Last name as on passport' })
-  @IsString()
-  lastName!: string;
-
+  @ApiProperty() @IsString() firstName!: string;
+  @ApiProperty() @IsString() lastName!: string;
   @ApiProperty() @IsDateString() dateOfBirth!: string;
   @ApiProperty() @IsString() nationality!: string;
-  @ApiProperty() @IsString() passportNumber!: string;
-  @ApiProperty() @IsDateString() passportExpiry!: string;
 
   @ApiPropertyOptional() @IsOptional() @IsEmail() email?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;

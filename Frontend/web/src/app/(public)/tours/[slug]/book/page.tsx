@@ -59,8 +59,6 @@ interface TravelerForm {
   lastName: string;
   dateOfBirth: string;
   nationality: string;
-  passportNumber: string;
-  passportExpiry: string;
   email: string;
   phone: string;
 }
@@ -103,7 +101,7 @@ function daysBetween(a: string, b: string) {
 
 const emptyTraveler = (): TravelerForm => ({
   firstName: '', lastName: '', dateOfBirth: '', nationality: '',
-  passportNumber: '', passportExpiry: '', email: '', phone: '',
+  email: '', phone: '',
 });
 
 // ─── Form input atoms (matched to public site styling) ──────────────────────
@@ -300,8 +298,6 @@ export default function BookTourPage() {
       if (!t.lastName.trim()) return `${labelN}: last name is required`;
       if (!t.dateOfBirth) return `${labelN}: date of birth is required`;
       if (!t.nationality.trim()) return `${labelN}: nationality is required`;
-      if (!t.passportNumber.trim()) return `${labelN}: passport number is required`;
-      if (!t.passportExpiry) return `${labelN}: passport expiry is required`;
       if (i === 0) {
         if (!t.email.trim()) return 'Primary traveler email is required';
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t.email)) return 'Primary traveler email is invalid';
@@ -393,8 +389,6 @@ export default function BookTourPage() {
           lastName: t.lastName.trim(),
           dateOfBirth: new Date(t.dateOfBirth).toISOString(),
           nationality: t.nationality.trim(),
-          passportNumber: t.passportNumber.trim(),
-          passportExpiry: new Date(t.passportExpiry).toISOString(),
           email: t.email.trim() || undefined,
           phone: t.phone.trim() || undefined,
         })),
@@ -732,7 +726,7 @@ export default function BookTourPage() {
                 Your Travel Details
               </h2>
               <p style={{ fontSize: 13, color: C.warmGray, marginBottom: 24 }}>
-                Passport information is required for visa processing and is encrypted at rest. Names must match passports exactly.
+                Please provide details for each traveler. Names should match official identification.
               </p>
 
               {!isAuthenticated && hasHydrated && (
@@ -755,13 +749,13 @@ export default function BookTourPage() {
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 16 }}>
                     <FormField
-                      label="First Name (as on passport)"
+                      label="First Name"
                       value={t.firstName}
                       onChange={(v) => setTravelers((arr) => arr.map((x, idx) => (idx === i ? { ...x, firstName: v } : x)))}
                       required
                     />
                     <FormField
-                      label="Last Name (as on passport)"
+                      label="Last Name"
                       value={t.lastName}
                       onChange={(v) => setTravelers((arr) => arr.map((x, idx) => (idx === i ? { ...x, lastName: v } : x)))}
                       required
@@ -778,20 +772,6 @@ export default function BookTourPage() {
                       value={t.nationality}
                       onChange={(v) => setTravelers((arr) => arr.map((x, idx) => (idx === i ? { ...x, nationality: v } : x)))}
                       placeholder="United States"
-                      required
-                    />
-                    <FormField
-                      label="Passport Number"
-                      value={t.passportNumber}
-                      onChange={(v) => setTravelers((arr) => arr.map((x, idx) => (idx === i ? { ...x, passportNumber: v } : x)))}
-                      placeholder="A12345678"
-                      required
-                    />
-                    <FormField
-                      label="Passport Expiry"
-                      type="date"
-                      value={t.passportExpiry}
-                      onChange={(v) => setTravelers((arr) => arr.map((x, idx) => (idx === i ? { ...x, passportExpiry: v } : x)))}
                       required
                     />
                     <FormField

@@ -7,9 +7,6 @@ import { PrismaService } from '../../database/prisma.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { BookTourDto, PayBalanceDto, CancelBookingDto } from './dto/book-tour.dto';
-import {
-  encryptPassport, decryptPassport, maskPassport,
-} from '../../common/crypto/passport-cipher';
 import { StripeService } from '../payments/stripe.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -391,15 +388,7 @@ export class SoulToursService {
       if (!t.lastName?.trim()) throw new BadRequestException(`Traveler ${i + 1}: last name is required`);
       if (!t.dateOfBirth) throw new BadRequestException(`Traveler ${i + 1}: date of birth is required`);
       if (!t.nationality?.trim()) throw new BadRequestException(`Traveler ${i + 1}: nationality is required`);
-      if (!t.passportNumber?.trim()) throw new BadRequestException(`Traveler ${i + 1}: passport number is required`);
-      if (!t.passportExpiry) throw new BadRequestException(`Traveler ${i + 1}: passport expiry is required`);
     });
-
-    // Encrypt all passport numbers up front (outside the transaction)
-    const encryptedTravelers = dto.travelersDetails.map((t) => ({
-      ...t,
-      passportNumberEncrypted: encryptPassport(t.passportNumber.trim()),
-    }));
 
     // Transactional create + inventory decrement
     const booking = await this.prisma.$transaction(async (tx) => {
@@ -455,14 +444,12 @@ export class SoulToursService {
           contactEmail: primary.email ?? '',
           contactPhone: primary.phone,
           travelers_rel: {
-            create: encryptedTravelers.map((t) => ({
+            create: dto.travelersDetails.map((t) => ({
               isPrimary: t.isPrimary,
               firstName: t.firstName,
               lastName: t.lastName,
               dateOfBirth: new Date(t.dateOfBirth),
               nationality: t.nationality,
-              passportNumber: t.passportNumberEncrypted,
-              passportExpiry: new Date(t.passportExpiry),
               email: t.email,
               phone: t.phone,
             })),
@@ -481,8 +468,7 @@ export class SoulToursService {
       `TourBooking created: ${booking.id} (${bookingReference}) — ${dto.travelers} travelers, deposit $${dto.chosenDepositAmount}`,
     );
 
-    // Don't expose encrypted passport blobs back to the client
-    return this.scrubBooking(booking);
+    return booking;
   }
 
   // ─── Pay Balance (Seeker) ──────────────────────────────────────────────────
@@ -674,7 +660,7 @@ export class SoulToursService {
     if (!booking) throw new NotFoundException('Booking not found');
     if (booking.seekerId !== seeker.id) throw new ForbiddenException('Not your booking');
 
-    return this.scrubBooking(booking);
+    return booking;
   }
 
   // ─── Manifest viewer (guide) ───────────────────────────────────────────────
@@ -712,29 +698,15 @@ export class SoulToursService {
       healthConditions: b.healthConditions,
       contactEmail: b.contactEmail,
       contactPhone: b.contactPhone,
-      manifest: b.travelers_rel.map((t) => {
-        let passportNumber = '';
-        let passportMasked = '';
-        try {
-          passportNumber = decryptPassport(t.passportNumber);
-          passportMasked = maskPassport(passportNumber);
-        } catch (err) {
-          this.logger.error(`Failed to decrypt passport for traveler ${t.id}`);
-          passportMasked = '<decrypt-failed>';
-        }
-        return {
-          isPrimary: t.isPrimary,
-          firstName: t.firstName,
-          lastName: t.lastName,
-          dateOfBirth: t.dateOfBirth,
-          nationality: t.nationality,
-          passportNumber, // full plaintext — guide-only endpoint
-          passportMasked,
-          passportExpiry: t.passportExpiry,
-          email: t.email,
-          phone: t.phone,
-        };
-      }),
+      manifest: b.travelers_rel.map((t) => ({
+        isPrimary: t.isPrimary,
+        firstName: t.firstName,
+        lastName: t.lastName,
+        dateOfBirth: t.dateOfBirth,
+        nationality: t.nationality,
+        email: t.email,
+        phone: t.phone,
+      })),
     }));
   }
 
@@ -813,15 +785,4 @@ export class SoulToursService {
     return { released };
   }
 
-  // ─── Internal: scrub encrypted fields from API responses ───────────────────
-
-  private scrubBooking<T extends { travelers_rel?: any[] }>(booking: T): T {
-    if (booking.travelers_rel) {
-      booking.travelers_rel = booking.travelers_rel.map((t: any) => ({
-        ...t,
-        passportNumber: undefined, // never return ciphertext or plaintext to seeker
-      }));
-    }
-    return booking;
-  }
 }

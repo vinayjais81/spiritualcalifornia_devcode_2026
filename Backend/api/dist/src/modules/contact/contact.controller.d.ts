@@ -24,8 +24,8 @@ export declare class ContactController {
             updatedAt: Date;
             type: string;
             status: string;
-            message: string;
             subject: string;
+            message: string;
         }[];
         total: number;
         page: number;
@@ -45,8 +45,8 @@ export declare class ContactController {
         updatedAt: Date;
         type: string;
         status: string;
-        message: string;
         subject: string;
+        message: string;
     }>;
 }
 export {};

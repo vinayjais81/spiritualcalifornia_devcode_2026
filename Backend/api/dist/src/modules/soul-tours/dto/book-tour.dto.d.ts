@@ -4,8 +4,6 @@ export declare class TravelerDto {
     lastName: string;
     dateOfBirth: string;
     nationality: string;
-    passportNumber: string;
-    passportExpiry: string;
     email?: string;
     phone?: string;
 }
