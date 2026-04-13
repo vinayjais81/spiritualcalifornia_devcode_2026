@@ -36,6 +36,38 @@ __decorate([
     (0, class_validator_1.IsEnum)(client_1.VerificationStatus),
     __metadata("design:type", String)
 ], GuidesQueryDto.prototype, "status", void 0);
+class TourBookingsQueryDto extends query_dto_1.PaginationQueryDto {
+    status;
+    guideId;
+}
+__decorate([
+    (0, swagger_2.ApiPropertyOptional)({ enum: client_1.TourBookingStatus }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.TourBookingStatus),
+    __metadata("design:type", String)
+], TourBookingsQueryDto.prototype, "status", void 0);
+__decorate([
+    (0, swagger_2.ApiPropertyOptional)({ description: 'Filter by guide profile ID' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], TourBookingsQueryDto.prototype, "guideId", void 0);
+class ServiceBookingsQueryDto extends query_dto_1.PaginationQueryDto {
+    status;
+    guideId;
+}
+__decorate([
+    (0, swagger_2.ApiPropertyOptional)({ enum: client_1.BookingStatus }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.BookingStatus),
+    __metadata("design:type", String)
+], ServiceBookingsQueryDto.prototype, "status", void 0);
+__decorate([
+    (0, swagger_2.ApiPropertyOptional)({ description: 'Filter by guide profile ID' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ServiceBookingsQueryDto.prototype, "guideId", void 0);
 let AdminController = class AdminController {
     adminService;
     config;
@@ -160,6 +192,31 @@ let AdminController = class AdminController {
     rejectGuide(guideId, dto) {
         return this.adminService.rejectGuide(guideId, dto.reason);
     }
+    getTourBookings(query) {
+        return this.adminService.getTourBookings({
+            page: query.page,
+            limit: query.limit,
+            search: query.search,
+            status: query.status,
+            guideId: query.guideId,
+        });
+    }
+    getServiceBookings(query) {
+        return this.adminService.getServiceBookings({
+            page: query.page,
+            limit: query.limit,
+            search: query.search,
+            status: query.status,
+            guideId: query.guideId,
+        });
+    }
+    getGuideRevenue(query) {
+        return this.adminService.getGuideRevenue({
+            page: query.page,
+            limit: query.limit,
+            search: query.search,
+        });
+    }
     getFinancials(query) {
         return this.adminService.getFinancials({
             page: query.page,
@@ -263,6 +320,30 @@ __decorate([
     __metadata("design:paramtypes", [String, reject_guide_dto_1.RejectGuideDto]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "rejectGuide", null);
+__decorate([
+    (0, common_1.Get)('tour-bookings'),
+    (0, swagger_1.ApiOperation)({ summary: 'List all tour bookings with filters' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [TourBookingsQueryDto]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getTourBookings", null);
+__decorate([
+    (0, common_1.Get)('service-bookings'),
+    (0, swagger_1.ApiOperation)({ summary: 'List all service bookings with filters' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [ServiceBookingsQueryDto]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getServiceBookings", null);
+__decorate([
+    (0, common_1.Get)('guide-revenue'),
+    (0, swagger_1.ApiOperation)({ summary: 'Guide-wise revenue breakdown (services + tours)' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [query_dto_1.PaginationQueryDto]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getGuideRevenue", null);
 __decorate([
     (0, common_1.Get)('financials'),
     (0, swagger_1.ApiOperation)({ summary: 'Get financial overview and payment history' }),

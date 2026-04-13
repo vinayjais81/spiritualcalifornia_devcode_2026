@@ -21,15 +21,26 @@ let AdminService = class AdminService {
     async getDashboardStats() {
         const oneWeekAgo = new Date();
         oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        const [totalUsers, totalGuides, totalBookings, revenueAgg, pendingVerifications, newUsersThisWeek,] = await Promise.all([
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const [totalUsers, totalGuides, serviceBookings, tourBookings, serviceRevenueAgg, tourRevenueAgg, revenueThisMonth, pendingVerifications, newUsersThisWeek, topGuides,] = await Promise.all([
             this.prisma.user.count(),
             this.prisma.guideProfile.count({
                 where: { verificationStatus: client_1.VerificationStatus.APPROVED },
             }),
             this.prisma.booking.count(),
+            this.prisma.tourBooking.count(),
+            this.prisma.payment.aggregate({
+                _sum: { amount: true, platformFee: true },
+                where: { status: client_1.PaymentStatus.SUCCEEDED, bookingId: { not: null } },
+            }),
+            this.prisma.payment.aggregate({
+                _sum: { amount: true, platformFee: true },
+                where: { status: client_1.PaymentStatus.SUCCEEDED, tourBookingId: { not: null } },
+            }),
             this.prisma.payment.aggregate({
                 _sum: { platformFee: true },
-                where: { status: client_1.PaymentStatus.SUCCEEDED },
+                where: { status: client_1.PaymentStatus.SUCCEEDED, createdAt: { gte: thirtyDaysAgo } },
             }),
             this.prisma.guideProfile.count({
                 where: { verificationStatus: client_1.VerificationStatus.PENDING },
@@ -37,14 +48,50 @@ let AdminService = class AdminService {
             this.prisma.user.count({
                 where: { createdAt: { gte: oneWeekAgo } },
             }),
+            this.prisma.$queryRaw `
+        SELECT
+          gp.id AS "guideId",
+          gp."displayName",
+          u."firstName",
+          u."lastName",
+          COALESCE(SUM(p.amount), 0)::text AS "totalRevenue",
+          COUNT(DISTINCT COALESCE(p."bookingId", p."tourBookingId"))::text AS "totalBookings"
+        FROM guide_profiles gp
+        JOIN users u ON u.id = gp."userId"
+        LEFT JOIN services s ON s."guideId" = gp.id
+        LEFT JOIN bookings b ON b."serviceId" = s.id
+        LEFT JOIN payments p ON (p."bookingId" = b.id OR p."tourBookingId" IN (
+          SELECT tb.id FROM tour_bookings tb
+          JOIN soul_tours st ON st.id = tb."tourId"
+          WHERE st."guideId" = gp.id
+        )) AND p.status = 'SUCCEEDED'
+        WHERE gp."verificationStatus" = 'APPROVED'
+        GROUP BY gp.id, gp."displayName", u."firstName", u."lastName"
+        ORDER BY COALESCE(SUM(p.amount), 0) DESC
+        LIMIT 5
+      `,
         ]);
+        const totalServiceRevenue = Number(serviceRevenueAgg._sum?.amount ?? 0);
+        const totalTourRevenue = Number(tourRevenueAgg._sum?.amount ?? 0);
         return {
             totalUsers,
             totalGuides,
-            totalBookings,
-            totalRevenue: Number(revenueAgg._sum?.platformFee ?? 0),
+            totalBookings: serviceBookings + tourBookings,
+            serviceBookings,
+            tourBookings,
+            totalRevenue: Number((serviceRevenueAgg._sum?.platformFee ?? 0)) + Number((tourRevenueAgg._sum?.platformFee ?? 0)),
+            totalServiceRevenue,
+            totalTourRevenue,
+            revenueThisMonth: Number(revenueThisMonth._sum?.platformFee ?? 0),
             pendingVerifications,
             newUsersThisWeek,
+            topGuides: topGuides.map((g) => ({
+                guideId: g.guideId,
+                displayName: g.displayName,
+                name: `${g.firstName} ${g.lastName}`,
+                totalRevenue: Number(g.totalRevenue),
+                totalBookings: Number(g.totalBookings),
+            })),
         };
     }
     async getUsers(params) {
@@ -279,6 +326,258 @@ let AdminService = class AdminService {
             data: { verificationStatus: client_1.VerificationStatus.REJECTED },
             select: { id: true, verificationStatus: true },
         });
+    }
+    async getTourBookings(params) {
+        const { page, limit, search, status, guideId } = params;
+        const skip = (page - 1) * limit;
+        const where = {};
+        if (status)
+            where.status = status;
+        if (guideId)
+            where.tour = { guideId };
+        if (search) {
+            where.OR = [
+                { bookingReference: { contains: search, mode: 'insensitive' } },
+                { contactEmail: { contains: search, mode: 'insensitive' } },
+                { contactFirstName: { contains: search, mode: 'insensitive' } },
+                { contactLastName: { contains: search, mode: 'insensitive' } },
+                { tour: { title: { contains: search, mode: 'insensitive' } } },
+            ];
+        }
+        const [bookings, total, statusCounts] = await Promise.all([
+            this.prisma.tourBooking.findMany({
+                where,
+                skip,
+                take: limit,
+                include: {
+                    tour: {
+                        select: {
+                            id: true,
+                            title: true,
+                            slug: true,
+                            location: true,
+                            guide: {
+                                select: {
+                                    id: true,
+                                    displayName: true,
+                                    user: { select: { firstName: true, lastName: true, email: true, avatarUrl: true } },
+                                },
+                            },
+                        },
+                    },
+                    departure: { select: { startDate: true, endDate: true, status: true } },
+                    roomType: { select: { name: true, totalPrice: true } },
+                    seeker: {
+                        select: {
+                            user: { select: { firstName: true, lastName: true, email: true, avatarUrl: true } },
+                        },
+                    },
+                    payments: {
+                        select: { id: true, amount: true, platformFee: true, guideAmount: true, paymentType: true, status: true, createdAt: true },
+                        orderBy: { createdAt: 'desc' },
+                    },
+                    travelers_rel: {
+                        select: { id: true, isPrimary: true, firstName: true, lastName: true, nationality: true },
+                    },
+                },
+                orderBy: { createdAt: 'desc' },
+            }),
+            this.prisma.tourBooking.count({ where }),
+            this.prisma.tourBooking.groupBy({
+                by: ['status'],
+                _count: true,
+            }),
+        ]);
+        const counts = {};
+        statusCounts.forEach((s) => { counts[s.status] = s._count; });
+        return {
+            bookings,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            statusCounts: counts,
+        };
+    }
+    async getServiceBookings(params) {
+        const { page, limit, search, status, guideId } = params;
+        const skip = (page - 1) * limit;
+        const where = {};
+        if (status)
+            where.status = status;
+        if (guideId)
+            where.service = { guide: { id: guideId } };
+        if (search) {
+            where.OR = [
+                { seeker: { user: { email: { contains: search, mode: 'insensitive' } } } },
+                { seeker: { user: { firstName: { contains: search, mode: 'insensitive' } } } },
+                { service: { title: { contains: search, mode: 'insensitive' } } },
+            ];
+        }
+        const [bookings, total, statusCounts] = await Promise.all([
+            this.prisma.booking.findMany({
+                where,
+                skip,
+                take: limit,
+                include: {
+                    service: {
+                        select: {
+                            id: true,
+                            name: true,
+                            type: true,
+                            durationMin: true,
+                            price: true,
+                            guide: {
+                                select: {
+                                    id: true,
+                                    displayName: true,
+                                    user: { select: { firstName: true, lastName: true, email: true, avatarUrl: true } },
+                                },
+                            },
+                        },
+                    },
+                    seeker: {
+                        select: {
+                            user: { select: { id: true, firstName: true, lastName: true, email: true, avatarUrl: true } },
+                        },
+                    },
+                    slot: { select: { startTime: true, endTime: true } },
+                    payment: {
+                        select: { id: true, amount: true, platformFee: true, guideAmount: true, status: true, createdAt: true },
+                    },
+                    review: {
+                        select: { id: true, rating: true, body: true },
+                    },
+                },
+                orderBy: { createdAt: 'desc' },
+            }),
+            this.prisma.booking.count({ where }),
+            this.prisma.booking.groupBy({
+                by: ['status'],
+                _count: true,
+            }),
+        ]);
+        const counts = {};
+        statusCounts.forEach((s) => { counts[s.status] = s._count; });
+        return {
+            bookings,
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            statusCounts: counts,
+        };
+    }
+    async getGuideRevenue(params) {
+        const { page, limit, search } = params;
+        const offset = (page - 1) * limit;
+        const searchPattern = search ? `%${search}%` : '%';
+        const guideRevenue = await this.prisma.$queryRaw `
+      WITH service_rev AS (
+        SELECT
+          gp.id AS "guideId",
+          COUNT(DISTINCT b.id)::text AS bookings,
+          COALESCE(SUM(p.amount), 0)::text AS revenue,
+          COALESCE(SUM(p."platformFee"), 0)::text AS "platformFee"
+        FROM guide_profiles gp
+        LEFT JOIN services s ON s."guideId" = gp.id
+        LEFT JOIN bookings b ON b."serviceId" = s.id AND b.status != 'CANCELLED'
+        LEFT JOIN payments p ON p."bookingId" = b.id AND p.status = 'SUCCEEDED'
+        GROUP BY gp.id
+      ),
+      tour_rev AS (
+        SELECT
+          gp.id AS "guideId",
+          COUNT(DISTINCT tb.id)::text AS bookings,
+          COALESCE(SUM(p.amount), 0)::text AS revenue,
+          COALESCE(SUM(p."platformFee"), 0)::text AS "platformFee"
+        FROM guide_profiles gp
+        LEFT JOIN soul_tours st ON st."guideId" = gp.id
+        LEFT JOIN tour_bookings tb ON tb."tourId" = st.id AND tb.status NOT IN ('CANCELLED')
+        LEFT JOIN payments p ON p."tourBookingId" = tb.id AND p.status = 'SUCCEEDED'
+        GROUP BY gp.id
+      )
+      SELECT
+        gp.id AS "guideId",
+        gp."displayName",
+        u."firstName",
+        u."lastName",
+        u.email,
+        u."avatarUrl",
+        COALESCE(sr.bookings, '0') AS "serviceBookings",
+        COALESCE(sr.revenue, '0') AS "serviceRevenue",
+        COALESCE(sr."platformFee", '0') AS "servicePlatformFee",
+        COALESCE(tr.bookings, '0') AS "tourBookings",
+        COALESCE(tr.revenue, '0') AS "tourRevenue",
+        COALESCE(tr."platformFee", '0') AS "tourPlatformFee"
+      FROM guide_profiles gp
+      JOIN users u ON u.id = gp."userId"
+      LEFT JOIN service_rev sr ON sr."guideId" = gp.id
+      LEFT JOIN tour_rev tr ON tr."guideId" = gp.id
+      WHERE gp."verificationStatus" = 'APPROVED'
+        AND (
+          ${!search}::boolean = true
+          OR gp."displayName" ILIKE ${searchPattern}
+          OR u."firstName" ILIKE ${searchPattern}
+          OR u."lastName" ILIKE ${searchPattern}
+          OR u.email ILIKE ${searchPattern}
+        )
+      ORDER BY (COALESCE(sr.revenue, '0')::numeric + COALESCE(tr.revenue, '0')::numeric) DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+        const totalCount = await this.prisma.guideProfile.count({
+            where: {
+                verificationStatus: client_1.VerificationStatus.APPROVED,
+                ...(search ? {
+                    OR: [
+                        { displayName: { contains: search, mode: 'insensitive' } },
+                        { user: { firstName: { contains: search, mode: 'insensitive' } } },
+                        { user: { lastName: { contains: search, mode: 'insensitive' } } },
+                        { user: { email: { contains: search, mode: 'insensitive' } } },
+                    ],
+                } : {}),
+            },
+        });
+        const [totalServiceRev, totalTourRev] = await Promise.all([
+            this.prisma.payment.aggregate({
+                _sum: { amount: true, platformFee: true, guideAmount: true },
+                where: { status: client_1.PaymentStatus.SUCCEEDED, bookingId: { not: null } },
+            }),
+            this.prisma.payment.aggregate({
+                _sum: { amount: true, platformFee: true, guideAmount: true },
+                where: { status: client_1.PaymentStatus.SUCCEEDED, tourBookingId: { not: null } },
+            }),
+        ]);
+        return {
+            guides: guideRevenue.map((g) => ({
+                guideId: g.guideId,
+                displayName: g.displayName,
+                firstName: g.firstName,
+                lastName: g.lastName,
+                email: g.email,
+                avatarUrl: g.avatarUrl,
+                serviceBookings: Number(g.serviceBookings),
+                serviceRevenue: Number(g.serviceRevenue),
+                servicePlatformFee: Number(g.servicePlatformFee),
+                tourBookings: Number(g.tourBookings),
+                tourRevenue: Number(g.tourRevenue),
+                tourPlatformFee: Number(g.tourPlatformFee),
+                totalRevenue: Number(g.serviceRevenue) + Number(g.tourRevenue),
+                totalPlatformFee: Number(g.servicePlatformFee) + Number(g.tourPlatformFee),
+            })),
+            totals: {
+                serviceRevenue: Number(totalServiceRev._sum?.amount ?? 0),
+                servicePlatformFee: Number(totalServiceRev._sum?.platformFee ?? 0),
+                serviceGuideAmount: Number(totalServiceRev._sum?.guideAmount ?? 0),
+                tourRevenue: Number(totalTourRev._sum?.amount ?? 0),
+                tourPlatformFee: Number(totalTourRev._sum?.platformFee ?? 0),
+                tourGuideAmount: Number(totalTourRev._sum?.guideAmount ?? 0),
+            },
+            total: totalCount,
+            page,
+            limit,
+            totalPages: Math.ceil(totalCount / limit),
+        };
     }
     async getFinancials(params) {
         const { page, limit } = params;

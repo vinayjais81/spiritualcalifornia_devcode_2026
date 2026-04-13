@@ -24,8 +24,8 @@ import { PaginationQueryDto } from './dto/query.dto';
 import { BanUserDto } from './dto/ban-user.dto';
 import { UpdateRolesDto } from './dto/update-roles.dto';
 import { RejectGuideDto } from './dto/reject-guide.dto';
-import { VerificationStatus } from '@prisma/client';
-import { IsOptional, IsEnum } from 'class-validator';
+import { VerificationStatus, TourBookingStatus, BookingStatus } from '@prisma/client';
+import { IsOptional, IsEnum, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 class GuidesQueryDto extends PaginationQueryDto {
@@ -33,6 +33,30 @@ class GuidesQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsEnum(VerificationStatus)
   status?: VerificationStatus;
+}
+
+class TourBookingsQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ enum: TourBookingStatus })
+  @IsOptional()
+  @IsEnum(TourBookingStatus)
+  status?: TourBookingStatus;
+
+  @ApiPropertyOptional({ description: 'Filter by guide profile ID' })
+  @IsOptional()
+  @IsString()
+  guideId?: string;
+}
+
+class ServiceBookingsQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ enum: BookingStatus })
+  @IsOptional()
+  @IsEnum(BookingStatus)
+  status?: BookingStatus;
+
+  @ApiPropertyOptional({ description: 'Filter by guide profile ID' })
+  @IsOptional()
+  @IsString()
+  guideId?: string;
 }
 
 @ApiTags('Admin')
@@ -216,6 +240,46 @@ export class AdminController {
     @Body() dto: RejectGuideDto,
   ) {
     return this.adminService.rejectGuide(guideId, dto.reason);
+  }
+
+  // ─── Tour Bookings ─────────────────────────────────────────────────────────
+
+  @Get('tour-bookings')
+  @ApiOperation({ summary: 'List all tour bookings with filters' })
+  getTourBookings(@Query() query: TourBookingsQueryDto) {
+    return this.adminService.getTourBookings({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+      status: query.status,
+      guideId: query.guideId,
+    });
+  }
+
+  // ─── Service Bookings ─────────────────────────────────────────────────────
+
+  @Get('service-bookings')
+  @ApiOperation({ summary: 'List all service bookings with filters' })
+  getServiceBookings(@Query() query: ServiceBookingsQueryDto) {
+    return this.adminService.getServiceBookings({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+      status: query.status,
+      guideId: query.guideId,
+    });
+  }
+
+  // ─── Guide Revenue Analytics ──────────────────────────────────────────────
+
+  @Get('guide-revenue')
+  @ApiOperation({ summary: 'Guide-wise revenue breakdown (services + tours)' })
+  getGuideRevenue(@Query() query: PaginationQueryDto) {
+    return this.adminService.getGuideRevenue({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+    });
   }
 
   // ─── Financials ───────────────────────────────────────────────────────────
