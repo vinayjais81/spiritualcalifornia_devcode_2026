@@ -118,6 +118,15 @@ export declare class PaymentsController {
         stripePayoutId: string | null;
         payoutAccountId: string;
     }>;
+    getPayoutHistory(user: CurrentUserData): Promise<{
+        id: string;
+        createdAt: Date;
+        currency: string;
+        status: import(".prisma/client").$Enums.PayoutStatus;
+        amount: import("@prisma/client-runtime-utils").Decimal;
+        processedAt: Date | null;
+        stripePayoutId: string | null;
+    }[]>;
     createIntent(data: {
         amount: number;
         bookingId?: string;

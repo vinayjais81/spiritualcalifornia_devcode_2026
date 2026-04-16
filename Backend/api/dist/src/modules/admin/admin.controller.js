@@ -25,6 +25,7 @@ const ban_user_dto_1 = require("./dto/ban-user.dto");
 const update_roles_dto_1 = require("./dto/update-roles.dto");
 const reject_guide_dto_1 = require("./dto/reject-guide.dto");
 const client_1 = require("@prisma/client");
+const payments_service_1 = require("../payments/payments.service");
 const class_validator_1 = require("class-validator");
 const swagger_2 = require("@nestjs/swagger");
 class GuidesQueryDto extends query_dto_1.PaginationQueryDto {
@@ -52,6 +53,15 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], TourBookingsQueryDto.prototype, "guideId", void 0);
+class PayoutRequestsQueryDto extends query_dto_1.PaginationQueryDto {
+    status;
+}
+__decorate([
+    (0, swagger_2.ApiPropertyOptional)({ enum: client_1.PayoutStatus }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(client_1.PayoutStatus),
+    __metadata("design:type", String)
+], PayoutRequestsQueryDto.prototype, "status", void 0);
 class ServiceBookingsQueryDto extends query_dto_1.PaginationQueryDto {
     status;
     guideId;
@@ -71,9 +81,11 @@ __decorate([
 let AdminController = class AdminController {
     adminService;
     config;
-    constructor(adminService, config) {
+    paymentsService;
+    constructor(adminService, config, paymentsService) {
         this.adminService = adminService;
         this.config = config;
+        this.paymentsService = paymentsService;
     }
     getDashboard() {
         return this.adminService.getDashboardStats();
@@ -223,6 +235,23 @@ let AdminController = class AdminController {
             limit: query.limit,
         });
     }
+    getPayoutRequests(query) {
+        return this.adminService.getPayoutRequests({
+            page: query.page,
+            limit: query.limit,
+            status: query.status,
+        });
+    }
+    getGuideBalances(query) {
+        return this.adminService.getGuideBalances({
+            page: query.page,
+            limit: query.limit,
+            search: query.search,
+        });
+    }
+    processPayout(id) {
+        return this.paymentsService.processPayout(id);
+    }
 };
 exports.AdminController = AdminController;
 __decorate([
@@ -352,6 +381,31 @@ __decorate([
     __metadata("design:paramtypes", [query_dto_1.PaginationQueryDto]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "getFinancials", null);
+__decorate([
+    (0, common_1.Get)('payout-requests'),
+    (0, swagger_1.ApiOperation)({ summary: 'List all guide payout requests with filters' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [PayoutRequestsQueryDto]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getPayoutRequests", null);
+__decorate([
+    (0, common_1.Get)('guide-balances'),
+    (0, swagger_1.ApiOperation)({ summary: 'List all guide payout account balances' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [query_dto_1.PaginationQueryDto]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getGuideBalances", null);
+__decorate([
+    (0, common_1.Post)('payout-requests/:id/process'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Process a pending payout request (triggers Stripe transfer)' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "processPayout", null);
 exports.AdminController = AdminController = __decorate([
     (0, swagger_1.ApiTags)('Admin'),
     (0, swagger_1.ApiBearerAuth)(),
@@ -359,6 +413,7 @@ exports.AdminController = AdminController = __decorate([
     (0, roles_decorator_1.Roles)('ADMIN', 'SUPER_ADMIN'),
     (0, common_1.Controller)('admin'),
     __metadata("design:paramtypes", [admin_service_1.AdminService,
-        config_1.ConfigService])
+        config_1.ConfigService,
+        payments_service_1.PaymentsService])
 ], AdminController);
 //# sourceMappingURL=admin.controller.js.map

@@ -27,6 +27,7 @@ import { SoulToursModule } from './modules/soul-tours/soul-tours.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { CheckoutModule } from './modules/checkout/checkout.module';
 import { CalendlyModule } from './modules/calendly/calendly.module';
+import { TicketsModule } from './modules/tickets/tickets.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { CalendlyModule } from './modules/calendly/calendly.module';
     OrdersModule,
     CheckoutModule,
     CalendlyModule,
+    TicketsModule,
   ],
 })
 export class AppModule {}

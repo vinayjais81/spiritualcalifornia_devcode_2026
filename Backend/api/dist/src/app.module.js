@@ -36,6 +36,7 @@ const soul_tours_module_1 = require("./modules/soul-tours/soul-tours.module");
 const orders_module_1 = require("./modules/orders/orders.module");
 const checkout_module_1 = require("./modules/checkout/checkout.module");
 const calendly_module_1 = require("./modules/calendly/calendly.module");
+const tickets_module_1 = require("./modules/tickets/tickets.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -77,6 +78,7 @@ exports.AppModule = AppModule = __decorate([
             orders_module_1.OrdersModule,
             checkout_module_1.CheckoutModule,
             calendly_module_1.CalendlyModule,
+            tickets_module_1.TicketsModule,
         ],
     })
 ], AppModule);

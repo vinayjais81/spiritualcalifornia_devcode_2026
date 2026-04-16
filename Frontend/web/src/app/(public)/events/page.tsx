@@ -109,9 +109,18 @@ export default function EventsPage() {
                     </div>
                     <span style={{ fontSize: 12, color: '#3A3530' }}>{event.guide.displayName}</span>
                   </Link>
-                  <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontWeight: 500, color: '#3A3530' }}>
-                    {lowestPrice === 0 ? 'Free' : `$${lowestPrice}`}
-                  </span>
+                  <Link
+                    href={`/events/${event.id}/checkout`}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '8px 18px', borderRadius: 6,
+                      background: '#3A3530', color: '#E8B84B',
+                      fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
+                      textDecoration: 'none', transition: 'background 0.2s',
+                    }}
+                  >
+                    {lowestPrice === 0 ? 'Register — Free' : `Get Tickets · $${lowestPrice}`}
+                  </Link>
                 </div>
               </div>
             </div>

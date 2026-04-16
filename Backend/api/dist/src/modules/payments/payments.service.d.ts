@@ -49,8 +49,10 @@ export declare class PaymentsService {
         ticketPurchaseId: string | null;
         tourBookingId: string | null;
     } | undefined>;
+    private confirmEventTickets;
     private sendTourPaymentNotification;
     private updateGuideBalance;
+    private resolveGuideIdFromPayment;
     failPayment(paymentIntentId: string): Promise<void>;
     findOne(paymentId: string): Promise<{
         id: string;
@@ -143,6 +145,19 @@ export declare class PaymentsService {
         stripePayoutId: string | null;
         payoutAccountId: string;
     }>;
+    processPayout(payoutRequestId: string): Promise<{
+        status: string;
+        transferId: string;
+    }>;
+    getGuidePayoutHistory(userId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        currency: string;
+        status: import(".prisma/client").$Enums.PayoutStatus;
+        amount: import("@prisma/client-runtime-utils").Decimal;
+        processedAt: Date | null;
+        stripePayoutId: string | null;
+    }[]>;
     getGuideEarnings(userId: string): Promise<{
         balance: {
             available: number;

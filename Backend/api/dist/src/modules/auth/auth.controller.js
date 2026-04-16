@@ -65,6 +65,9 @@ let AuthController = class AuthController {
     async me(user) {
         return user;
     }
+    changePassword(user, body) {
+        return this.authService.changePassword(user.id, body.currentPassword, body.newPassword);
+    }
     googleAuth() {
     }
     async googleCallback(googleUser, res) {
@@ -183,6 +186,16 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "me", null);
+__decorate([
+    (0, common_1.Post)('change-password'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Change password (authenticated user)' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "changePassword", null);
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Get)('google'),

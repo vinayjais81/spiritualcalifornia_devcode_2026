@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
-import { Role, VerificationStatus, PaymentStatus, BookingStatus, TourBookingStatus } from '@prisma/client';
+import { Role, VerificationStatus, PaymentStatus, BookingStatus, TourBookingStatus, PayoutStatus } from '@prisma/client';
 
 @Injectable()
 export class AdminService {
@@ -746,6 +746,132 @@ export class AdminService {
       page,
       limit,
       totalPages: Math.ceil(totalPayments / limit),
+    };
+  }
+
+  // ─── Payout Management ────────────────────────────────────────────────────
+
+  async getPayoutRequests(params: { page: number; limit: number; status?: PayoutStatus }) {
+    const { page, limit, status } = params;
+    const skip = (page - 1) * limit;
+    const where: any = {};
+    if (status) where.status = status;
+
+    const [requests, total, statusCounts] = await Promise.all([
+      this.prisma.payoutRequest.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          guide: {
+            select: {
+              id: true,
+              displayName: true,
+              stripeAccountId: true,
+              stripeOnboardingDone: true,
+              user: { select: { firstName: true, lastName: true, email: true, avatarUrl: true } },
+            },
+          },
+          payoutAccount: {
+            select: { availableBalance: true, pendingBalance: true, totalEarned: true, totalPaidOut: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.payoutRequest.count({ where }),
+      this.prisma.payoutRequest.groupBy({ by: ['status'], _count: true }),
+    ]);
+
+    const counts: Record<string, number> = {};
+    statusCounts.forEach((s) => { counts[s.status] = s._count; });
+
+    return {
+      requests: requests.map((r) => ({
+        id: r.id,
+        amount: Number(r.amount),
+        currency: r.currency,
+        status: r.status,
+        stripePayoutId: r.stripePayoutId,
+        processedAt: r.processedAt,
+        createdAt: r.createdAt,
+        guide: {
+          id: r.guide.id,
+          displayName: r.guide.displayName,
+          name: `${r.guide.user.firstName} ${r.guide.user.lastName}`,
+          email: r.guide.user.email,
+          avatarUrl: r.guide.user.avatarUrl,
+          stripeConnected: !!r.guide.stripeAccountId && r.guide.stripeOnboardingDone,
+        },
+        balance: {
+          available: Number(r.payoutAccount.availableBalance),
+          totalEarned: Number(r.payoutAccount.totalEarned),
+          totalPaidOut: Number(r.payoutAccount.totalPaidOut),
+        },
+      })),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+      statusCounts: counts,
+    };
+  }
+
+  async getGuideBalances(params: { page: number; limit: number; search?: string }) {
+    const { page, limit, search } = params;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (search) {
+      where.guide = {
+        OR: [
+          { displayName: { contains: search, mode: 'insensitive' } },
+          { user: { email: { contains: search, mode: 'insensitive' } } },
+          { user: { firstName: { contains: search, mode: 'insensitive' } } },
+        ],
+      };
+    }
+
+    const [accounts, total] = await Promise.all([
+      this.prisma.payoutAccount.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          guide: {
+            select: {
+              id: true,
+              displayName: true,
+              stripeAccountId: true,
+              stripeOnboardingDone: true,
+              user: { select: { firstName: true, lastName: true, email: true, avatarUrl: true } },
+            },
+          },
+          _count: { select: { payoutRequests: true } },
+        },
+        orderBy: { totalEarned: 'desc' },
+      }),
+      this.prisma.payoutAccount.count({ where }),
+    ]);
+
+    return {
+      accounts: accounts.map((a) => ({
+        id: a.id,
+        guideId: a.guide.id,
+        displayName: a.guide.displayName,
+        name: `${a.guide.user.firstName} ${a.guide.user.lastName}`,
+        email: a.guide.user.email,
+        avatarUrl: a.guide.user.avatarUrl,
+        stripeConnected: !!a.guide.stripeAccountId && a.guide.stripeOnboardingDone,
+        availableBalance: Number(a.availableBalance),
+        pendingBalance: Number(a.pendingBalance),
+        totalEarned: Number(a.totalEarned),
+        totalPaidOut: Number(a.totalPaidOut),
+        payoutRequestsCount: a._count.payoutRequests,
+      })),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 }

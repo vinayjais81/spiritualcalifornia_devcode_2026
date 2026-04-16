@@ -47,6 +47,9 @@ export declare class AuthService {
     resetPassword(token: string, newPassword: string): Promise<{
         message: string;
     }>;
+    changePassword(userId: string, currentPassword: string, newPassword: string): Promise<{
+        message: string;
+    }>;
     getCalendlyAuthUrl(userId: string, redirectTo?: string): Promise<{
         url: string;
     }>;

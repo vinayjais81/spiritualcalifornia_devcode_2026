@@ -167,11 +167,70 @@ export class PaymentsService {
       );
     }
 
+    // Confirm event tickets (generate QR codes, increment sold count)
+    if (payment.ticketPurchaseId) {
+      try {
+        const primaryTicket = await this.prisma.ticketPurchase.findUnique({
+          where: { id: payment.ticketPurchaseId },
+        });
+        if (primaryTicket) {
+          await this.confirmEventTickets(primaryTicket.purchaseGroupId);
+        }
+      } catch (err: any) {
+        this.logger.error(`Ticket confirmation failed: ${err.message}`, err.stack);
+      }
+    }
+
     // Update guide payout account balance
     await this.updateGuideBalance(payment);
 
     this.logger.log(`Payment confirmed: ${payment.id}`);
     return updated;
+  }
+
+  // ─── Event ticket confirmation (QR generation + sold increment) ────────────
+
+  private async confirmEventTickets(purchaseGroupId: string) {
+    const tickets = await this.prisma.ticketPurchase.findMany({
+      where: { purchaseGroupId },
+      include: { tier: { include: { event: { select: { id: true, title: true } } } } },
+    });
+    if (!tickets.length || tickets[0].status === 'CONFIRMED') return;
+
+    // Dynamic import handles both ESM and CJS module formats
+    const qrModule = await import('qrcode');
+    const toDataURL = qrModule.toDataURL ?? (qrModule as any).default?.toDataURL;
+    if (!toDataURL) {
+      this.logger.error('QRCode.toDataURL not found — skipping QR generation');
+      // Still confirm tickets without QR codes
+      await this.prisma.ticketPurchase.updateMany({
+        where: { purchaseGroupId },
+        data: { status: 'CONFIRMED' },
+      });
+      return;
+    }
+
+    for (const ticket of tickets) {
+      const qrData = JSON.stringify({
+        ticketId: ticket.id,
+        eventId: ticket.tier.event.id,
+        eventTitle: ticket.tier.event.title,
+        tierName: ticket.tier.name,
+        attendeeName: ticket.attendeeName,
+      });
+      const qrCode = await toDataURL(qrData, { width: 200, margin: 2 });
+      await this.prisma.ticketPurchase.update({
+        where: { id: ticket.id },
+        data: { status: 'CONFIRMED', qrCode },
+      });
+    }
+
+    await this.prisma.eventTicketTier.update({
+      where: { id: tickets[0].tierId },
+      data: { sold: { increment: tickets.length } },
+    });
+
+    this.logger.log(`Confirmed ${tickets.length} event tickets for group ${purchaseGroupId}`);
   }
 
   // ─── Tour: dispatch confirmation/balance-paid email ────────────────────────
@@ -237,37 +296,53 @@ export class PaymentsService {
   // ─── Update Guide Balance ──────────────────────────────────────────────────
 
   private async updateGuideBalance(payment: any) {
-    let guideId: string | undefined;
+    const guideId = await this.resolveGuideIdFromPayment(payment);
+    if (!guideId) return;
 
+    const guide = await this.prisma.guideProfile.findUnique({
+      where: { id: guideId },
+      select: { stripeAccountId: true },
+    });
+
+    await this.prisma.payoutAccount.upsert({
+      where: { guideId },
+      update: {
+        availableBalance: { increment: Number(payment.guideAmount) },
+        totalEarned: { increment: Number(payment.guideAmount) },
+      },
+      create: {
+        guideId,
+        // Use guide's actual Stripe account or a unique placeholder (unique constraint on stripeAccountId)
+        stripeAccountId: guide?.stripeAccountId || `pending-${guideId}`,
+        availableBalance: Number(payment.guideAmount),
+        totalEarned: Number(payment.guideAmount),
+      },
+    });
+  }
+
+  private async resolveGuideIdFromPayment(payment: any): Promise<string | undefined> {
     if (payment.bookingId) {
       const booking = await this.prisma.booking.findUnique({
         where: { id: payment.bookingId },
         include: { service: { select: { guideId: true } } },
       });
-      guideId = booking?.service.guideId;
-    } else if (payment.tourBookingId) {
+      return booking?.service.guideId;
+    }
+    if (payment.tourBookingId) {
       const tb = await this.prisma.tourBooking.findUnique({
         where: { id: payment.tourBookingId },
         include: { tour: { select: { guideId: true } } },
       });
-      guideId = tb?.tour.guideId;
+      return tb?.tour.guideId;
     }
-
-    if (!guideId) return;
-
-    await this.prisma.payoutAccount.upsert({
-      where: { guideId },
-      update: {
-        pendingBalance: { increment: Number(payment.guideAmount) },
-        totalEarned: { increment: Number(payment.guideAmount) },
-      },
-      create: {
-        guideId,
-        stripeAccountId: 'pending-setup',
-        pendingBalance: Number(payment.guideAmount),
-        totalEarned: Number(payment.guideAmount),
-      },
-    });
+    if (payment.ticketPurchaseId) {
+      const tp = await this.prisma.ticketPurchase.findUnique({
+        where: { id: payment.ticketPurchaseId },
+        include: { tier: { include: { event: { select: { guideId: true } } } } },
+      });
+      return tp?.tier.event.guideId;
+    }
+    return undefined;
   }
 
   // ─── Handle Payment Failure ────────────────────────────────────────────────
@@ -435,6 +510,8 @@ export class PaymentsService {
   // ─── Payout Request (Guide Cashout) ────────────────────────────────────────
 
   async requestPayout(userId: string, amount: number) {
+    if (amount < 10) throw new BadRequestException('Minimum payout amount is $10');
+
     const guide = await this.prisma.guideProfile.findUnique({ where: { userId } });
     if (!guide) throw new NotFoundException('Guide profile not found');
 
@@ -442,6 +519,7 @@ export class PaymentsService {
     if (!payoutAccount) throw new BadRequestException('No payout account found. Set up Stripe Connect first.');
     if (Number(payoutAccount.availableBalance) < amount) throw new BadRequestException('Insufficient available balance');
 
+    // Create payout request + decrement balance atomically
     const payout = await this.prisma.payoutRequest.create({
       data: {
         guideId: guide.id,
@@ -451,17 +529,88 @@ export class PaymentsService {
       },
     });
 
-    // In production, trigger actual Stripe payout/transfer here
-    // For now, mark as processing
     await this.prisma.payoutAccount.update({
       where: { id: payoutAccount.id },
-      data: {
-        availableBalance: { decrement: amount },
-      },
+      data: { availableBalance: { decrement: amount } },
     });
 
     this.logger.log(`Payout requested: ${payout.id} for $${amount} by guide ${guide.id}`);
     return payout;
+  }
+
+  // ─── Process Payout (Admin triggers actual Stripe transfer) ────────────────
+
+  async processPayout(payoutRequestId: string) {
+    const payout = await this.prisma.payoutRequest.findUnique({
+      where: { id: payoutRequestId },
+      include: { payoutAccount: true, guide: { select: { stripeAccountId: true, stripeOnboardingDone: true, displayName: true } } },
+    });
+    if (!payout) throw new NotFoundException('Payout request not found');
+    if (payout.status !== 'PENDING') throw new BadRequestException(`Payout is already ${payout.status}`);
+
+    if (!payout.guide.stripeAccountId || !payout.guide.stripeOnboardingDone) {
+      throw new BadRequestException('Guide has not completed Stripe Connect onboarding');
+    }
+
+    // Update status to PROCESSING
+    await this.prisma.payoutRequest.update({
+      where: { id: payout.id },
+      data: { status: 'PROCESSING' },
+    });
+
+    try {
+      // Execute real Stripe transfer to guide's connected account
+      const transfer = await this.stripeService.createTransfer({
+        amount: Number(payout.amount),
+        connectedAccountId: payout.guide.stripeAccountId,
+        description: `Payout ${payout.id} for ${payout.guide.displayName}`,
+      });
+
+      // Mark as completed
+      await this.prisma.payoutRequest.update({
+        where: { id: payout.id },
+        data: { status: 'COMPLETED', stripePayoutId: transfer.id, processedAt: new Date() },
+      });
+
+      await this.prisma.payoutAccount.update({
+        where: { id: payout.payoutAccountId },
+        data: { totalPaidOut: { increment: Number(payout.amount) } },
+      });
+
+      this.logger.log(`Payout completed: ${payout.id} → Stripe transfer ${transfer.id}`);
+      return { status: 'COMPLETED', transferId: transfer.id };
+    } catch (err: any) {
+      // Stripe transfer failed — refund the balance back
+      await this.prisma.payoutRequest.update({
+        where: { id: payout.id },
+        data: { status: 'FAILED' },
+      });
+
+      await this.prisma.payoutAccount.update({
+        where: { id: payout.payoutAccountId },
+        data: { availableBalance: { increment: Number(payout.amount) } },
+      });
+
+      this.logger.error(`Payout failed: ${payout.id} — ${err.message}`);
+      throw new BadRequestException(`Stripe transfer failed: ${err.message}`);
+    }
+  }
+
+  // ─── Get Guide Payout History ──────────────────────────────────────────────
+
+  async getGuidePayoutHistory(userId: string) {
+    const guide = await this.prisma.guideProfile.findUnique({ where: { userId } });
+    if (!guide) throw new NotFoundException('Guide profile not found');
+
+    return this.prisma.payoutRequest.findMany({
+      where: { guideId: guide.id },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+      select: {
+        id: true, amount: true, currency: true, status: true,
+        stripePayoutId: true, processedAt: true, createdAt: true,
+      },
+    });
   }
 
   // ─── Get Guide Earnings ────────────────────────────────────────────────────

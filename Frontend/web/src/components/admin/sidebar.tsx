@@ -15,6 +15,7 @@ import {
   Mail,
   Plane,
   Briefcase,
+  Wallet,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { useRouter } from 'next/navigation';
@@ -26,6 +27,7 @@ const navItems = [
   { href: '/verification', label: 'Verification Queue', icon: ShieldCheck },
   { href: '/tour-bookings', label: 'Tour Bookings', icon: Plane },
   { href: '/service-bookings', label: 'Service Bookings', icon: Briefcase },
+  { href: '/payouts', label: 'Payouts', icon: Wallet },
   { href: '/financials', label: 'Financials', icon: BarChart3 },
   { href: '/contacts', label: 'Contact Leads', icon: Mail },
   { href: '/settings', label: 'Settings', icon: Settings },

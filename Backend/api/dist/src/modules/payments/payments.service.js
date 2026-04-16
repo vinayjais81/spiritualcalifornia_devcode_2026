@@ -1,10 +1,43 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
@@ -139,9 +172,59 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
             });
             this.sendTourPaymentNotification(payment.tourBookingId, payment.paymentType).catch((err) => this.logger.error(`Tour notification failed for booking ${payment.tourBookingId}: ${err.message}`));
         }
+        if (payment.ticketPurchaseId) {
+            try {
+                const primaryTicket = await this.prisma.ticketPurchase.findUnique({
+                    where: { id: payment.ticketPurchaseId },
+                });
+                if (primaryTicket) {
+                    await this.confirmEventTickets(primaryTicket.purchaseGroupId);
+                }
+            }
+            catch (err) {
+                this.logger.error(`Ticket confirmation failed: ${err.message}`, err.stack);
+            }
+        }
         await this.updateGuideBalance(payment);
         this.logger.log(`Payment confirmed: ${payment.id}`);
         return updated;
+    }
+    async confirmEventTickets(purchaseGroupId) {
+        const tickets = await this.prisma.ticketPurchase.findMany({
+            where: { purchaseGroupId },
+            include: { tier: { include: { event: { select: { id: true, title: true } } } } },
+        });
+        if (!tickets.length || tickets[0].status === 'CONFIRMED')
+            return;
+        const qrModule = await Promise.resolve().then(() => __importStar(require('qrcode')));
+        const toDataURL = qrModule.toDataURL ?? qrModule.default?.toDataURL;
+        if (!toDataURL) {
+            this.logger.error('QRCode.toDataURL not found — skipping QR generation');
+            await this.prisma.ticketPurchase.updateMany({
+                where: { purchaseGroupId },
+                data: { status: 'CONFIRMED' },
+            });
+            return;
+        }
+        for (const ticket of tickets) {
+            const qrData = JSON.stringify({
+                ticketId: ticket.id,
+                eventId: ticket.tier.event.id,
+                eventTitle: ticket.tier.event.title,
+                tierName: ticket.tier.name,
+                attendeeName: ticket.attendeeName,
+            });
+            const qrCode = await toDataURL(qrData, { width: 200, margin: 2 });
+            await this.prisma.ticketPurchase.update({
+                where: { id: ticket.id },
+                data: { status: 'CONFIRMED', qrCode },
+            });
+        }
+        await this.prisma.eventTicketTier.update({
+            where: { id: tickets[0].tierId },
+            data: { sold: { increment: tickets.length } },
+        });
+        this.logger.log(`Confirmed ${tickets.length} event tickets for group ${purchaseGroupId}`);
     }
     async sendTourPaymentNotification(tourBookingId, paymentType) {
         const booking = await this.prisma.tourBooking.findUnique({
@@ -199,36 +282,50 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
         }
     }
     async updateGuideBalance(payment) {
-        let guideId;
+        const guideId = await this.resolveGuideIdFromPayment(payment);
+        if (!guideId)
+            return;
+        const guide = await this.prisma.guideProfile.findUnique({
+            where: { id: guideId },
+            select: { stripeAccountId: true },
+        });
+        await this.prisma.payoutAccount.upsert({
+            where: { guideId },
+            update: {
+                availableBalance: { increment: Number(payment.guideAmount) },
+                totalEarned: { increment: Number(payment.guideAmount) },
+            },
+            create: {
+                guideId,
+                stripeAccountId: guide?.stripeAccountId || `pending-${guideId}`,
+                availableBalance: Number(payment.guideAmount),
+                totalEarned: Number(payment.guideAmount),
+            },
+        });
+    }
+    async resolveGuideIdFromPayment(payment) {
         if (payment.bookingId) {
             const booking = await this.prisma.booking.findUnique({
                 where: { id: payment.bookingId },
                 include: { service: { select: { guideId: true } } },
             });
-            guideId = booking?.service.guideId;
+            return booking?.service.guideId;
         }
-        else if (payment.tourBookingId) {
+        if (payment.tourBookingId) {
             const tb = await this.prisma.tourBooking.findUnique({
                 where: { id: payment.tourBookingId },
                 include: { tour: { select: { guideId: true } } },
             });
-            guideId = tb?.tour.guideId;
+            return tb?.tour.guideId;
         }
-        if (!guideId)
-            return;
-        await this.prisma.payoutAccount.upsert({
-            where: { guideId },
-            update: {
-                pendingBalance: { increment: Number(payment.guideAmount) },
-                totalEarned: { increment: Number(payment.guideAmount) },
-            },
-            create: {
-                guideId,
-                stripeAccountId: 'pending-setup',
-                pendingBalance: Number(payment.guideAmount),
-                totalEarned: Number(payment.guideAmount),
-            },
-        });
+        if (payment.ticketPurchaseId) {
+            const tp = await this.prisma.ticketPurchase.findUnique({
+                where: { id: payment.ticketPurchaseId },
+                include: { tier: { include: { event: { select: { guideId: true } } } } },
+            });
+            return tp?.tier.event.guideId;
+        }
+        return undefined;
     }
     async failPayment(paymentIntentId) {
         const payment = await this.prisma.payment.findUnique({
@@ -357,6 +454,8 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
         return { connected: true, ...status };
     }
     async requestPayout(userId, amount) {
+        if (amount < 10)
+            throw new common_1.BadRequestException('Minimum payout amount is $10');
         const guide = await this.prisma.guideProfile.findUnique({ where: { userId } });
         if (!guide)
             throw new common_1.NotFoundException('Guide profile not found');
@@ -375,12 +474,70 @@ let PaymentsService = PaymentsService_1 = class PaymentsService {
         });
         await this.prisma.payoutAccount.update({
             where: { id: payoutAccount.id },
-            data: {
-                availableBalance: { decrement: amount },
-            },
+            data: { availableBalance: { decrement: amount } },
         });
         this.logger.log(`Payout requested: ${payout.id} for $${amount} by guide ${guide.id}`);
         return payout;
+    }
+    async processPayout(payoutRequestId) {
+        const payout = await this.prisma.payoutRequest.findUnique({
+            where: { id: payoutRequestId },
+            include: { payoutAccount: true, guide: { select: { stripeAccountId: true, stripeOnboardingDone: true, displayName: true } } },
+        });
+        if (!payout)
+            throw new common_1.NotFoundException('Payout request not found');
+        if (payout.status !== 'PENDING')
+            throw new common_1.BadRequestException(`Payout is already ${payout.status}`);
+        if (!payout.guide.stripeAccountId || !payout.guide.stripeOnboardingDone) {
+            throw new common_1.BadRequestException('Guide has not completed Stripe Connect onboarding');
+        }
+        await this.prisma.payoutRequest.update({
+            where: { id: payout.id },
+            data: { status: 'PROCESSING' },
+        });
+        try {
+            const transfer = await this.stripeService.createTransfer({
+                amount: Number(payout.amount),
+                connectedAccountId: payout.guide.stripeAccountId,
+                description: `Payout ${payout.id} for ${payout.guide.displayName}`,
+            });
+            await this.prisma.payoutRequest.update({
+                where: { id: payout.id },
+                data: { status: 'COMPLETED', stripePayoutId: transfer.id, processedAt: new Date() },
+            });
+            await this.prisma.payoutAccount.update({
+                where: { id: payout.payoutAccountId },
+                data: { totalPaidOut: { increment: Number(payout.amount) } },
+            });
+            this.logger.log(`Payout completed: ${payout.id} → Stripe transfer ${transfer.id}`);
+            return { status: 'COMPLETED', transferId: transfer.id };
+        }
+        catch (err) {
+            await this.prisma.payoutRequest.update({
+                where: { id: payout.id },
+                data: { status: 'FAILED' },
+            });
+            await this.prisma.payoutAccount.update({
+                where: { id: payout.payoutAccountId },
+                data: { availableBalance: { increment: Number(payout.amount) } },
+            });
+            this.logger.error(`Payout failed: ${payout.id} — ${err.message}`);
+            throw new common_1.BadRequestException(`Stripe transfer failed: ${err.message}`);
+        }
+    }
+    async getGuidePayoutHistory(userId) {
+        const guide = await this.prisma.guideProfile.findUnique({ where: { userId } });
+        if (!guide)
+            throw new common_1.NotFoundException('Guide profile not found');
+        return this.prisma.payoutRequest.findMany({
+            where: { guideId: guide.id },
+            orderBy: { createdAt: 'desc' },
+            take: 50,
+            select: {
+                id: true, amount: true, currency: true, status: true,
+                stripePayoutId: true, processedAt: true, createdAt: true,
+            },
+        });
     }
     async getGuideEarnings(userId) {
         const guide = await this.prisma.guideProfile.findUnique({ where: { userId } });

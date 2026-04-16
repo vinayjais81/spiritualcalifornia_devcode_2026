@@ -61,6 +61,7 @@ const sidebarSections = [
     { href: '/guide/dashboard/earnings', icon: '💰', name: 'Earnings & Payouts' },
     { href: '/guide/dashboard/subscription', icon: '⭐', name: 'Subscription Plan' },
     { href: '/guide/dashboard/reviews', icon: '💬', name: 'Reviews' },
+    { href: '/guide/dashboard/settings', icon: '⚙️', name: 'Account Settings' },
   ]},
 ];
 

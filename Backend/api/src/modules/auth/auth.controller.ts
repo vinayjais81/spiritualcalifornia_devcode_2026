@@ -136,6 +136,16 @@ export class AuthController {
     return user;
   }
 
+  @Post('change-password')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change password (authenticated user)' })
+  changePassword(
+    @CurrentUser() user: CurrentUserData,
+    @Body() body: { currentPassword: string; newPassword: string },
+  ) {
+    return this.authService.changePassword(user.id, body.currentPassword, body.newPassword);
+  }
+
   // ─── Google OAuth ────────────────────────────────────────────────────────────
 
   /**

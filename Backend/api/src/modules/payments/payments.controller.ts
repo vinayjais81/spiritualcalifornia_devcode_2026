@@ -83,6 +83,13 @@ export class PaymentsController {
     return this.paymentsService.requestPayout(user.id, amount);
   }
 
+  @Get('payout-history')
+  @Roles(Role.GUIDE)
+  @ApiOperation({ summary: "Get guide's payout request history" })
+  getPayoutHistory(@CurrentUser() user: CurrentUserData) {
+    return this.paymentsService.getGuidePayoutHistory(user.id);
+  }
+
   // ─── Create Payment Intent (for frontend Stripe Elements) ──────────────────
 
   @Post('create-intent')

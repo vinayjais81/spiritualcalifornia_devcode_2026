@@ -11,6 +11,7 @@ const sidebarSections = [
   { label: 'Overview', items: [{ href: '/seeker/dashboard', icon: '🏠', name: 'Dashboard' }] },
   { label: 'My Activity', items: [
     { href: '/seeker/dashboard/bookings', icon: '📅', name: 'My Bookings' },
+    { href: '/seeker/dashboard/events', icon: '🎫', name: 'My Events' },
     { href: '/seeker/dashboard/tours', icon: '🌍', name: 'My Tours' },
     { href: '/seeker/dashboard/payments', icon: '💳', name: 'Payment History' },
     { href: '/seeker/dashboard/favorites', icon: '❤️', name: 'Favorite Guides' },

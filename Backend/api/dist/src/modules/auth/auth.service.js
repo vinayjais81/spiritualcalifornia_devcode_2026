@@ -236,6 +236,19 @@ let AuthService = AuthService_1 = class AuthService {
         });
         return { message: 'Password reset successfully' };
     }
+    async changePassword(userId, currentPassword, newPassword) {
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user || !user.passwordHash)
+            throw new common_1.BadRequestException('User not found');
+        const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+        if (!valid)
+            throw new common_1.BadRequestException('Current password is incorrect');
+        if (newPassword.length < 8)
+            throw new common_1.BadRequestException('New password must be at least 8 characters');
+        const passwordHash = await bcrypt.hash(newPassword, 12);
+        await this.usersService.update(userId, { passwordHash });
+        return { message: 'Password changed successfully' };
+    }
     async getCalendlyAuthUrl(userId, redirectTo) {
         const clientId = this.configService.get('CALENDLY_CLIENT_ID', '');
         const redirectUri = this.configService.get('CALENDLY_REDIRECT_URI', '');

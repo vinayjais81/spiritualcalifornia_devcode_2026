@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Param,
   Body,
@@ -24,7 +25,8 @@ import { PaginationQueryDto } from './dto/query.dto';
 import { BanUserDto } from './dto/ban-user.dto';
 import { UpdateRolesDto } from './dto/update-roles.dto';
 import { RejectGuideDto } from './dto/reject-guide.dto';
-import { VerificationStatus, TourBookingStatus, BookingStatus } from '@prisma/client';
+import { VerificationStatus, TourBookingStatus, BookingStatus, PayoutStatus } from '@prisma/client';
+import { PaymentsService } from '../payments/payments.service';
 import { IsOptional, IsEnum, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -45,6 +47,13 @@ class TourBookingsQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   guideId?: string;
+}
+
+class PayoutRequestsQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ enum: PayoutStatus })
+  @IsOptional()
+  @IsEnum(PayoutStatus)
+  status?: PayoutStatus;
 }
 
 class ServiceBookingsQueryDto extends PaginationQueryDto {
@@ -68,6 +77,7 @@ export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly config: ConfigService,
+    private readonly paymentsService: PaymentsService,
   ) {}
 
   // ─── Dashboard ────────────────────────────────────────────────────────────
@@ -291,5 +301,34 @@ export class AdminController {
       page: query.page,
       limit: query.limit,
     });
+  }
+
+  // ─── Payout Management ────────────────────────────────────────────────────
+
+  @Get('payout-requests')
+  @ApiOperation({ summary: 'List all guide payout requests with filters' })
+  getPayoutRequests(@Query() query: PayoutRequestsQueryDto) {
+    return this.adminService.getPayoutRequests({
+      page: query.page,
+      limit: query.limit,
+      status: query.status,
+    });
+  }
+
+  @Get('guide-balances')
+  @ApiOperation({ summary: 'List all guide payout account balances' })
+  getGuideBalances(@Query() query: PaginationQueryDto) {
+    return this.adminService.getGuideBalances({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+    });
+  }
+
+  @Post('payout-requests/:id/process')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Process a pending payout request (triggers Stripe transfer)' })
+  processPayout(@Param('id') id: string) {
+    return this.paymentsService.processPayout(id);
   }
 }

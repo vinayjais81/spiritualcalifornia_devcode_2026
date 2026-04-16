@@ -53,6 +53,9 @@ let PaymentsController = class PaymentsController {
     requestPayout(user, amount) {
         return this.paymentsService.requestPayout(user.id, amount);
     }
+    getPayoutHistory(user) {
+        return this.paymentsService.getGuidePayoutHistory(user.id);
+    }
     createIntent(data) {
         return this.paymentsService.createPaymentIntent(data);
     }
@@ -126,6 +129,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, Number]),
     __metadata("design:returntype", void 0)
 ], PaymentsController.prototype, "requestPayout", null);
+__decorate([
+    (0, common_1.Get)('payout-history'),
+    (0, roles_decorator_1.Roles)(client_1.Role.GUIDE),
+    (0, swagger_1.ApiOperation)({ summary: "Get guide's payout request history" }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], PaymentsController.prototype, "getPayoutHistory", null);
 __decorate([
     (0, common_1.Post)('create-intent'),
     (0, swagger_1.ApiOperation)({ summary: 'Create a payment intent and return client secret for Stripe Elements' }),

@@ -627,15 +627,18 @@ model EventTicketTier {
 }
 
 model TicketPurchase {
-  id          String   @id @default(cuid())
-  seekerId    String
-  tierId      String
-  quantity    Int      @default(1)
-  totalAmount Decimal  @db.Decimal(10, 2)
-  qrCode      String?  @unique
-  createdAt   DateTime @default(now())
+  id               String   @id @default(cuid())
+  purchaseGroupId  String   // Groups all tickets from one checkout session
+  seekerId         String
+  tierId           String
+  quantity         Int      @default(1)
+  totalAmount      Decimal  @db.Decimal(10, 2)
+  bookingFee       Decimal  @default(0) @db.Decimal(10, 2)
+  status           TicketStatus @default(PENDING)
+  qrCode           String?
+  createdAt        DateTime @default(now())
 
-  // Per-attendee details (from checkout-event.html design)
+  // Per-attendee details (one TicketPurchase per attendee)
   attendeeName          String?
   attendeeEmail         String?
   dietaryNeeds          String?
@@ -645,7 +648,16 @@ model TicketPurchase {
   tier    EventTicketTier @relation(fields: [tierId], references: [id])
   payment Payment?
 
+  @@index([purchaseGroupId])
+  @@index([seekerId])
   @@map("ticket_purchases")
+}
+
+enum TicketStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  REFUNDED
 }
 
 // ─────────────────────────────────────────────
