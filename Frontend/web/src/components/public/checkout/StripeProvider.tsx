@@ -1,9 +1,8 @@
 'use client';
 
-import { loadStripe } from '@stripe/stripe-js';
+import { useState, useEffect } from 'react';
+import { loadStripe, Stripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 interface StripeProviderProps {
   clientSecret: string;
@@ -11,9 +10,50 @@ interface StripeProviderProps {
 }
 
 export function StripeProvider({ clientSecret, children }: StripeProviderProps) {
+  const [stripe, setStripe] = useState<Stripe | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+    if (!key) {
+      setError('Stripe publishable key is not configured.');
+      return;
+    }
+
+    loadStripe(key).then((s) => {
+      if (s) {
+        setStripe(s);
+      } else {
+        setError('Failed to initialize Stripe. Please refresh the page.');
+      }
+    }).catch(() => {
+      setError('Failed to load Stripe. Please check your internet connection and refresh.');
+    });
+  }, []);
+
+  if (error) {
+    return (
+      <div style={{
+        padding: '14px 18px', borderRadius: 8, marginBottom: 16,
+        background: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.2)',
+        fontSize: 13, color: '#C0392B',
+      }}>
+        {error}
+      </div>
+    );
+  }
+
+  if (!stripe) {
+    return (
+      <div style={{ padding: '20px 0', textAlign: 'center', fontSize: 13, color: '#8A8278' }}>
+        Loading Stripe...
+      </div>
+    );
+  }
+
   return (
     <Elements
-      stripe={stripePromise}
+      stripe={stripe}
       options={{
         clientSecret,
         appearance: {
