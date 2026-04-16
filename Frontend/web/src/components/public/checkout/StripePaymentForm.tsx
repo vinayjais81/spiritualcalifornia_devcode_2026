@@ -15,11 +15,12 @@ export function StripePaymentForm({ submitLabel, onSuccess, onError, returnUrl, 
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
+  const [ready, setReady] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!stripe || !elements) return;
+    if (!stripe || !elements || !ready) return;
 
     setLoading(true);
     setErrorMessage(null);
@@ -51,6 +52,8 @@ export function StripePaymentForm({ submitLabel, onSuccess, onError, returnUrl, 
   return (
     <form onSubmit={handleSubmit}>
       <PaymentElement
+        onReady={() => setReady(true)}
+        onLoadError={(e) => setErrorMessage(e.error.message ?? 'Failed to load payment form. Please refresh.')}
         options={{
           layout: 'tabs',
           wallets: { applePay: 'auto', googlePay: 'auto' },
@@ -80,7 +83,7 @@ export function StripePaymentForm({ submitLabel, onSuccess, onError, returnUrl, 
 
       <button
         type="submit"
-        disabled={!stripe || loading}
+        disabled={!stripe || !ready || loading}
         style={{
           width: '100%', padding: 18, borderRadius: 8, marginTop: 20,
           background: loading ? 'rgba(232,184,75,0.5)' : '#E8B84B',
@@ -90,7 +93,7 @@ export function StripePaymentForm({ submitLabel, onSuccess, onError, returnUrl, 
           border: 'none', cursor: loading ? 'not-allowed' : 'pointer',
         }}
       >
-        {loading ? 'Processing...' : submitLabel}
+        {loading ? 'Processing...' : !ready ? 'Loading payment form...' : submitLabel}
       </button>
 
       <div style={{ textAlign: 'center', marginTop: 14, fontSize: 11, color: '#8A8278' }}>
