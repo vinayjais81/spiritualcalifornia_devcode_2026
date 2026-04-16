@@ -314,6 +314,34 @@ export class TicketsService {
     };
   }
 
+  // ─── Regenerate QR codes for all confirmed tickets (admin one-time fix) ─────
+
+  async regenerateAllQRCodes() {
+    const frontendUrl = process.env.FRONTEND_URL || 'https://spiritualcalifornia.com';
+    const tickets = await this.prisma.ticketPurchase.findMany({
+      where: { status: 'CONFIRMED' },
+      select: { id: true },
+    });
+
+    let updated = 0;
+    for (const ticket of tickets) {
+      const verifyUrl = `${frontendUrl}/verify-ticket/${ticket.id}`;
+      const qrCode = await QRCode.toDataURL(verifyUrl, {
+        width: 300, margin: 2,
+        color: { dark: '#3A3530', light: '#FFFFFF' },
+        errorCorrectionLevel: 'M',
+      });
+      await this.prisma.ticketPurchase.update({
+        where: { id: ticket.id },
+        data: { qrCode },
+      });
+      updated++;
+    }
+
+    this.logger.log(`Regenerated QR codes for ${updated} confirmed tickets`);
+    return { updated };
+  }
+
   // ─── Get seeker's event tickets (grouped by purchase) ──────────────────────
 
   async getMyEventTickets(userId: string) {

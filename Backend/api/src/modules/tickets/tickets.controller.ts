@@ -39,6 +39,15 @@ export class TicketsController {
     return this.ticketsService.checkInTicket(ticketId, user.id);
   }
 
+  // ─── Admin: Regenerate QR codes for existing tickets ───────────────────────
+
+  @Post('regenerate-qr')
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Regenerate QR codes for all confirmed tickets (one-time fix)' })
+  regenerateQR() {
+    return this.ticketsService.regenerateAllQRCodes();
+  }
+
   // ─── Seeker: Checkout + View Tickets ──────────────────────────────────────
 
   @Post('event-checkout')
