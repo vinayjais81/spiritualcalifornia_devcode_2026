@@ -24,10 +24,10 @@ export function StripeProvider({ clientSecret, children }: StripeProviderProps) 
       if (s) {
         setStripe(s);
       } else {
-        setError('Failed to initialize Stripe. Please refresh the page.');
+        setError('Stripe returned null. Key may be invalid. Check NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY.');
       }
-    }).catch(() => {
-      setError('Failed to load Stripe. Please check your internet connection and refresh.');
+    }).catch((err) => {
+      setError(`Stripe load error: ${err?.message || String(err)}`);
     });
   }, []);
 
