@@ -34,8 +34,16 @@ export function StripePaymentForm({ submitLabel, onSuccess, onError, returnUrl, 
       setErrorMessage(error.message ?? 'Payment failed');
       onError?.(error.message ?? 'Payment failed');
       setLoading(false);
-    } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-      onSuccess(paymentIntent.id);
+    } else if (paymentIntent) {
+      if (paymentIntent.status === 'succeeded' || paymentIntent.status === 'processing') {
+        onSuccess(paymentIntent.id);
+      } else if (paymentIntent.status === 'requires_action') {
+        setErrorMessage('Additional authentication required. Please complete the verification.');
+      } else {
+        setErrorMessage(`Payment could not be completed (${paymentIntent.status}). Please try again.`);
+      }
+      setLoading(false);
+    } else {
       setLoading(false);
     }
   };
