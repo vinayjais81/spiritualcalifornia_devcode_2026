@@ -6,8 +6,10 @@ import { TicketsService } from './tickets.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.decorator';
 import { EventCheckoutDto } from './dto/event-checkout.dto';
+import { Role } from '@prisma/client';
 
 @ApiTags('Tickets')
 @ApiBearerAuth()
@@ -15,6 +17,29 @@ import { EventCheckoutDto } from './dto/event-checkout.dto';
 @Controller('tickets')
 export class TicketsController {
   constructor(private readonly ticketsService: TicketsService) {}
+
+  // ─── Public: QR code scan lands here ──────────────────────────────────────
+
+  @Public()
+  @Get('verify/:ticketId')
+  @ApiOperation({ summary: 'Verify a ticket by ID (public — scanned QR code)' })
+  verifyTicket(@Param('ticketId') ticketId: string) {
+    return this.ticketsService.verifyTicket(ticketId);
+  }
+
+  // ─── Guide/Admin: Mark ticket as checked in ───────────────────────────────
+
+  @Post(':ticketId/check-in')
+  @Roles(Role.GUIDE, Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Check in a ticket at the door (guide/admin only)' })
+  checkInTicket(
+    @Param('ticketId') ticketId: string,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.ticketsService.checkInTicket(ticketId, user.id);
+  }
+
+  // ─── Seeker: Checkout + View Tickets ──────────────────────────────────────
 
   @Post('event-checkout')
   @Roles('SEEKER')

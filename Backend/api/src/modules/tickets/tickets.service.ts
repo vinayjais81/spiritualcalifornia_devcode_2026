@@ -150,15 +150,15 @@ export class TicketsService {
     if (tickets[0].status === 'CONFIRMED') return; // Idempotent
 
     // Generate QR codes + confirm all tickets
+    const frontendUrl = process.env.FRONTEND_URL || 'https://spiritualcalifornia.com';
     for (const ticket of tickets) {
-      const qrData = JSON.stringify({
-        ticketId: ticket.id,
-        eventId: ticket.tier.event.id,
-        eventTitle: ticket.tier.event.title,
-        tierName: ticket.tier.name,
-        attendeeName: ticket.attendeeName,
+      const verifyUrl = `${frontendUrl}/verify-ticket/${ticket.id}`;
+      const qrCode = await QRCode.toDataURL(verifyUrl, {
+        width: 300,
+        margin: 2,
+        color: { dark: '#3A3530', light: '#FFFFFF' },
+        errorCorrectionLevel: 'M',
       });
-      const qrCode = await QRCode.toDataURL(qrData, { width: 200, margin: 2 });
 
       await this.prisma.ticketPurchase.update({
         where: { id: ticket.id },
@@ -222,6 +222,95 @@ export class TicketsService {
         bookingFee: tickets.reduce((sum, t) => sum + Number(t.bookingFee), 0),
         total: tickets.reduce((sum, t) => sum + Number(t.totalAmount) + Number(t.bookingFee), 0),
       },
+    };
+  }
+
+  // ─── Verify Ticket (public — scanned QR code) ──────────────────────────────
+
+  async verifyTicket(ticketId: string) {
+    const ticket = await this.prisma.ticketPurchase.findUnique({
+      where: { id: ticketId },
+      include: {
+        tier: {
+          include: {
+            event: {
+              select: {
+                id: true, title: true, startTime: true, endTime: true,
+                timezone: true, location: true, type: true, coverImageUrl: true,
+                guide: { select: { displayName: true, user: { select: { firstName: true, lastName: true } } } },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!ticket) throw new NotFoundException('Ticket not found');
+
+    const event = ticket.tier.event;
+    const guideName = event.guide.displayName || `${event.guide.user.firstName} ${event.guide.user.lastName}`;
+
+    return {
+      ticketId: ticket.id,
+      status: ticket.status,
+      checkedInAt: ticket.checkedInAt,
+      attendee: {
+        name: ticket.attendeeName,
+        email: ticket.attendeeEmail,
+        dietaryNeeds: ticket.dietaryNeeds,
+        accessibilityNeeds: ticket.accessibilityNeeds,
+      },
+      tier: {
+        name: ticket.tier.name,
+        price: Number(ticket.tier.price),
+        currency: ticket.tier.currency,
+      },
+      event: {
+        id: event.id,
+        title: event.title,
+        startTime: event.startTime,
+        endTime: event.endTime,
+        timezone: event.timezone,
+        location: event.location,
+        type: event.type,
+        coverImageUrl: event.coverImageUrl,
+        guideName,
+      },
+      purchasedAt: ticket.createdAt,
+    };
+  }
+
+  // ─── Check In Ticket (guide/admin scans at the door) ──────────────────────
+
+  async checkInTicket(ticketId: string, userId: string) {
+    const ticket = await this.prisma.ticketPurchase.findUnique({
+      where: { id: ticketId },
+      include: { tier: { include: { event: { select: { title: true } } } } },
+    });
+    if (!ticket) throw new NotFoundException('Ticket not found');
+
+    if (ticket.status !== 'CONFIRMED') {
+      throw new BadRequestException(`Cannot check in — ticket status is ${ticket.status}`);
+    }
+    if (ticket.checkedInAt) {
+      throw new BadRequestException(
+        `Already checked in at ${ticket.checkedInAt.toISOString()}`,
+      );
+    }
+
+    const updated = await this.prisma.ticketPurchase.update({
+      where: { id: ticketId },
+      data: { checkedInAt: new Date(), checkedInBy: userId },
+    });
+
+    this.logger.log(
+      `Ticket ${ticketId} checked in by ${userId} for "${ticket.tier.event.title}"`,
+    );
+
+    return {
+      ticketId: updated.id,
+      checkedInAt: updated.checkedInAt,
+      checkedInBy: updated.checkedInBy,
+      attendeeName: updated.attendeeName,
     };
   }
 
