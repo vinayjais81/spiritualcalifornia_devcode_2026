@@ -40,6 +40,12 @@ enum EventType {
   VIRTUAL
   IN_PERSON
   SOUL_TRAVEL
+  RETREAT
+}
+
+enum TourTrack {
+  ADVENTURE
+  HEALING
 }
 
 enum BookingStatus {
@@ -268,6 +274,7 @@ model GuideProfile {
   algoliaObjectId      String?
   averageRating        Float              @default(0)
   totalReviews         Int                @default(0)
+  isFeatured           Boolean            @default(false)
   claimToken           String?            @unique
   claimTokenExpiry     DateTime?
   scrapedSourceUrl     String?
@@ -1010,6 +1017,10 @@ model SoulTour {
   cancellationPolicy    Json?     // { fullRefundDaysBefore: 90, halfRefundDaysBefore: 60 } — falls back to platform default
   balanceDueDaysBefore  Int       @default(60)
   minDepositPerPerson   Decimal?  @db.Decimal(10, 2)
+  // ── Listing-page additions (2026-04-17) ──
+  trackType             TourTrack?   // ADVENTURE | HEALING — drives public listing tabs
+  latestUpdate          String?      // Guide's latest announcement shown on tour card
+  latestUpdateAt        DateTime?
   // ─────────────────────
   isPublished   Boolean  @default(false)
   isCancelled   Boolean  @default(false)

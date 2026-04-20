@@ -88,6 +88,9 @@ export class SoulToursService {
         notIncluded: tourData.notIncluded ?? [],
         requirements: tourData.requirements,
         difficultyLevel: tourData.difficultyLevel,
+        trackType: tourData.trackType as any,
+        latestUpdate: tourData.latestUpdate,
+        latestUpdateAt: tourData.latestUpdate ? new Date() : undefined,
         languages: tourData.languages ?? [],
         depositMin: tourData.depositMin,
         minDepositPerPerson: tourData.minDepositPerPerson,
@@ -175,14 +178,24 @@ export class SoulToursService {
 
   // ─── List Published Tours (Public) ─────────────────────────────────────────
 
-  async findPublished(page = 1, limit = 12) {
+  async findPublished(
+    page = 1,
+    limit = 12,
+    filters: { track?: string; country?: string } = {},
+  ) {
     const skip = (page - 1) * limit;
     const where: Prisma.SoulTourWhereInput = {
       isPublished: true,
       isCancelled: false,
-      // Show tours that have at least one upcoming departure
       departures: { some: { status: 'SCHEDULED', startDate: { gte: new Date() } } },
     };
+
+    if (filters.track && ['ADVENTURE', 'HEALING'].includes(filters.track)) {
+      (where as any).trackType = filters.track;
+    }
+    if (filters.country && filters.country !== 'all') {
+      where.country = { equals: filters.country, mode: 'insensitive' };
+    }
 
     const [tours, total] = await Promise.all([
       this.prisma.soulTour.findMany({
@@ -205,6 +218,40 @@ export class SoulToursService {
     return { tours, total, page, totalPages: Math.ceil(total / limit) };
   }
 
+  // ─── Public Stats (hero strip on /travels) ────────────────────────────────
+
+  async getPublicStats() {
+    const now = new Date();
+    const activeWhere: Prisma.SoulTourWhereInput = {
+      isPublished: true,
+      isCancelled: false,
+      departures: { some: { status: 'SCHEDULED', startDate: { gte: now } } },
+    };
+
+    const [totalJourneys, countryRows, travelerRows] = await Promise.all([
+      this.prisma.soulTour.count({ where: activeWhere }),
+      this.prisma.soulTour.findMany({
+        where: { ...activeWhere, country: { not: null } },
+        select: { country: true },
+        distinct: ['country'],
+      }),
+      this.prisma.tourBookingTraveler.count({
+        where: {
+          booking: {
+            status: { in: ['DEPOSIT_PAID', 'FULLY_PAID', 'CONFIRMED', 'COMPLETED'] },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      totalJourneys,
+      countries: countryRows.length,
+      travelers: travelerRows,
+      avgRating: 4.9, // Reviews for tours will come online in a later phase
+    };
+  }
+
   // ─── Update Tour ───────────────────────────────────────────────────────────
 
   async update(userId: string, tourId: string, dto: UpdateTourDto) {
@@ -213,7 +260,7 @@ export class SoulToursService {
     if (!tour) throw new NotFoundException('Tour not found');
     if (tour.guideId !== guide.id) throw new ForbiddenException('Not your tour');
 
-    const { roomTypes, departures, itinerary, startDate, endDate, cancellationPolicy, ...rest } = dto;
+    const { roomTypes, departures, itinerary, startDate, endDate, cancellationPolicy, trackType, latestUpdate, ...rest } = dto;
 
     return this.prisma.soulTour.update({
       where: { id: tourId },
@@ -224,6 +271,9 @@ export class SoulToursService {
         cancellationPolicy: cancellationPolicy
           ? (cancellationPolicy as unknown as Prisma.InputJsonValue)
           : undefined,
+        trackType: trackType as any,
+        latestUpdate,
+        latestUpdateAt: latestUpdate !== undefined ? new Date() : undefined,
       },
       include: { roomTypes: true, departures: true, itinerary: true },
     });

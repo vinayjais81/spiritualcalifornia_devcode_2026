@@ -257,6 +257,9 @@ export class AdminService {
           verificationStatus: true,
           averageRating: true,
           totalReviews: true,
+          isFeatured: true,
+          isVerified: true,
+          isPublished: true,
           createdAt: true,
           user: {
             select: {
@@ -354,6 +357,16 @@ export class AdminService {
       where: { id: guideId },
       data: { verificationStatus: VerificationStatus.APPROVED },
       select: { id: true, verificationStatus: true },
+    });
+  }
+
+  async setFeatured(guideId: string, isFeatured: boolean) {
+    const guide = await this.prisma.guideProfile.findUnique({ where: { id: guideId } });
+    if (!guide) throw new NotFoundException('Guide profile not found');
+    return this.prisma.guideProfile.update({
+      where: { id: guideId },
+      data: { isFeatured },
+      select: { id: true, slug: true, displayName: true, isFeatured: true },
     });
   }
 

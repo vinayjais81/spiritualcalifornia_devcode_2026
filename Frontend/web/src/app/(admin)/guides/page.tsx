@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Star, CheckCircle, Clock, XCircle, BookOpen, AlertTriangle } from 'lucide-react';
+import { Search, Star, CheckCircle, Clock, XCircle, BookOpen, AlertTriangle, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 type VerificationStatus = 'PENDING' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED' | 'FLAGGED';
@@ -21,6 +21,7 @@ interface Guide {
   verificationStatus: VerificationStatus;
   averageRating: number;
   totalReviews: number;
+  isFeatured: boolean;
   createdAt: string;
   user: {
     id: string;
@@ -83,6 +84,16 @@ export default function GuidesPage() {
     onError: () => toast.error('Failed to approve guide'),
   });
 
+  const featureMutation = useMutation({
+    mutationFn: ({ guideId, isFeatured }: { guideId: string; isFeatured: boolean }) =>
+      api.patch(`/admin/guides/${guideId}/featured`, { isFeatured }),
+    onSuccess: (_, { isFeatured }) => {
+      toast.success(isFeatured ? 'Guide featured on practitioners page' : 'Removed from featured');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'guides'] });
+    },
+    onError: () => toast.error('Failed to update featured status'),
+  });
+
   const guides: Guide[] = data?.guides ?? [];
 
   return (
@@ -131,6 +142,7 @@ export default function GuidesPage() {
                       <th className="px-4 py-3">Credentials</th>
                       <th className="px-4 py-3">Rating</th>
                       <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Featured</th>
                       <th className="px-4 py-3">Actions</th>
                     </tr>
                   </thead>
@@ -138,7 +150,7 @@ export default function GuidesPage() {
                     {isLoading
                       ? Array.from({ length: 6 }).map((_, i) => (
                           <tr key={i}>
-                            {Array.from({ length: 6 }).map((_, j) => (
+                            {Array.from({ length: 7 }).map((_, j) => (
                               <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
                             ))}
                           </tr>
@@ -146,7 +158,7 @@ export default function GuidesPage() {
                       : guides.length === 0
                       ? (
                           <tr>
-                            <td colSpan={6} className="px-4 py-12 text-center text-gray-400">
+                            <td colSpan={7} className="px-4 py-12 text-center text-gray-400">
                               <BookOpen className="mx-auto mb-2 h-8 w-8 opacity-40" />
                               No guides found
                             </td>
@@ -190,6 +202,21 @@ export default function GuidesPage() {
                                   <StatusIcon className="h-3 w-3" />
                                   {cfg.label}
                                 </Badge>
+                              </td>
+                              <td className="px-4 py-3">
+                                <button
+                                  onClick={() => featureMutation.mutate({ guideId: guide.id, isFeatured: !guide.isFeatured })}
+                                  disabled={featureMutation.isPending || guide.verificationStatus !== 'APPROVED'}
+                                  title={guide.verificationStatus !== 'APPROVED' ? 'Only approved guides can be featured' : guide.isFeatured ? 'Click to un-feature' : 'Click to feature'}
+                                  className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-40 ${
+                                    guide.isFeatured
+                                      ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                  }`}
+                                >
+                                  <Sparkles className={`h-3 w-3 ${guide.isFeatured ? 'fill-amber-500 text-amber-500' : ''}`} />
+                                  {guide.isFeatured ? 'Featured' : 'Feature'}
+                                </button>
                               </td>
                               <td className="px-4 py-3">
                                 {guide.verificationStatus === 'PENDING' && (

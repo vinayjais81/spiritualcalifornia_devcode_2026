@@ -40,7 +40,7 @@ export interface ProductSearchRecord {
 export interface EventSearchRecord {
   objectID: string;
   title: string;
-  type: 'VIRTUAL' | 'IN_PERSON' | 'SOUL_TRAVEL';
+  type: 'VIRTUAL' | 'IN_PERSON' | 'SOUL_TRAVEL' | 'RETREAT';
   startTime: number; // Unix timestamp for filtering
   location?: string;
   guideName: string;

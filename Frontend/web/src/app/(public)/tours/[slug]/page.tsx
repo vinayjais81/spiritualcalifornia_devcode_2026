@@ -509,7 +509,7 @@ export default function TourDetailPage() {
           {/* Guide bio */}
           <div style={{ marginBottom: 56 }}>
             <SectionHeader>Your trip leader</SectionHeader>
-            <Link href={`/practitioners/${tour.guide.slug}`} style={{ textDecoration: 'none' }}>
+            <Link href={`/guides/${tour.guide.slug}`} style={{ textDecoration: 'none' }}>
               <div style={{
                 background: C.white, border: '1px solid rgba(232,184,75,0.15)', borderRadius: 12,
                 padding: 24, display: 'flex', alignItems: 'center', gap: 20,

@@ -163,6 +163,7 @@ export default function EventsPage() {
             <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
               <option value="IN_PERSON">In-Person</option>
               <option value="VIRTUAL">Virtual</option>
+              <option value="RETREAT">Retreat</option>
               <option value="SOUL_TRAVEL">Soul Travel</option>
             </Select>
           </FormGroup>

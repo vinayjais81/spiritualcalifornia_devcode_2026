@@ -545,6 +545,176 @@ export class GuidesService {
     }
   }
 
+  // ─── Public: Guide Listing (for /practitioners page) ───────────────────────
+
+  async listPublic(filters: {
+    modality?: string;
+    minRating?: number;
+    sortBy?: 'rating' | 'reviews' | 'newest';
+    page?: number;
+    limit?: number;
+  } = {}) {
+    const page = filters.page || 1;
+    const limit = filters.limit || 24;
+    const skip = (page - 1) * limit;
+
+    const where: any = {
+      isPublished: true,
+      isVerified: true,
+    };
+
+    if (filters.modality && filters.modality !== 'all') {
+      where.modalities = { has: filters.modality };
+    }
+    if (filters.minRating && filters.minRating > 0) {
+      where.averageRating = { gte: filters.minRating };
+    }
+
+    const orderBy: any =
+      filters.sortBy === 'reviews'
+        ? [{ totalReviews: 'desc' }, { averageRating: 'desc' }]
+        : filters.sortBy === 'newest'
+        ? [{ createdAt: 'desc' }]
+        : [{ averageRating: 'desc' }, { totalReviews: 'desc' }];
+
+    const [guides, total, featured] = await Promise.all([
+      this.prisma.guideProfile.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          slug: true,
+          displayName: true,
+          tagline: true,
+          location: true,
+          modalities: true,
+          isVerified: true,
+          isFeatured: true,
+          averageRating: true,
+          totalReviews: true,
+          user: { select: { avatarUrl: true } },
+          categories: {
+            select: { category: { select: { name: true } } },
+            take: 3,
+          },
+          blogPosts: {
+            where: { isPublished: true },
+            orderBy: { publishedAt: 'desc' },
+            take: 1,
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              excerpt: true,
+              coverImageUrl: true,
+              publishedAt: true,
+            },
+          },
+          services: {
+            where: { isActive: true },
+            select: { price: true, type: true, durationMin: true },
+            orderBy: { price: 'asc' },
+            take: 1,
+          },
+        },
+      }),
+      this.prisma.guideProfile.count({ where }),
+      // Always fetch featured separately — the featured strip shows the top 3
+      // admin-flagged guides (auto-filled with top-rated if fewer than 3).
+      this.prisma.guideProfile.findMany({
+        where: { isPublished: true, isVerified: true, isFeatured: true },
+        orderBy: [{ averageRating: 'desc' }, { totalReviews: 'desc' }],
+        take: 3,
+        select: {
+          id: true,
+          slug: true,
+          displayName: true,
+          tagline: true,
+          location: true,
+          modalities: true,
+          isVerified: true,
+          averageRating: true,
+          totalReviews: true,
+          user: { select: { avatarUrl: true } },
+          blogPosts: {
+            where: { isPublished: true },
+            orderBy: { publishedAt: 'desc' },
+            take: 1,
+            select: {
+              title: true,
+              slug: true,
+              excerpt: true,
+              coverImageUrl: true,
+              publishedAt: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    // If fewer than 3 featured are flagged, auto-fill with top-rated verified guides
+    let featuredList = featured;
+    if (featuredList.length < 3) {
+      const filler = await this.prisma.guideProfile.findMany({
+        where: {
+          isPublished: true,
+          isVerified: true,
+          isFeatured: false,
+          id: { notIn: featuredList.map((g) => g.id) },
+        },
+        orderBy: [{ averageRating: 'desc' }, { totalReviews: 'desc' }],
+        take: 3 - featuredList.length,
+        select: {
+          id: true,
+          slug: true,
+          displayName: true,
+          tagline: true,
+          location: true,
+          modalities: true,
+          isVerified: true,
+          averageRating: true,
+          totalReviews: true,
+          user: { select: { avatarUrl: true } },
+          blogPosts: {
+            where: { isPublished: true },
+            orderBy: { publishedAt: 'desc' },
+            take: 1,
+            select: {
+              title: true,
+              slug: true,
+              excerpt: true,
+              coverImageUrl: true,
+              publishedAt: true,
+            },
+          },
+        },
+      });
+      featuredList = [...featuredList, ...filler];
+    }
+
+    return {
+      guides,
+      featured: featuredList,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  // ─── Admin: Toggle Featured ────────────────────────────────────────────────
+
+  async setFeatured(guideId: string, isFeatured: boolean) {
+    const guide = await this.prisma.guideProfile.findUnique({ where: { id: guideId } });
+    if (!guide) throw new NotFoundException('Guide not found');
+    return this.prisma.guideProfile.update({
+      where: { id: guideId },
+      data: { isFeatured },
+      select: { id: true, slug: true, displayName: true, isFeatured: true },
+    });
+  }
+
   // ─── Public: Guide Services by Slug ─────────────────────────────────────────
 
   async getPublicServices(slug: string) {

@@ -6,11 +6,12 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Public } from '../auth/decorators/public.decorator';
@@ -40,6 +41,32 @@ export class GuidesController {
   @ApiOperation({ summary: 'List all active categories with subcategories' })
   listCategories() {
     return this.guidesService.listCategories();
+  }
+
+  // ─── Public: Practitioners Listing ─────────────────────────────────────────
+
+  @Public()
+  @Get('public')
+  @ApiOperation({ summary: 'List verified published guides with latest blog post (public /practitioners page)' })
+  @ApiQuery({ name: 'modality', required: false })
+  @ApiQuery({ name: 'minRating', required: false, description: '0 | 4 | 4.5 | 4.8' })
+  @ApiQuery({ name: 'sortBy', required: false, description: 'rating | reviews | newest' })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  listPublic(
+    @Query('modality') modality?: string,
+    @Query('minRating') minRating?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.guidesService.listPublic({
+      modality,
+      minRating: minRating ? Number(minRating) : 0,
+      sortBy: (sortBy as 'rating' | 'reviews' | 'newest') || 'rating',
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 24,
+    });
   }
 
   // ─── Public: Guide Profile by Slug ───────────────────────────────────────────

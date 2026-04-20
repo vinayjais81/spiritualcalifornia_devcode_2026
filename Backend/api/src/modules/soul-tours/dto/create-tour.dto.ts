@@ -89,6 +89,14 @@ export class CreateTourDto {
   @IsOptional() @IsIn(['EASY', 'MODERATE', 'CHALLENGING'])
   difficultyLevel?: string;
 
+  @ApiPropertyOptional({ description: 'ADVENTURE | HEALING — drives public listing tabs' })
+  @IsOptional() @IsIn(['ADVENTURE', 'HEALING'])
+  trackType?: string;
+
+  @ApiPropertyOptional({ description: 'Guide\'s latest announcement shown on the public tour card' })
+  @IsOptional() @IsString() @MaxLength(500)
+  latestUpdate?: string;
+
   @ApiPropertyOptional({ type: [String] })
   @IsOptional() @IsArray() @IsString({ each: true })
   languages?: string[];

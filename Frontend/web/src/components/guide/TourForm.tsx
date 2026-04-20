@@ -65,6 +65,8 @@ export interface TourFormState {
   minDepositPerPerson: string;
   // Tour metadata
   difficultyLevel: string;
+  trackType: string;          // 'ADVENTURE' | 'HEALING' | ''
+  latestUpdate: string;       // Optional guide announcement shown on public card
   languages: string;         // comma-separated
   // Inclusions
   highlights: string;        // newline-separated
@@ -88,7 +90,7 @@ export const emptyTourForm: TourFormState = {
   location: '', city: '', state: '', country: 'United States', meetingPoint: '',
   startDate: '', endDate: '', timezone: 'America/Los_Angeles',
   basePrice: '', capacity: '12', minDepositPerPerson: '500',
-  difficultyLevel: 'MODERATE', languages: 'English',
+  difficultyLevel: 'MODERATE', trackType: '', latestUpdate: '', languages: 'English',
   highlights: '', included: '', notIncluded: '', requirements: '',
   balanceDueDaysBefore: '60', fullRefundDaysBefore: '90', halfRefundDaysBefore: '60',
   roomTypes: [],
@@ -141,6 +143,8 @@ export function hydrateTourForm(tour: any): TourFormState {
     capacity: tour.capacity ? String(tour.capacity) : '12',
     minDepositPerPerson: tour.minDepositPerPerson ? String(tour.minDepositPerPerson) : '500',
     difficultyLevel: tour.difficultyLevel || 'MODERATE',
+    trackType: tour.trackType || '',
+    latestUpdate: tour.latestUpdate || '',
     languages: (tour.languages || ['English']).join(', '),
     highlights: (tour.highlights || []).join('\n'),
     included: (tour.included || []).join('\n'),
@@ -322,6 +326,8 @@ export function TourForm({ initial, tourId }: Props) {
       capacity: Number(form.capacity),
       minDepositPerPerson: form.minDepositPerPerson ? Number(form.minDepositPerPerson) : undefined,
       difficultyLevel: form.difficultyLevel || undefined,
+      trackType: form.trackType || undefined,
+      latestUpdate: form.latestUpdate?.trim() || undefined,
       languages: csvToArray(form.languages),
       highlights: linesToArray(form.highlights),
       included: linesToArray(form.included),
@@ -746,8 +752,29 @@ export function TourForm({ initial, tourId }: Props) {
               <option value="CHALLENGING">Challenging</option>
             </Select>
           </FormGroup>
+          <FormGroup label="Track — drives public listing tab">
+            <Select value={form.trackType} onChange={(e) => set('trackType', e.target.value)}>
+              <option value="">Uncategorized (shown in both tabs)</option>
+              <option value="ADVENTURE">Soul Adventure</option>
+              <option value="HEALING">Healing Body</option>
+            </Select>
+          </FormGroup>
           <FormGroup label="Languages Spoken (comma-separated)">
             <Input value={form.languages} onChange={(e) => set('languages', e.target.value)} placeholder="English, Spanish, Nepali" />
+          </FormGroup>
+          <FormGroup label="Latest Update from You (optional, shown on public card)">
+            <textarea
+              value={form.latestUpdate}
+              onChange={(e) => set('latestUpdate', e.target.value)}
+              maxLength={500}
+              rows={2}
+              placeholder='e.g. "Just confirmed a private audience with the head lama at Kopan Monastery."'
+              style={{
+                width: '100%', padding: '10px 12px',
+                border: '1.5px solid rgba(138,130,120,0.25)', borderRadius: 8,
+                fontFamily: font, fontSize: 13, resize: 'vertical',
+              }}
+            />
           </FormGroup>
           <FormGroup label="Balance Due (days before departure)">
             <Input type="number" min={0} value={form.balanceDueDaysBefore} onChange={(e) => set('balanceDueDaysBefore', e.target.value)} />

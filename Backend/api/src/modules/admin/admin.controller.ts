@@ -224,6 +224,16 @@ export class AdminController {
     });
   }
 
+  @Patch('guides/:guideId/featured')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Toggle a guide as featured on the public practitioners page' })
+  setFeatured(
+    @Param('guideId') guideId: string,
+    @Body() body: { isFeatured: boolean },
+  ) {
+    return this.adminService.setFeatured(guideId, !!body.isFeatured);
+  }
+
   // ─── Verification Queue ───────────────────────────────────────────────────
 
   @Get('verification')

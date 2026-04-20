@@ -111,9 +111,28 @@ export class SoulToursController {
   @Public()
   @Get()
   @ApiOperation({ summary: 'List published tours (public)' })
-  @ApiQuery({ name: 'page', required: false }) @ApiQuery({ name: 'limit', required: false })
-  findPublished(@Query('page') page?: string, @Query('limit') limit?: string) {
-    return this.soulToursService.findPublished(Number(page) || 1, Number(limit) || 12);
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  @ApiQuery({ name: 'track', required: false, description: 'ADVENTURE | HEALING' })
+  @ApiQuery({ name: 'country', required: false, description: 'Filter by tour country (case-insensitive)' })
+  findPublished(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('track') track?: string,
+    @Query('country') country?: string,
+  ) {
+    return this.soulToursService.findPublished(
+      Number(page) || 1,
+      Number(limit) || 12,
+      { track, country },
+    );
+  }
+
+  @Public()
+  @Get('stats')
+  @ApiOperation({ summary: 'Aggregate stats for /travels hero strip (public, live)' })
+  getStats() {
+    return this.soulToursService.getPublicStats();
   }
 
   // ─── Bookings (Seeker) ─────────────────────────────────────────────────────
