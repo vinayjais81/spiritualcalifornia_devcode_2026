@@ -210,15 +210,17 @@ export class PaymentsService {
       return;
     }
 
+    const frontendUrl = process.env.FRONTEND_URL || 'https://spiritualcalifornia.com';
     for (const ticket of tickets) {
-      const qrData = JSON.stringify({
-        ticketId: ticket.id,
-        eventId: ticket.tier.event.id,
-        eventTitle: ticket.tier.event.title,
-        tierName: ticket.tier.name,
-        attendeeName: ticket.attendeeName,
+      // Encode the public verify-ticket URL so scanning takes the door staff
+      // straight to the check-in page for this specific ticket.
+      const verifyUrl = `${frontendUrl}/verify-ticket/${ticket.id}`;
+      const qrCode = await toDataURL(verifyUrl, {
+        width: 300,
+        margin: 2,
+        color: { dark: '#3A3530', light: '#FFFFFF' },
+        errorCorrectionLevel: 'M',
       });
-      const qrCode = await toDataURL(qrData, { width: 200, margin: 2 });
       await this.prisma.ticketPurchase.update({
         where: { id: ticket.id },
         data: { status: 'CONFIRMED', qrCode },
