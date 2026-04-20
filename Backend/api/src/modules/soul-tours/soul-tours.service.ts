@@ -191,7 +191,12 @@ export class SoulToursService {
     };
 
     if (filters.track && ['ADVENTURE', 'HEALING'].includes(filters.track)) {
-      (where as any).trackType = filters.track;
+      // Uncategorized tours (trackType = null) appear under BOTH tabs so existing
+      // seed/legacy data continues to surface until guides label their tours.
+      (where as any).OR = [
+        { trackType: filters.track },
+        { trackType: null },
+      ];
     }
     if (filters.country && filters.country !== 'all') {
       where.country = { equals: filters.country, mode: 'insensitive' };
