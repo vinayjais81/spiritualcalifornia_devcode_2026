@@ -3,6 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service';
 import { StripeService } from './stripe.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { UploadService } from '../upload/upload.service';
+
+/** 7 days — download link embedded in receipt email stays usable through the weekend. */
+const ORDER_DOWNLOAD_URL_TTL_SECONDS = 7 * 24 * 60 * 60;
 
 @Injectable()
 export class PaymentsService {
@@ -14,6 +18,7 @@ export class PaymentsService {
     private readonly stripeService: StripeService,
     private readonly config: ConfigService,
     private readonly notifications: NotificationsService,
+    private readonly uploadService: UploadService,
   ) {
     this.commissionPercent = Number(this.config.get('STRIPE_PLATFORM_COMMISSION_PERCENT', '15'));
   }
@@ -146,6 +151,12 @@ export class PaymentsService {
         where: { id: payment.orderId },
         data: { status: 'PAID' },
       });
+      // Fire-and-forget: generate 7-day download URLs for digital items + send receipt.
+      // Any failure here is logged but doesn't fail the webhook — seeker can always
+      // regenerate links from the /downloads dashboard.
+      this.handleOrderPaid(payment.orderId).catch((err) =>
+        this.logger.error(`Order PAID side-effects failed (${payment.orderId}): ${err?.message}`, err?.stack),
+      );
     }
     if (payment.tourBookingId) {
       // Clear holdExpiresAt so the hold reaper doesn't release this seat;
@@ -292,6 +303,93 @@ export class PaymentsService {
         guideName: booking.tour.guide.displayName,
         isPaidInFull,
       });
+    }
+  }
+
+  // ─── Order: generate digital download URLs + send receipt ─────────────────
+
+  /**
+   * Runs right after an order is flipped to PAID. Two side-effects:
+   *   1. For every digital OrderItem, pre-generate a 7-day signed S3 URL and
+   *      cache it on the row (so the receipt email + confirmation screen can
+   *      link directly — no "check your dashboard" friction).
+   *   2. Send the order-confirmation email with those links inline.
+   *
+   * Failures are logged but never thrown — seeker can always regenerate links
+   * from /downloads, and order is already paid.
+   */
+  private async handleOrderPaid(orderId: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        seeker: { select: { userId: true } },
+        items: {
+          include: {
+            product: { select: { id: true, name: true, type: true, fileS3Key: true } },
+          },
+        },
+      },
+    });
+    if (!order) {
+      this.logger.warn(`handleOrderPaid: order ${orderId} not found`);
+      return;
+    }
+
+    // 1. Generate download URLs for digital items
+    const expiresAt = new Date(Date.now() + ORDER_DOWNLOAD_URL_TTL_SECONDS * 1000);
+    const digitalLinks: Array<{ name: string; url: string }> = [];
+
+    for (const item of order.items) {
+      if (item.product.type !== 'DIGITAL') continue;
+      if (!item.product.fileS3Key) {
+        this.logger.warn(
+          `Digital product ${item.product.id} missing fileS3Key — can't generate download URL`,
+        );
+        continue;
+      }
+      try {
+        const url = await this.uploadService.getPresignedDownloadUrl(
+          item.product.fileS3Key,
+          ORDER_DOWNLOAD_URL_TTL_SECONDS,
+          `${item.product.name.replace(/[^a-zA-Z0-9._-]/g, '_')}.${item.product.fileS3Key.split('.').pop() || 'zip'}`,
+        );
+        await this.prisma.orderItem.update({
+          where: { id: item.id },
+          data: { downloadUrl: url, downloadUrlExpiresAt: expiresAt },
+        });
+        digitalLinks.push({ name: item.product.name, url });
+      } catch (err: any) {
+        this.logger.error(
+          `Download URL gen failed for orderItem ${item.id}: ${err?.message}`,
+          err?.stack,
+        );
+      }
+    }
+
+    // 2. Send the order-confirmation email (with download links embedded)
+    if (order.contactEmail && order.seeker) {
+      const fullName = [order.contactFirstName, order.contactLastName].filter(Boolean).join(' ').trim();
+      try {
+        await this.notifications.notifyOrderConfirmed({
+          userId: order.seeker.userId,
+          email: order.contactEmail,
+          name: fullName || 'there',
+          orderId: order.id,
+          items: order.items.map((i) => ({
+            name: i.product.name,
+            qty: i.quantity,
+            price: `$${(Number(i.unitPrice) * i.quantity).toFixed(2)}`,
+          })),
+          total: `$${Number(order.totalAmount).toFixed(2)}`,
+          hasDigital: digitalLinks.length > 0,
+          digitalDownloads: digitalLinks,
+        });
+      } catch (err: any) {
+        this.logger.error(
+          `notifyOrderConfirmed failed for order ${order.id}: ${err?.message}`,
+          err?.stack,
+        );
+      }
     }
   }
 

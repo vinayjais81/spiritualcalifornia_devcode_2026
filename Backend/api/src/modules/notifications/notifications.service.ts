@@ -68,7 +68,17 @@ export class NotificationsService {
     });
   }
 
-  async notifyOrderConfirmed(order: { userId: string; email: string; name: string; orderId: string; items: Array<{ name: string; qty: number; price: string }>; total: string; hasDigital: boolean }) {
+  async notifyOrderConfirmed(order: {
+    userId: string;
+    email: string;
+    name: string;
+    orderId: string;
+    items: Array<{ name: string; qty: number; price: string }>;
+    total: string;
+    hasDigital: boolean;
+    /** Per-item signed S3 URLs so the email can link directly to the file */
+    digitalDownloads?: Array<{ name: string; url: string }>;
+  }) {
     await this.create(order.userId, 'ORDER_PLACED', 'Order Confirmed', `Your order #${order.orderId.slice(-8).toUpperCase()} has been confirmed.`);
     await this.emailService.sendOrderConfirmation(order.email, order);
   }

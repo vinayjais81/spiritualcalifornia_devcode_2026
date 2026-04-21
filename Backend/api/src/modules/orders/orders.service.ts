@@ -18,7 +18,7 @@ export class OrdersService {
     const seeker = await this.prisma.seekerProfile.findUnique({ where: { userId } });
     if (!seeker) throw new ForbiddenException('Seeker profile not found');
 
-    // Resolve products and calculate prices
+    // Resolve products (fresh read outside the transaction for validation + price calc)
     const itemDetails = await Promise.all(
       dto.items.map(async (item) => {
         const product = await this.prisma.product.findUnique({ where: { id: item.productId } });
@@ -29,10 +29,7 @@ export class OrdersService {
         if (item.variantId) {
           const variant = await this.prisma.productVariant.findUnique({ where: { id: item.variantId } });
           if (!variant || variant.productId !== product.id) throw new BadRequestException('Invalid variant');
-          if (variant.stockQuantity < item.quantity) throw new BadRequestException(`Insufficient stock for ${variant.name}`);
           if (variant.price) unitPrice = Number(variant.price);
-        } else if (product.type === 'PHYSICAL' && product.stockQuantity !== null && product.stockQuantity < item.quantity) {
-          throw new BadRequestException(`Insufficient stock for ${product.name}`);
         }
 
         return { product, unitPrice, quantity: item.quantity, variantId: item.variantId };
@@ -42,7 +39,7 @@ export class OrdersService {
     const subtotal = itemDetails.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
     const hasPhysical = itemDetails.some((i) => i.product.type === 'PHYSICAL');
 
-    // Shipping
+    // Shipping (resolved outside tx since shipping method is immutable reference data)
     let shippingCost = 0;
     if (hasPhysical && dto.shippingMethodId) {
       const method = await this.checkoutService.getShippingMethod(dto.shippingMethodId);
@@ -58,7 +55,7 @@ export class OrdersService {
       promoCodeId = promo.promoCodeId;
     }
 
-    // Tax
+    // Tax — calculated server-side from the shipping state; never trust a client-sent rate.
     const state = dto.shippingAddress?.state;
     let taxRate = 0;
     let taxAmount = 0;
@@ -70,8 +67,31 @@ export class OrdersService {
 
     const totalAmount = subtotal - discountAmount + shippingCost + taxAmount;
 
-    // Create order in transaction
+    // ─── Atomic stock check + decrement + order create ──────────────────────
+    // Everything in one transaction so concurrent checkouts can't oversell.
     const order = await this.prisma.$transaction(async (tx) => {
+      // Re-verify + decrement stock for every physical/variant line.
+      // Using conditional updateMany so the row only updates when stock is sufficient.
+      for (const line of itemDetails) {
+        if (line.variantId) {
+          const res = await tx.productVariant.updateMany({
+            where: { id: line.variantId, stockQuantity: { gte: line.quantity } },
+            data: { stockQuantity: { decrement: line.quantity } },
+          });
+          if (res.count === 0) {
+            throw new BadRequestException(`Insufficient stock for ${line.product.name}`);
+          }
+        } else if (line.product.type === 'PHYSICAL' && line.product.stockQuantity !== null) {
+          const res = await tx.product.updateMany({
+            where: { id: line.product.id, stockQuantity: { gte: line.quantity } },
+            data: { stockQuantity: { decrement: line.quantity } },
+          });
+          if (res.count === 0) {
+            throw new BadRequestException(`Insufficient stock for ${line.product.name}`);
+          }
+        }
+      }
+
       const newOrder = await tx.order.create({
         data: {
           seekerId: seeker.id,
@@ -102,7 +122,6 @@ export class OrdersService {
         include: { items: { include: { product: { select: { name: true, type: true, imageUrls: true } } } } },
       });
 
-      // Increment promo code usage
       if (promoCodeId) {
         await tx.promoCode.update({ where: { id: promoCodeId }, data: { usedCount: { increment: 1 } } });
       }

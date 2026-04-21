@@ -22,15 +22,13 @@ export default function CartPage() {
   const hasDigital = items.some(i => i.productType === 'DIGITAL');
   const hasEvents = items.some(i => i.itemType === 'EVENT_TICKET');
 
-  // Determine checkout route
+  // Determine checkout route.
+  // Products (digital, physical, or mixed) all flow through the unified /checkout.
+  // Events keep their own flow because of the attendee-details step + QR generation.
   const getCheckoutRoute = () => {
-    const types = new Set(items.map(i => i.itemType === 'PRODUCT' ? i.productType : i.itemType));
-    if (types.size === 1) {
-      if (types.has('DIGITAL')) return '/checkout/digital';
-      if (types.has('PHYSICAL')) return '/checkout/physical';
-      if (types.has('EVENT_TICKET')) return '/checkout/event';
-    }
-    return '/checkout'; // Mixed
+    const itemTypes = new Set(items.map(i => i.itemType));
+    if (itemTypes.size === 1 && itemTypes.has('EVENT_TICKET')) return '/checkout/event';
+    return '/checkout';
   };
 
   if (items.length === 0) {

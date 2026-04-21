@@ -49,8 +49,28 @@ export class EmailService {
 
   // ─── Order Confirmation ────────────────────────────────────────────────────
 
-  async sendOrderConfirmation(to: string, data: { name: string; orderId: string; items: Array<{ name: string; qty: number; price: string }>; total: string; hasDigital: boolean }) {
+  async sendOrderConfirmation(to: string, data: { name: string; orderId: string; items: Array<{ name: string; qty: number; price: string }>; total: string; hasDigital: boolean; digitalDownloads?: Array<{ name: string; url: string }> }) {
     const itemRows = data.items.map(i => `<div style="display: flex; justify-content: space-between; padding: 6px 0;"><span style="color: #3A3530; font-size: 13px;">${i.name} ×${i.qty}</span><span style="color: #3A3530; font-weight: 500; font-size: 13px;">${i.price}</span></div>`).join('');
+
+    // Per-item download section — only rendered when we actually have signed URLs.
+    // Falls back to a generic "visit /downloads" pointer if digital items exist but URL generation failed.
+    const downloadSection = (data.digitalDownloads && data.digitalDownloads.length > 0)
+      ? `
+        <div style="background: #FDF6E3; border: 1px solid rgba(232,184,75,0.25); border-radius: 12px; padding: 20px 22px; margin-bottom: 24px;">
+          <div style="font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #E8B84B; margin-bottom: 12px; font-weight: 600;">⚡ Your Digital Downloads</div>
+          ${data.digitalDownloads.map(d => `
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(232,184,75,0.15);">
+              <span style="color: #3A3530; font-size: 13px; flex: 1;">${d.name}</span>
+              <a href="${d.url}" style="background: #3A3530; color: #E8B84B; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;">Download</a>
+            </div>
+          `).join('')}
+          <div style="margin-top: 12px; font-size: 11px; color: #8A8278; text-align: center;">Links stay valid for 7 days. After that, you can always regenerate them from your <a href="${this.config.get('FRONTEND_URL')}/downloads" style="color: #E8B84B;">Downloads library</a>.</div>
+        </div>
+      `
+      : (data.hasDigital
+        ? `<div style="background: #FDF6E3; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; text-align: center; font-size: 13px; color: #3A3530;">⚡ Your digital items are ready in your <a href="${this.config.get('FRONTEND_URL')}/downloads" style="color: #E8B84B;">Downloads library</a>.</div>`
+        : '');
+
     return this.send(to, `Order Confirmed — #${data.orderId.slice(-8).toUpperCase()}`, `
       <div style="font-family: 'Inter', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
         <div style="text-align: center; margin-bottom: 24px;"><div style="font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #E8B84B;">Spiritual California</div></div>
@@ -60,7 +80,7 @@ export class EmailService {
           ${itemRows}
           <div style="border-top: 2px solid #E8B84B; margin-top: 12px; padding-top: 12px; display: flex; justify-content: space-between;"><span style="font-weight: 600; color: #3A3530;">Total</span><span style="font-weight: 600; color: #3A3530; font-size: 18px;">${data.total}</span></div>
         </div>
-        ${data.hasDigital ? '<div style="background: #FDF6E3; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; text-align: center; font-size: 13px; color: #3A3530;">⚡ Your digital items are available for <a href="' + this.config.get('FRONTEND_URL') + '/downloads" style="color: #E8B84B;">instant download</a>.</div>' : ''}
+        ${downloadSection}
         <div style="text-align: center;"><a href="${this.config.get('FRONTEND_URL')}/seeker/dashboard" style="display: inline-block; padding: 14px 32px; background: #E8B84B; color: #3A3530; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;">View My Orders</a></div>
       </div>
     `);
