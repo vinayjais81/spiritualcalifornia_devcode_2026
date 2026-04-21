@@ -48,6 +48,18 @@ enum TourTrack {
   HEALING
 }
 
+enum ProductCategory {
+  CRYSTALS
+  SOUND_HEALING
+  AROMATHERAPY
+  BOOKS_COURSES
+  DIGITAL_DOWNLOADS
+  RITUAL_TOOLS
+  JEWELRY_MALAS
+  GIFT_BUNDLES
+  ART
+}
+
 enum BookingStatus {
   PENDING
   CONFIRMED
@@ -679,6 +691,7 @@ model Product {
   name            String
   description     String?
   type            ProductType
+  category        ProductCategory?   // Drives shop page category tabs
   price           Decimal     @db.Decimal(10, 2)
   currency        String      @default("USD")
   stockQuantity   Int?
@@ -697,6 +710,7 @@ model Product {
 
   @@index([guideId])
   @@index([type, isActive])
+  @@index([category, isActive])
   @@map("products")
 }
 

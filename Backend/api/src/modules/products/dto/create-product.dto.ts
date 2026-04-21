@@ -1,11 +1,16 @@
-import { IsString, IsEnum, IsNumber, IsOptional, IsArray, IsPositive, Min, MaxLength } from 'class-validator';
+import { IsString, IsEnum, IsNumber, IsOptional, IsArray, IsBoolean, IsPositive, Min, MaxLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProductType } from '@prisma/client';
+import { ProductType, ProductCategory } from '@prisma/client';
 
 export class CreateProductDto {
   @ApiProperty({ enum: ProductType })
   @IsEnum(ProductType)
   type: ProductType;
+
+  @ApiPropertyOptional({ enum: ProductCategory, description: 'Shop category for filtering' })
+  @IsEnum(ProductCategory)
+  @IsOptional()
+  category?: ProductCategory;
 
   @ApiProperty({ example: '30-Day Awareness Training' })
   @IsString()
@@ -47,4 +52,10 @@ export class CreateProductDto {
   @ApiPropertyOptional({ description: 'Array of digital file objects with name, size, url' })
   @IsOptional()
   digitalFiles?: any;
+
+  /** Publish state — true = visible on /shop, false = hidden draft. Defaults to true. */
+  @ApiPropertyOptional()
+  @IsBoolean()
+  @IsOptional()
+  isActive?: boolean;
 }

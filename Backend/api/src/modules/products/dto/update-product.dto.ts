@@ -1,6 +1,6 @@
 import { IsString, IsEnum, IsNumber, IsOptional, IsBoolean, IsArray, IsPositive, Min, MaxLength } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ProductType } from '@prisma/client';
+import { ProductType, ProductCategory } from '@prisma/client';
 
 export class UpdateProductDto {
   @ApiPropertyOptional({ example: 'Updated Product Name' })
@@ -13,6 +13,11 @@ export class UpdateProductDto {
   @IsOptional()
   @IsEnum(ProductType)
   type?: ProductType;
+
+  @ApiPropertyOptional({ enum: ProductCategory })
+  @IsOptional()
+  @IsEnum(ProductCategory)
+  category?: ProductCategory;
 
   @ApiPropertyOptional({ example: 29 })
   @IsOptional()

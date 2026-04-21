@@ -34,8 +34,13 @@ export class ProductsController {
   @Public()
   @Get('public')
   @ApiOperation({ summary: 'List all active products (public storefront)' })
-  findPublic(@Query('limit') limit?: string, @Query('page') page?: string, @Query('type') type?: string) {
-    return this.productsService.findPublic(Number(limit) || 50, Number(page) || 1, type);
+  findPublic(
+    @Query('limit') limit?: string,
+    @Query('page') page?: string,
+    @Query('type') type?: string,
+    @Query('category') category?: string,
+  ) {
+    return this.productsService.findPublic(Number(limit) || 50, Number(page) || 1, type, category);
   }
 
   @Public()

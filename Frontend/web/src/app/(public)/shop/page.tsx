@@ -14,6 +14,7 @@ interface Product {
   name: string;
   description: string | null;
   type: 'DIGITAL' | 'PHYSICAL';
+  category?: string | null;
   price: number;
   imageUrls: string[];
   isActive: boolean;
@@ -22,6 +23,34 @@ interface Product {
     slug: string;
   };
 }
+
+// Map CategoryStrip UI keys → backend ProductCategory enum.
+// 'all' and 'digital' are handled separately (no category param for 'all';
+// 'digital' maps to type=DIGITAL for back-compat with the old UI behaviour).
+const CATEGORY_ENUM_MAP: Record<string, string> = {
+  crystals:      'CRYSTALS',
+  sound:         'SOUND_HEALING',
+  aromatherapy:  'AROMATHERAPY',
+  books:         'BOOKS_COURSES',
+  tools:         'RITUAL_TOOLS',
+  jewelry:       'JEWELRY_MALAS',
+  bundles:       'GIFT_BUNDLES',
+  art:           'ART',
+  // 'digital' intentionally absent — treated as a type filter below
+};
+
+const CATEGORY_LABEL: Record<string, string> = {
+  all:          'All Products',
+  crystals:     'Crystals',
+  sound:        'Sound Healing',
+  aromatherapy: 'Aromatherapy',
+  books:        'Books & Courses',
+  digital:      'Digital Downloads',
+  tools:        'Ritual Tools',
+  jewelry:      'Jewelry & Malas',
+  bundles:      'Gift Bundles',
+  art:          'Art',
+};
 
 // Fallback data while API loads or if not yet populated
 const fallbackProducts: Product[] = [
@@ -43,27 +72,42 @@ export default function ShopPage() {
 
   useEffect(() => {
     const fetchProducts = async () => {
+      setLoading(true);
       try {
-        // Try fetching from API — if products exist in DB, use them
-        const res = await api.get('/products/public', { params: { limit: 50 } });
-        if (res.data && Array.isArray(res.data) && res.data.length > 0) {
-          setProducts(res.data);
+        // Build query: 'digital' tab maps to type=DIGITAL; all other keys map
+        // to the ProductCategory enum; 'all' sends no filter.
+        const params: Record<string, string | number> = { limit: 50 };
+        if (activeCategory === 'digital') {
+          params.type = 'DIGITAL';
+        } else if (CATEGORY_ENUM_MAP[activeCategory]) {
+          params.category = CATEGORY_ENUM_MAP[activeCategory];
+        }
+
+        const res = await api.get('/products/public', { params });
+        // Backend returns { products, total, page, totalPages }
+        const items: Product[] = Array.isArray(res.data)
+          ? res.data
+          : res.data?.products ?? [];
+        if (items.length > 0) {
+          setProducts(items);
+        } else {
+          // No results for this filter — clear the grid (don't fall back to demo data,
+          // since that would misleadingly show unrelated products under a category).
+          setProducts(activeCategory === 'all' ? fallbackProducts : []);
         }
       } catch {
-        // API not ready or no products — keep fallback data
+        // API not ready — only show fallback on the 'all' tab; otherwise empty state.
+        setProducts(activeCategory === 'all' ? fallbackProducts : []);
       } finally {
         setLoading(false);
       }
     };
     fetchProducts();
-  }, []);
+  }, [activeCategory]);
 
-  // Filter & sort
-  const filteredProducts = products.filter((p) => {
-    if (activeCategory === 'all') return true;
-    if (activeCategory === 'digital') return p.type === 'DIGITAL';
-    return true; // Extend with real category mapping when available
-  });
+  // Filtering happens server-side now; keep this a pass-through so
+  // we can still layer client-side features (sort, etc.) cleanly.
+  const filteredProducts = products;
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
     if (sortBy === 'price-low') return a.price - b.price;
@@ -114,7 +158,7 @@ export default function ShopPage() {
               fontFamily: "'Cormorant Garamond', serif",
               fontSize: 32, fontWeight: 400, color: '#3A3530',
             }}>
-              {activeCategory === 'all' ? 'All Products' : activeCategory.charAt(0).toUpperCase() + activeCategory.slice(1)}
+              {CATEGORY_LABEL[activeCategory] ?? 'All Products'}
             </h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               <span style={{ fontSize: 12, color: '#8A8278' }}>{sortedProducts.length} items</span>

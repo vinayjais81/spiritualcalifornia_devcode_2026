@@ -22,13 +22,14 @@ export class ProductsService {
         guideId: guide.id,
         name: dto.name,
         type: dto.type,
+        category: dto.category,
         price: dto.price,
         description: dto.description,
         fileS3Key: dto.fileS3Key,
         digitalFiles: dto.digitalFiles ?? undefined,
         imageUrls: dto.imageUrls ?? [],
         stockQuantity: dto.stockQuantity,
-        isActive: false,
+        isActive: dto.isActive ?? true,
       },
     });
   }
@@ -54,10 +55,18 @@ export class ProductsService {
 
   // ─── List All Active Products (Public Storefront) ──────────────────────────
 
-  async findPublic(limit = 50, page = 1, type?: string) {
+  async findPublic(limit = 50, page = 1, type?: string, category?: string) {
     const skip = (page - 1) * limit;
     const where: any = { isActive: true };
     if (type === 'DIGITAL' || type === 'PHYSICAL') where.type = type;
+
+    const VALID_CATEGORIES = [
+      'CRYSTALS', 'SOUND_HEALING', 'AROMATHERAPY', 'BOOKS_COURSES',
+      'DIGITAL_DOWNLOADS', 'RITUAL_TOOLS', 'JEWELRY_MALAS', 'GIFT_BUNDLES', 'ART',
+    ];
+    if (category && VALID_CATEGORIES.includes(category)) {
+      where.category = category;
+    }
 
     const [products, total] = await Promise.all([
       this.prisma.product.findMany({

@@ -13,12 +13,26 @@ interface DigitalFile {
 
 interface Product {
   id: string; name: string; description: string | null; type: string;
+  category: string | null;
   price: number | string; imageUrls: string[]; stockQuantity: number | null;
   fileS3Key: string | null;
   digitalFiles: DigitalFile[] | null;
+  isActive: boolean;
 }
 
-const emptyForm = { name: '', description: '', type: 'DIGITAL', price: '', stockQuantity: '' };
+const PRODUCT_CATEGORIES: Array<{ value: string; label: string }> = [
+  { value: 'CRYSTALS',          label: 'Crystals' },
+  { value: 'SOUND_HEALING',     label: 'Sound Healing' },
+  { value: 'AROMATHERAPY',      label: 'Aromatherapy' },
+  { value: 'BOOKS_COURSES',     label: 'Books & Courses' },
+  { value: 'DIGITAL_DOWNLOADS', label: 'Digital Downloads' },
+  { value: 'RITUAL_TOOLS',      label: 'Ritual Tools' },
+  { value: 'JEWELRY_MALAS',     label: 'Jewelry & Malas' },
+  { value: 'GIFT_BUNDLES',      label: 'Gift Bundles' },
+  { value: 'ART',               label: 'Art' },
+];
+
+const emptyForm = { name: '', description: '', type: 'DIGITAL', category: '', price: '', stockQuantity: '', isActive: true };
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -45,8 +59,10 @@ export default function ProductsPage() {
       name: p.name,
       description: p.description || '',
       type: p.type,
+      category: p.category || '',
       price: String(typeof p.price === 'string' ? parseFloat(p.price) : p.price),
       stockQuantity: p.stockQuantity != null ? String(p.stockQuantity) : '',
+      isActive: p.isActive !== false,
     });
     setImagePreviews(p.imageUrls || []);
     // Load existing digital files
@@ -149,6 +165,7 @@ export default function ProductsPage() {
       const payload: any = {
         name: form.name,
         type: form.type,
+        category: form.category || undefined,
         price: parseFloat(form.price),
         description: form.description || undefined,
         imageUrls: imagePreviews.length > 0 ? imagePreviews : undefined,
@@ -156,6 +173,7 @@ export default function ProductsPage() {
         digitalFiles: form.type === 'DIGITAL' && digitalFiles.length > 0
           ? digitalFiles.map(f => ({ name: f.name, size: f.size, url: f.data }))
           : undefined,
+        isActive: form.isActive,
       };
 
       if (editingId) {
@@ -186,7 +204,19 @@ export default function ProductsPage() {
           <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '60px 1fr 100px auto 36px', gap: '12px', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
             <ProductThumb imageUrls={p.imageUrls} type={p.type} />
             <div>
-              <div style={{ fontFamily: font, fontSize: '14px', fontWeight: 500, color: C.charcoal }}>{p.name}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ fontFamily: font, fontSize: '14px', fontWeight: 500, color: C.charcoal }}>{p.name}</div>
+                {p.isActive === false && (
+                  <span style={{
+                    padding: '2px 8px', borderRadius: 10,
+                    background: 'rgba(232,184,75,0.15)',
+                    color: '#B8960F', fontSize: 10, fontWeight: 600,
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                  }}>
+                    Hidden
+                  </span>
+                )}
+              </div>
               <div style={{ fontFamily: font, fontSize: '12px', color: C.warmGray, marginTop: '2px' }}>
                 {p.type === 'DIGITAL' ? 'Digital Download' : 'Physical Product'}
                 {p.imageUrls?.length > 0 && ` · ${p.imageUrls.length} image${p.imageUrls.length > 1 ? 's' : ''}`}
@@ -201,6 +231,50 @@ export default function ProductsPage() {
 
       {/* Create / Edit Modal */}
       <Modal open={showModal} onClose={closeModal} title={editingId ? 'Edit Product' : 'Add New Product'}>
+        {/* Publish toggle — appears above all fields so it's the first thing the guide sees. */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: 16, marginBottom: 20, padding: '14px 18px',
+          background: form.isActive ? 'rgba(90,138,106,0.08)' : 'rgba(232,184,75,0.08)',
+          border: `1.5px solid ${form.isActive ? 'rgba(90,138,106,0.35)' : 'rgba(232,184,75,0.35)'}`,
+          borderRadius: 10,
+        }}>
+          <div>
+            <div style={{ fontFamily: font, fontSize: 13, fontWeight: 500, color: C.charcoal, marginBottom: 2 }}>
+              {form.isActive ? '🟢 Active — visible on shop' : '⏸️ Inactive — hidden draft'}
+            </div>
+            <div style={{ fontFamily: font, fontSize: 11, color: C.warmGray, lineHeight: 1.5 }}>
+              {form.isActive
+                ? 'Seekers can see this product on the public shop page and buy it immediately.'
+                : 'Only you can see this product. Switch to Active to publish it.'}
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={form.isActive}
+            onClick={() => setForm(f => ({ ...f, isActive: !f.isActive }))}
+            style={{
+              position: 'relative', flexShrink: 0,
+              width: 48, height: 26, borderRadius: 13,
+              border: 'none', cursor: 'pointer',
+              background: form.isActive ? '#5A8A6A' : '#C4BEB6',
+              transition: 'background 0.2s',
+            }}
+          >
+            <span
+              style={{
+                position: 'absolute', top: 3,
+                left: form.isActive ? 25 : 3,
+                width: 20, height: 20, borderRadius: '50%',
+                background: '#fff',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                transition: 'left 0.2s',
+              }}
+            />
+          </button>
+        </div>
+
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           <FormGroup label="Product Name" full>
             <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Himalayan Singing Bowl Set" />
@@ -215,6 +289,14 @@ export default function ProductsPage() {
             <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
               <option value="DIGITAL">Digital Download</option>
               <option value="PHYSICAL">Physical Product</option>
+            </Select>
+          </FormGroup>
+          <FormGroup label="Shop Category — drives /shop filter tabs">
+            <Select value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+              <option value="">Uncategorized (only in &ldquo;All&rdquo;)</option>
+              {PRODUCT_CATEGORIES.map(c => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
             </Select>
           </FormGroup>
           {form.type === 'PHYSICAL' && (
