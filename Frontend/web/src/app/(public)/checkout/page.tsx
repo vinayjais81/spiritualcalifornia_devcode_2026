@@ -215,12 +215,22 @@ export default function CheckoutPage() {
     }
   };
 
-  // Stripe callback: card confirmed successfully. Poll the order until the
-  // webhook flips it to PAID, then render the confirmation screen.
-  const handleStripeSuccess = async () => {
+  // Stripe callback: card confirmed successfully. Actively call the backend
+  // confirm endpoint (fallback for environments where the Stripe webhook isn't
+  // wired yet — e.g. local dev without `stripe listen`). That single call
+  // flips the order to PAID, generates 7-day download URLs, and triggers the
+  // confirmation email. We then fetch the fresh order so the confirmation
+  // screen can surface the inline download CTAs.
+  const handleStripeSuccess = async (paymentIntentId: string) => {
     if (!pendingPayment) return;
+    try {
+      await api.post('/payments/confirm-payment', { paymentIntentId });
+    } catch {
+      // Ignore — the Stripe webhook may have already fired. Polling below
+      // will still return the PAID order if that's the case.
+    }
     clearCart();
-    const finalOrder = await pollOrderPaid(pendingPayment.orderId, 8);
+    const finalOrder = await pollOrderPaid(pendingPayment.orderId, 6);
     setConfirmedOrder(finalOrder);
   };
 
@@ -567,13 +577,18 @@ async function pollOrderPaid(orderId: string, maxAttempts: number): Promise<Orde
   for (let i = 0; i < maxAttempts; i++) {
     try {
       const { data } = await api.get(`/orders/${orderId}`);
-      if (data.status === 'PAID' || data.status === 'DELIVERED' || i === maxAttempts - 1) {
-        return data;
+      if (data.status === 'PAID' || data.status === 'DELIVERED') {
+        // PAID reached. If this order has digital items, confirm their download
+        // URLs have landed too — the post-PAID hook that generates them runs
+        // fire-and-forget, so a tight poll after confirm-payment may beat it.
+        const digitalItems = (data.items || []).filter((it: any) => it.product?.type === 'DIGITAL');
+        const allDigitalReady = digitalItems.length === 0
+          || digitalItems.every((it: any) => !!it.downloadUrl);
+        if (allDigitalReady || i === maxAttempts - 1) return data;
       }
     } catch { /* fall through to retry */ }
     await new Promise((r) => setTimeout(r, 1500));
   }
-  // Final attempt — return whatever the server has (may still be PENDING)
   const { data } = await api.get(`/orders/${orderId}`);
   return data;
 }
