@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { useCartStore } from '@/store/cart.store';
@@ -86,6 +86,7 @@ const demoRelated = [
 
 export default function ProductDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const productId = params.id as string;
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,7 +95,9 @@ export default function ProductDetailPage() {
   const [addedToCart, setAddedToCart] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
 
-  const handleAddToCart = () => {
+  // Add the current product to the cart. Shared by "Add to Cart" and "Buy Now";
+  // the caller decides whether to navigate afterwards.
+  const addCurrentProduct = () => {
     if (!product) return;
     addItem({
       itemType: 'PRODUCT',
@@ -108,8 +111,18 @@ export default function ProductDetailPage() {
       guideName: product.guide.displayName,
       variantName: selectedVariant ? product.variants.find(v => v.id === selectedVariant)?.name : undefined,
     });
+  };
+
+  const handleAddToCart = () => {
+    addCurrentProduct();
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2000);
+  };
+
+  // Buy Now = add to cart + jump straight to checkout. Industry-standard single-click buy flow.
+  const handleBuyNow = () => {
+    addCurrentProduct();
+    router.push('/checkout');
   };
 
   useEffect(() => {
@@ -358,7 +371,7 @@ export default function ProductDetailPage() {
 
           {/* Action Buttons */}
           <button
-            onClick={handleAddToCart}
+            onClick={handleBuyNow}
             style={{
               width: '100%', padding: 18, borderRadius: 10,
               background: '#3A3530', color: '#E8B84B',
@@ -383,7 +396,7 @@ export default function ProductDetailPage() {
               transition: 'all 0.2s',
             }}
           >
-            {addedToCart ? '✓ Added to Cart' : isDigital ? 'Save for Later' : 'Add to Cart'}
+            {addedToCart ? '✓ Added to Cart' : 'Add to Cart'}
           </button>
 
           {/* Secure note */}

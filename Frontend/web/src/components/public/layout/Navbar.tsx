@@ -18,9 +18,15 @@ const navLinks = [
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  // Cart count comes from a localStorage-persisted Zustand store, so it's 0 during
+  // SSR and non-zero on the client. Gating the rendered count behind a `mounted`
+  // flag keeps the server and first client render identical, avoiding hydration errors.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
-  const cartItemCount = useCartStore((s) => s.getItemCount());
+  const storedCartCount = useCartStore((s) => s.getItemCount());
+  const cartItemCount = mounted ? storedCartCount : 0;
 
   // Hide "List Your Practice" for authenticated seekers (no GUIDE / ADMIN role)
   const isGuide = (user?.roles ?? []).includes('GUIDE');
@@ -135,6 +141,56 @@ export function Navbar() {
           className="hidden md:flex"
           style={{ gridColumn: 3, justifySelf: 'end', alignItems: 'center', gap: '24px' }}
         >
+          {/* Cart icon with live item count */}
+          <Link
+            href="/cart"
+            aria-label={`Cart${cartItemCount > 0 ? ` (${cartItemCount} item${cartItemCount !== 1 ? 's' : ''})` : ''}`}
+            style={{
+              position: 'relative',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              color: '#3A3530',
+              textDecoration: 'none',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.background = 'rgba(232,184,75,0.12)')}
+            onMouseLeave={e => ((e.currentTarget as HTMLAnchorElement).style.background = 'transparent')}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+              <path d="M3 6h18" />
+              <path d="M16 10a4 4 0 0 1-8 0" />
+            </svg>
+            {cartItemCount > 0 && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: '-2px',
+                  right: '-2px',
+                  minWidth: '18px',
+                  height: '18px',
+                  padding: '0 5px',
+                  background: '#E8B84B',
+                  color: '#3A3530',
+                  fontFamily: 'var(--font-inter), sans-serif',
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  borderRadius: '9px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1.5px solid rgba(250,250,247,0.96)',
+                }}
+              >
+                {cartItemCount > 99 ? '99+' : cartItemCount}
+              </span>
+            )}
+          </Link>
+
           {isAuthenticated && user ? (
             <div style={{ position: 'relative' }}>
               <button

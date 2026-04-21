@@ -3,9 +3,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useCartStore } from '@/store/cart.store';
+import { useAuthStore } from '@/store/auth.store';
 import { CheckoutProgress } from '@/components/public/checkout/CheckoutProgress';
 import { OrderSummary } from '@/components/public/checkout/OrderSummary';
-import { PaymentForm } from '@/components/public/booking/PaymentForm';
+import { StripeProvider } from '@/components/public/checkout/StripeProvider';
+import { StripePaymentForm } from '@/components/public/checkout/StripePaymentForm';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -54,6 +56,7 @@ interface OrderResponse {
 
 export default function CheckoutPage() {
   const { items, getSubtotal, hasPhysicalItems, hasDigitalItems, clearCart } = useCartStore();
+  const { user, isAuthenticated } = useAuthStore();
   const subtotal = getSubtotal();
   const hasPhysical = hasPhysicalItems();
   const hasDigital = hasDigitalItems();
@@ -82,6 +85,47 @@ export default function CheckoutPage() {
   // Submission state
   const [submitting, setSubmitting] = useState(false);
   const [confirmedOrder, setConfirmedOrder] = useState<OrderResponse | null>(null);
+  // Set once the order is created + Stripe PaymentIntent minted. Swapping this
+  // value in replaces the "Continue to Payment" CTA with real Stripe Elements.
+  const [pendingPayment, setPendingPayment] = useState<{ orderId: string; clientSecret: string } | null>(null);
+
+  // Pre-fill the form for signed-in seekers. Two sources, in priority order:
+  //   1. auth store (email + name are always available) — synchronous
+  //   2. GET /orders/mine — pulls phone + last shipping address from the most
+  //      recent order, so returning customers skip the address re-entry.
+  // Fields remain editable; we only fill if the field is currently empty so we
+  // never overwrite something the user has already typed.
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    setForm((prev) => ({
+      ...prev,
+      email: prev.email || user.email || '',
+      firstName: prev.firstName || user.firstName || '',
+      lastName: prev.lastName || user.lastName || '',
+    }));
+    api.get('/orders/mine')
+      .then((r) => {
+        const orders = Array.isArray(r.data) ? r.data : [];
+        // Prefer the most recent PAID order — falls back to any recent order
+        // if no paid ones yet (so address is still remembered between attempts).
+        const pick =
+          orders.find((o: any) => o.status === 'PAID' || o.status === 'DELIVERED') ||
+          orders[0];
+        if (!pick) return;
+        const addr = pick.shippingAddress || {};
+        setForm((prev) => ({
+          ...prev,
+          phone: prev.phone || pick.contactPhone || '',
+          street: prev.street || addr.street || '',
+          apartment: prev.apartment || addr.apartment || '',
+          city: prev.city || addr.city || '',
+          state: prev.state && prev.state !== 'CA' ? prev.state : (addr.state || prev.state || 'CA'),
+          zipCode: prev.zipCode || addr.zipCode || '',
+          country: prev.country && prev.country !== 'US' ? prev.country : (addr.country || prev.country || 'US'),
+        }));
+      })
+      .catch(() => { /* silent — first-time customer has no orders yet */ });
+  }, [isAuthenticated, user]);
 
   // Load shipping methods + tax rates on mount (only needed if cart has physical items)
   useEffect(() => {
@@ -119,7 +163,10 @@ export default function CheckoutPage() {
     return null;
   };
 
-  const handleSubmit = async () => {
+  // Step 1 → Step 2. Validates the form, posts the order, then swaps the
+  // "Continue to Payment" CTA for real Stripe Elements using the returned
+  // client secret. The order sits in PENDING until Stripe confirms the PI.
+  const handleContinueToPayment = async () => {
     const err = validate();
     if (err) { toast.error(err); return; }
 
@@ -150,21 +197,31 @@ export default function CheckoutPage() {
       }
 
       const { data } = await api.post('/orders', payload);
-      const orderId = data.order.id;
-
-      // NOTE: Real Stripe Elements integration not wired on this dev build.
-      // For now the order lands in PENDING state; the backend webhook in production
-      // flips it to PAID. We poll /orders/:id until we see PAID (or accept PENDING
-      // after a short wait so the confirmation screen still renders).
-      clearCart();
-      const finalOrder = await pollOrderPaid(orderId, 8);
-      setConfirmedOrder(finalOrder);
+      const orderId: string = data?.order?.id;
+      const clientSecret: string | undefined = data?.paymentIntent?.clientSecret;
+      if (!orderId || !clientSecret) {
+        throw new Error('Checkout failed: server did not return a payment intent.');
+      }
+      setPendingPayment({ orderId, clientSecret });
+      // Scroll the payment section into view so the user sees the card field appear
+      setTimeout(() => {
+        document.getElementById('checkout-payment-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
     } catch (e: any) {
-      const msg = e?.response?.data?.message || 'Checkout failed. Please try again.';
+      const msg = e?.response?.data?.message || e?.message || 'Checkout failed. Please try again.';
       toast.error(Array.isArray(msg) ? msg.join(', ') : msg);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // Stripe callback: card confirmed successfully. Poll the order until the
+  // webhook flips it to PAID, then render the confirmation screen.
+  const handleStripeSuccess = async () => {
+    if (!pendingPayment) return;
+    clearCart();
+    const finalOrder = await pollOrderPaid(pendingPayment.orderId, 8);
+    setConfirmedOrder(finalOrder);
   };
 
   const applyPromo = async () => {
@@ -304,13 +361,54 @@ export default function CheckoutPage() {
           )}
 
           {/* Payment */}
-          <SectionTitle>Payment</SectionTitle>
-          <PaymentForm
-            tabs={['Credit / Debit', 'Bank Transfer']}
-            submitLabel={`Complete Purchase — $${total.toFixed(2)}`}
-            onSubmit={handleSubmit}
-            loading={submitting}
-          />
+          <div id="checkout-payment-section">
+            <SectionTitle>Payment</SectionTitle>
+            {pendingPayment ? (
+              <>
+                <div style={{
+                  fontSize: 11, color: '#5A8A6A', marginBottom: 14,
+                  display: 'flex', alignItems: 'center', gap: 8,
+                }}>
+                  <span>✓</span> Order created. Complete payment to finalise your purchase.
+                  <button
+                    type="button"
+                    onClick={() => setPendingPayment(null)}
+                    style={{
+                      marginLeft: 'auto', background: 'none', border: 'none',
+                      color: '#8A8278', fontSize: 11, cursor: 'pointer',
+                      textDecoration: 'underline',
+                    }}
+                  >
+                    Edit details
+                  </button>
+                </div>
+                <StripeProvider clientSecret={pendingPayment.clientSecret}>
+                  <StripePaymentForm
+                    submitLabel={`Complete Purchase — $${total.toFixed(2)}`}
+                    onSuccess={handleStripeSuccess}
+                    onError={(msg) => toast.error(msg)}
+                    returnUrl={typeof window !== 'undefined' ? `${window.location.origin}/checkout` : '/checkout'}
+                  />
+                </StripeProvider>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={handleContinueToPayment}
+                disabled={submitting}
+                style={{
+                  width: '100%', padding: 18, borderRadius: 8,
+                  background: submitting ? 'rgba(232,184,75,0.5)' : '#E8B84B',
+                  color: '#3A3530',
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: 13, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
+                  border: 'none', cursor: submitting ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {submitting ? 'Creating order…' : `Continue to Payment — $${total.toFixed(2)}`}
+              </button>
+            )}
+          </div>
 
           {/* What happens next */}
           {hasDigital && (
