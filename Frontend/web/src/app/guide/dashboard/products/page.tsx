@@ -8,7 +8,11 @@ import { C, font, formatPrice, PageHeader, Panel, Btn, EmptyState, ProductThumb,
 interface DigitalFile {
   name: string;
   size: number;
-  data: string; // base64 data URL (will be S3 key when wired)
+  s3Key: string;              // S3 key — used by downloads to mint signed URLs
+  contentType?: string;
+  uploading?: boolean;        // transient — only present during upload
+  /** Legacy field kept only so old form state from base64 uploads still hydrates. */
+  url?: string;
 }
 
 interface Product {
@@ -65,11 +69,24 @@ export default function ProductsPage() {
       isActive: p.isActive !== false,
     });
     setImagePreviews(p.imageUrls || []);
-    // Load existing digital files
-    if (p.digitalFiles && Array.isArray(p.digitalFiles)) {
-      setDigitalFiles(p.digitalFiles);
+    // Load existing digital files — accept either the new {name,size,s3Key} shape
+    // or the legacy {name,size,url:"data:..."} shape so older products still edit.
+    if (Array.isArray(p.digitalFiles)) {
+      setDigitalFiles(
+        p.digitalFiles.map((f: any) => ({
+          name: f.name || 'Uploaded file',
+          size: f.size || 0,
+          s3Key: f.s3Key || '',      // empty for legacy base64 rows
+          contentType: f.contentType,
+          url: f.url,                 // preserved for legacy display only
+        })),
+      );
     } else if (p.fileS3Key) {
-      setDigitalFiles([{ name: p.fileS3Key.split('/').pop() || 'Uploaded file', size: 0, data: p.fileS3Key }]);
+      setDigitalFiles([{
+        name: p.fileS3Key.split('/').pop() || 'Uploaded file',
+        size: 0,
+        s3Key: p.fileS3Key,
+      }]);
     } else {
       setDigitalFiles([]);
     }
@@ -113,30 +130,84 @@ export default function ProductsPage() {
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleDigitalFileAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Map a file's MIME type back to what the backend /upload whitelist accepts.
+  // The browser gives us most of these for free, but a couple (Safari m4a) need
+  // a hint so S3's Content-Type header matches the signed request.
+  const resolveContentType = (file: File): string => {
+    if (file.type) return file.type;
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    switch (ext) {
+      case 'mp3': return 'audio/mpeg';
+      case 'wav': return 'audio/wav';
+      case 'flac': return 'audio/flac';
+      case 'aac': return 'audio/aac';
+      case 'm4a': return 'audio/mp4';
+      case 'mp4': return 'video/mp4';
+      case 'mov': return 'video/quicktime';
+      case 'pdf': return 'application/pdf';
+      case 'zip': return 'application/zip';
+      case 'rar': return 'application/vnd.rar';
+      case 'epub': return 'application/epub+zip';
+      case 'mobi': return 'application/x-mobipocket-ebook';
+      default: return 'application/octet-stream';
+    }
+  };
+
+  // Direct browser → S3 upload via pre-signed PUT URL. No base64 in the DB,
+  // no request-body size pressure on our API, and the file key is what gets
+  // persisted so downloads can mint signed GET URLs later.
+  const handleDigitalFileAdd = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
+    const toUpload = Array.from(files);
+    e.target.value = '';
 
-    Array.from(files).forEach(file => {
-      if (file.size > 50 * 1024 * 1024) {
-        toast.error(`${file.name} exceeds 50MB limit`);
-        return;
+    for (const file of toUpload) {
+      if (file.size > 500 * 1024 * 1024) {
+        toast.error(`${file.name} exceeds 500MB limit`);
+        continue;
       }
       if (digitalFiles.length >= 10) {
         toast.error('Maximum 10 files allowed');
-        return;
+        break;
       }
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setDigitalFiles(prev => [...prev, {
-          name: file.name,
-          size: file.size,
-          data: ev.target?.result as string,
-        }]);
+
+      // Optimistic placeholder so the guide sees upload progress
+      const placeholder: DigitalFile = {
+        name: file.name,
+        size: file.size,
+        s3Key: '',
+        uploading: true,
       };
-      reader.readAsDataURL(file);
-    });
-    e.target.value = '';
+      setDigitalFiles(prev => [...prev, placeholder]);
+      const placeholderIndex = digitalFiles.length; // captured before state updates flush
+
+      try {
+        const contentType = resolveContentType(file);
+        const { data: presigned } = await api.get('/upload/presigned-url', {
+          params: { folder: 'products', fileName: file.name, contentType },
+        });
+        // Upload the raw file bytes directly to S3 — our API never touches the body.
+        const putRes = await fetch(presigned.uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: { 'Content-Type': contentType },
+        });
+        if (!putRes.ok) {
+          throw new Error(`S3 upload failed (${putRes.status})`);
+        }
+        // Swap the placeholder for the real record
+        setDigitalFiles(prev => prev.map((f, i) =>
+          i === placeholderIndex && f.uploading
+            ? { name: file.name, size: file.size, s3Key: presigned.key, contentType }
+            : f,
+        ));
+      } catch (err: any) {
+        toast.error(`${file.name}: ${err?.message || 'upload failed'}`);
+        // Drop the failed placeholder
+        setDigitalFiles(prev => prev.filter((f, i) => !(i === placeholderIndex && f.uploading)));
+      }
+    }
   };
 
   const removeDigitalFile = (index: number) => {
@@ -171,7 +242,10 @@ export default function ProductsPage() {
         imageUrls: imagePreviews.length > 0 ? imagePreviews : undefined,
         stockQuantity: form.stockQuantity ? parseInt(form.stockQuantity) : undefined,
         digitalFiles: form.type === 'DIGITAL' && digitalFiles.length > 0
-          ? digitalFiles.map(f => ({ name: f.name, size: f.size, url: f.data }))
+          ? digitalFiles
+              // Drop any uploads still in-flight so we never persist an empty s3Key
+              .filter(f => !f.uploading && f.s3Key)
+              .map(f => ({ name: f.name, size: f.size, s3Key: f.s3Key, contentType: f.contentType }))
           : undefined,
         isActive: form.isActive,
       };
@@ -314,17 +388,26 @@ export default function ProductsPage() {
                     <div key={i} style={{
                       display: 'flex', alignItems: 'center', gap: '10px',
                       padding: '10px 14px', background: C.offWhite,
-                      border: '1px solid rgba(232,184,75,0.3)', borderRadius: '8px',
+                      border: `1px solid ${file.uploading ? 'rgba(138,130,120,0.35)' : 'rgba(232,184,75,0.3)'}`,
+                      borderRadius: '8px', opacity: file.uploading ? 0.7 : 1,
                     }}>
-                      <span style={{ fontSize: '20px' }}>{fileIcon(file.name)}</span>
+                      <span style={{ fontSize: '20px' }}>{file.uploading ? '⏳' : fileIcon(file.name)}</span>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontFamily: font, fontSize: '13px', fontWeight: 500, color: C.charcoal }}>{file.name}</div>
-                        <div style={{ fontFamily: font, fontSize: '11px', color: C.warmGray }}>{formatFileSize(file.size)}</div>
+                        <div style={{ fontFamily: font, fontSize: '11px', color: C.warmGray }}>
+                          {file.uploading ? 'Uploading to secure storage…' : formatFileSize(file.size)}
+                        </div>
                       </div>
                       <button
                         onClick={() => removeDigitalFile(i)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.warmGray, fontSize: '16px' }}
-                        onMouseEnter={e => (e.currentTarget.style.color = '#C0392B')}
+                        disabled={file.uploading}
+                        style={{
+                          background: 'none', border: 'none',
+                          cursor: file.uploading ? 'not-allowed' : 'pointer',
+                          color: C.warmGray, fontSize: '16px',
+                          opacity: file.uploading ? 0.4 : 1,
+                        }}
+                        onMouseEnter={e => { if (!file.uploading) (e.currentTarget.style.color = '#C0392B'); }}
                         onMouseLeave={e => (e.currentTarget.style.color = C.warmGray)}
                       >
                         ×
@@ -351,7 +434,7 @@ export default function ProductsPage() {
                 </label>
               )}
               <div style={{ fontFamily: font, fontSize: '11px', color: C.warmGray, marginTop: '6px' }}>
-                Accepted: PDF, ePub, MP3, WAV, MP4, ZIP. Max 10 files, 50MB each. These files will be available for download after purchase.
+                Accepted: PDF, ePub, MOBI, MP3, WAV, FLAC, AAC, MP4, MOV, ZIP, RAR. Max 10 files, 500MB each. Files are stored securely on S3 and made available to seekers immediately after purchase.
               </div>
             </FormGroup>
           )}
@@ -422,7 +505,14 @@ export default function ProductsPage() {
 
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
           <Btn variant="secondary" onClick={closeModal}>Cancel</Btn>
-          <Btn onClick={save}>{editingId ? 'Save Changes' : 'Add Product'}</Btn>
+          <Btn
+            onClick={save}
+            disabled={digitalFiles.some(f => f.uploading)}
+          >
+            {digitalFiles.some(f => f.uploading)
+              ? 'Uploading files…'
+              : editingId ? 'Save Changes' : 'Add Product'}
+          </Btn>
         </div>
       </Modal>
     </div>

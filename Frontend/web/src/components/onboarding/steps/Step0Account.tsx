@@ -4,6 +4,7 @@ import { useState, FormEvent } from 'react';
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
+import { refreshAuthWithLatestRoles } from '@/lib/refreshAuth';
 import { WizardFormCard } from '../WizardFormCard';
 import { WizardInput } from '../WizardInput';
 import { WizardButton } from '../WizardButton';
@@ -23,6 +24,9 @@ export function Step0Account() {
     setError(null);
     try {
       await api.post('/guides/onboarding/start');
+      // GUIDE role was just added to the DB; the existing JWT is stale.
+      // Rotate it so subsequent guide API calls pass @Roles(GUIDE) guards.
+      await refreshAuthWithLatestRoles();
       nextStep();
     } catch (e: any) {
       const msg = e.response?.data?.message ?? 'Could not start onboarding. Please try again.';
@@ -45,6 +49,7 @@ export function Step0Account() {
       });
       setAuth(authData.user, authData.accessToken);
       await api.post('/guides/onboarding/start');
+      await refreshAuthWithLatestRoles();
       nextStep();
     } catch (e: any) {
       const msg = e.response?.data?.message ?? 'Registration failed. Please try again.';
@@ -65,6 +70,7 @@ export function Step0Account() {
       });
       setAuth(authData.user, authData.accessToken);
       await api.post('/guides/onboarding/start');
+      await refreshAuthWithLatestRoles();
       nextStep();
     } catch (e: any) {
       const msg = e.response?.data?.message ?? 'Login failed. Please check your credentials.';

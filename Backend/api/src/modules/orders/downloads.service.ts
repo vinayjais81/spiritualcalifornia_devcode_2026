@@ -7,6 +7,37 @@ const EMAIL_URL_TTL_SECONDS = 7 * 24 * 60 * 60;
 /** 1 hour — used when the dashboard streams a fresh URL just to hand to a single click. */
 const DASHBOARD_URL_TTL_SECONDS = 60 * 60;
 
+/**
+ * Describes how to deliver the first digital file of a product, resolved from
+ * the three storage shapes the platform has accumulated:
+ *   1. `product.digitalFiles: [{ s3Key, name, ... }]` — new S3-backed uploads
+ *   2. `product.fileS3Key` — legacy single-file column
+ *   3. `product.digitalFiles: [{ url: "data:...", name }]` — oldest path that
+ *      stored base64 data URLs inline. Returned as-is so small files still work
+ *      for existing purchases; the guide can re-upload via the new S3 flow.
+ *
+ * Returns `null` when the product genuinely has nothing attached.
+ */
+export function resolveDigitalSource(product: {
+  fileS3Key: string | null;
+  digitalFiles: unknown;
+  name: string;
+}): { kind: 's3'; key: string; filename: string } | { kind: 'direct'; url: string; filename: string } | null {
+  const files = Array.isArray(product.digitalFiles) ? (product.digitalFiles as any[]) : [];
+  const first = files[0] as { name?: string; s3Key?: string; url?: string } | undefined;
+
+  if (first?.s3Key) {
+    return { kind: 's3', key: first.s3Key, filename: first.name || product.name };
+  }
+  if (product.fileS3Key) {
+    return { kind: 's3', key: product.fileS3Key, filename: product.name };
+  }
+  if (first?.url) {
+    return { kind: 'direct', url: first.url, filename: first.name || product.name };
+  }
+  return null;
+}
+
 @Injectable()
 export class DownloadsService {
   private readonly logger = new Logger(DownloadsService.name);
@@ -32,7 +63,7 @@ export class DownloadsService {
         product: { type: 'DIGITAL' },
       },
       include: {
-        product: { select: { id: true, name: true, fileS3Key: true } },
+        product: { select: { id: true, name: true, fileS3Key: true, digitalFiles: true } },
       },
     });
 
@@ -40,18 +71,27 @@ export class DownloadsService {
     const results: Array<{ orderItemId: string; productName: string; downloadUrl: string }> = [];
 
     for (const item of items) {
-      if (!item.product.fileS3Key) {
+      const source = resolveDigitalSource(item.product);
+      if (!source) {
         this.logger.warn(
-          `Digital product ${item.product.id} has no fileS3Key — skipping URL generation for orderItem ${item.id}`,
+          `Digital product ${item.product.id} has no downloadable file — skipping URL generation for orderItem ${item.id}`,
         );
         continue;
       }
       try {
-        const downloadUrl = await this.uploadService.getPresignedDownloadUrl(
-          item.product.fileS3Key,
-          EMAIL_URL_TTL_SECONDS,
-          `${item.product.name.replace(/[^a-zA-Z0-9._-]/g, '_')}.${item.product.fileS3Key.split('.').pop() || 'zip'}`,
-        );
+        let downloadUrl: string;
+        if (source.kind === 's3') {
+          const safeName = source.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const ext = source.filename.includes('.') ? '' : `.${source.key.split('.').pop() || 'zip'}`;
+          downloadUrl = await this.uploadService.getPresignedDownloadUrl(
+            source.key,
+            EMAIL_URL_TTL_SECONDS,
+            `${safeName}${ext}`,
+          );
+        } else {
+          // Legacy base64 data URL — cache verbatim
+          downloadUrl = source.url;
+        }
         await this.prisma.orderItem.update({
           where: { id: item.id },
           data: { downloadUrl, downloadUrlExpiresAt: expiresAt },
@@ -101,8 +141,8 @@ export class DownloadsService {
     if (!item) throw new NotFoundException('Order item not found');
     if (item.product.type !== 'DIGITAL') throw new BadRequestException('This is not a digital product');
 
-    const s3Key = item.product.fileS3Key;
-    if (!s3Key) throw new BadRequestException('No file attached to this product');
+    const source = resolveDigitalSource(item.product);
+    if (!source) throw new BadRequestException('No file attached to this product');
 
     // Reuse the cached URL from the order-PAID step if it's still valid.
     // Otherwise mint a fresh one (shorter TTL — the dashboard is interactive).
@@ -117,13 +157,19 @@ export class DownloadsService {
     let newExpiresAt: Date | undefined;
     if (stillValid) {
       downloadUrl = cachedUrl!;
-    } else {
+    } else if (source.kind === 's3') {
+      const safeName = source.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const ext = source.filename.includes('.') ? '' : `.${source.key.split('.').pop() || 'zip'}`;
       downloadUrl = await this.uploadService.getPresignedDownloadUrl(
-        s3Key,
+        source.key,
         DASHBOARD_URL_TTL_SECONDS,
-        `${item.product.name.replace(/[^a-zA-Z0-9._-]/g, '_')}.${s3Key.split('.').pop() || 'zip'}`,
+        `${safeName}${ext}`,
       );
       newExpiresAt = new Date(Date.now() + DASHBOARD_URL_TTL_SECONDS * 1000);
+    } else {
+      // Legacy base64 data URL — return as-is. Browser handles the download.
+      // No expiry because nothing to refresh.
+      downloadUrl = source.url;
     }
 
     // Track download count + refresh cached URL if we generated a new one
@@ -137,8 +183,8 @@ export class DownloadsService {
 
     return {
       downloadUrl,
-      fileName: item.product.name,
-      fileKey: s3Key,
+      fileName: source.filename,
+      fileKey: source.kind === 's3' ? source.key : null,
       downloadCount: item.downloadCount + 1,
     };
   }

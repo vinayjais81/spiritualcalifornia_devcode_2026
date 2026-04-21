@@ -4,6 +4,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { StripeService } from './stripe.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UploadService } from '../upload/upload.service';
+import { resolveDigitalSource } from '../orders/downloads.service';
 
 /** 7 days — download link embedded in receipt email stays usable through the weekend. */
 const ORDER_DOWNLOAD_URL_TTL_SECONDS = 7 * 24 * 60 * 60;
@@ -325,7 +326,7 @@ export class PaymentsService {
         seeker: { select: { userId: true } },
         items: {
           include: {
-            product: { select: { id: true, name: true, type: true, fileS3Key: true } },
+            product: { select: { id: true, name: true, type: true, fileS3Key: true, digitalFiles: true } },
           },
         },
       },
@@ -341,18 +342,28 @@ export class PaymentsService {
 
     for (const item of order.items) {
       if (item.product.type !== 'DIGITAL') continue;
-      if (!item.product.fileS3Key) {
+      const source = resolveDigitalSource(item.product);
+      if (!source) {
         this.logger.warn(
-          `Digital product ${item.product.id} missing fileS3Key — can't generate download URL`,
+          `Digital product ${item.product.id} has no downloadable file — skipping URL generation`,
         );
         continue;
       }
       try {
-        const url = await this.uploadService.getPresignedDownloadUrl(
-          item.product.fileS3Key,
-          ORDER_DOWNLOAD_URL_TTL_SECONDS,
-          `${item.product.name.replace(/[^a-zA-Z0-9._-]/g, '_')}.${item.product.fileS3Key.split('.').pop() || 'zip'}`,
-        );
+        let url: string;
+        if (source.kind === 's3') {
+          const safeName = source.filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const ext = source.filename.includes('.') ? '' : `.${source.key.split('.').pop() || 'zip'}`;
+          url = await this.uploadService.getPresignedDownloadUrl(
+            source.key,
+            ORDER_DOWNLOAD_URL_TTL_SECONDS,
+            `${safeName}${ext}`,
+          );
+        } else {
+          // Legacy base64 data URL — store verbatim. Small files download fine;
+          // large ones should be re-uploaded by the guide via the S3 flow.
+          url = source.url;
+        }
         await this.prisma.orderItem.update({
           where: { id: item.id },
           data: { downloadUrl: url, downloadUrlExpiresAt: expiresAt },

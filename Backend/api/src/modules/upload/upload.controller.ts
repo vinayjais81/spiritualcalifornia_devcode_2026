@@ -23,13 +23,25 @@ const ALLOWED_CONTENT_TYPES = [
   'image/webp',
   'image/gif',
   'application/pdf',
+  // Video
   'video/mp4',
-  // Digital product types
-  'audio/mpeg',       // .mp3
-  'audio/mp4',        // .m4a
-  'audio/x-m4a',     // .m4a (Safari)
+  'video/quicktime', // .mov
+  // Audio — digital product deliverables
+  'audio/mpeg',          // .mp3
+  'audio/mp4',           // .m4a
+  'audio/x-m4a',         // .m4a (Safari)
+  'audio/wav',           // .wav
+  'audio/x-wav',         // .wav (older)
+  'audio/flac',          // .flac
+  'audio/x-flac',        // .flac (older)
+  'audio/aac',           // .aac
+  // Archives / books
   'application/zip',
+  'application/x-zip-compressed',
+  'application/x-rar-compressed',
+  'application/vnd.rar',
   'application/epub+zip',
+  'application/x-mobipocket-ebook',
 ];
 
 @ApiTags('Upload')

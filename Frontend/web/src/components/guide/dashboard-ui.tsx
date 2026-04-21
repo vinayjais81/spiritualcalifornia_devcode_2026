@@ -54,15 +54,15 @@ export function StatCard({ value, label, accent }: { value: string | number; lab
 }
 
 // ─── Button ──────────────────────────────────────────────────────────────────
-export function Btn({ children, variant = 'primary', size = 'md', onClick, style: extraStyle }: { children: React.ReactNode; variant?: 'primary' | 'secondary' | 'danger' | 'green'; size?: 'sm' | 'md'; onClick?: () => void; style?: React.CSSProperties }) {
-  const base: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: font, fontSize: size === 'sm' ? '11px' : '12px', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', borderRadius: '6px', border: 'none', cursor: 'pointer', transition: 'all 0.3s', textDecoration: 'none', padding: size === 'sm' ? '7px 14px' : '10px 22px' };
+export function Btn({ children, variant = 'primary', size = 'md', onClick, style: extraStyle, disabled }: { children: React.ReactNode; variant?: 'primary' | 'secondary' | 'danger' | 'green'; size?: 'sm' | 'md'; onClick?: () => void; style?: React.CSSProperties; disabled?: boolean }) {
+  const base: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: font, fontSize: size === 'sm' ? '11px' : '12px', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', borderRadius: '6px', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all 0.3s', textDecoration: 'none', padding: size === 'sm' ? '7px 14px' : '10px 22px', opacity: disabled ? 0.55 : 1 };
   const styles: Record<string, React.CSSProperties> = {
     primary: { ...base, background: C.gold, color: C.white },
     secondary: { ...base, background: 'transparent', color: C.charcoal, border: '1.5px solid rgba(232,184,75,0.5)' },
     danger: { ...base, background: 'transparent', color: C.red, border: `1.5px solid rgba(192,57,43,0.3)` },
     green: { ...base, background: C.green, color: C.white },
   };
-  return <button onClick={onClick} style={{ ...styles[variant], ...extraStyle }}>{children}</button>;
+  return <button onClick={onClick} disabled={disabled} style={{ ...styles[variant], ...extraStyle }}>{children}</button>;
 }
 
 // ─── Form Components ─────────────────────────────────────────────────────────

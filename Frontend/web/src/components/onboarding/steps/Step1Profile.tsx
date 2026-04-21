@@ -4,6 +4,7 @@ import { useRef, ChangeEvent, useState, useEffect } from 'react';
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
+import { refreshAuthWithLatestRoles } from '@/lib/refreshAuth';
 import { LocationAutocomplete } from '@/components/shared/LocationAutocomplete';
 
 
@@ -100,6 +101,9 @@ export function Step1Profile() {
         });
         setAuth(authData.user, authData.accessToken);
         await api.post('/guides/onboarding/start');
+        // GUIDE role just got added in the DB — rotate the JWT so later calls
+        // (profile update, avatar upload, submit) pass @Roles(GUIDE) guards.
+        await refreshAuthWithLatestRoles();
         // Upload deferred avatar if user selected one before creating account
         if (pendingFile.current) {
           const f = pendingFile.current;
