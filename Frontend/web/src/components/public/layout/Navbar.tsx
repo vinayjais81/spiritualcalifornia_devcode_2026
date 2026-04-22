@@ -22,7 +22,12 @@ export function Navbar() {
   // SSR and non-zero on the client. Gating the rendered count behind a `mounted`
   // flag keeps the server and first client render identical, avoiding hydration errors.
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+    // First chance to hit the server — pull the durable cart so a seeker
+    // returning after days/devices sees their items in the navbar badge.
+    useCartStore.getState().syncFromServer();
+  }, []);
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuthStore();
   const storedCartCount = useCartStore((s) => s.getItemCount());

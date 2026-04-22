@@ -6,11 +6,32 @@ export const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach access token to every request
+// Lazily mint a stable guest-cart session id on first cart interaction.
+// Stored in localStorage so it survives tab/window close on the same device.
+const CART_SESSION_KEY = 'sc-cart-session';
+export function getOrCreateCartSessionId(): string {
+  if (typeof window === 'undefined') return '';
+  let id = localStorage.getItem(CART_SESSION_KEY);
+  if (!id) {
+    id = (typeof crypto !== 'undefined' && 'randomUUID' in crypto)
+      ? crypto.randomUUID()
+      : `sc_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+    localStorage.setItem(CART_SESSION_KEY, id);
+  }
+  return id;
+}
+export function clearCartSessionId() {
+  if (typeof window !== 'undefined') localStorage.removeItem(CART_SESSION_KEY);
+}
+
+// Attach access token + guest cart session id to every request.
+// The backend ignores x-session-id on non-cart endpoints, so it's harmless to
+// always send and cheap to set here in one place.
 api.interceptors.request.use((config) => {
   if (typeof window !== 'undefined') {
     const token = localStorage.getItem('access_token');
     if (token) config.headers.Authorization = `Bearer ${token}`;
+    config.headers['x-session-id'] = getOrCreateCartSessionId();
   }
   return config;
 });

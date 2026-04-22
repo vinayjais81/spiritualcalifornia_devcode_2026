@@ -979,15 +979,19 @@ model Cart {
 }
 
 model CartItem {
-  id        String       @id @default(cuid())
-  cartId    String
-  itemType  CartItemType
-  itemId    String       // Polymorphic: productId, tierId, tourId, serviceId
-  variantId String?      // For ProductVariant selection
-  quantity  Int          @default(1)
-  metadata  Json?        // Extra data (e.g., selected date for service, room type for tour)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id          String       @id @default(cuid())
+  cartId      String
+  itemType    CartItemType
+  itemId      String       // Polymorphic: productId, tierId, tourId, serviceId
+  variantId   String?      // For ProductVariant selection
+  quantity    Int          @default(1)
+  // Snapshot of the unit price when this row was added. Lets the cart API
+  // detect "price changed since you added this" without needing to remember
+  // history elsewhere. Nullable for legacy rows created before this column.
+  priceAtAdd  Decimal?     @db.Decimal(10, 2)
+  metadata    Json?        // Extra data (e.g., selected date for service, room type for tour)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
 

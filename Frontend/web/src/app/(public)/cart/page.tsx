@@ -1,6 +1,8 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { useCartStore } from '@/store/cart.store';
 
 const typeBadge = (type: string) => {
@@ -15,12 +17,38 @@ const typeBadge = (type: string) => {
 };
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, getSubtotal, getItemCount } = useCartStore();
+  const items = useCartStore((s) => s.items);
+  const warnings = useCartStore((s) => s.warnings);
+  const warningsAcknowledged = useCartStore((s) => s.warningsAcknowledged);
+  const syncFromServer = useCartStore((s) => s.syncFromServer);
+  const acknowledgeWarnings = useCartStore((s) => s.acknowledgeWarnings);
+  const { updateQuantity, removeItem, getSubtotal, getItemCount } = useCartStore();
   const subtotal = getSubtotal();
   const itemCount = getItemCount();
   const hasPhysical = items.some(i => i.productType === 'PHYSICAL');
   const hasDigital = items.some(i => i.productType === 'DIGITAL');
   const hasEvents = items.some(i => i.itemType === 'EVENT_TICKET');
+
+  // Refresh from server on mount so stale items, price changes, etc. are
+  // surfaced the moment the seeker lands on /cart — even if the navbar already
+  // primed a sync earlier. Cheap: single GET.
+  useEffect(() => { syncFromServer(); }, [syncFromServer]);
+
+  // Toast "removed" warnings once each — store them in a ref so re-renders
+  // don't spam the same message. Blocking warnings (price + overstock) stay
+  // in the banner until the user acknowledges.
+  const toastedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    for (const w of warnings) {
+      if (w.kind === 'removed' && !toastedRef.current.has(w.message)) {
+        toast.info(w.message);
+        toastedRef.current.add(w.message);
+      }
+    }
+  }, [warnings]);
+
+  const blockingWarnings = warnings.filter((w) => w.kind !== 'removed');
+  const mustAcknowledge = blockingWarnings.length > 0 && !warningsAcknowledged;
 
   // Determine checkout route.
   // Products (digital, physical, or mixed) all flow through the unified /checkout.
@@ -62,6 +90,55 @@ export default function CartPage() {
         Your Cart
       </h1>
       <p style={{ fontSize: 13, color: '#8A8278', marginBottom: 32 }}>{itemCount} item{itemCount !== 1 ? 's' : ''}</p>
+
+      {/* Warnings banner — pricing changes + stock issues. Blocks checkout until acknowledged. */}
+      {blockingWarnings.length > 0 && (
+        <div style={{
+          background: '#FDF6E3',
+          border: '1.5px solid #E8B84B',
+          borderRadius: 12,
+          padding: '16px 20px',
+          marginBottom: 28,
+          display: 'flex',
+          gap: 14,
+          alignItems: 'flex-start',
+        }}>
+          <div style={{ fontSize: 20, lineHeight: 1 }}>⚠️</div>
+          <div style={{ flex: 1 }}>
+            <div style={{
+              fontFamily: "'Cormorant Garamond', serif",
+              fontSize: 17, color: '#3A3530', marginBottom: 8, fontWeight: 500,
+            }}>
+              Some items in your cart changed while you were away
+            </div>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: '#3A3530', lineHeight: 1.7 }}>
+              {blockingWarnings.map((w, i) => (
+                <li key={i}>{w.message}</li>
+              ))}
+            </ul>
+            {!warningsAcknowledged && (
+              <button
+                onClick={() => acknowledgeWarnings()}
+                style={{
+                  marginTop: 12,
+                  padding: '8px 18px',
+                  borderRadius: 6,
+                  background: '#3A3530',
+                  color: '#E8B84B',
+                  border: 'none',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  cursor: 'pointer',
+                }}
+              >
+                Acknowledge &amp; continue
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 48 }}>
         {/* Left: Cart items */}
@@ -153,14 +230,28 @@ export default function CartPage() {
               </span>
             </div>
 
-            <Link href={getCheckoutRoute()} style={{
-              display: 'block', width: '100%', padding: 16, borderRadius: 8, marginTop: 20,
-              background: '#3A3530', color: '#E8B84B', textAlign: 'center',
-              fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
-              textDecoration: 'none',
-            }}>
-              Proceed to Checkout
-            </Link>
+            {mustAcknowledge ? (
+              <div
+                title="Please review and acknowledge the warnings above first"
+                style={{
+                  display: 'block', width: '100%', padding: 16, borderRadius: 8, marginTop: 20,
+                  background: 'rgba(58,53,48,0.35)', color: 'rgba(232,184,75,0.7)', textAlign: 'center',
+                  fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
+                  cursor: 'not-allowed',
+                }}
+              >
+                Review changes above to continue
+              </div>
+            ) : (
+              <Link href={getCheckoutRoute()} style={{
+                display: 'block', width: '100%', padding: 16, borderRadius: 8, marginTop: 20,
+                background: '#3A3530', color: '#E8B84B', textAlign: 'center',
+                fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
+                textDecoration: 'none',
+              }}>
+                Proceed to Checkout
+              </Link>
+            )}
             <Link href="/shop" style={{
               display: 'block', width: '100%', padding: 14, borderRadius: 8, marginTop: 10,
               border: '1.5px solid rgba(232,184,75,0.3)', color: '#3A3530', textAlign: 'center',

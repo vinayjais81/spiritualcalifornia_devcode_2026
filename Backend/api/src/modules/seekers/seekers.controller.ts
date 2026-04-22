@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Body, Param, Headers, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -55,6 +55,16 @@ export class SeekersController {
   @ApiOperation({ summary: 'Get seeker dashboard stats' })
   getDashboardStats(@CurrentUser() user: CurrentUserData) {
     return this.seekersService.getDashboardStats(user.id);
+  }
+
+  @Get('dashboard/pending-actions')
+  @Roles(Role.SEEKER)
+  @ApiOperation({ summary: 'Get everything the seeker left mid-flow: cart, pending tours, bookings, tickets' })
+  getPendingActions(
+    @CurrentUser() user: CurrentUserData,
+    @Headers('x-session-id') sessionId?: string,
+  ) {
+    return this.seekersService.getPendingActions(user.id, sessionId);
   }
 
   // ─── Payment History ───────────────────────────────────────────────────────

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { C, font, PageHeader, Panel, StatCard } from '@/components/guide/dashboard-ui';
+import { NeedsAttentionPanel } from '@/components/seeker/NeedsAttentionPanel';
 
 export default function SeekerDashboardPage() {
   const { user } = useAuthStore();
@@ -18,6 +19,11 @@ export default function SeekerDashboardPage() {
   return (
     <div>
       <PageHeader title={`Welcome back, ${user?.firstName || 'Seeker'}`} subtitle="Your spiritual journey at a glance." />
+
+      {/* Unified "Needs your attention" block — cart + pending tours +
+          pending service bookings + pending ticket purchases. Hidden
+          entirely when nothing is pending. */}
+      <NeedsAttentionPanel />
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>

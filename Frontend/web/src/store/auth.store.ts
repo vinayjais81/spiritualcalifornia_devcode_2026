@@ -24,6 +24,12 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (user, accessToken) => {
         localStorage.setItem('access_token', accessToken);
         set({ user, accessToken, isAuthenticated: true });
+        // Fire-and-forget cart merge: take any items the seeker added while
+        // signed out and union them into their server-side cart. Import here
+        // (not at top of file) to avoid a circular store dependency.
+        import('./cart.store').then(({ useCartStore }) => {
+          useCartStore.getState().mergeGuestCartIntoUser().catch(() => { /* silent */ });
+        });
       },
 
       clearAuth: () => {
