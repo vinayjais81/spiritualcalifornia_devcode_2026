@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Param,
   Body,
   Query,
@@ -25,6 +26,7 @@ import { PaginationQueryDto } from './dto/query.dto';
 import { BanUserDto } from './dto/ban-user.dto';
 import { UpdateRolesDto } from './dto/update-roles.dto';
 import { RejectGuideDto } from './dto/reject-guide.dto';
+import { AdminCreatePostDto, AdminUpdatePostDto } from './dto/admin-blog.dto';
 import { VerificationStatus, TourBookingStatus, BookingStatus, PayoutStatus } from '@prisma/client';
 import { PaymentsService } from '../payments/payments.service';
 import { IsOptional, IsEnum, IsString } from 'class-validator';
@@ -340,5 +342,59 @@ export class AdminController {
   @ApiOperation({ summary: 'Process a pending payout request (triggers Stripe transfer)' })
   processPayout(@Param('id') id: string) {
     return this.paymentsService.processPayout(id);
+  }
+
+  // ─── Blog Management ─────────────────────────────────────────────────────
+  // Admin can list/create/edit/delete any post on the platform. Create +
+  // update require a `guideId` so the post stays attributed to a guide — this
+  // keeps the /journal/[guideSlug]/[postSlug] URL structure intact.
+
+  @Get('blog/authors')
+  @ApiOperation({ summary: 'List all potential blog authors (guides + admin users)' })
+  listBlogAuthors() {
+    return this.adminService.listBlogAuthors();
+  }
+
+  @Get('blog')
+  @ApiOperation({ summary: 'List all blog posts across the platform' })
+  listAllPosts(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('search') search?: string,
+    @Query('guideId') guideId?: string,
+    @Query('status') status?: 'all' | 'published' | 'draft',
+  ) {
+    return this.adminService.listAllPosts({
+      page: page ? Number(page) : 1,
+      limit: limit ? Number(limit) : 20,
+      search,
+      guideId,
+      status: status ?? 'all',
+    });
+  }
+
+  @Get('blog/:id')
+  @ApiOperation({ summary: 'Get a single blog post (for editing)' })
+  getPost(@Param('id') id: string) {
+    return this.adminService.getPost(id);
+  }
+
+  @Post('blog')
+  @ApiOperation({ summary: 'Create a blog post attributed to any guide' })
+  createPost(@Body() dto: AdminCreatePostDto) {
+    return this.adminService.createPost(dto);
+  }
+
+  @Patch('blog/:id')
+  @ApiOperation({ summary: 'Update any blog post (can also reassign to a different guide)' })
+  updatePost(@Param('id') id: string, @Body() dto: AdminUpdatePostDto) {
+    return this.adminService.updatePost(id, dto);
+  }
+
+  @Delete('blog/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete any blog post' })
+  deletePost(@Param('id') id: string) {
+    return this.adminService.deletePost(id);
   }
 }

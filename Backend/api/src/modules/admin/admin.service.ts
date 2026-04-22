@@ -887,4 +887,302 @@ export class AdminService {
       totalPages: Math.ceil(total / limit),
     };
   }
+
+  // ─── Blog Management (platform-wide) ───────────────────────────────────────
+  // Admins have full CRUD across any guide's posts — no ownership check, no
+  // 1-per-24h publish rate limit. Attribution is still required (posts live
+  // under /journal/[guideSlug]/[postSlug]), so create/update take an explicit
+  // guideId.
+
+  /**
+   * Return every potential blog author — both existing guide profiles and
+   * admin users. Admins without a guide profile are still listed; when one
+   * is chosen, `resolveAuthorToGuideId` lazily creates a minimal, unpublished
+   * profile for them so the BlogPost.guideId FK is satisfied.
+   */
+  async listBlogAuthors() {
+    const [guides, admins] = await Promise.all([
+      this.prisma.guideProfile.findMany({
+        orderBy: { displayName: 'asc' },
+        select: {
+          id: true,
+          displayName: true,
+          slug: true,
+          user: { select: { id: true, avatarUrl: true, roles: true } },
+        },
+      }),
+      // Every user with ADMIN or SUPER_ADMIN role
+      this.prisma.user.findMany({
+        where: { roles: { some: { role: { in: [Role.ADMIN, Role.SUPER_ADMIN] } } } },
+        orderBy: [{ firstName: 'asc' }, { lastName: 'asc' }],
+        include: { guideProfile: { select: { id: true } } },
+      }),
+    ]);
+
+    const guideAuthors = guides.map((g) => ({
+      id: g.id,
+      kind: 'guide' as const,
+      displayName: g.displayName,
+      avatarUrl: g.user?.avatarUrl ?? null,
+      // Admins who also happen to have a guide profile come through here too,
+      // so we don't double-list them in the admins bucket below.
+      isAdmin: (g.user?.roles ?? []).some((r: any) => r.role === Role.ADMIN || r.role === Role.SUPER_ADMIN),
+    }));
+
+    const adminAuthors = admins
+      // Exclude admins who already appear as guides (via their guide profile)
+      .filter((u) => !u.guideProfile)
+      .map((u) => ({
+        id: u.id, // NOTE: this is a userId, not a guideId
+        kind: 'admin' as const,
+        displayName: `${u.firstName} ${u.lastName}`.trim() || u.email,
+        avatarUrl: u.avatarUrl ?? null,
+        isAdmin: true,
+      }));
+
+    return { guides: guideAuthors, admins: adminAuthors };
+  }
+
+  /**
+   * Turn a selected author (guide id OR admin user id) into a concrete
+   * GuideProfile id that can be written to BlogPost.guideId. If the admin
+   * doesn't have a profile yet, we create a minimal unpublished, unverified
+   * one attributed to them.
+   */
+  private async resolveAuthorToGuideId(authorId: string, authorKind: 'guide' | 'admin'): Promise<string> {
+    if (authorKind === 'guide') {
+      const guide = await this.prisma.guideProfile.findUnique({ where: { id: authorId } });
+      if (!guide) throw new NotFoundException('Guide profile not found');
+      return guide.id;
+    }
+
+    // authorKind === 'admin' → authorId is a userId
+    const user = await this.prisma.user.findUnique({
+      where: { id: authorId },
+      include: { guideProfile: true, roles: true },
+    });
+    if (!user) throw new NotFoundException('Admin user not found');
+    const isAdmin = user.roles.some((r) => r.role === Role.ADMIN || r.role === Role.SUPER_ADMIN);
+    if (!isAdmin) throw new BadRequestException('Selected user is not an admin');
+
+    if (user.guideProfile) return user.guideProfile.id;
+
+    // Lazily create a shell guide profile for this admin so the blog post FK
+    // can reference it. Keeps it unpublished + unverified so it doesn't leak
+    // into public /practitioners listings — admin isn't offering services.
+    const baseSlug = this.slugify(`${user.firstName} ${user.lastName}`) || `admin-${user.id.slice(-6)}`;
+    const slug = await this.uniqueGuideSlug(baseSlug);
+    const profile = await this.prisma.guideProfile.create({
+      data: {
+        userId: user.id,
+        slug,
+        displayName: `${user.firstName} ${user.lastName}`.trim() || 'Editorial Team',
+        tagline: 'Spiritual California Editorial',
+        isPublished: false,
+        isVerified: false,
+        verificationStatus: VerificationStatus.APPROVED, // admin is trusted, skip review
+      },
+    });
+    return profile.id;
+  }
+
+  private async uniqueGuideSlug(baseSlug: string, excludeId?: string): Promise<string> {
+    let slug = baseSlug;
+    let counter = 0;
+    while (true) {
+      const existing = await this.prisma.guideProfile.findFirst({
+        where: { slug, ...(excludeId ? { id: { not: excludeId } } : {}) },
+      });
+      if (!existing) return slug;
+      counter++;
+      slug = `${baseSlug}-${counter}`;
+    }
+  }
+
+  async listAllPosts(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    guideId?: string;
+    status?: 'all' | 'published' | 'draft';
+  }) {
+    const page = params.page ?? 1;
+    const limit = Math.min(params.limit ?? 20, 100);
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (params.guideId) where.guideId = params.guideId;
+    if (params.status === 'published') where.isPublished = true;
+    if (params.status === 'draft') where.isPublished = false;
+    if (params.search) {
+      where.OR = [
+        { title: { contains: params.search, mode: 'insensitive' } },
+        { excerpt: { contains: params.search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [posts, total] = await Promise.all([
+      this.prisma.blogPost.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          guide: {
+            select: {
+              id: true,
+              slug: true,
+              displayName: true,
+              user: { select: { avatarUrl: true } },
+            },
+          },
+        },
+      }),
+      this.prisma.blogPost.count({ where }),
+    ]);
+
+    return { posts, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async getPost(postId: string) {
+    const post = await this.prisma.blogPost.findUnique({
+      where: { id: postId },
+      include: {
+        guide: {
+          select: {
+            id: true,
+            slug: true,
+            displayName: true,
+            user: { select: { avatarUrl: true } },
+          },
+        },
+      },
+    });
+    if (!post) throw new NotFoundException('Blog post not found');
+    return post;
+  }
+
+  async createPost(dto: {
+    authorId: string;
+    authorKind: 'guide' | 'admin';
+    title: string;
+    content: string;
+    excerpt?: string;
+    coverImageUrl?: string;
+    tags?: string[];
+    publish?: boolean;
+  }) {
+    const guideId = await this.resolveAuthorToGuideId(dto.authorId, dto.authorKind);
+
+    if (dto.publish && !dto.coverImageUrl) {
+      throw new BadRequestException('A cover image is required to publish a blog post.');
+    }
+
+    const baseSlug = this.slugify(dto.title);
+    const slug = await this.uniqueBlogSlug(guideId, baseSlug);
+
+    return this.prisma.blogPost.create({
+      data: {
+        guideId,
+        title: dto.title,
+        slug,
+        content: dto.content,
+        excerpt: dto.excerpt || dto.content.replace(/<[^>]*>/g, '').substring(0, 200),
+        coverImageUrl: dto.coverImageUrl,
+        tags: dto.tags ?? [],
+        isPublished: dto.publish ?? false,
+        publishedAt: dto.publish ? new Date() : null,
+      },
+    });
+  }
+
+  async updatePost(postId: string, dto: {
+    authorId?: string;
+    authorKind?: 'guide' | 'admin';
+    title?: string;
+    content?: string;
+    excerpt?: string;
+    coverImageUrl?: string;
+    tags?: string[];
+    publish?: boolean;
+  }) {
+    const post = await this.prisma.blogPost.findUnique({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Blog post not found');
+
+    const data: any = {};
+    let newGuideId = post.guideId;
+
+    // Author reassignment — only when both fields sent together
+    if (dto.authorId && dto.authorKind) {
+      const resolved = await this.resolveAuthorToGuideId(dto.authorId, dto.authorKind);
+      if (resolved !== post.guideId) {
+        data.guideId = resolved;
+        newGuideId = resolved;
+      }
+    }
+
+    if (dto.title !== undefined) {
+      data.title = dto.title;
+      data.slug = await this.uniqueBlogSlug(newGuideId, this.slugify(dto.title), postId);
+    } else if (newGuideId !== post.guideId) {
+      // Re-attributed to a new guide — ensure slug is still unique under the new owner
+      data.slug = await this.uniqueBlogSlug(newGuideId, post.slug, postId);
+    }
+
+    if (dto.content !== undefined) data.content = dto.content;
+    if (dto.excerpt !== undefined) data.excerpt = dto.excerpt;
+    if (dto.coverImageUrl !== undefined) data.coverImageUrl = dto.coverImageUrl;
+    if (dto.tags !== undefined) data.tags = dto.tags;
+
+    if (dto.publish === true) {
+      const hasCover = dto.coverImageUrl ?? post.coverImageUrl;
+      if (!hasCover) throw new BadRequestException('A cover image is required to publish a blog post.');
+      data.isPublished = true;
+      if (!post.isPublished) data.publishedAt = new Date();
+    } else if (dto.publish === false) {
+      data.isPublished = false;
+    }
+
+    return this.prisma.blogPost.update({
+      where: { id: postId },
+      data,
+    });
+  }
+
+  async deletePost(postId: string) {
+    const post = await this.prisma.blogPost.findUnique({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Blog post not found');
+    await this.prisma.blogPost.delete({ where: { id: postId } });
+    return { deleted: true };
+  }
+
+  // ── Blog helpers ─────────────────────────────────────────────────────────
+
+  private slugify(text: string): string {
+    return text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  private async uniqueBlogSlug(
+    guideId: string,
+    baseSlug: string,
+    excludeId?: string,
+  ): Promise<string> {
+    let slug = baseSlug || 'post';
+    let counter = 0;
+    while (true) {
+      const existing = await this.prisma.blogPost.findFirst({
+        where: {
+          guideId,
+          slug,
+          ...(excludeId ? { id: { not: excludeId } } : {}),
+        },
+      });
+      if (!existing) return slug;
+      counter++;
+      slug = `${baseSlug}-${counter}`;
+    }
+  }
 }
