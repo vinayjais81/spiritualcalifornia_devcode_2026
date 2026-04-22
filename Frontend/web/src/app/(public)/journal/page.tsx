@@ -20,16 +20,6 @@ interface BlogPost {
   };
 }
 
-const fallbackPosts: BlogPost[] = [
-  { id: '1', title: 'The Silence Between the Notes: What Sound Healing Taught Me About Presence', slug: 'silence-between-notes', excerpt: 'In the resonant pause after a singing bowl fades, I found something I had been chasing for years — a presence so complete it needed no effort to maintain.', coverImageUrl: null, tags: ['Sound Healing', 'Meditation'], publishedAt: '2026-03-15', guide: { slug: 'maya-williams', displayName: 'Maya Williams', user: { avatarUrl: null } } },
-  { id: '2', title: 'A Beginner\'s Guide to Crystal Energy Work', slug: 'crystal-energy-work', excerpt: 'Crystals have been used for thousands of years across cultures for healing, protection, and spiritual growth. Here\'s how to start your own practice.', coverImageUrl: null, tags: ['Crystals', 'Energy Work'], publishedAt: '2026-03-10', guide: { slug: 'dr-sarah-chen', displayName: 'Dr. Sarah Chen', user: { avatarUrl: null } } },
-  { id: '3', title: 'Breathwork for Anxiety: 5 Techniques That Actually Work', slug: 'breathwork-anxiety', excerpt: 'After working with hundreds of clients, these are the breathing techniques I recommend most for managing anxiety in daily life.', coverImageUrl: null, tags: ['Breathwork', 'Wellness'], publishedAt: '2026-03-05', guide: { slug: 'marcus-thompson', displayName: 'Marcus Thompson', user: { avatarUrl: null } } },
-  { id: '4', title: 'The Ancient Art of Qi Gong: Moving Meditation for Modern Life', slug: 'qigong-modern-life', excerpt: 'Qi Gong bridges the gap between physical exercise and meditation. Learn how this 4,000-year-old practice can transform your daily routine.', coverImageUrl: null, tags: ['Qi Gong', 'Meditation'], publishedAt: '2026-02-28', guide: { slug: 'carlos-mendez', displayName: 'Carlos Mendez', user: { avatarUrl: null } } },
-  { id: '5', title: 'Setting Up Your Home Altar: A Sacred Space Guide', slug: 'home-altar-guide', excerpt: 'Creating a sacred space doesn\'t require a dedicated room. Here\'s how to create a meaningful altar in any living situation.', coverImageUrl: null, tags: ['Sacred Space', 'Rituals'], publishedAt: '2026-02-20', guide: { slug: 'rebecca-stone', displayName: 'Rebecca Stone', user: { avatarUrl: null } } },
-  { id: '6', title: 'Understanding Your Chakras: A Practitioner\'s Perspective', slug: 'understanding-chakras', excerpt: 'Beyond the colorful diagrams and quick guides, here\'s what chakra work really looks like from someone who practices it daily.', coverImageUrl: null, tags: ['Chakras', 'Energy Work'], publishedAt: '2026-02-15', guide: { slug: 'priya-sharma', displayName: 'Priya Sharma', user: { avatarUrl: null } } },
-];
-
-const topics = ['Meditation', 'Breathwork', 'Sound Healing', 'Reiki', 'Ayurveda', 'Yoga', 'Crystals', 'Mindfulness', 'Sacred Rituals', 'Energy Work'];
 const filterTabs = ['All', 'Spiritual Practices', 'Sound Healing', 'Meditation', 'Wellness', 'Sacred Living'];
 
 function formatDate(dateStr: string) {
@@ -38,7 +28,7 @@ function formatDate(dateStr: string) {
 }
 
 export default function JournalPage() {
-  const [posts, setPosts] = useState<BlogPost[]>(fallbackPosts);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -47,17 +37,21 @@ export default function JournalPage() {
     const fetchPosts = async () => {
       try {
         const res = await api.get('/blog', { params: { limit: 20 } });
-        if (res.data?.posts && res.data.posts.length > 0) {
-          setPosts(res.data.posts);
-        }
+        setPosts(res.data?.posts ?? []);
       } catch {
-        // Keep fallback
+        setPosts([]);
       } finally {
         setLoading(false);
       }
     };
     fetchPosts();
   }, []);
+
+  // Derive topic chips from the tags of posts we actually have. Avoids
+  // hardcoding a curated list that can drift from what's published.
+  const topics = Array.from(
+    new Set(posts.flatMap((p) => p.tags || [])),
+  ).slice(0, 10);
 
   const featured = posts[0];
   const remaining = posts.slice(1);
@@ -133,22 +127,24 @@ export default function JournalPage() {
       </div>
 
       {/* Topics */}
-      <div style={{
-        maxWidth: 1200, margin: '0 auto', padding: '20px 48px',
-        display: 'flex', flexWrap: 'wrap', gap: 8,
-      }}>
-        <span style={{ fontSize: 11, color: '#8A8278', alignSelf: 'center', marginRight: 8 }}>Browse:</span>
-        {topics.map((topic) => (
-          <button key={topic} style={{
-            padding: '6px 14px', borderRadius: 20,
-            background: '#FDF6E3', border: '1px solid rgba(232,184,75,0.2)',
-            fontSize: 12, color: '#3A3530', cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}>
-            {topic}
-          </button>
-        ))}
-      </div>
+      {topics.length > 0 && (
+        <div style={{
+          maxWidth: 1200, margin: '0 auto', padding: '20px 48px',
+          display: 'flex', flexWrap: 'wrap', gap: 8,
+        }}>
+          <span style={{ fontSize: 11, color: '#8A8278', alignSelf: 'center', marginRight: 8 }}>Browse:</span>
+          {topics.map((topic) => (
+            <button key={topic} style={{
+              padding: '6px 14px', borderRadius: 20,
+              background: '#FDF6E3', border: '1px solid rgba(232,184,75,0.2)',
+              fontSize: 12, color: '#3A3530', cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}>
+              {topic}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Main Body */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 48px 80px' }}>
@@ -201,6 +197,14 @@ export default function JournalPage() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : posts.length === 0 ? (
+          <div style={{
+            textAlign: 'center', padding: '60px 24px',
+            background: '#FDF6E3', border: '1px solid rgba(232,184,75,0.2)', borderRadius: 16,
+            color: '#8A8278', fontSize: 14,
+          }}>
+            No articles yet. Check back soon — new stories land here from our verified practitioners.
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28 }}>

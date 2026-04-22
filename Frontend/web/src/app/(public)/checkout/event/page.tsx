@@ -6,14 +6,17 @@ import { useCartStore } from '@/store/cart.store';
 import { CheckoutProgress } from '@/components/public/checkout/CheckoutProgress';
 import { OrderSummary } from '@/components/public/checkout/OrderSummary';
 import { PaymentForm } from '@/components/public/booking/PaymentForm';
+import { useSiteConfigOrFallback } from '@/lib/siteConfig';
 
 interface Attendee { firstName: string; lastName: string; email: string; requirements: string; }
 
 export default function EventCheckoutPage() {
   const { items, getSubtotal, clearCart } = useCartStore();
+  const siteConfig = useSiteConfigOrFallback();
+  const bookingFeeRate = siteConfig.fees.eventBookingFeePercent / 100;
   const eventItems = items.filter(i => i.itemType === 'EVENT_TICKET');
   const subtotal = getSubtotal();
-  const bookingFee = Math.round(subtotal * 0.05 * 100) / 100;
+  const bookingFee = Math.round(subtotal * bookingFeeRate * 100) / 100;
   const total = subtotal + bookingFee;
   const ticketCount = eventItems.reduce((sum, i) => sum + i.quantity, 0) || 2;
   const [attendees, setAttendees] = useState<Attendee[]>(
@@ -99,7 +102,7 @@ export default function EventCheckoutPage() {
             tabs={['Credit / Debit', 'Apple Pay', 'PayPal']}
             submitLabel={`Confirm & Pay — $${total.toFixed(2)} (${ticketCount} ticket${ticketCount > 1 ? 's' : ''})`}
             onSubmit={() => { clearCart(); setDone(true); }}
-            cancellationNote="Full refund up to 7 days before the event. 50% refund 3-7 days before. No refund within 72 hours."
+            cancellationNote={siteConfig.cancellationPolicies.event.text}
           />
         </div>
 

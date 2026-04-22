@@ -7,6 +7,7 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { StripeProvider } from '@/components/public/checkout/StripeProvider';
 import { StripePaymentForm } from '@/components/public/checkout/StripePaymentForm';
+import { useSiteConfigOrFallback } from '@/lib/siteConfig';
 
 // ─── Design tokens (match site palette) ─────────────────────────────────────
 
@@ -83,6 +84,8 @@ export default function EventCheckoutPage() {
   const { id: eventId } = useParams<{ id: string }>();
   const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
+  const siteConfig = useSiteConfigOrFallback();
+  const bookingFeeRate = siteConfig.fees.eventBookingFeePercent / 100;
 
   // State
   const [event, setEvent] = useState<EventDetail | null>(null);
@@ -125,7 +128,7 @@ export default function EventCheckoutPage() {
   const selectedTier = event?.ticketTiers.find((t) => t.id === selectedTierId) ?? null;
   const remaining = selectedTier ? selectedTier.capacity - selectedTier.sold : 0;
   const subtotal = selectedTier ? selectedTier.price * quantity : 0;
-  const bookingFee = Math.round(subtotal * 0.05 * 100) / 100;
+  const bookingFee = Math.round(subtotal * bookingFeeRate * 100) / 100;
   const total = subtotal + bookingFee;
   const guideName = event?.guide.displayName || `${event?.guide.user.firstName} ${event?.guide.user.lastName}`;
 
@@ -392,7 +395,7 @@ export default function EventCheckoutPage() {
                   submitLabel={`Confirm & Pay — ${fmtMoney(summary?.total ?? total)} (${quantity} ticket${quantity > 1 ? 's' : ''})`}
                   onSuccess={handlePaymentSuccess}
                   returnUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/events/${eventId}/checkout`}
-                  cancellationNote="Full refund up to 7 days before the event. 50% refund within 7 days. No refund within 48 hours."
+                  cancellationNote={siteConfig.cancellationPolicies.event.text}
                 />
               </StripeProvider>
             </>
@@ -481,7 +484,7 @@ export default function EventCheckoutPage() {
             </div>
 
             <div style={{ marginTop: 16, padding: 12, background: C.goldPale, borderRadius: 4, fontSize: 11, color: C.warmGray, lineHeight: 1.6 }}>
-              <strong style={{ color: C.charcoal }}>Cancellation policy:</strong> Full refund up to 7 days before the event. 50% refund within 7 days. No refund within 48 hours.
+              <strong style={{ color: C.charcoal }}>Cancellation policy:</strong> {siteConfig.cancellationPolicies.event.text}
             </div>
           </div>
         )}

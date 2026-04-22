@@ -6,6 +6,7 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { C, font, serif, PageHeader, Panel } from '@/components/guide/dashboard-ui';
 import { toast } from 'sonner';
+import { useSiteConfigOrFallback } from '@/lib/siteConfig';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -25,6 +26,10 @@ interface EarningsData {
 
 export default function SettingsPage() {
   const { user } = useAuthStore();
+  const siteConfig = useSiteConfigOrFallback();
+  const commissionPercent = siteConfig.fees.platformCommissionPercent;
+  const guideShare = 100 - commissionPercent;
+  const minPayout = siteConfig.payouts.minUsd;
 
   // Password form
   const [currentPassword, setCurrentPassword] = useState('');
@@ -155,9 +160,9 @@ export default function SettingsPage() {
           <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray, marginBottom: 12 }}>How Payouts Work</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
             {[
-              { step: '1', title: 'Seeker Pays', desc: 'Payment processed via Stripe. 15% platform fee deducted.' },
-              { step: '2', title: 'Balance Credited', desc: 'Your 85% earnings are added to your available balance instantly.' },
-              { step: '3', title: 'Request Payout', desc: 'Request a transfer from your Earnings page ($10 minimum).' },
+              { step: '1', title: 'Seeker Pays', desc: `Payment processed via Stripe. ${commissionPercent}% platform fee deducted.` },
+              { step: '2', title: 'Balance Credited', desc: `Your ${guideShare}% earnings are added to your available balance instantly.` },
+              { step: '3', title: 'Request Payout', desc: `Request a transfer from your Earnings page ($${minPayout} minimum).` },
               { step: '4', title: 'Funds Transferred', desc: 'Admin processes your request. Arrives in 3-5 business days.' },
             ].map((s) => (
               <div key={s.step} style={{ textAlign: 'center' }}>

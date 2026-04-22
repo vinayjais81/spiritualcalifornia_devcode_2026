@@ -117,17 +117,34 @@ export default function ProfilePage() {
                 type="file"
                 accept="image/jpeg,image/png,image/webp"
                 style={{ display: 'none' }}
-                onChange={(e) => {
+                onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;
                   if (file.size > 5 * 1024 * 1024) {
                     toast.error('Image must be under 5MB');
                     return;
                   }
-                  const reader = new FileReader();
-                  reader.onload = (ev) => setAvatar(ev.target?.result as string);
-                  reader.readAsDataURL(file);
-                  toast.info('Photo selected. S3 upload will be wired when AWS keys are configured.');
+                  // Optimistic local preview while the S3 upload completes.
+                  const localUrl = URL.createObjectURL(file);
+                  setAvatar(localUrl);
+                  try {
+                    const { data } = await api.get('/upload/presigned-url', {
+                      params: { folder: 'avatars', fileName: file.name, contentType: file.type },
+                    });
+                    const putRes = await fetch(data.uploadUrl, {
+                      method: 'PUT',
+                      body: file,
+                      headers: { 'Content-Type': file.type },
+                    });
+                    if (!putRes.ok) throw new Error(`S3 PUT failed (${putRes.status})`);
+                    // Server resolves the S3 key → User.avatarUrl (CDN URL).
+                    await api.put('/guides/onboarding/profile', { avatarS3Key: data.key });
+                    setAvatar(data.fileUrl);
+                    toast.success('Profile photo updated');
+                  } catch (err: any) {
+                    toast.error(err?.response?.data?.message || 'Avatar upload failed');
+                    setAvatar('/images/hero1.jpg');
+                  }
                 }}
               />
             </label>

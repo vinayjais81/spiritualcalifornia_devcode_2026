@@ -13,12 +13,6 @@ interface SoulTravel {
   guide: { slug: string; displayName: string; avatarUrl: string | null };
 }
 
-const staticUpdates = [
-  { image: '/images/ayurveda.jpg', imageAlt: 'Retreat', destination: 'California · Big Sur', title: 'Dawn at Esalen: A Morning That Changed Everything', excerpt: 'The Pacific was still dark when we gathered on the cliff edge. What we witnessed was not just a sunrise — it was a mirror...', date: 'Upcoming · By Spiritual CA', href: '/travels' },
-  { image: '/images/poppy_close.jpg', imageAlt: 'Retreat', destination: 'California · Mount Shasta', title: 'Sacred Mountain: Crystal Healing at the Vortex', excerpt: 'At the base of Mount Shasta, the energy is palpable. Our group sat in circle with crystals as the mountain held us...', date: 'Upcoming · By Spiritual CA', href: '/travels' },
-  { image: '/images/yoga_outdoor.jpg', imageAlt: 'Retreat', destination: 'California · Joshua Tree', title: 'Desert Drums: Rhythm and Renewal Under the Stars', excerpt: 'The Milky Way was impossibly bright. Our drum circle echoed off the boulders as something ancient moved through us...', date: 'Upcoming · By Spiritual CA', href: '/travels' },
-];
-
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
@@ -33,19 +27,19 @@ interface Props {
 }
 
 export function SoulTravelsUpdates({ soulTravels }: Props) {
-  const cards = soulTravels && soulTravels.length > 0
-    ? soulTravels.map(s => ({
-        image: s.coverImageUrl || '/images/poppy_field.jpg',
-        imageAlt: s.title,
-        destination: s.location || 'California',
-        title: s.title,
-        excerpt: `${formatPrice(s.startingPrice)} · Led by ${s.guide.displayName}`,
-        date: formatDate(s.startTime),
-        // Link each tour card to its own detail page, not the listing.
-        // Route file: src/app/(public)/tours/[slug]/page.tsx
-        href: `/tours/${s.slug}`,
-      }))
-    : staticUpdates;
+  // Hide the section entirely when there are no live tours. Placeholder
+  // retreats were misleading — they looked like real offerings.
+  if (!soulTravels || soulTravels.length === 0) return null;
+
+  const cards = soulTravels.map(s => ({
+    image: s.coverImageUrl || '/images/poppy_field.jpg',
+    imageAlt: s.title,
+    destination: s.location || 'California',
+    title: s.title,
+    excerpt: `${formatPrice(s.startingPrice)} · Led by ${s.guide.displayName}`,
+    date: formatDate(s.startTime),
+    href: `/tours/${s.slug}`,
+  }));
 
   return (
     <section style={{ padding: '64px 0 72px', background: '#FFFFFF' }}>

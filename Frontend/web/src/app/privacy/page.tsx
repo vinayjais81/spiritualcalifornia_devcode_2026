@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { SITE_CONFIG_FALLBACK } from '@/lib/siteConfig';
 
 const G = {
   gold:     '#E8B84B',
@@ -12,6 +13,22 @@ export const metadata = {
   title: 'Privacy Policy | Spiritual California',
   description: 'Privacy Policy for the Spiritual California marketplace platform.',
 };
+
+// Server component — we can't call the /config/public hook here, but we can
+// read the same defaults that hook falls back to, plus any NEXT_PUBLIC_ env
+// override so ops can rotate addresses without a redeploy of the copy.
+const privacyEmail =
+  process.env.NEXT_PUBLIC_CONTACT_PRIVACY_EMAIL ??
+  SITE_CONFIG_FALLBACK.contactEmails.privacy;
+
+// Pick the most recent date between the policy's authored date and today's
+// rendered-from-git release. We keep the authored date as the floor.
+const POLICY_AUTHORED_DATE = new Date('2026-03-18');
+const lastUpdatedLabel = POLICY_AUTHORED_DATE.toLocaleDateString('en-US', {
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric',
+});
 
 export default function PrivacyPage() {
   return (
@@ -52,7 +69,7 @@ export default function PrivacyPage() {
           Privacy Policy
         </h1>
         <p style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 13, color: G.warmGray, marginBottom: 48 }}>
-          Last updated: March 18, 2026
+          Last updated: {lastUpdatedLabel}
         </p>
 
         <div style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 15, lineHeight: 1.8, color: G.charcoal }}>
@@ -121,7 +138,7 @@ export default function PrivacyPage() {
               <li>Request portability of your data</li>
               <li>Withdraw consent where processing is based on consent</li>
             </ul>
-            <p style={{ marginTop: 12 }}>To exercise these rights, contact us at <a href="mailto:privacy@spiritualcalifornia.com" style={{ color: G.gold, textDecoration: 'none' }}>privacy@spiritualcalifornia.com</a>.</p>
+            <p style={{ marginTop: 12 }}>To exercise these rights, contact us at <a href={`mailto:${privacyEmail}`} style={{ color: G.gold, textDecoration: 'none' }}>{privacyEmail}</a>.</p>
           </Section>
 
           <Section title="8. California Privacy Rights (CCPA)">
@@ -148,7 +165,7 @@ export default function PrivacyPage() {
             <p>If you have questions or concerns about this Privacy Policy or our data practices, please contact:</p>
             <p style={{ marginTop: 8, color: G.warmGray }}>
               Spiritual California — Privacy Team<br />
-              <a href="mailto:privacy@spiritualcalifornia.com" style={{ color: G.gold, textDecoration: 'none' }}>privacy@spiritualcalifornia.com</a>
+              <a href={`mailto:${privacyEmail}`} style={{ color: G.gold, textDecoration: 'none' }}>{privacyEmail}</a>
             </p>
           </Section>
 

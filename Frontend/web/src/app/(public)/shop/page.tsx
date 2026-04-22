@@ -52,20 +52,8 @@ const CATEGORY_LABEL: Record<string, string> = {
   art:          'Art',
 };
 
-// Fallback data while API loads or if not yet populated
-const fallbackProducts: Product[] = [
-  { id: '1', name: 'Himalayan Singing Bowl Set — Full Chakra', description: 'Seven hand-hammered bowls, each tuned to a specific chakra frequency.', type: 'PHYSICAL', price: 285, imageUrls: [], isActive: true, guide: { displayName: 'Luna Rivera', slug: 'luna-rivera' } },
-  { id: '2', name: 'Amethyst Cluster — Large', description: 'Natural amethyst geode, ethically sourced from Brazilian mines.', type: 'PHYSICAL', price: 89, imageUrls: [], isActive: true, guide: { displayName: 'Dr. Sarah Chen', slug: 'dr-sarah-chen' } },
-  { id: '3', name: '432 Hz Deep Sleep Meditation', description: '47-minute guided journey with binaural beats and crystal bowl accompaniment.', type: 'DIGITAL', price: 24, imageUrls: [], isActive: true, guide: { displayName: 'Maya Williams', slug: 'maya-williams' } },
-  { id: '4', name: 'Shamanic Mirror Ring — Sterling Silver', description: 'Handcrafted obsidian mirror ring with sacred geometry.', type: 'PHYSICAL', price: 145, imageUrls: [], isActive: true, guide: { displayName: 'Carlos Mendez', slug: 'carlos-mendez' } },
-  { id: '5', name: 'Sacred Geometry Oracle Deck', description: '44 cards with guidebook. Printed on recycled cotton paper with gold foil edges.', type: 'PHYSICAL', price: 48, imageUrls: [], isActive: true, guide: { displayName: 'Rebecca Stone', slug: 'rebecca-stone' } },
-  { id: '6', name: 'Lavender Sage Smudge Bundle', description: 'Hand-tied California white sage and French lavender.', type: 'PHYSICAL', price: 18, imageUrls: [], isActive: true, guide: { displayName: 'Elena Vasquez', slug: 'elena-vasquez' } },
-  { id: '7', name: 'Chakra Alignment Program — Video Course', description: '7-week self-paced program with 14 HD video lessons.', type: 'DIGITAL', price: 89, imageUrls: [], isActive: true, guide: { displayName: 'Priya Sharma', slug: 'priya-sharma' } },
-  { id: '8', name: 'Hand-Poured Intention Candle — Abundance', description: 'Soy wax candle infused with citrine chips and cinnamon essential oil.', type: 'PHYSICAL', price: 32, imageUrls: [], isActive: true, guide: { displayName: 'James O\'Brien', slug: 'james-obrien' } },
-];
-
 export default function ShopPage() {
-  const [products, setProducts] = useState<Product[]>(fallbackProducts);
+  const [products, setProducts] = useState<Product[]>([]);
   const [activeCategory, setActiveCategory] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
   const [loading, setLoading] = useState(true);
@@ -74,8 +62,6 @@ export default function ShopPage() {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        // Build query: 'digital' tab maps to type=DIGITAL; all other keys map
-        // to the ProductCategory enum; 'all' sends no filter.
         const params: Record<string, string | number> = { limit: 50 };
         if (activeCategory === 'digital') {
           params.type = 'DIGITAL';
@@ -84,20 +70,12 @@ export default function ShopPage() {
         }
 
         const res = await api.get('/products/public', { params });
-        // Backend returns { products, total, page, totalPages }
         const items: Product[] = Array.isArray(res.data)
           ? res.data
           : res.data?.products ?? [];
-        if (items.length > 0) {
-          setProducts(items);
-        } else {
-          // No results for this filter — clear the grid (don't fall back to demo data,
-          // since that would misleadingly show unrelated products under a category).
-          setProducts(activeCategory === 'all' ? fallbackProducts : []);
-        }
+        setProducts(items);
       } catch {
-        // API not ready — only show fallback on the 'all' tab; otherwise empty state.
-        setProducts(activeCategory === 'all' ? fallbackProducts : []);
+        setProducts([]);
       } finally {
         setLoading(false);
       }
@@ -115,19 +93,32 @@ export default function ShopPage() {
     return 0; // newest is default order
   });
 
-  const heroMain = {
-    id: products[0]?.id || '1',
-    name: products[0]?.name || 'Himalayan Singing Bowl Set',
-    price: products[0]?.price || 285,
-    category: 'Sound Healing',
-    description: products[0]?.description || '',
-    badge: 'New Collection',
-  };
-
-  const heroSide = [
-    { id: products[1]?.id || '2', name: products[1]?.name || 'Amethyst Cluster', price: products[1]?.price || 89, category: 'Crystals' },
-    { id: products[2]?.id || '3', name: products[2]?.name || 'Deep Sleep Meditation', price: products[2]?.price || 24, category: 'Digital Downloads' },
-  ];
+  // The hero block features the first three real products. Skip the banner
+  // entirely until the catalogue has at least three items — a half-filled
+  // hero looks broken and placeholder product names are misleading.
+  const heroReady = products.length >= 3;
+  const heroCategoryFor = (p: Product) =>
+    p.category ? CATEGORY_LABEL[p.category.toLowerCase()] ?? p.category : p.type === 'DIGITAL' ? 'Digital Downloads' : 'Featured';
+  const heroMain = heroReady
+    ? {
+        id: products[0].id,
+        name: products[0].name,
+        price: products[0].price,
+        category: heroCategoryFor(products[0]),
+        description: products[0].description || '',
+        imageUrl: products[0].imageUrls?.[0],
+        badge: 'Featured',
+      }
+    : null;
+  const heroSide = heroReady
+    ? [1, 2].map((i) => ({
+        id: products[i].id,
+        name: products[i].name,
+        price: products[i].price,
+        category: heroCategoryFor(products[i]),
+        imageUrl: products[i].imageUrls?.[0],
+      }))
+    : [];
 
   return (
     <>
@@ -140,8 +131,8 @@ export default function ShopPage() {
       {/* Store Body */}
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 48px 80px' }}>
 
-        {/* Hero Banner */}
-        <HeroBanner main={heroMain} side={heroSide} />
+        {/* Hero Banner — only shown once we have ≥3 real products */}
+        {heroMain && <HeroBanner main={heroMain} side={heroSide} />}
 
         {/* Section Header + Sort */}
         <div style={{ marginBottom: 20 }}>

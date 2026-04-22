@@ -21,6 +21,8 @@ export default function BlogPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ ...emptyForm });
   const [coverPreview, setCoverPreview] = useState<string | null>(null);
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
   const [loadingPost, setLoadingPost] = useState(false);
 
   const load = () => api.get('/blog/mine').then(r => setPosts(r.data)).catch(() => {});
@@ -30,6 +32,7 @@ export default function BlogPage() {
     setEditingId(null);
     setForm({ ...emptyForm });
     setCoverPreview(null);
+    setCoverImageUrl(null);
     setShowModal(true);
   };
 
@@ -61,6 +64,7 @@ export default function BlogPage() {
       excerpt: post.excerpt || '',
     });
     setCoverPreview(post.coverImageUrl || null);
+    setCoverImageUrl(post.coverImageUrl || null);
     setShowModal(true);
   };
 
@@ -69,40 +73,66 @@ export default function BlogPage() {
     setEditingId(null);
     setForm({ ...emptyForm });
     setCoverPreview(null);
+    setCoverImageUrl(null);
   };
 
-  const handleCoverSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setCoverPreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
-    toast.info('Cover image selected. S3 upload will be wired when AWS keys are configured.');
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5MB');
+      return;
+    }
+    // Optimistic preview.
+    const localUrl = URL.createObjectURL(file);
+    setCoverPreview(localUrl);
+    setUploadingCover(true);
+    try {
+      const { data } = await api.get('/upload/presigned-url', {
+        params: { folder: 'guide-media', fileName: file.name, contentType: file.type },
+      });
+      const putRes = await fetch(data.uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type },
+      });
+      if (!putRes.ok) throw new Error(`S3 PUT failed (${putRes.status})`);
+      setCoverImageUrl(data.fileUrl);
+      setCoverPreview(data.fileUrl);
+      toast.success('Cover image uploaded');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Cover upload failed');
+      setCoverPreview(coverImageUrl);
+    } finally {
+      setUploadingCover(false);
+    }
   };
 
   const save = async (publish: boolean) => {
-    if (publish && !coverPreview) {
+    if (publish && !coverImageUrl) {
       toast.error('A cover image is required to publish. Please upload a cover image.');
+      return;
+    }
+    if (uploadingCover) {
+      toast.error('Please wait for the cover image to finish uploading.');
       return;
     }
     try {
       if (editingId) {
-        // Update existing post
         await api.put(`/blog/${editingId}`, {
           title: form.title || undefined,
           content: form.content || undefined,
           excerpt: form.excerpt || undefined,
-          coverImageUrl: coverPreview || undefined,
+          coverImageUrl: coverImageUrl || undefined,
           publish,
         });
         toast.success(publish ? 'Post published!' : 'Post updated');
       } else {
-        // Create new post
         await api.post('/blog', {
           title: form.title,
           content: form.content,
           excerpt: form.excerpt || undefined,
-          coverImageUrl: coverPreview || undefined,
+          coverImageUrl: coverImageUrl || undefined,
           publish,
         });
         toast.success(publish ? 'Post published!' : 'Draft saved');
@@ -153,7 +183,7 @@ export default function BlogPage() {
 
           {/* Cover Image — required for publishing */}
           <FormGroup label="Cover Image (required to publish)">
-            {coverPreview && coverPreview.startsWith('data:') && (
+            {coverPreview && (
               <div style={{ marginBottom: '10px', borderRadius: '8px', overflow: 'hidden', maxHeight: '160px' }}>
                 <img src={coverPreview} alt="Preview" style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} />
               </div>
@@ -164,8 +194,8 @@ export default function BlogPage() {
               background: C.goldPale, border: '1.5px solid rgba(232,184,75,0.5)',
               borderRadius: '6px', cursor: 'pointer', color: C.charcoal,
             }}>
-              📁 {coverPreview ? 'Change Cover Image' : 'Upload Cover Image'}
-              <input type="file" accept="image/*" onChange={handleCoverSelect} style={{ display: 'none' }} />
+              📁 {uploadingCover ? 'Uploading…' : coverPreview ? 'Change Cover Image' : 'Upload Cover Image'}
+              <input type="file" accept="image/*" onChange={handleCoverSelect} style={{ display: 'none' }} disabled={uploadingCover} />
             </label>
           </FormGroup>
 

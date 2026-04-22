@@ -69,13 +69,37 @@ export default function EventsPage() {
     setImagePreview(null);
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploadingCover, setUploadingCover] = useState(false);
+
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
-    toast.info('Image selected. S3 upload will be wired when AWS keys are configured.');
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be under 5MB');
+      return;
+    }
+    // Optimistic local preview while S3 round-trips.
+    setImagePreview(URL.createObjectURL(file));
+    setUploadingCover(true);
+    try {
+      const { data } = await api.get('/upload/presigned-url', {
+        params: { folder: 'events', fileName: file.name, contentType: file.type },
+      });
+      const putRes = await fetch(data.uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: { 'Content-Type': file.type },
+      });
+      if (!putRes.ok) throw new Error(`S3 PUT failed (${putRes.status})`);
+      setForm((f) => ({ ...f, coverImageUrl: data.fileUrl }));
+      setImagePreview(data.fileUrl);
+      toast.success('Cover image uploaded');
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Cover upload failed');
+      setImagePreview(form.coverImageUrl || null);
+    } finally {
+      setUploadingCover(false);
+    }
   };
 
   const save = async () => {
@@ -101,6 +125,7 @@ export default function EventsPage() {
           endTime: form.endTime || undefined,
           location: form.location || undefined,
           description: form.description || undefined,
+          coverImageUrl: form.coverImageUrl || undefined,
           ticketPrice: form.ticketPrice ? parseFloat(form.ticketPrice) : 0,
         });
         toast.success('Event created');
@@ -182,7 +207,7 @@ export default function EventsPage() {
 
           {/* Event Image Upload */}
           <FormGroup label="Event Image" full>
-            {imagePreview && imagePreview.startsWith('data:') && (
+            {imagePreview && (
               <div style={{ marginBottom: '10px', borderRadius: '8px', overflow: 'hidden', maxHeight: '160px' }}>
                 <img src={imagePreview} alt="Preview" style={{ width: '100%', height: '160px', objectFit: 'cover', borderRadius: '8px' }} />
               </div>
@@ -192,10 +217,10 @@ export default function EventsPage() {
               padding: '8px 16px', fontFamily: font, fontSize: '12px', fontWeight: 500,
               background: C.goldPale, border: '1.5px solid rgba(232,184,75,0.5)',
               borderRadius: '6px', cursor: 'pointer', color: C.charcoal,
-              transition: 'all 0.2s',
+              transition: 'all 0.2s', opacity: uploadingCover ? 0.6 : 1,
             }}>
-              📁 {imagePreview ? 'Change Image' : 'Upload Image'}
-              <input type="file" accept="image/*" onChange={handleImageSelect} style={{ display: 'none' }} />
+              📁 {uploadingCover ? 'Uploading…' : imagePreview ? 'Change Image' : 'Upload Image'}
+              <input type="file" accept="image/*" onChange={handleImageSelect} style={{ display: 'none' }} disabled={uploadingCover} />
             </label>
           </FormGroup>
         </div>

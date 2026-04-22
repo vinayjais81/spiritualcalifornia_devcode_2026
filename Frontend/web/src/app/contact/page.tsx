@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Navbar } from '@/components/public/layout/Navbar';
 import { Footer } from '@/components/public/layout/Footer';
 import { api } from '@/lib/api';
+import { useSiteConfigOrFallback } from '@/lib/siteConfig';
 
 const G = {
   gold:     '#E8B84B',
@@ -24,31 +25,37 @@ const INQUIRY_TYPES = [
   { value: 'feedback',    label: 'Feedback' },
 ];
 
-const INFO_ITEMS = [
-  {
-    icon: '📍',
-    title: 'Based in',
-    body: 'California, United States',
-  },
-  {
-    icon: '📧',
-    title: 'Email',
-    body: 'hello@spiritualcalifornia.com',
-    href: 'mailto:hello@spiritualcalifornia.com',
-  },
-  {
-    icon: '🛡️',
-    title: 'Support',
-    body: 'support@spiritualcalifornia.com',
-    href: 'mailto:support@spiritualcalifornia.com',
-  },
-  {
-    icon: '🤝',
-    title: 'Partnerships',
-    body: 'partners@spiritualcalifornia.com',
-    href: 'mailto:partners@spiritualcalifornia.com',
-  },
-];
+// Built from live config where possible — partnerships/support still fall
+// back to the brand root until we surface them in /config/public.
+function useInfoItems() {
+  const cfg = useSiteConfigOrFallback();
+  const supportEmail = cfg.contactEmails.support;
+  return [
+    {
+      icon: '📍',
+      title: 'Based in',
+      body: 'California, United States',
+    },
+    {
+      icon: '📧',
+      title: 'Email',
+      body: supportEmail,
+      href: `mailto:${supportEmail}`,
+    },
+    {
+      icon: '🛡️',
+      title: 'Privacy',
+      body: cfg.contactEmails.privacy,
+      href: `mailto:${cfg.contactEmails.privacy}`,
+    },
+    {
+      icon: '⚖️',
+      title: 'Legal',
+      body: cfg.contactEmails.legal,
+      href: `mailto:${cfg.contactEmails.legal}`,
+    },
+  ];
+}
 
 const iBase: React.CSSProperties = {
   border: '1px solid rgba(138,130,120,0.25)',
@@ -86,6 +93,7 @@ export default function ContactPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const infoItems = useInfoItems();
 
   const [name, setName]       = useState('');
   const [email, setEmail]     = useState('');
@@ -265,7 +273,7 @@ export default function ContactPage() {
               <h3 style={{ fontFamily: 'var(--font-cormorant-garamond), serif', fontSize: 22, fontWeight: 400, color: G.charcoal, marginBottom: 24 }}>
                 Contact information
               </h3>
-              {INFO_ITEMS.map((item) => (
+              {infoItems.map((item) => (
                 <div key={item.title} style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
                   <span style={{ fontSize: 20, flexShrink: 0, marginTop: 2 }}>{item.icon}</span>
                   <div>

@@ -10,6 +10,7 @@ import { BookingSuccess } from '@/components/public/booking/BookingSuccess';
 import { StripeProvider } from '@/components/public/checkout/StripeProvider';
 import { StripePaymentForm } from '@/components/public/checkout/StripePaymentForm';
 import { useAuthStore } from '@/store/auth.store';
+import { useSiteConfigOrFallback } from '@/lib/siteConfig';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -160,6 +161,7 @@ export default function BookTourPage() {
 
   const { isAuthenticated, user } = useAuthStore();
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const siteConfig = useSiteConfigOrFallback();
 
   // ─── State ────────────────────────────────────────────────────────────────
   const [tour, setTour] = useState<Tour | null>(null);
@@ -972,7 +974,12 @@ export default function BookTourPage() {
                         submitLabel={`Pay $${(chosenDeposit || 0).toLocaleString()} & Reserve My Spot`}
                         onSuccess={handlePaymentSuccess}
                         returnUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/tours/${slug}/book`}
-                        cancellationNote={`Full refund of deposit if cancelled ${tour.cancellationPolicy?.fullRefundDaysBefore || 90}+ days before departure. 50% refund ${tour.cancellationPolicy?.halfRefundDaysBefore || 60}–${(tour.cancellationPolicy?.fullRefundDaysBefore || 90) - 1} days before. No refund within ${tour.cancellationPolicy?.halfRefundDaysBefore || 60} days. Travel insurance is strongly recommended.`}
+                        cancellationNote={(() => {
+                          // Prefer per-tour policy, fall back to the platform default from /config/public.
+                          const full = tour.cancellationPolicy?.fullRefundDaysBefore ?? siteConfig.cancellationPolicies.tourDefault.fullRefundDaysBefore;
+                          const half = tour.cancellationPolicy?.halfRefundDaysBefore ?? siteConfig.cancellationPolicies.tourDefault.halfRefundDaysBefore;
+                          return `Full refund of deposit if cancelled ${full}+ days before departure. 50% refund ${half}–${full - 1} days before. No refund within ${half} days. Travel insurance is strongly recommended.`;
+                        })()}
                       />
                     </StripeProvider>
                   </div>

@@ -28,6 +28,7 @@ import { OrdersModule } from './modules/orders/orders.module';
 import { CheckoutModule } from './modules/checkout/checkout.module';
 import { CalendlyModule } from './modules/calendly/calendly.module';
 import { TicketsModule } from './modules/tickets/tickets.module';
+import { PublicConfigModule } from './modules/config/config.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { TicketsModule } from './modules/tickets/tickets.module';
     CheckoutModule,
     CalendlyModule,
     TicketsModule,
+    PublicConfigModule,
   ],
 })
 export class AppModule {}

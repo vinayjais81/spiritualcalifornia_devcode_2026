@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { SITE_CONFIG_FALLBACK } from '@/lib/siteConfig';
 
 const G = {
   gold:     '#E8B84B',
@@ -12,6 +13,17 @@ export const metadata = {
   title: 'Terms of Service | Spiritual California',
   description: 'Terms of Service for the Spiritual California marketplace platform.',
 };
+
+const legalEmail =
+  process.env.NEXT_PUBLIC_CONTACT_LEGAL_EMAIL ??
+  SITE_CONFIG_FALLBACK.contactEmails.legal;
+
+const POLICY_AUTHORED_DATE = new Date('2026-03-18');
+const lastUpdatedLabel = POLICY_AUTHORED_DATE.toLocaleDateString('en-US', {
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric',
+});
 
 export default function TermsPage() {
   return (
@@ -52,7 +64,7 @@ export default function TermsPage() {
           Terms of Service
         </h1>
         <p style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 13, color: G.warmGray, marginBottom: 48 }}>
-          Last updated: March 18, 2026
+          Last updated: {lastUpdatedLabel}
         </p>
 
         <div style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 15, lineHeight: 1.8, color: G.charcoal }}>
@@ -131,7 +143,7 @@ export default function TermsPage() {
             <p>If you have questions about these Terms, please contact us at:</p>
             <p style={{ marginTop: 8, color: G.warmGray }}>
               Spiritual California<br />
-              <a href="mailto:legal@spiritualcalifornia.com" style={{ color: G.gold, textDecoration: 'none' }}>legal@spiritualcalifornia.com</a>
+              <a href={`mailto:${legalEmail}`} style={{ color: G.gold, textDecoration: 'none' }}>{legalEmail}</a>
             </p>
           </Section>
 

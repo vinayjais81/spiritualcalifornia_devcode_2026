@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { C, font, serif, Panel, Btn } from '@/components/guide/dashboard-ui';
+import { useSiteConfigOrFallback } from '@/lib/siteConfig';
 
 const statusMap: Record<string, { bg: string; color: string; border: string; label: string }> = {
   PENDING: { bg: '#FFF3E0', color: '#E65100', border: '#FFCC80', label: 'Pending Payment' },
@@ -40,6 +41,8 @@ function formatDuration(min: number) {
 export default function BookingDetailPage() {
   const params = useParams();
   const bookingId = params.id as string;
+  const siteConfig = useSiteConfigOrFallback();
+  const servicePolicy = siteConfig.cancellationPolicies.service;
   const [booking, setBooking] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
@@ -272,7 +275,7 @@ export default function BookingDetailPage() {
             <div style={{ fontWeight: 600, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase' as const, marginBottom: '8px' }}>
               Cancellation Policy
             </div>
-            Full refund if cancelled 48+ hours before the session. 50% refund within 48 hours. No refund for no-shows. You may reschedule once at no charge up to 24 hours before the session.
+            {servicePolicy.text}
           </div>
 
           {/* Booking created date */}
@@ -297,9 +300,9 @@ export default function BookingDetailPage() {
             </h3>
             <p style={{ fontFamily: font, fontSize: '13px', color: C.warmGray, lineHeight: 1.6, marginBottom: '20px' }}>
               Are you sure you want to cancel your <strong>{booking.service?.name}</strong> session with <strong>{guide?.displayName}</strong>?
-              {slotStart && (slotStart.getTime() - now.getTime()) < 48 * 60 * 60 * 1000 && (
+              {slotStart && (slotStart.getTime() - now.getTime()) < servicePolicy.fullRefundHoursBefore * 60 * 60 * 1000 && (
                 <span style={{ display: 'block', color: C.red, marginTop: '8px' }}>
-                  This session is within 48 hours — only a 50% refund will apply.
+                  This session is within {servicePolicy.fullRefundHoursBefore} hours — only a 50% refund will apply.
                 </span>
               )}
             </p>

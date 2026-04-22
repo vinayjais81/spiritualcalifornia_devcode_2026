@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { C, font, serif, PageHeader, Panel, EmptyState } from '@/components/guide/dashboard-ui';
 import { toast } from 'sonner';
+import { useSiteConfigOrFallback } from '@/lib/siteConfig';
 
 interface EarningsData {
   balance: { available: number; pending: number; totalEarned: number; totalPaidOut: number };
@@ -39,6 +40,9 @@ export default function EarningsPage() {
   const queryClient = useQueryClient();
   const [payoutAmount, setPayoutAmount] = useState('');
   const [showPayoutForm, setShowPayoutForm] = useState(false);
+  const siteConfig = useSiteConfigOrFallback();
+  const commissionPercent = siteConfig.fees.platformCommissionPercent;
+  const minPayout = siteConfig.payouts.minUsd;
 
   const { data: earnings, isLoading } = useQuery<EarningsData>({
     queryKey: ['guide', 'earnings'],
@@ -84,7 +88,7 @@ export default function EarningsPage() {
 
   const handlePayout = () => {
     const amount = parseFloat(payoutAmount);
-    if (isNaN(amount) || amount < 10) { toast.error('Minimum payout is $10'); return; }
+    if (isNaN(amount) || amount < minPayout) { toast.error(`Minimum payout is $${minPayout}`); return; }
     if (amount > (earnings?.balance.available ?? 0)) { toast.error('Insufficient balance'); return; }
     payoutMutation.mutate(amount);
   };
@@ -124,7 +128,7 @@ export default function EarningsPage() {
         </div>
 
         <div style={{ fontFamily: font, fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 20 }}>
-          From services, events, and tours on Spiritual California. Platform commission: 15%.
+          From services, events, and tours on Spiritual California. Platform commission: {commissionPercent}%.
         </div>
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -159,13 +163,13 @@ export default function EarningsPage() {
           <div style={{ marginTop: 20, padding: 20, background: 'rgba(255,255,255,0.08)', borderRadius: 8, display: 'flex', alignItems: 'flex-end', gap: 12, flexWrap: 'wrap' }}>
             <div style={{ flex: 1, minWidth: 200 }}>
               <label style={{ display: 'block', fontFamily: font, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>
-                Amount (min $10)
+                Amount (min ${minPayout})
               </label>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 15, color: 'rgba(255,255,255,0.5)' }}>$</span>
                 <input
                   type="number"
-                  min="10"
+                  min={minPayout}
                   step="0.01"
                   max={available}
                   value={payoutAmount}
@@ -253,7 +257,7 @@ export default function EarningsPage() {
       {/* Payout History */}
       <Panel title="Payout Requests" icon="💸">
         {!payoutHistory?.length ? (
-          <EmptyState message="No payout requests yet. Request a payout when your available balance is $10 or more." />
+          <EmptyState message={`No payout requests yet. Request a payout when your available balance is $${minPayout} or more.`} />
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: font, fontSize: 13 }}>
@@ -291,8 +295,8 @@ export default function EarningsPage() {
       <div style={{ background: C.goldPale, border: '1px solid rgba(232,184,75,0.2)', borderRadius: 12, padding: 24, fontFamily: font, fontSize: 13, color: C.charcoal, lineHeight: 1.8 }}>
         <strong style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray }}>How payouts work</strong>
         <ul style={{ margin: '8px 0 0 16px', padding: 0 }}>
-          <li>When a seeker pays for your service, tour, or event, your earnings (minus 15% platform fee) are credited to your available balance.</li>
-          <li>Request a payout anytime your balance is $10 or more.</li>
+          <li>When a seeker pays for your service, tour, or event, your earnings (minus {commissionPercent}% platform fee) are credited to your available balance.</li>
+          <li>Request a payout anytime your balance is ${minPayout} or more.</li>
           <li>The admin team reviews and processes your payout via Stripe Connect.</li>
           <li>Funds typically arrive in your bank account within 3–5 business days after processing.</li>
         </ul>

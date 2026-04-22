@@ -20,6 +20,13 @@ interface TopGuide {
   totalBookings: number;
 }
 
+interface IntegrationStatus {
+  name: string;
+  description: string;
+  detail: string;
+  status: 'operational' | 'test' | 'unconfigured';
+}
+
 interface DashboardStats {
   totalUsers: number;
   totalGuides: number;
@@ -78,6 +85,16 @@ export default function DashboardPage() {
       newUsersThisWeek: 0,
       topGuides: [],
     },
+  });
+
+  // Derived live from env at the backend — don't hardcode statuses here.
+  const { data: integrations = [] } = useQuery<IntegrationStatus[]>({
+    queryKey: ['admin', 'integration-status'],
+    queryFn: async () => {
+      const { data } = await api.get('/admin/integration-status');
+      return data;
+    },
+    refetchInterval: 60_000,
   });
 
   return (
@@ -247,35 +264,40 @@ export default function DashboardPage() {
             </Card>
           </div>
 
-          {/* System Status */}
+          {/* System Status — live-derived from /admin/integration-status */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">System Status</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {[
-                { label: 'API Server', status: 'Operational' },
-                { label: 'Database', status: 'Operational' },
-                { label: 'Stripe Payments', status: 'Test Mode' },
-                { label: 'Email (Resend)', status: 'Dev Mode' },
-                { label: 'Verification (Persona)', status: 'Not Configured' },
-              ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between rounded-lg border px-4 py-2.5">
-                  <span className="text-sm text-gray-600">{item.label}</span>
-                  <Badge
-                    variant={item.status === 'Operational' ? 'default' : 'secondary'}
-                    className={
-                      item.status === 'Operational'
-                        ? 'bg-green-100 text-green-700 hover:bg-green-100'
-                        : item.status === 'Not Configured'
-                        ? 'bg-red-100 text-red-700 hover:bg-red-100'
-                        : 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100'
-                    }
-                  >
-                    {item.status}
-                  </Badge>
-                </div>
-              ))}
+              {integrations.length === 0 ? (
+                Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton key={i} className="h-11 rounded-lg" />
+                ))
+              ) : (
+                integrations.map((item) => {
+                  const label =
+                    item.status === 'operational'
+                      ? 'Operational'
+                      : item.status === 'test'
+                      ? 'Test Mode'
+                      : 'Not Configured';
+                  const className =
+                    item.status === 'operational'
+                      ? 'bg-green-100 text-green-700 hover:bg-green-100'
+                      : item.status === 'test'
+                      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100'
+                      : 'bg-red-100 text-red-700 hover:bg-red-100';
+                  return (
+                    <div key={item.name} className="flex items-center justify-between rounded-lg border px-4 py-2.5" title={item.detail}>
+                      <span className="text-sm text-gray-600">{item.name}</span>
+                      <Badge variant="secondary" className={className}>
+                        {label}
+                      </Badge>
+                    </div>
+                  );
+                })
+              )}
             </CardContent>
           </Card>
         </div>

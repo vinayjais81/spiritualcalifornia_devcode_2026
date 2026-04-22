@@ -189,7 +189,7 @@ export default function GuideDashboardLayout({ children }: { children: React.Rea
 
       {/* ── FOOTER ───────────────────────────────────────────────── */}
       <footer style={{ marginLeft: '240px', padding: '24px 48px', borderTop: '1px solid rgba(232,184,75,0.12)', fontFamily: font, fontSize: '11px', color: C.warmGray, letterSpacing: '0.08em', textAlign: 'center' }}>
-        © 2026 Spiritual California LLC · All rights reserved
+        © {new Date().getFullYear()} Spiritual California LLC · All rights reserved
       </footer>
     </div>
   );

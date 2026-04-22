@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { useAuthStore } from '@/store/auth.store';
 import { StripeProvider } from '@/components/public/checkout/StripeProvider';
 import { StripePaymentForm } from '@/components/public/checkout/StripePaymentForm';
+import { useSiteConfigOrFallback } from '@/lib/siteConfig';
 
 const BOOKING_STATE_KEY = 'sc-booking-state';
 
@@ -105,6 +106,7 @@ export default function BookPractitionerPage() {
   const slug = params.guideSlug as string;
   const { isAuthenticated, user } = useAuthStore();
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
+  const siteConfig = useSiteConfigOrFallback();
 
   // ─── State ──────────────────────────────────────────────────────────────
   const [step, setStep] = useState(1);
@@ -712,7 +714,7 @@ export default function BookPractitionerPage() {
                     submitLabel={`Confirm & Pay ${formatPrice(price)}`}
                     onSuccess={handlePaymentSuccess}
                     returnUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/book/${slug}`}
-                    cancellationNote="Full refund if cancelled 48+ hours before the session. 50% refund within 48 hours. No refund for no-shows. You may reschedule once at no charge up to 24 hours before the session."
+                    cancellationNote={siteConfig.cancellationPolicies.service.text}
                   />
                 </StripeProvider>
               </div>

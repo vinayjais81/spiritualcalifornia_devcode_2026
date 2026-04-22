@@ -117,49 +117,6 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Phase Roadmap */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Build Progress</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {[
-                  { phase: 'Phase 0', label: 'Foundation + Architecture', done: true },
-                  { phase: 'Phase 1', label: 'Auth + User Management', done: true },
-                  { phase: 'Admin Panel', label: 'Admin Panel', done: true },
-                  { phase: 'Public Site', label: 'Public Home Page', done: true },
-                  { phase: 'Phase 2', label: 'Onboarding + Verification', done: true },
-                  { phase: 'Phase 3', label: 'Guide Hub (Blog, Profile, Calendar, Services)', done: true },
-                  { phase: 'Phase 4', label: 'Seeker + AI Chatbot + Search', done: true },
-                  { phase: 'Phase 5', label: 'Booking + Stripe Payments', done: true },
-                  { phase: 'Phase 6', label: 'Events + E-commerce + Cart + Checkout', done: true },
-                  { phase: 'Phase 7', label: 'Reviews + Community', done: true },
-                  { phase: 'Phase 8', label: 'Security + Performance', done: true },
-                  { phase: 'Phase 9', label: 'Testing + QA + Deploy', done: false },
-                ].map(({ phase, label, done }) => (
-                  <div key={phase} className="flex items-center gap-3">
-                    <div className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full ${
-                      done ? 'bg-green-100' : 'bg-gray-100'
-                    }`}>
-                      <div className={`h-2 w-2 rounded-full ${done ? 'bg-green-500' : 'bg-gray-300'}`} />
-                    </div>
-                    <span className={`text-sm ${done ? 'text-gray-900' : 'text-gray-400'}`}>
-                      <span className="font-medium">{phase}</span>
-                      {' — '}
-                      {label}
-                    </span>
-                    {done && (
-                      <Badge className="ml-auto bg-green-100 text-green-700 hover:bg-green-100 text-xs">
-                        Complete
-                      </Badge>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
         </div>
       </div>
     </div>

@@ -26,58 +26,15 @@ interface BlogPost {
   };
 }
 
-const fallbackPost: BlogPost = {
-  id: 'demo',
-  title: 'The Silence Between the Notes: What Sound Healing Taught Me About Presence',
-  slug: 'silence-between-notes',
-  content: `<p>There's a moment in every sound healing session that I live for. It's not when the singing bowl first rings — though that initial vibration is beautiful. It's not the crescendo, when multiple frequencies weave together into something that feels like it's rearranging your cells.</p>
-
-<p>It's the silence that follows.</p>
-
-<h2>The Discovery</h2>
-
-<p>When I first began studying sound healing twelve years ago in Nepal, my teacher Rinpoche said something that puzzled me for years: "The sound is not the healing. The silence is the healing. The sound is only the door."</p>
-
-<p>I didn't understand. I was obsessed with frequencies — 432 Hz, 528 Hz, the Solfeggio scale. I spent hours tuning bowls, measuring harmonics, studying the physics of resonance. I thought precision was the point.</p>
-
-<blockquote>
-"The sound is not the healing. The silence is the healing. The sound is only the door."
-<cite>— Rinpoche, Kathmandu, 2014</cite>
-</blockquote>
-
-<h2>What Changes in the Silence</h2>
-
-<p>When a singing bowl fades, something remarkable happens in the listener's nervous system. The brain, which has been entrained to the bowl's frequency, doesn't immediately return to its default patterns. There's a gap — a neurological pause where the mind is genuinely, completely still.</p>
-
-<p>This isn't meditation through effort. This is stillness through surrender. The sound does the work of quieting the mental chatter, and then when it stops, you're left in a space that most people spend years of meditation practice trying to reach.</p>
-
-<h2>Bringing It Home</h2>
-
-<p>You don't need a practitioner to access this. Here's a simple practice you can try tonight:</p>
-
-<p>Find any resonant object — a singing bowl if you have one, but even a wine glass or a bell will work. Strike it once. Close your eyes. Follow the sound as it fades. And when it disappears, stay with what remains.</p>
-
-<p>That space — between the last vibration and your next thought — is where the healing lives.</p>
-
-<p>It's always been there. The sound just helps you find the door.</p>`,
-  excerpt: 'In the resonant pause after a singing bowl fades, I found something I had been chasing for years.',
-  coverImageUrl: null,
-  tags: ['Sound Healing', 'Meditation', 'Consciousness', 'Presence', 'Healing', 'Mindfulness'],
-  publishedAt: '2026-03-15',
-  guide: {
-    slug: 'maya-williams',
-    displayName: 'Maya Williams',
-    tagline: 'Sound Healer & Reiki Master',
-    bio: 'Maya has been practicing sound healing for over 12 years, trained in the Himalayan singing bowl tradition. She leads workshops, retreats, and private sessions from her studio in Los Angeles.',
-    user: { avatarUrl: null },
-  },
-};
-
-const relatedPosts = [
-  { id: '2', title: 'A Beginner\'s Guide to Crystal Energy Work', slug: 'crystal-energy-work', excerpt: 'Crystals have been used for thousands of years across cultures.', guideSlug: 'dr-sarah-chen', guideName: 'Dr. Sarah Chen', date: 'Mar 10, 2026', tags: ['Crystals'] },
-  { id: '3', title: 'Breathwork for Anxiety: 5 Techniques', slug: 'breathwork-anxiety', excerpt: 'The breathing techniques I recommend most for managing anxiety.', guideSlug: 'marcus-thompson', guideName: 'Marcus Thompson', date: 'Mar 5, 2026', tags: ['Breathwork'] },
-  { id: '4', title: 'The Ancient Art of Qi Gong', slug: 'qigong-modern-life', excerpt: 'Qi Gong bridges the gap between exercise and meditation.', guideSlug: 'carlos-mendez', guideName: 'Carlos Mendez', date: 'Feb 28, 2026', tags: ['Qi Gong'] },
-];
+interface RelatedPostApi {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string | null;
+  publishedAt: string | null;
+  tags: string[];
+  guide: { slug: string; displayName: string };
+}
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -89,6 +46,7 @@ export default function SinglePostPage() {
   const postSlug = params.postSlug as string;
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
+  const [related, setRelated] = useState<RelatedPostApi[]>([]);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -96,13 +54,27 @@ export default function SinglePostPage() {
         const res = await api.get(`/blog/${guideSlug}/${postSlug}`);
         setPost(res.data);
       } catch {
-        setPost(fallbackPost);
+        setPost(null);
       } finally {
         setLoading(false);
       }
     };
     fetchPost();
   }, [guideSlug, postSlug]);
+
+  // Related posts: best-effort, silently empty if the endpoint isn't live.
+  useEffect(() => {
+    if (!post) return;
+    (async () => {
+      try {
+        const res = await api.get('/blog', { params: { limit: 4, excludeId: post.id } });
+        const items: RelatedPostApi[] = res.data?.posts ?? [];
+        setRelated(items.filter((p) => p.id !== post.id).slice(0, 3));
+      } catch {
+        setRelated([]);
+      }
+    })();
+  }, [post]);
 
   if (loading) {
     return (
@@ -274,13 +246,15 @@ export default function SinglePostPage() {
             </button>
           ))}
         </div>
+        {/* Applaud count is derived from the backend once that API lands.
+            Until then, render a functional button without a fake count. */}
         <button style={{
           padding: '10px 20px', borderRadius: 24,
           background: 'transparent', border: '1.5px solid #E8B84B',
           fontSize: 12, color: '#3A3530', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 6,
         }}>
-          👏 47
+          Applaud
         </button>
       </div>
 
@@ -293,32 +267,34 @@ export default function SinglePostPage() {
         avatarUrl={post.guide.user.avatarUrl || undefined}
       />
 
-      {/* Related Posts */}
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 24px 80px' }}>
-        <div style={{
-          fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase',
-          color: '#E8B84B', marginBottom: 24,
-          display: 'flex', alignItems: 'center', gap: 12,
-        }}>
-          You May Also Like
-          <span style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.25)' }} />
+      {/* Related Posts — only render if the /blog feed returned neighbours */}
+      {related.length > 0 && (
+        <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 24px 80px' }}>
+          <div style={{
+            fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase',
+            color: '#E8B84B', marginBottom: 24,
+            display: 'flex', alignItems: 'center', gap: 12,
+          }}>
+            You May Also Like
+            <span style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.25)' }} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+            {related.map((rp) => (
+              <PostCard
+                key={rp.id}
+                guideSlug={rp.guide.slug}
+                postSlug={rp.slug}
+                title={rp.title}
+                excerpt={rp.excerpt || undefined}
+                category={rp.tags?.[0]}
+                authorName={rp.guide.displayName}
+                publishedAt={rp.publishedAt ? formatDate(rp.publishedAt) : ''}
+                readTime="5 min read"
+              />
+            ))}
+          </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
-          {relatedPosts.map((rp) => (
-            <PostCard
-              key={rp.id}
-              guideSlug={rp.guideSlug}
-              postSlug={rp.slug}
-              title={rp.title}
-              excerpt={rp.excerpt}
-              category={rp.tags[0]}
-              authorName={rp.guideName}
-              publishedAt={rp.date}
-              readTime="5 min read"
-            />
-          ))}
-        </div>
-      </div>
+      )}
     </>
   );
 }

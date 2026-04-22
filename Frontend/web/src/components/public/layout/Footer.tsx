@@ -160,7 +160,7 @@ export function Footer() {
             color: 'rgba(255,255,255,0.3)',
           }}
         >
-          © 2026 Spiritual California. All rights reserved.
+          © {new Date().getFullYear()} Spiritual California. All rights reserved.
         </span>
         <span
           style={{

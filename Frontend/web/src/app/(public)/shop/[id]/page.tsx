@@ -43,46 +43,22 @@ interface Product {
   variants: ProductVariant[];
 }
 
-// Fallback product for demo
-const fallbackDigital: Product = {
-  id: 'demo-digital', name: '432 Hz Deep Sleep Meditation', description: 'A 47-minute guided journey combining binaural beats, crystal bowl frequencies, and gentle voice guidance. Designed to quiet the mind and guide you into deep, restorative sleep.\n\nThis recording uses scientifically-tuned 432 Hz frequencies paired with delta wave entrainment to naturally slow brainwave activity. The crystal bowl accompaniment adds harmonic overtones that many listeners describe as deeply soothing.',
-  type: 'DIGITAL', price: 24, currency: 'USD', imageUrls: [], fileS3Key: null,
-  digitalFiles: [{ name: 'deep-sleep-432hz.mp3', size: '87 MB', format: 'MP3 320kbps' }],
-  shippingInfo: null, stockQuantity: null,
-  guide: { id: 'g1', slug: 'maya-williams', displayName: 'Maya Williams, Reiki Master', isVerified: true, tagline: 'Sound Healer & Energy Practitioner', user: { avatarUrl: null } },
-  variants: [],
-};
+interface ReviewApiShape {
+  id: string;
+  authorName: string;
+  rating: number;
+  body: string;
+  date: string;
+  verified?: boolean;
+}
 
-const fallbackPhysical: Product = {
-  id: 'demo-physical', name: 'Shamanic Mirror Ring — Sterling Silver', description: 'A handcrafted sterling silver ring featuring a polished obsidian mirror, inspired by ancient Mesoamerican shamanic traditions. The obsidian mirror was used by healers and seers as a tool for scrying, self-reflection, and spiritual protection.\n\nEach ring is individually cast using the lost-wax method, ensuring subtle uniqueness in every piece. The obsidian is hand-polished to a deep, reflective finish.',
-  type: 'PHYSICAL', price: 145, currency: 'USD', imageUrls: [], fileS3Key: null,
-  digitalFiles: null, shippingInfo: { weight: '18g', material: 'Sterling Silver 925 · Obsidian' },
-  stockQuantity: 3,
-  guide: { id: 'g2', slug: 'carlos-mendez', displayName: 'Carlos Mendez, QiGong Sifu', isVerified: true, tagline: 'Artisan Jeweler & Energy Worker', user: { avatarUrl: null } },
-  variants: [
-    { id: 'v5', name: '5', price: null, stockQuantity: 2, attributes: { size: '5' } },
-    { id: 'v6', name: '6', price: null, stockQuantity: 3, attributes: { size: '6' } },
-    { id: 'v7', name: '7', price: null, stockQuantity: 1, attributes: { size: '7' } },
-    { id: 'v8', name: '8', price: null, stockQuantity: 2, attributes: { size: '8' } },
-    { id: 'v9', name: '9', price: null, stockQuantity: 0, attributes: { size: '9' } },
-    { id: 'v10', name: '10', price: null, stockQuantity: 1, attributes: { size: '10' } },
-    { id: 'v11', name: '11', price: null, stockQuantity: 2, attributes: { size: '11' } },
-    { id: 'vcustom', name: 'Custom', price: 25, stockQuantity: 99, attributes: { size: 'Custom' } },
-  ],
-};
-
-const demoReviews = [
-  { id: 'r1', authorName: 'Sarah K.', rating: 5, body: 'This has completely transformed my sleep routine. I fall asleep within minutes now.', date: 'Mar 2026', verified: true },
-  { id: 'r2', authorName: 'David N.', rating: 5, body: 'The crystal bowl frequencies are incredible. You can feel them resonating through your whole body.', date: 'Feb 2026', verified: true },
-  { id: 'r3', authorName: 'Emily W.', rating: 4, body: 'Beautiful recording. I use it every night. Would love a longer version!', date: 'Jan 2026', verified: true },
-];
-
-const demoRelated = [
-  { id: '1', name: 'Himalayan Singing Bowl Set', price: 285, guideName: 'Luna Rivera' },
-  { id: '2', name: 'Amethyst Cluster — Large', price: 89, guideName: 'Dr. Sarah Chen' },
-  { id: '3', name: 'Sacred Geometry Oracle Deck', price: 48, guideName: 'Rebecca Stone' },
-  { id: '4', name: 'Lavender Sage Bundle', price: 18, guideName: 'Elena Vasquez' },
-];
+interface RelatedApiShape {
+  id: string;
+  name: string;
+  price: number;
+  imageUrl?: string;
+  guideName?: string;
+}
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -90,9 +66,12 @@ export default function ProductDetailPage() {
   const productId = params.id as string;
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [addedToCart, setAddedToCart] = useState(false);
+  const [reviews, setReviews] = useState<ReviewApiShape[]>([]);
+  const [related, setRelated] = useState<RelatedApiShape[]>([]);
   const addItem = useCartStore((s) => s.addItem);
 
   // Add the current product to the cart. Shared by "Add to Cart" and "Buy Now";
@@ -131,18 +110,36 @@ export default function ProductDetailPage() {
         const res = await api.get(`/products/${productId}`);
         setProduct(res.data);
       } catch {
-        // Use fallback based on ID pattern
-        if (productId.includes('digital') || productId === 'demo-digital') {
-          setProduct(fallbackDigital);
-        } else {
-          setProduct(fallbackPhysical);
-        }
+        setNotFound(true);
       } finally {
         setLoading(false);
       }
     };
     fetchProduct();
   }, [productId]);
+
+  // Reviews and related products are best-effort — the endpoints may not be
+  // wired up yet, in which case we silently render empty states rather than
+  // surfacing errors to the shopper.
+  useEffect(() => {
+    if (!product) return;
+    (async () => {
+      try {
+        const res = await api.get(`/products/${product.id}/reviews`);
+        setReviews(Array.isArray(res.data) ? res.data : res.data?.reviews ?? []);
+      } catch {
+        setReviews([]);
+      }
+    })();
+    (async () => {
+      try {
+        const res = await api.get(`/products/${product.id}/related`);
+        setRelated(Array.isArray(res.data) ? res.data : res.data?.products ?? []);
+      } catch {
+        setRelated([]);
+      }
+    })();
+  }, [product]);
 
   if (loading) {
     return (
@@ -161,7 +158,11 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (!product) return <div style={{ padding: 100, textAlign: 'center' }}>Product not found</div>;
+  if (!product || notFound) return <div style={{ padding: 100, textAlign: 'center' }}>Product not found</div>;
+
+  const averageRating = reviews.length
+    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+    : 0;
 
   const isDigital = product.type === 'DIGITAL';
   const activePrice = selectedVariant
@@ -272,11 +273,15 @@ export default function ProductDetailPage() {
             </p>
           )}
 
-          {/* Rating (physical only) */}
-          {!isDigital && (
+          {/* Rating (physical only) — hidden until the product has any reviews */}
+          {!isDigital && reviews.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-              <span style={{ color: '#E8B84B', fontSize: 14 }}>★★★★★</span>
-              <span style={{ fontSize: 12, color: '#8A8278' }}>5.0 · 12 reviews</span>
+              <span style={{ color: '#E8B84B', fontSize: 14 }}>
+                {'★'.repeat(Math.round(averageRating))}{'☆'.repeat(5 - Math.round(averageRating))}
+              </span>
+              <span style={{ fontSize: 12, color: '#8A8278' }}>
+                {averageRating.toFixed(1)} · {reviews.length} review{reviews.length !== 1 ? 's' : ''}
+              </span>
             </div>
           )}
 
@@ -434,19 +439,21 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* Reviews */}
-      <ReviewsSection
-        reviews={demoReviews}
-        averageRating={4.8}
-        totalReviews={demoReviews.length}
-        columns={isDigital ? 3 : 2}
-      />
+      {/* Reviews — only render once we have data from the backend */}
+      {reviews.length > 0 && (
+        <ReviewsSection
+          reviews={reviews}
+          averageRating={averageRating}
+          totalReviews={reviews.length}
+          columns={isDigital ? 3 : 2}
+        />
+      )}
 
-      {/* Related Products */}
+      {/* Related Products — RelatedProducts already no-ops on empty */}
       <RelatedProducts
         title={`More by ${product.guide.displayName.split(',')[0]}`}
         subtitle="From the same practitioner"
-        products={demoRelated}
+        products={related}
       />
     </>
   );

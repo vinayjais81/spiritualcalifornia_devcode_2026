@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import {
   C, font, serif, Btn, Panel, Modal, FormGroup, TextArea, formatDate,
 } from '@/components/guide/dashboard-ui';
+import { useSiteConfigOrFallback } from '@/lib/siteConfig';
 
 interface Traveler {
   id: string;
@@ -91,6 +92,7 @@ function daysBetween(a: Date, b: Date): number {
 export default function SeekerTourBookingDetailPage() {
   const params = useParams();
   const bookingId = params?.id as string;
+  const siteConfig = useSiteConfigOrFallback();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
@@ -123,9 +125,15 @@ export default function SeekerTourBookingDetailPage() {
       .filter((p) => p.status === 'SUCCEEDED')
       .reduce((sum, p) => sum + Number(p.amount), 0);
     const daysUntil = daysBetween(new Date(), new Date(booking.departure.startDate));
-    // Default policy — backend allows per-tour override but we don't have it on this endpoint
-    if (daysUntil >= 90) return { amount: totalPaid, percent: 100, tier: 'FULL' };
-    if (daysUntil >= 60) return { amount: totalPaid / 2, percent: 50, tier: 'HALF' };
+    // Thresholds come from the platform tour default; the backend still owns
+    // the per-tour override for the actual refund amount on cancel.
+    const tourPolicy = siteConfig.cancellationPolicies.tourDefault;
+    if (daysUntil >= tourPolicy.fullRefundDaysBefore) {
+      return { amount: totalPaid, percent: 100, tier: 'FULL' };
+    }
+    if (daysUntil >= tourPolicy.halfRefundDaysBefore) {
+      return { amount: totalPaid / 2, percent: 50, tier: 'HALF' };
+    }
     return { amount: 0, percent: 0, tier: 'NONE' };
   })();
 
