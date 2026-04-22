@@ -4,6 +4,7 @@ import { Carousel } from '@/components/public/shared/Carousel';
 
 interface SoulTravel {
   id: string;
+  slug: string;
   title: string;
   startTime: string;
   location: string | null;
@@ -40,7 +41,9 @@ export function SoulTravelsUpdates({ soulTravels }: Props) {
         title: s.title,
         excerpt: `${formatPrice(s.startingPrice)} · Led by ${s.guide.displayName}`,
         date: formatDate(s.startTime),
-        href: '/travels',
+        // Link each tour card to its own detail page, not the listing.
+        // Route file: src/app/(public)/tours/[slug]/page.tsx
+        href: `/tours/${s.slug}`,
       }))
     : staticUpdates;
 

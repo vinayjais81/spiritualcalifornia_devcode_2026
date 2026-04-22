@@ -39,8 +39,13 @@ export function FeedCard({
   return (
     <Link
       href={href}
-      className="group block"
+      className="group"
       style={{
+        // Explicit block + width — the `data-card` wrapper is the flex item
+        // inside the Carousel, so the child link needs its own width for the
+        // image container (with `fill`) to have something concrete to fill.
+        display: 'block',
+        width: '300px',
         flex: '0 0 300px',
         background: '#FFFFFF',
         borderRadius: '4px',

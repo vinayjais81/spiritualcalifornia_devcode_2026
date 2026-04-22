@@ -26,13 +26,14 @@ export function UpdateCard({
     <Link
       href={href}
       style={{
+        display: 'block',
+        width: '280px',
         flex: '0 0 280px',
         background: '#FAFAF7',
         borderRadius: '4px',
         overflow: 'hidden',
         textDecoration: 'none',
         color: 'inherit',
-        display: 'block',
         transition: 'transform 0.3s, box-shadow 0.3s',
       }}
       onMouseEnter={e => {

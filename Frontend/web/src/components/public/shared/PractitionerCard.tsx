@@ -20,7 +20,7 @@ export function PractitionerCard({
     <Link
       href={href}
       className="group flex flex-col items-center text-center"
-      style={{ flex: '0 0 180px', textDecoration: 'none', color: 'inherit' }}
+      style={{ width: '180px', flex: '0 0 180px', textDecoration: 'none', color: 'inherit' }}
     >
       {/* Avatar */}
       <div

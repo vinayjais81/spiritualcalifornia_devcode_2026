@@ -45,7 +45,8 @@ export function EventsSection({ events }: Props) {
         avatarImage: e.guide.avatarUrl || '/images/logo.jpg',
         avatarAlt: e.guide.displayName,
         metaText: `${formatEventDate(e.startTime)} · ${formatPrice(e.startingPrice)} · ${e.guide.displayName}`,
-        href: '/events',
+        // Event detail page: src/app/(public)/events/[id]/page.tsx
+        href: `/events/${e.id}`,
       }))
     : staticEvents.map(s => ({ ...s, href: '/events' }));
 

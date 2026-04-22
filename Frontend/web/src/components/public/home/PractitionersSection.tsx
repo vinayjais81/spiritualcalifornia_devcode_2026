@@ -33,9 +33,11 @@ const staticPractitioners = [
   { name: 'Luna Park', specialty: 'Tibetan Medicine · QiGong', image: '/images/hero3.jpg', verified: true, href: '/practitioners' },
 ];
 
+// Fallback cards shown only when the API returns no blog posts. These link
+// to the main /journal listing since they don't correspond to real posts.
 const staticFeedCards = [
-  { image: '/images/hero1.jpg', imageAlt: 'Post', tag: 'Mind Healing', tagVariant: 'default' as const, title: 'How to Break the Cycle of Burnout Through Somatic Awareness', excerpt: 'When the body holds what the mind cannot process, healing begins not in thought but in sensation...', avatarImage: '/images/hero2.jpg', avatarAlt: 'Author', metaText: 'Spiritual CA · 5 min read' },
-  { image: '/images/ayurveda.jpg', imageAlt: 'Post', tag: 'Body Healing', tagVariant: 'default' as const, title: 'Ayurvedic Morning Rituals to Restore Your Dosha Balance', excerpt: 'Ancient wisdom meets modern life: five practices you can begin tomorrow to recalibrate your energy...', avatarImage: '/images/hero3.jpg', avatarAlt: 'Author', metaText: 'Spiritual CA · 7 min read' },
+  { image: '/images/hero1.jpg', imageAlt: 'Post', tag: 'Mind Healing', tagVariant: 'default' as const, title: 'How to Break the Cycle of Burnout Through Somatic Awareness', excerpt: 'When the body holds what the mind cannot process, healing begins not in thought but in sensation...', avatarImage: '/images/hero2.jpg', avatarAlt: 'Author', metaText: 'Spiritual CA · 5 min read', href: '/journal' },
+  { image: '/images/ayurveda.jpg', imageAlt: 'Post', tag: 'Body Healing', tagVariant: 'default' as const, title: 'Ayurvedic Morning Rituals to Restore Your Dosha Balance', excerpt: 'Ancient wisdom meets modern life: five practices you can begin tomorrow to recalibrate your energy...', avatarImage: '/images/hero3.jpg', avatarAlt: 'Author', metaText: 'Spiritual CA · 7 min read', href: '/journal' },
 ];
 
 function estimateReadTime(excerpt: string | null): string {
@@ -70,6 +72,8 @@ export function PractitionersSection({ guides, blogPosts }: Props) {
         avatarImage: p.guide.avatarUrl || '/images/logo.jpg',
         avatarAlt: p.guide.displayName,
         metaText: `${p.guide.displayName} · ${estimateReadTime(p.excerpt)}`,
+        // Blog post detail route is /journal/[guideSlug]/[postSlug]
+        href: `/journal/${p.guide.slug}/${p.slug}`,
       }))
     : staticFeedCards;
 

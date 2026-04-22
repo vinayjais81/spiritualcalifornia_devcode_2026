@@ -110,13 +110,16 @@ export class HomeService {
   private async getActiveProducts() {
     const products = await this.prisma.product.findMany({
       where: { isActive: true },
-      orderBy: { createdAt: 'desc' },
+      // Surface products by featured guides first so the home carousel's
+      // opening slots carry the "Editor's Pick" badge, matching the design.
+      orderBy: [{ guide: { isFeatured: 'desc' } }, { createdAt: 'desc' }],
       take: 8,
       include: {
         guide: {
           select: {
             slug: true,
             displayName: true,
+            isFeatured: true,
             user: { select: { avatarUrl: true } },
           },
         },
@@ -128,11 +131,13 @@ export class HomeService {
       name: p.name,
       description: p.description,
       type: p.type,
+      category: p.category, // ProductCategory enum — drives the "Digital · Meditation" tag suffix
       price: p.price,
       imageUrls: p.imageUrls,
       guide: {
         slug: p.guide.slug,
         displayName: p.guide.displayName,
+        isFeatured: p.guide.isFeatured,
         avatarUrl: p.guide.user.avatarUrl,
       },
     }));
