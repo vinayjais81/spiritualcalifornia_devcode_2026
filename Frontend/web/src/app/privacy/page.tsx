@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { SITE_CONFIG_FALLBACK } from '@/lib/siteConfig';
+import { SITE_CONFIG_FALLBACK } from '@/lib/siteConfig.constants';
 
 const G = {
   gold:     '#E8B84B',
