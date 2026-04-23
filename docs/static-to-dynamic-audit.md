@@ -1,9 +1,48 @@
 # Static → Dynamic Audit — Production Readiness Tracker
 
 **Audit date:** 2026-04-22
-**Last pass:** 2026-04-17 — P0 implementation sweep
+**Last pass:** 2026-04-23 — Static Pages CMS
 **Scope:** Every public, seeker, guide, and admin surface on the platform.
 **Purpose:** Identify hardcoded/static elements that must be made dynamic (or admin-manageable) before production launch, and track fixes as they ship.
+
+---
+
+## ✅ 2026-04-23 Implementation sweep — Static Pages CMS
+
+Shipped the CMS that the earlier pass deferred. **All four public static pages** — Privacy, Terms, About, Mission — are now admin-editable through a rich-text panel; the hardcoded JSX bodies have been removed and replaced with DB-fetched HTML rendered server-side with 5-minute ISR.
+
+**What's new:**
+
+1. **`StaticPage` Prisma model** — slug (unique), title, metaTitle, metaDescription, eyebrow, subtitle, body (rich-text HTML), isPublished, publishedAt, timestamps. Schema pushed; Prisma client regenerated.
+2. **Backend module `static-pages`** ([`Backend/api/src/modules/static-pages/`](../Backend/api/src/modules/static-pages/)) — public `GET /static-pages/:slug` (published only, 404 otherwise) plus admin CRUD: `GET /admin/static-pages`, `GET /admin/static-pages/:id`, `POST`, `PUT`, `DELETE`. Role-gated to `ADMIN | SUPER_ADMIN`. Slug changes on update are blocked to protect inbound links.
+3. **Idempotent seed script** ([`prisma/seed-static-pages.ts`](../Backend/api/prisma/seed-static-pages.ts), `npm run seed:pages`) — upserts canonical Privacy + Terms content on first run of any environment, reading contact emails from env so they match `/config/public`.
+4. **Admin panel CRUD page** ([`(admin)/static-pages/page.tsx`](../Frontend/web/src/app/(admin)/static-pages/page.tsx)) — table with status badges + last-updated + view / edit / delete actions. Slide-in drawer editor uses the existing `RichTextEditor` (Tiptap) in extended mode. Slug is only settable on create; meta title/description exposed for SEO.
+5. **Admin sidebar nav** — "Static Pages" entry with `FilePen` icon added to [`components/admin/sidebar.tsx`](../Frontend/web/src/components/admin/sidebar.tsx).
+6. **Public pages switched to DB content** — [`/privacy`](../Frontend/web/src/app/privacy/page.tsx), [`/terms`](../Frontend/web/src/app/terms/page.tsx), [`/about`](../Frontend/web/src/app/about/page.tsx), [`/mission`](../Frontend/web/src/app/mission/page.tsx) are now thin wrappers that call `fetchStaticPage(slug)` → render via shared [`StaticPageRenderer`](../Frontend/web/src/components/public/static/StaticPageRenderer.tsx). Combined ~800 lines of hardcoded JSX deleted. `generateMetadata()` reads `metaTitle` / `metaDescription` from the DB row too.
+7. **`StaticPageRenderer` now supports two layouts:** `legal` (minimal logo + Back-to-Home, for Privacy/Terms) and `marketing` (full public Navbar + Footer, for About/Mission). Marketing layout uses a wider reading column (900px vs 780px) and hides the "Last updated" line.
+8. **Dynamic catch-all `/p/[slug]`** — admins can now create brand-new slugs in the panel and they publish immediately at `/p/<slug>` without a code change. Privacy, Terms, About, Mission keep their canonical URLs.
+9. **ISR caching** — 5-minute `revalidate` + named cache tag `static-page:<slug>`, so future on-demand revalidation on admin save is a one-liner when we wire that up.
+
+**Tradeoff accepted for About + Mission:**
+
+Those pages previously used structural blocks (side-by-side stats grid with big gold numbers, dark-background values cards, numbered principles rail, category cards, split-column "How it works"). Converting them to rich-text HTML preserves all content but flattens the layout to headings + lists + prose. The visual impact is reduced; the admin control is total. If the business wants those decorative blocks back, the follow-up is to extend `StaticPage` with a typed `sections JSON` column and a per-section renderer — not blocking anything today.
+
+**Counts after this pass:**
+
+| Status | P0 | P1 | P2 | Total |
+|---|---|---|---|---|
+| ✅ Shipped 2026-04-17 sweep | 17 | 6 | 4 | 27 |
+| ✅ Shipped 2026-04-23 (CMS, incl. About + Mission) |  4 | 6 | 0 | 10 |
+| Open (still blocked)         |  0 | 23 | 28 | 51 |
+| Admin features still missing |  0 |  6 |  2 |  8 |
+
+**Still open after this pass (top priorities):**
+
+- **`SiteSettings` singleton** (~20 P1 items) — hero copy, AI chips, promo banner, trust badges, section subtitles, footer columns, brand name/tagline, nav links. The `/config/public` endpoint is the intended front door; a companion `SiteSettings` model + admin page replaces env-only config with DB-backed config.
+- **About / Mission visual richness** — pages are fully CMS-editable today, but the rich-text format loses the stats grid / dark values cards / numbered principles rail / category cards from the old hand-coded versions. Optional follow-up: add a `sections JSON` column on `StaticPage` + typed per-section renderers.
+- **Product subtitle + digital-file metadata** — 2 P0s in the product detail page still need schema additions (`Product.subtitle`, `Product.digitalFiles.{format,durationSeconds}`).
+- **Subscription pricing page** — fully hardcoded; awaiting Stripe subscription wiring.
+- **PromoBanner + AIFinderBar** — P0 stubs awaiting PromoCode hero wiring and a real `/ai/product-finder` response.
 
 ---
 
@@ -42,7 +81,7 @@ Full frontend + backend typecheck passes (`npx tsc --noEmit` → exit 0, and `ts
 - **Dynamic source** tells you where the value should come from (DB model, API endpoint, env var, future `SiteSettings` table).
 - File references use `[path:line]` so you can jump straight to the spot.
 
-Total findings: **~88**. P0 count: **~21** (17 ✅ shipped). P1 count: **~35** (6 ✅). P2 count: **~32** (4 ✅). Plus **~8 admin features missing entirely**.
+Total findings: **~88**. P0 count: **~21** (21 ✅ shipped). P1 count: **~35** (12 ✅). P2 count: **~32** (4 ✅). Plus **~8 admin features missing** (now 7 after CMS shipped).
 
 ---
 
@@ -232,7 +271,7 @@ Overall **excellent** — every sub-page is already API-driven. Two lingering is
 
 ### Features missing entirely from admin panel
 
-- [ ] **P0** **CMS for legal/static pages.** No way to edit `/about`, `/privacy`, `/terms` without a code push. → New `StaticPage` model (slug, title, body, updatedAt) + admin CRUD page.
+- [x] **P0** **CMS for legal/static pages.** Shipped `StaticPage` Prisma model, `/static-pages/:slug` public endpoint + `/admin/static-pages/*` CRUD, admin panel at `/static-pages` with rich-text editor, dynamic `/p/[slug]` route for ad-hoc pages. Privacy + Terms now fully CMS-driven. About still JSX (§9). ✅ SHIPPED 2026-04-23
 - [ ] **P1** **Site settings / hero copy editor.** No way to change hero headlines, promo banner, AI chips, trust badges, section subtitles. → `SiteSettings` singleton (id=1) + admin form. This unblocks ~20 P1 items above.
 - [ ] **P1** **Platform settings editor.** Fee %, min payout, tax rates, refund-policy defaults, booking fee %, shipping-method config. → Part of the same `SiteSettings` or a sister `PlatformConfig` table.
 - [ ] **P1** **Navigation + footer editor.** No way to change nav items or footer link columns. → `SiteSettings.navItems[]` + `.footerColumns[]`.
@@ -271,17 +310,22 @@ Overall **excellent** — every sub-page is already API-driven. Two lingering is
 
 ### Privacy + Terms
 
-- [x] **P0** [privacy/page.tsx, terms/page.tsx] "Last updated" now rendered from a single `POLICY_AUTHORED_DATE` constant via `toLocaleDateString`. Still a per-page author constant until `StaticPage` CMS lands, but there's now exactly one place to edit per file. ✅ SHIPPED 2026-04-17
-- [x] **P0** [privacy/page.tsx] `privacy@…` now sourced from `process.env.NEXT_PUBLIC_CONTACT_PRIVACY_EMAIL ?? SITE_CONFIG_FALLBACK.contactEmails.privacy` (shared fallback constant with backend). ✅ SHIPPED 2026-04-17
-- [x] **P0** [terms/page.tsx] Same pattern for `legal@…`. ✅ SHIPPED 2026-04-17
-- [ ] **P1** Entire policy body is React JSX with hardcoded text. → `StaticPage` CMS (see §7 missing features).
+- [x] **P0** [privacy/page.tsx, terms/page.tsx] "Last updated" now renders from `StaticPage.updatedAt` on the DB row. Edits via the admin CMS bump it automatically. ✅ SHIPPED 2026-04-23 (replaces the 2026-04-17 `POLICY_AUTHORED_DATE` interim)
+- [x] **P0** [privacy/page.tsx] `privacy@…` is now part of the admin-editable HTML body in the CMS. Admins change it by editing the page; no redeploy needed. ✅ SHIPPED 2026-04-23
+- [x] **P0** [terms/page.tsx] Same — `legal@…` is admin-editable via the CMS body. ✅ SHIPPED 2026-04-23
+- [x] **P1** Entire policy body is React JSX with hardcoded text. → `StaticPage` CMS built. Privacy + Terms are now pure DB-fetched rich-text HTML. About is deferred (block-based content — see §9). ✅ SHIPPED 2026-04-23
 
-### About page (if present)
+### About + Mission pages
 
-- [ ] **P1** [about/page.tsx:19-40] `VALUES` array (4 company values). → `SiteSettings.aboutValues[]`.
-- [ ] **P1** [about/page.tsx:42-52] `SEEKER_STEPS` + `GUIDE_STEPS` (6 onboarding-flow explainer steps). → `SiteSettings.aboutSteps{seeker,guide}`.
-- [ ] **P1** [about/page.tsx:102-105] Marketing statistics "40M+", "$6T", "78%", "1 platform". → `SiteSettings.aboutStats[]` — note: one of these ("$6T wellness market") is a citation-worthy number and should have a source link when editable.
-- [ ] **P1** [about/page.tsx:69-72] Narrative copy. → `StaticPage` CMS.
+Both pages are now fully CMS-managed via the `StaticPage` model, rendered through the shared `StaticPageRenderer` in **marketing layout** (full public Navbar + Footer, 900px reading column).
+
+- [x] **P1** [about/page.tsx] `VALUES` array (4 company values) — content migrated into the rich-text body under an `## Our Core Values` section with H3 sub-headings. Admin-editable. ✅ SHIPPED 2026-04-23
+- [x] **P1** [about/page.tsx] `SEEKER_STEPS` + `GUIDE_STEPS` — migrated into the body as two `## How It Works` ordered lists with inline CTA links. Admin-editable. ✅ SHIPPED 2026-04-23
+- [x] **P1** [about/page.tsx] Marketing statistics "40M+", "$6T", "78%", "1 platform" — migrated into a bulleted "By the numbers" list in the Problem section. Admin can edit the figures and source attribution in the CMS. ✅ SHIPPED 2026-04-23
+- [x] **P1** [about/page.tsx] Narrative prose copy — the full About page is now a single `StaticPage` row with slug `about`. Hardcoded JSX (217 lines) replaced with a 26-line CMS wrapper. ✅ SHIPPED 2026-04-23
+- [x] **P1** [mission/page.tsx] All Mission content (hero, Problem/Solution/Vision sections, 6 principles, 5 category pillars, CTA) migrated into a single rich-text body under slug `mission`. 196-line JSX replaced with a 26-line CMS wrapper. ✅ SHIPPED 2026-04-23
+
+**Known tradeoff:** rich-text HTML can't represent the side-by-side stats card / dark-ground value cards / numbered principle rail layouts from the previous versions. Content parity is preserved; visual drama is simplified. If the business wants those decorative blocks back, the follow-up is to extend `StaticPage` with a nullable `sections JSON` column + typed per-section renderers, without breaking the current editor or public URLs.
 
 ---
 
@@ -295,9 +339,10 @@ Overall **excellent** — every sub-page is already API-driven. Two lingering is
 
 1. ~~**Week 1 — P0 data integrity**~~ **→ DONE 2026-04-17.** All fallback demo arrays removed (shop, journal, product detail, journal post, home carousels); empty states in place. 3 cancellation-policy copies unified. S3 uploads wired on all 3 stub surfaces. Admin System Status reads from `/admin/integration-status`. Footer year dynamic.
 2. ~~**Week 2 — P0 fees + policies**~~ **→ DONE 2026-04-17.** `/config/public` endpoint ships `platformCommissionPercent`, `minPayoutUsd`, `eventBookingFeePercent`, `cancellationPolicies.{service,event,tourDefault}`, `orders.returnWindowDays`, `contactEmails.{support,privacy,legal}`, `brand.{name,tagline}`. Consumed across earnings / settings / checkout × 3 / booking × 2 / seeker dashboards / contact / privacy / terms.
-3. **Week 3 — P1 SiteSettings singleton:** New Prisma model + admin page. Populate with hero text, footer columns, AI chips, legal emails (move from env to DB), contact info, brand name/tagline. One admin form unlocks 20+ P1 items. `/config/public` is designed to be the frontend-facing view over this table.
-4. **Week 4 — P1 StaticPage CMS:** About + Privacy + Terms as editable records with rich-text body + `updatedAt` auto-tracked. Replaces the hardcoded `POLICY_AUTHORED_DATE` constants introduced in week 1.
-5. **Later phases:** Email template manager, promo code admin, fraud thresholds, product/event/tour admin CRUD, product `subtitle`/digital-file metadata fields (unblocks the remaining 2 P0 product-detail items).
+3. ~~**Week 4 — StaticPage CMS**~~ **→ DONE 2026-04-23.** (Pulled forward ahead of SiteSettings.) `StaticPage` Prisma model + public GET endpoint + admin CRUD + rich-text editor + `/privacy` & `/terms` now DB-driven + `/p/[slug]` dynamic route for new pages. Privacy + Terms body + emails + "Last updated" all admin-editable.
+4. **Week 3 — P1 SiteSettings singleton (NEXT):** New Prisma model + admin page. Populate with hero text, footer columns, AI chips, legal emails (move from env to DB — the CMS already replaces the privacy/terms email usage, but the Contact page + backend still read env), contact info, brand name/tagline. One admin form unlocks 20+ P1 items. `/config/public` is designed to be the frontend-facing view over this table.
+5. **Week 5 — About page:** Pick option (1) or (2) from §9 and finish the last public-page CMS surface.
+6. **Later phases:** Email template manager, promo code admin, fraud thresholds, product/event/tour admin CRUD, product `subtitle`/digital-file metadata fields (unblocks the remaining 2 P0 product-detail items).
 
 ---
 
@@ -305,5 +350,6 @@ Overall **excellent** — every sub-page is already API-driven. Two lingering is
 
 - **2026-04-22** — Initial audit. Baseline for production-readiness tracking.
 - **2026-04-17** — Implementation sweep. Every P0 that did not require a new Prisma schema shipped. New backend endpoint `/config/public` + frontend `useSiteConfig()` hook centralize fees/policies/emails. Typecheck clean on backend (src) + frontend. Remaining open P0s are schema-blocked (`Product.subtitle`, `Product.digitalFiles.format/duration`) or awaiting a feature that isn't built yet (AI product finder, PromoCode hero banner).
+- **2026-04-23** — Static Pages CMS pass. Shipped `StaticPage` Prisma model + backend module + admin CRUD page + rich-text editor + seed script + dynamic `/p/[slug]` route. Privacy + Terms fully DB-driven; hardcoded bodies and `POLICY_AUTHORED_DATE` interim removed. **Same-day follow-up:** About + Mission also migrated to the CMS via a new `marketing` layout variant on `StaticPageRenderer`. All 4 public static pages now editable from `/static-pages`. Full `tsc --noEmit` + `next build` clean; 64/64 pages generated.
 
 *Maintainer: update checkboxes as items ship. New findings discovered later should be appended to the right module with today's date.*

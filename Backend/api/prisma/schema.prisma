@@ -1289,3 +1289,26 @@ model TaxRate {
   @@unique([state, country])
   @@map("tax_rates")
 }
+
+// ─── CMS: Static Pages ───────────────────────────────────────────────────────
+//
+// Admin-editable legal / marketing copy (about, privacy, terms, etc.). One
+// row per public slug. Body is rich-text HTML produced by the admin editor.
+// Keeping metaTitle/metaDescription separate so they can be tuned for SEO
+// independently of the on-page heading.
+model StaticPage {
+  id              String    @id @default(cuid())
+  slug            String    @unique // e.g. "privacy", "terms", "about"
+  title           String    // on-page H1
+  metaTitle       String?   // <title> tag override
+  metaDescription String?   // <meta name="description">
+  eyebrow         String?   // small all-caps label above H1 (optional)
+  subtitle        String?   // italic serif intro paragraph (optional)
+  body            String    @db.Text // rich-text HTML
+  isPublished     Boolean   @default(true)
+  publishedAt     DateTime? // null while in draft
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@map("static_pages")
+}

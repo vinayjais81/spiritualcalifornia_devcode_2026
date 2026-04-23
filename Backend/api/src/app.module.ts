@@ -29,6 +29,7 @@ import { CheckoutModule } from './modules/checkout/checkout.module';
 import { CalendlyModule } from './modules/calendly/calendly.module';
 import { TicketsModule } from './modules/tickets/tickets.module';
 import { PublicConfigModule } from './modules/config/config.module';
+import { StaticPagesModule } from './modules/static-pages/static-pages.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { PublicConfigModule } from './modules/config/config.module';
     CalendlyModule,
     TicketsModule,
     PublicConfigModule,
+    StaticPagesModule,
   ],
 })
 export class AppModule {}

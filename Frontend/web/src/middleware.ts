@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Public website routes — always accessible, no auth required
-const PUBLIC_SITE_PATHS = ['/', '/practitioners', '/shop', '/travels', '/tours', '/events', '/about', '/mission', '/blog', '/journal', '/book', '/cart', '/checkout', '/downloads', '/reviews', '/seeker', '/contact', '/onboarding', '/register', '/guide', '/signin', '/forgot-password', '/guides', '/verify-email', '/reset-password', '/verify-ticket', '/terms', '/privacy'];
+const PUBLIC_SITE_PATHS = ['/', '/practitioners', '/shop', '/travels', '/tours', '/events', '/about', '/mission', '/blog', '/journal', '/book', '/cart', '/checkout', '/downloads', '/reviews', '/seeker', '/contact', '/onboarding', '/register', '/guide', '/signin', '/forgot-password', '/guides', '/verify-email', '/reset-password', '/verify-ticket', '/terms', '/privacy', '/p'];
 
 // Admin-only paths — protected by client-side AuthGuard
 const ADMIN_PATHS = ['/dashboard', '/users', '/guides', '/verification', '/financials', '/settings'];
