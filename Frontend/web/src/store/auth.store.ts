@@ -2,6 +2,11 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AuthUser } from '@/types/auth';
 import { api } from '@/lib/api';
+import {
+  cancelProactiveRefresh,
+  registerRefreshCallback,
+  scheduleProactiveRefresh,
+} from '@/lib/authRefresh';
 
 interface AuthState {
   user: AuthUser | null;
@@ -24,6 +29,9 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (user, accessToken) => {
         localStorage.setItem('access_token', accessToken);
         set({ user, accessToken, isAuthenticated: true });
+        // Schedule the silent-refresh timer so the session doesn't fall off
+        // a cliff when the access token expires.
+        scheduleProactiveRefresh(accessToken);
         // Fire-and-forget cart merge: take any items the seeker added while
         // signed out and union them into their server-side cart. Import here
         // (not at top of file) to avoid a circular store dependency.
@@ -34,6 +42,7 @@ export const useAuthStore = create<AuthState>()(
 
       clearAuth: () => {
         localStorage.removeItem('access_token');
+        cancelProactiveRefresh();
         set({ user: null, accessToken: null, isAuthenticated: false });
       },
 
@@ -61,6 +70,8 @@ export const useAuthStore = create<AuthState>()(
             // Sync the access_token to localStorage for the API interceptor
             if (state.accessToken) {
               localStorage.setItem('access_token', state.accessToken);
+              // Re-arm the silent refresh timer on page load / tab restore.
+              scheduleProactiveRefresh(state.accessToken);
             }
           }
         };
@@ -68,3 +79,16 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
+
+// Register a callback so the proactive-refresh timer (running in
+// `authRefresh.ts` without React / store context) can push the new access
+// token back into this store after a silent refresh completes.
+if (typeof window !== 'undefined') {
+  registerRefreshCallback((newAccessToken) => {
+    localStorage.setItem('access_token', newAccessToken);
+    useAuthStore.setState({ accessToken: newAccessToken });
+    // Chain the next refresh so the timer stays armed for as long as the
+    // session is active.
+    scheduleProactiveRefresh(newAccessToken);
+  });
+}

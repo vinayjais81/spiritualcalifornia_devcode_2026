@@ -145,28 +145,88 @@ export class AuthService {
 
   // ─── Refresh Tokens ─────────────────────────────────────────────────────────
 
+  /**
+   * Refresh the access + refresh token pair. Rotates the refresh token on
+   * every call. If the incoming token is *already* revoked, we check the
+   * 60-second grace window: a rotation that happened recently is treated
+   * as a race (e.g. two tabs both calling /auth/refresh simultaneously) and
+   * the replacement token is returned. This is the fix for the UX bug where
+   * "the session just times out" — historically that was one of two parallel
+   * refresh calls losing the race and being logged out.
+   */
   async refreshTokens(userId: string, incomingRefreshToken: string) {
+    const GRACE_MS = 60_000;
+
     const storedToken = await this.prisma.refreshToken.findUnique({
       where: { token: incomingRefreshToken },
     });
 
-    if (!storedToken || storedToken.userId !== userId || storedToken.isRevoked) {
+    if (!storedToken || storedToken.userId !== userId) {
       throw new UnauthorizedException('Invalid refresh token');
     }
     if (storedToken.expiresAt < new Date()) {
       throw new UnauthorizedException('Refresh token expired');
     }
 
-    // Rotate: revoke old, issue new
-    await this.prisma.refreshToken.update({
-      where: { id: storedToken.id },
-      data: { isRevoked: true },
-    });
+    // Grace window: if the incoming token was revoked very recently AND the
+    // replacement is still alive, mint an access token against the replacement
+    // without rotating again. Concurrent refreshes converge on the same state.
+    if (storedToken.isRevoked) {
+      const revokedRecently =
+        storedToken.revokedAt &&
+        Date.now() - storedToken.revokedAt.getTime() < GRACE_MS;
 
+      if (revokedRecently && storedToken.replacedByTokenId) {
+        const replacement = await this.prisma.refreshToken.findUnique({
+          where: { id: storedToken.replacedByTokenId },
+        });
+        if (
+          replacement &&
+          !replacement.isRevoked &&
+          replacement.expiresAt > new Date()
+        ) {
+          const roles = await this.usersService.getRoles(userId);
+          const user = await this.usersService.findByIdOrThrow(userId);
+          const accessToken = await this.generateAccessToken(
+            userId,
+            user.email,
+            roles,
+          );
+          this.logger.debug(
+            `Refresh grace window hit for user ${userId} — reusing replacement token`,
+          );
+          return { accessToken, refreshToken: replacement.token };
+        }
+      }
+
+      // Outside the grace window, treat as stolen / reused and reject.
+      // Also revoke ALL active refresh tokens for this user as a defensive
+      // measure against refresh-token replay attacks.
+      await this.prisma.refreshToken.updateMany({
+        where: { userId, isRevoked: false },
+        data: { isRevoked: true, revokedAt: new Date() },
+      });
+      this.logger.warn(
+        `Refresh token reuse detected for user ${userId}. Revoking all active tokens.`,
+      );
+      throw new UnauthorizedException('Refresh token reuse detected');
+    }
+
+    // Normal rotation path: mint new pair, then revoke the old one and link
+    // it to the replacement so that a racing request can hit the grace
+    // window above.
     const roles = await this.usersService.getRoles(userId);
     const user = await this.usersService.findByIdOrThrow(userId);
     const tokens = await this.generateTokens(userId, user.email, roles);
-    await this.saveRefreshToken(userId, tokens.refreshToken);
+    const newStored = await this.saveRefreshToken(userId, tokens.refreshToken);
+    await this.prisma.refreshToken.update({
+      where: { id: storedToken.id },
+      data: {
+        isRevoked: true,
+        revokedAt: new Date(),
+        replacedByTokenId: newStored.id,
+      },
+    });
 
     return tokens;
   }
@@ -382,26 +442,61 @@ export class AuthService {
 
   // ─── Helpers ────────────────────────────────────────────────────────────────
 
+  /**
+   * Mint the access + refresh token pair. Lifetimes come from env so ops can
+   * tune them without a code change (see env.validation.ts). Defaults are
+   * 30m access / 7d refresh — access token long enough to keep idle users
+   * logged in through short breaks, short enough to limit exposure if an
+   * access token leaks.
+   */
   async generateTokens(userId: string, email: string, roles: Role[]) {
-    const payload = { sub: userId, email, roles };
-
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
-        secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
-        expiresIn: '15m',
-      }),
-      this.jwtService.signAsync(payload, {
+    const accessToken = await this.generateAccessToken(userId, email, roles);
+    // The `expiresIn` cast is safe: env.validation.ts requires the value to
+    // be a string and the JWT lib parses it with `ms`, which accepts any
+    // well-formed duration ('7d', '30m', '90s', etc.). Cast silences the
+    // `ms.StringValue` template-literal type.
+    const refreshToken = await this.jwtService.signAsync(
+      { sub: userId, email, roles },
+      {
         secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
-        expiresIn: '7d',
-      }),
-    ]);
-
+        expiresIn: this.configService.get<string>(
+          'JWT_REFRESH_EXPIRES_IN',
+          '7d',
+        ) as any,
+      },
+    );
     return { accessToken, refreshToken };
   }
 
+  /** Mints only the short-lived access token. Used by the rotation grace path. */
+  async generateAccessToken(userId: string, email: string, roles: Role[]) {
+    return this.jwtService.signAsync(
+      { sub: userId, email, roles },
+      {
+        secret: this.configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
+        expiresIn: this.configService.get<string>(
+          'JWT_ACCESS_EXPIRES_IN',
+          '30m',
+        ) as any,
+      },
+    );
+  }
+
+  /**
+   * Persist a refresh token and return the created record so callers can
+   * link the OLD token to its replacement (for the rotation grace window).
+   * Expiry is parsed from the signed JWT itself via `decode` so it stays in
+   * sync with JWT_REFRESH_EXPIRES_IN without duplicating the lifetime logic.
+   */
   private async saveRefreshToken(userId: string, token: string) {
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7d
-    await this.prisma.refreshToken.create({ data: { userId, token, expiresAt } });
+    const decoded = this.jwtService.decode(token) as { exp?: number } | null;
+    const expiresAt =
+      decoded?.exp && Number.isFinite(decoded.exp)
+        ? new Date(decoded.exp * 1000)
+        : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    return this.prisma.refreshToken.create({
+      data: { userId, token, expiresAt },
+    });
   }
 
   sanitizeUser(user: any) {

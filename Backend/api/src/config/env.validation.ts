@@ -17,7 +17,10 @@ const envSchema = z.object({
 
   // JWT
   JWT_ACCESS_SECRET: z.string().min(32),
-  JWT_ACCESS_EXPIRES_IN: z.string().default('15m'),
+  // 30m default: long enough to absorb short idle periods without forcing a
+  // refresh round-trip; short enough that a leaked access token isn't useful
+  // for long. The frontend schedules a silent refresh 2 minutes before expiry.
+  JWT_ACCESS_EXPIRES_IN: z.string().default('30m'),
   JWT_REFRESH_SECRET: z.string().min(32),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
 
@@ -69,6 +72,11 @@ const envSchema = z.object({
   CALENDLY_CLIENT_SECRET: z.string().min(1),
   CALENDLY_REDIRECT_URI: z.string().url(),
   CALENDLY_WEBHOOK_SECRET: z.string().min(1),
+
+  // CMS — shared secret for calling the Next.js `revalidate-static-page`
+  // webhook after admin CRUD. Optional: if missing, admin saves still
+  // succeed but public pages stay cached for up to 5 minutes.
+  STATIC_PAGE_REVALIDATE_SECRET: z.string().optional().or(z.literal('')),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

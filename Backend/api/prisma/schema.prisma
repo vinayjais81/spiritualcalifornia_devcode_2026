@@ -205,16 +205,22 @@ model UserRole {
 }
 
 model RefreshToken {
-  id        String   @id @default(cuid())
-  userId    String
-  token     String   @unique
-  expiresAt DateTime
-  isRevoked Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id                  String    @id @default(cuid())
+  userId              String
+  token               String    @unique
+  expiresAt           DateTime
+  isRevoked           Boolean   @default(false)
+  // When the token was rotated / revoked. Used with `replacedByTokenId`
+  // to grant a 60-second grace window so concurrent refresh calls from
+  // multiple tabs don't log each other out.
+  revokedAt           DateTime?
+  replacedByTokenId   String?
+  createdAt           DateTime  @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
+  @@index([replacedByTokenId])
   @@map("refresh_tokens")
 }
 
