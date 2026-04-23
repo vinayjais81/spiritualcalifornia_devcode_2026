@@ -1,11 +1,19 @@
 /**
- * Idempotent seed for the CMS `static_pages` table.
+ * First-run seed for the CMS `static_pages` table.
  *
- * Run with: `npx tsx prisma/seed-static-pages.ts` (or via the `seed:pages`
- * package.json script if configured). Safe to re-run — uses `upsert` so
- * admin edits made through the panel after the first run will be OVERWRITTEN.
- * Only run against fresh environments or when you explicitly want to reset
- * the CMS copy back to the canonical source-controlled version.
+ * Run with: `npm run seed:pages` (or `npx tsx prisma/seed-static-pages.ts`).
+ *
+ * SAFE BY DEFAULT: only creates rows for slugs that don't already exist.
+ * Admin edits made through `/static-pages` in the admin panel are preserved
+ * across re-runs. This means CI can call this after every deploy without
+ * wiping out the CMS — new slugs added to this file get inserted, existing
+ * slugs are left untouched.
+ *
+ * To force-reset a page back to its canonical source-controlled version,
+ * delete the row through the admin panel first, then re-run the script.
+ *
+ * If you need to bulk-reset everything, run with `SEED_STATIC_PAGES_FORCE=1`
+ * in the env — that switches to destructive upsert mode (NOT for production).
  */
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
@@ -266,112 +274,117 @@ const TERMS_BODY = `
 <p>Spiritual California<br /><a href="mailto:${LEGAL_EMAIL}">${LEGAL_EMAIL}</a></p>
 `.trim();
 
+// Force mode (`SEED_STATIC_PAGES_FORCE=1`) overwrites admin edits. Default
+// mode leaves existing rows alone and only inserts missing ones.
+const FORCE = process.env.SEED_STATIC_PAGES_FORCE === '1';
+
+interface PageSeed {
+  slug: string;
+  title: string;
+  metaTitle: string;
+  metaDescription: string;
+  eyebrow: string;
+  subtitle?: string | null;
+  body: string;
+}
+
+async function seedPage(seed: PageSeed, now: Date) {
+  const existing = await prisma.staticPage.findUnique({
+    where: { slug: seed.slug },
+  });
+
+  if (existing && !FORCE) {
+    console.log(`· Kept existing static page (admin-editable): ${seed.slug}`);
+    return;
+  }
+
+  if (existing && FORCE) {
+    await prisma.staticPage.update({
+      where: { slug: seed.slug },
+      data: {
+        title: seed.title,
+        metaTitle: seed.metaTitle,
+        metaDescription: seed.metaDescription,
+        eyebrow: seed.eyebrow,
+        subtitle: seed.subtitle ?? null,
+        body: seed.body,
+        isPublished: true,
+      },
+    });
+    console.log(`⚠ FORCE-overwrote static page: ${seed.slug}`);
+    return;
+  }
+
+  await prisma.staticPage.create({
+    data: {
+      slug: seed.slug,
+      title: seed.title,
+      metaTitle: seed.metaTitle,
+      metaDescription: seed.metaDescription,
+      eyebrow: seed.eyebrow,
+      subtitle: seed.subtitle ?? null,
+      body: seed.body,
+      isPublished: true,
+      publishedAt: now,
+    },
+  });
+  console.log(`✓ Created static page: ${seed.slug}`);
+}
+
 async function main() {
   const now = new Date();
 
-  const privacy = await prisma.staticPage.upsert({
-    where: { slug: 'privacy' },
-    create: {
+  await seedPage(
+    {
       slug: 'privacy',
       title: 'Privacy Policy',
       metaTitle: 'Privacy Policy | Spiritual California',
       metaDescription:
         'Privacy Policy for the Spiritual California marketplace platform.',
       eyebrow: 'Legal',
-      subtitle: null,
       body: PRIVACY_BODY,
-      isPublished: true,
-      publishedAt: now,
     },
-    update: {
-      title: 'Privacy Policy',
-      metaTitle: 'Privacy Policy | Spiritual California',
-      metaDescription:
-        'Privacy Policy for the Spiritual California marketplace platform.',
-      eyebrow: 'Legal',
-      body: PRIVACY_BODY,
-      isPublished: true,
-    },
-  });
-  console.log(`✓ Upserted static page: ${privacy.slug}`);
+    now,
+  );
 
-  const about = await prisma.staticPage.upsert({
-    where: { slug: 'about' },
-    create: {
+  await seedPage(
+    {
       slug: 'about',
       title: 'Wellness deserves trust',
       metaTitle: 'About Us | Spiritual California',
       metaDescription:
         'Learn how Spiritual California is building a trusted, verified marketplace connecting seekers with authentic wellness practitioners.',
       eyebrow: 'Our Story',
-      subtitle: null,
       body: ABOUT_BODY,
-      isPublished: true,
-      publishedAt: now,
     },
-    update: {
-      title: 'Wellness deserves trust',
-      metaTitle: 'About Us | Spiritual California',
-      metaDescription:
-        'Learn how Spiritual California is building a trusted, verified marketplace connecting seekers with authentic wellness practitioners.',
-      eyebrow: 'Our Story',
-      body: ABOUT_BODY,
-      isPublished: true,
-    },
-  });
-  console.log(`✓ Upserted static page: ${about.slug}`);
+    now,
+  );
 
-  const mission = await prisma.staticPage.upsert({
-    where: { slug: 'mission' },
-    create: {
+  await seedPage(
+    {
       slug: 'mission',
       title: 'A single trusted destination for mind, body & soul',
       metaTitle: 'Our Mission | Spiritual California',
       metaDescription:
         "Spiritual California's mission: building a single trusted destination for mind, body and soul — where verification, community, and transformation converge.",
       eyebrow: 'Our Mission',
-      subtitle: null,
       body: MISSION_BODY,
-      isPublished: true,
-      publishedAt: now,
     },
-    update: {
-      title: 'A single trusted destination for mind, body & soul',
-      metaTitle: 'Our Mission | Spiritual California',
-      metaDescription:
-        "Spiritual California's mission: building a single trusted destination for mind, body and soul — where verification, community, and transformation converge.",
-      eyebrow: 'Our Mission',
-      body: MISSION_BODY,
-      isPublished: true,
-    },
-  });
-  console.log(`✓ Upserted static page: ${mission.slug}`);
+    now,
+  );
 
-  const terms = await prisma.staticPage.upsert({
-    where: { slug: 'terms' },
-    create: {
+  await seedPage(
+    {
       slug: 'terms',
       title: 'Terms of Service',
       metaTitle: 'Terms of Service | Spiritual California',
       metaDescription:
         'Terms of Service for the Spiritual California marketplace platform.',
       eyebrow: 'Legal',
-      subtitle: null,
       body: TERMS_BODY,
-      isPublished: true,
-      publishedAt: now,
     },
-    update: {
-      title: 'Terms of Service',
-      metaTitle: 'Terms of Service | Spiritual California',
-      metaDescription:
-        'Terms of Service for the Spiritual California marketplace platform.',
-      eyebrow: 'Legal',
-      body: TERMS_BODY,
-      isPublished: true,
-    },
-  });
-  console.log(`✓ Upserted static page: ${terms.slug}`);
+    now,
+  );
 }
 
 main()

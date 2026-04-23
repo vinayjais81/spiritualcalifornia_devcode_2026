@@ -38,6 +38,10 @@ jobs:
             npm ci
             npx prisma generate
             npx prisma migrate deploy
+            # Seed CMS with initial static pages (privacy/terms/about/mission).
+            # Safe to re-run: only creates slugs that don't already exist, so
+            # admin edits in `/static-pages` are preserved across deploys.
+            npm run seed:pages
             npm run build
 
             echo "==> Frontend: install + build"
