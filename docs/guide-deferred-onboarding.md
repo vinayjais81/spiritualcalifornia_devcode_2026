@@ -31,7 +31,7 @@ The threshold for "registered" is now **email verified** (same as seekers). Emai
 
 ### Frontend
 
-- [`OnboardingWizard`](../Frontend/web/src/components/onboarding/OnboardingWizard.tsx) on mount calls `/guides/onboarding/status`. If `isEmailVerified === true` and the URL doesn't have `?resume=1`, it `router.replace('/guide/dashboard')`. Guides who explicitly want the linear wizard back can navigate to `/onboarding/guide?resume=1` from the widget's "Resume guided setup →" link.
+- [`OnboardingWizard`](../Frontend/web/src/components/onboarding/OnboardingWizard.tsx) on mount calls `/guides/onboarding/status`. If **`started === true` AND `isEmailVerified === true`** and the URL doesn't have `?resume=1`, it `router.replace('/guide/dashboard')`. The `started` check is critical: a user who's email-verified (e.g. an existing seeker) but hasn't yet hit `/guides/onboarding/start` doesn't have the GUIDE role, and `/guide/dashboard` would redirect them right back here, creating an infinite loop. They must complete Step 1 of the wizard at least once to receive the GUIDE role, after which subsequent visits hit the redirect cleanly. Guides who explicitly want the linear wizard back can navigate to `/onboarding/guide?resume=1` from the widget's "Resume guided setup →" link.
 - [`/onboarding/guide/page.tsx`](../Frontend/web/src/app/onboarding/guide/page.tsx) wraps the wizard in `<Suspense>` so `useSearchParams()` doesn't break static prerender.
 - New [`GuideProfileCompletenessWidget`](../Frontend/web/src/components/guide/GuideProfileCompletenessWidget.tsx):
   - Same visual language as the seeker widget for consistency.
@@ -68,9 +68,10 @@ The completeness widget reads its 5 sections from existing schema columns (`bio`
 | User state | What `/onboarding/guide` does | Where the widget shows |
 |---|---|---|
 | Unauthenticated | Step 1 form (account creation embedded in wizard) | n/a |
-| Authenticated, email NOT verified | Resume wizard at the appropriate step | n/a |
-| Authenticated, email verified, completeness <100% | Redirect to `/guide/dashboard` (unless `?resume=1`) | Yes, on dashboard |
-| Authenticated, email verified, `?resume=1` set | Wizard renders, resumes at completed-steps boundary | Yes (still useful — verification might not be submitted) |
+| Authenticated, email NOT verified, GuideProfile not yet created | Resume wizard at step 1 | n/a |
+| Authenticated, email verified, **GuideProfile NOT yet created** | Wizard runs (so they can hit `/guides/onboarding/start` and receive the GUIDE role) | n/a |
+| Authenticated, email verified, GuideProfile started, completeness <100% | Redirect to `/guide/dashboard` (unless `?resume=1`) | Yes, on dashboard |
+| Authenticated, email verified, GuideProfile started, `?resume=1` set | Wizard renders, resumes at completed-steps boundary | Yes (still useful — verification might not be submitted) |
 | Authenticated, email verified, completeness 100% | Redirect to `/guide/dashboard` | No (auto-hides) |
 
 ## Verification checklist (post-deploy)

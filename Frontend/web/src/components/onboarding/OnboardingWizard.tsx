@@ -43,11 +43,22 @@ export function OnboardingWizard() {
       .catch(() => {});
   }, [isAuthenticated, categories.length, setCategories]);
 
-  // Once email is verified we treat the guide as "registered enough" and
-  // drop them onto /guide/dashboard. The remaining wizard steps (categories,
-  // profile, credentials, submit-for-verification) are surfaced as a
-  // ProfileCompletenessWidget on the dashboard. A guide who explicitly
-  // wants the linear wizard back can opt in via `?resume=1`.
+  // Once email is verified AND the guide has actually started onboarding
+  // (i.e. their GuideProfile + GUIDE role exist) we treat them as
+  // "registered enough" and drop them onto /guide/dashboard. The remaining
+  // wizard steps (categories, profile, credentials, submit-for-verification)
+  // are surfaced as a ProfileCompletenessWidget on the dashboard.
+  //
+  // We deliberately DO NOT redirect users who are email-verified but haven't
+  // yet hit /guides/onboarding/start — they don't have the GUIDE role, so
+  // /guide/dashboard would just bounce them right back here, creating a
+  // redirect loop. This catches:
+  //   - brand-new guide registrations mid-wizard
+  //   - existing seekers (email-verified) who just navigated to
+  //     /onboarding/guide for the first time to also become a guide
+  //
+  // A guide who explicitly wants the linear wizard back can opt in via
+  // `?resume=1`.
   useEffect(() => {
     if (!isAuthenticated) return;
     const wantsResume = searchParams.get('resume') === '1';
@@ -55,7 +66,7 @@ export function OnboardingWizard() {
       .get('/guides/onboarding/status')
       .then((res) => {
         setStatus(res.data);
-        if (res.data?.isEmailVerified && !wantsResume) {
+        if (res.data?.started && res.data?.isEmailVerified && !wantsResume) {
           router.replace('/guide/dashboard');
           return;
         }
