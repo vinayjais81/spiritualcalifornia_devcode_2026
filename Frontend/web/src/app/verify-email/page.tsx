@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/auth.store';
 
 type Status = 'verifying' | 'success' | 'expired' | 'invalid' | 'already_verified';
 
@@ -12,9 +13,11 @@ function VerifyEmailContent() {
 
   const searchParams = useSearchParams();
   const router = useRouter();
+  const setAuth = useAuthStore((s) => s.setAuth);
   const token = searchParams.get('token');
   const [status, setStatus] = useState<Status>('verifying');
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(3);
+  const [redirectTarget, setRedirectTarget] = useState('/seeker/dashboard');
   const hasRun = useRef(false);
 
   useEffect(() => {
@@ -28,7 +31,16 @@ function VerifyEmailContent() {
 
     api
       .get(`/auth/verify-email?token=${encodeURIComponent(token)}`)
-      .then(() => {
+      .then((res) => {
+        // Backend now mints session tokens on successful verification —
+        // this is the FIRST time the user gets a session. We log them in
+        // here and route them based on intent.
+        const { user, accessToken, intent } = res.data ?? {};
+        if (user && accessToken) {
+          setAuth(user, accessToken);
+        }
+        const target = intent === 'guide' ? '/onboarding/guide' : '/seeker/dashboard';
+        setRedirectTarget(target);
         setStatus('success');
       })
       .catch((err: any) => {
@@ -41,20 +53,21 @@ function VerifyEmailContent() {
           setStatus('invalid');
         }
       });
-  }, [token]);
+  }, [token, setAuth]);
 
-  // Countdown redirect on success — drop the user on their dashboard so
-  // they see the profile-completeness widget (which now hosts the wizard's
-  // step 3+ fields) instead of bouncing to the public homepage.
+  // Countdown redirect on success — guide intent goes to the wizard so
+  // the user can finish Step 1 (their bio/avatar/etc are still in the
+  // Zustand store from before they clicked the email link). Seeker intent
+  // goes straight to the dashboard.
   useEffect(() => {
     if (status !== 'success') return;
     if (countdown <= 0) {
-      router.push('/seeker/dashboard');
+      router.push(redirectTarget);
       return;
     }
     const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(t);
-  }, [status, countdown, router]);
+  }, [status, countdown, router, redirectTarget]);
 
   return (
     <div

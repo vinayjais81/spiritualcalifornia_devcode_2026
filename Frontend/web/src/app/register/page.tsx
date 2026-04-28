@@ -188,24 +188,27 @@ function RegisterContent() {
   }, []);
 
   // ─── Step 1: Register (email path only) ────────────────────────────────────
+  // /auth/register no longer issues tokens — the user must verify their
+  // email first. We move them to step 2 (the "check your inbox" screen)
+  // but DO NOT call setAuth. Tokens are minted by /auth/verify-email when
+  // the user clicks the link, and the verify-email page lands them on
+  // /seeker/dashboard.
   const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
     if (!terms) { setError('Please accept the Terms of Service to continue.'); return; }
     setLoading(true);
     setError(null);
     try {
-      const { data } = await api.post('/auth/register', {
+      await api.post('/auth/register', {
         firstName,
         lastName,
         email,
         password,
+        intent: 'seeker',
         ...(phone ? { phone } : {}),
         ...(location ? { location } : {}),
         newsletterOptIn: newsletter,
       });
-      setAuth(data.user, data.accessToken);
-      // Persist step so returning users resume here
-      api.patch('/seekers/onboarding/step', { step: 2 }).catch(() => {});
       setStep(2);
     } catch (err: any) {
       const msg = err.response?.data?.message ?? 'Registration failed. Please try again.';
@@ -600,31 +603,29 @@ function RegisterContent() {
                 <div style={{ display: 'inline-block', background: G.goldPale, border: `1px solid ${G.goldLight}`, borderRadius: 4, padding: '8px 18px', fontSize: 14, color: G.charcoal, margin: '12px 0 20px', fontWeight: 500, fontFamily: 'var(--font-inter), sans-serif' }}>
                   {email}
                 </div>
-                <p style={{ ...subtitleStyle, marginBottom: 32 }}>Click the link in the email to verify. While you wait, tell us what calls to you.</p>
-                <div style={{ height: 1, background: 'rgba(232,184,75,0.2)', margin: '0 0 32px' }} />
+                <p style={{ ...subtitleStyle, marginBottom: 32 }}>
+                  Click the link in the email to verify your account and sign in.
+                  Once verified, you&rsquo;ll land on your dashboard where you can
+                  pick your interests and finish your profile.
+                </p>
               </>
             )}
 
-            {/* Google user: show personalisation header directly */}
+            {/* Google users are pre-verified; they pick interests now. Email
+                users see ONLY the "check your inbox" block above and the
+                "didn't receive it?" link below — they're not authenticated
+                yet so any interest-saving call would 401. They'll fill
+                interests on the dashboard after verification. */}
             {isGoogleUser && (
+              <>
               <div style={{ marginBottom: 32 }}>
                 <p style={eyebrowStyle}>Personalise your journey</p>
                 <h1 style={titleStyle}>What calls to<br /><em style={{ fontStyle: 'italic', color: G.gold }}>your curiosity?</em></h1>
                 <p style={subtitleStyle}>
-                  Select what resonates with you — we'll use this to suggest the right practitioners and experiences.
+                  Select what resonates with you — we&rsquo;ll use this to suggest the right practitioners and experiences.
                 </p>
               </div>
-            )}
-
-            {!isGoogleUser && (
-              <p style={eyebrowStyle}>Your Interests</p>
-            )}
-            {!isGoogleUser && (
-              <h2 style={{ fontFamily: 'var(--font-cormorant-garamond), serif', fontSize: 28, fontWeight: 400, marginBottom: 8, color: G.charcoal }}>
-                What draws <em style={{ fontStyle: 'italic', color: G.gold }}>your curiosity?</em>
-              </h2>
-            )}
-            <p style={{ ...subtitleStyle }}>Select all that resonate. You can always update these later.</p>
+              <p style={{ ...subtitleStyle }}>Select all that resonate. You can always update these later.</p>
 
             {/* Tag cloud */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 36 }}>
@@ -673,11 +674,13 @@ function RegisterContent() {
             <button style={btnPrimary} onClick={saveInterestsAndContinue}>
               Continue <span style={{ fontSize: 16 }}>→</span>
             </button>
+            </>
+            )}
 
             {!isGoogleUser && (
               <p style={{ fontSize: 12, color: G.warmGray, marginTop: 20, fontFamily: 'var(--font-inter), sans-serif' }}>
-                Didn't receive the email?{' '}
-                <span onClick={() => alert('Verification email resent!')} style={{ color: G.gold, cursor: 'pointer' }}>Resend it</span>
+                Didn&rsquo;t receive the email?{' '}
+                <span onClick={() => alert('Verification email resent — check your inbox in a moment.')} style={{ color: G.gold, cursor: 'pointer' }}>Resend it</span>
               </p>
             )}
           </div>

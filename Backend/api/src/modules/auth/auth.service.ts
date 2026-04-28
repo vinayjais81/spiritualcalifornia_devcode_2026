@@ -11,7 +11,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { Role } from '@prisma/client';
+import { Role, VerificationStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { Resend } from 'resend';
@@ -29,6 +29,21 @@ export class AuthService {
 
   // ─── Register ───────────────────────────────────────────────────────────────
 
+  /**
+   * Register a new user. Critically, this DOES NOT issue access/refresh
+   * tokens — the user must verify their email first via the link in the
+   * verification email, at which point /auth/verify-email will assign the
+   * role + create the profile + mint tokens.
+   *
+   * Guards against fake / typo / malicious registrations: nobody holds a
+   * session for an account they didn't prove they own.
+   *
+   * The intent ('seeker' | 'guide') is persisted on the User row so that
+   * /auth/verify-email knows which side-effects to run. Optional fields
+   * captured by the form (phone, location, newsletter opt-in) are saved
+   * as well — they don't depend on a role and aren't sensitive on their
+   * own.
+   */
   async register(dto: RegisterDto) {
     const existing = await this.usersService.findByEmail(dto.email);
     if (existing) throw new ConflictException('Email already registered');
@@ -44,49 +59,31 @@ export class AuthService {
       lastName: dto.lastName,
     });
 
-    // SEEKER and GUIDE are mutually exclusive on the same email. The two
-    // intents take different paths here:
-    //
-    //   intent='guide'  → no role and no profile assigned now. The
-    //                     /guides/onboarding/start endpoint will create the
-    //                     GuideProfile and assign GUIDE.
-    //   intent='seeker' → existing behaviour: assign SEEKER + create
-    //                     SeekerProfile so the user can immediately use
-    //                     the marketplace as a seeker.
-    const isGuideIntent = dto.intent === 'guide';
+    const intent: 'seeker' | 'guide' = dto.intent === 'guide' ? 'guide' : 'seeker';
 
-    const sideEffects: Promise<unknown>[] = [
-      this.usersService.update(user.id, {
-        emailVerifyToken,
-        emailVerifyExpiry,
-        ...(dto.phone ? { phone: dto.phone } : {}),
-        ...(dto.newsletterOptIn !== undefined
-          ? { marketingEmails: dto.newsletterOptIn }
-          : {}),
-      }),
-    ];
-    if (!isGuideIntent) {
-      sideEffects.push(
-        this.usersService.createSeekerProfile(user.id, dto.location),
-        this.usersService.assignRole(user.id, Role.SEEKER),
-      );
-    }
-    await Promise.all(sideEffects);
+    await this.usersService.update(user.id, {
+      emailVerifyToken,
+      emailVerifyExpiry,
+      pendingIntent: intent,
+      ...(dto.phone ? { phone: dto.phone } : {}),
+      ...(dto.newsletterOptIn !== undefined
+        ? { marketingEmails: dto.newsletterOptIn }
+        : {}),
+    });
 
-    // Send verification email — fire-and-forget (never block register response)
+    // Send verification email — fire-and-forget. The user MUST click the
+    // link before they can log in; there's no fallback path that issues
+    // tokens without verification.
     void this.sendVerificationEmail(user.email, user.firstName, emailVerifyToken);
 
-    const roles: Role[] = isGuideIntent ? [] : [Role.SEEKER];
-    const tokens = await this.generateTokens(user.id, user.email, roles);
-    await this.saveRefreshToken(user.id, tokens.refreshToken);
-
     return {
-      user: this.sanitizeUser({
-        ...user,
-        roles: roles.map((role) => ({ role })),
-      }),
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
+      requiresEmailVerification: true,
     };
   }
 
@@ -100,6 +97,14 @@ export class AuthService {
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');
+
+    // Block sign-in for unverified emails. Without this gate someone could
+    // register with a typo / someone else's address and immediately log in
+    // — that's the threat we're closing. Frontend renders a friendly
+    // "verify your email first" message + resend link on this exact code.
+    if (!user.isEmailVerified) {
+      throw new UnauthorizedException('EMAIL_NOT_VERIFIED');
+    }
 
     await this.usersService.update(user.id, { lastLoginAt: new Date() });
 
@@ -262,6 +267,21 @@ export class AuthService {
 
   // ─── Verify Email ───────────────────────────────────────────────────────────
 
+  /**
+   * Verify the email-verification token from the link sent at /auth/register.
+   *
+   * On success this:
+   *   1. Marks isEmailVerified = true.
+   *   2. Reads `pendingIntent` and runs the role/profile side-effects that
+   *      were deferred at register time (assign SEEKER/GUIDE, create
+   *      SeekerProfile / GuideProfile via existing helpers).
+   *   3. Mints access + refresh tokens and returns them — this is the
+   *      first time the user receives a session.
+   *
+   * Idempotent for users that have already been verified previously
+   * (e.g. someone clicks the email link twice). Returns tokens regardless,
+   * so the second click also "logs them in" rather than erroring.
+   */
   async verifyEmail(token: string) {
     const user = await this.prisma.user.findFirst({
       where: { emailVerifyToken: token },
@@ -272,13 +292,81 @@ export class AuthService {
       throw new BadRequestException('Verification token expired');
     }
 
+    // Run intent-driven side-effects that were deferred at register time.
+    // We call these via Prisma directly (rather than depending on
+    // SeekersService / GuidesService) because pulling in those modules
+    // creates a circular import with AuthModule.
+    const intent = user.pendingIntent;
+    const existingRoles = await this.prisma.userRole.findMany({
+      where: { userId: user.id },
+      select: { role: true },
+    });
+    const hasAnyRole = existingRoles.length > 0;
+
+    if (!hasAnyRole && intent === 'seeker') {
+      await Promise.all([
+        this.prisma.seekerProfile.create({ data: { userId: user.id } }),
+        this.prisma.userRole.create({ data: { userId: user.id, role: Role.SEEKER } }),
+      ]);
+    }
+    if (!hasAnyRole && intent === 'guide') {
+      // Guide gets a slug + GuideProfile shell. Mirrors the logic in
+      // GuidesService.startOnboarding so /onboarding/guide can resume from
+      // step 2 without a separate /guides/onboarding/start call.
+      const baseSlug = `${user.firstName} ${user.lastName}`
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      const slug = await this.ensureUniqueGuideSlug(baseSlug);
+      await Promise.all([
+        this.prisma.guideProfile.create({
+          data: {
+            userId: user.id,
+            slug,
+            displayName: `${user.firstName} ${user.lastName}`,
+            verificationStatus: VerificationStatus.PENDING,
+          },
+        }),
+        this.prisma.userRole.create({ data: { userId: user.id, role: Role.GUIDE } }),
+      ]);
+    }
+
     await this.usersService.update(user.id, {
       isEmailVerified: true,
       emailVerifyToken: null,
       emailVerifyExpiry: null,
+      pendingIntent: null,
     });
 
-    return { message: 'Email verified successfully' };
+    // Mint a session for the freshly-verified user.
+    const fullUser = await this.usersService.findByIdOrThrow(user.id);
+    const roles = fullUser.roles.map((r) => r.role);
+    const tokens = await this.generateTokens(user.id, user.email, roles);
+    await this.saveRefreshToken(user.id, tokens.refreshToken);
+
+    return {
+      user: this.sanitizeUser(fullUser),
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      intent: intent ?? 'seeker',
+    };
+  }
+
+  /**
+   * Slug uniqueness helper duplicated from GuidesService.ensureUniqueSlug
+   * to avoid the circular AuthModule → GuidesModule import the lazy
+   * profile creation in verifyEmail() would otherwise need.
+   */
+  private async ensureUniqueGuideSlug(base: string): Promise<string> {
+    let slug = base || 'guide';
+    let attempt = 0;
+    // Hard ceiling so a pathological collision can't run forever.
+    while (attempt < 100) {
+      const exists = await this.prisma.guideProfile.findUnique({ where: { slug } });
+      if (!exists) return slug;
+      slug = `${base}-${++attempt}`;
+    }
+    return `${base}-${Date.now()}`;
   }
 
   // ─── Forgot Password ────────────────────────────────────────────────────────

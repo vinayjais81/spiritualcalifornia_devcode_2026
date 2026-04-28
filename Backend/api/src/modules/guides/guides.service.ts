@@ -515,6 +515,20 @@ export class GuidesService {
 
   // ─── Public: Guide Profile by Slug (Aggregated) ────────────────────────────
 
+  /**
+   * Public guide profile by slug. Visibility is gated on TWO flags that BOTH
+   * have to be true for the profile to render to the public:
+   *
+   *   - isVerified  → set when the verification pipeline (Persona ID +
+   *                   admin credential review) approves the guide.
+   *   - isPublished → set by the admin during approval. Lets us un-publish
+   *                   a verified guide (e.g. on report) without deleting
+   *                   their data.
+   *
+   * If either flag is false we return 404 — same shape as a non-existent
+   * slug — so an unverified guide's profile URL is indistinguishable from
+   * "no such guide" to scrapers / search engines.
+   */
   async getPublicProfile(slug: string) {
     const guide = await this.prisma.guideProfile.findUnique({
       where: { slug },
@@ -547,7 +561,11 @@ export class GuidesService {
       },
     });
 
-    if (!guide) throw new NotFoundException(`Guide not found: ${slug}`);
+    if (!guide || !guide.isVerified || !guide.isPublished) {
+      // Single 404 message regardless of which gate failed — don't leak
+      // whether a slug exists but is pending verification.
+      throw new NotFoundException(`Guide not found: ${slug}`);
+    }
 
     // Aggregate all related data in parallel
     const [services, events, products, blogPosts, reviewData, testimonials, soulTours] =

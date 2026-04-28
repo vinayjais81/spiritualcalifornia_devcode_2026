@@ -59,6 +59,7 @@ export class UsersService {
         | 'passwordHash'
         | 'lastLoginAt'
         | 'marketingEmails'
+        | 'pendingIntent'
       >
     >,
   ) {

@@ -4,7 +4,6 @@ import { useRef, ChangeEvent, useState, useEffect } from 'react';
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
-import { refreshAuthWithLatestRoles } from '@/lib/refreshAuth';
 import { LocationAutocomplete } from '@/components/shared/LocationAutocomplete';
 
 
@@ -41,13 +40,14 @@ const lbl: React.CSSProperties = {
 
 export function Step1Profile() {
   const { step1, setStep1, setLoading, isLoading, setError, error, nextStep } = useOnboardingStore();
-  const { user, isAuthenticated, setAuth } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingFile = useRef<File | null>(null);
   const [focused, setFocused] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
+  const [awaitingVerification, setAwaitingVerification] = useState<string | null>(null);
   const [terms, setTerms] = useState(false);
 
   // Pre-fill name from auth store on first load
@@ -90,35 +90,40 @@ export function Step1Profile() {
     if (!isAuthenticated && !terms) { setError('Please accept the Terms of Service and Privacy Policy to continue.'); return; }
     setLoading(true); setError(null);
     try {
-      // For new (unauthenticated) users: create account first, then start onboarding
+      // ── Unauthenticated path: register only, then ask the user to
+      //    verify their email. We deliberately do NOT continue to
+      //    /guides/onboarding/start or save profile data — the backend
+      //    won't issue tokens until email is verified, and the rest of
+      //    the wizard requires an authenticated session. The bio /
+      //    avatar / etc. fields stay in the Zustand store so the form
+      //    is pre-filled when the user comes back from the verify link.
       if (!isAuthenticated) {
         if (!email || !password) { setError('Email and password are required.'); setLoading(false); return; }
-        // intent='guide' tells the backend to NOT assign SEEKER / create a
-        // SeekerProfile — guides and seekers are mutually exclusive on the
-        // same email. The GUIDE role is assigned by /guides/onboarding/start
-        // immediately below.
-        const { data: authData } = await api.post('/auth/register', {
+        await api.post('/auth/register', {
           firstName: step1.firstName,
           lastName: step1.lastName,
           email,
           password,
           intent: 'guide',
+          phone: step1.phone || undefined,
         });
-        setAuth(authData.user, authData.accessToken);
-        await api.post('/guides/onboarding/start');
-        // GUIDE role just got added in the DB — rotate the JWT so later calls
-        // (profile update, avatar upload, submit) pass @Roles(GUIDE) guards.
-        await refreshAuthWithLatestRoles();
-        // Upload deferred avatar if user selected one before creating account
-        if (pendingFile.current) {
-          const f = pendingFile.current;
-          const { data: upData } = await api.get('/upload/presigned-url', {
-            params: { folder: 'avatars', fileName: f.name, contentType: f.type },
-          });
-          await fetch(upData.uploadUrl, { method: 'PUT', body: f, headers: { 'Content-Type': f.type } });
-          setStep1({ avatarS3Key: upData.key });
-          pendingFile.current = null;
-        }
+        setAwaitingVerification(email);
+        setLoading(false);
+        return;
+      }
+
+      // ── Authenticated path: GuideProfile + GUIDE role were created at
+      //    /auth/verify-email. Now we apply the form data and advance.
+      // Upload deferred avatar if the user picked one before / during
+      // initial registration.
+      if (pendingFile.current) {
+        const f = pendingFile.current;
+        const { data: upData } = await api.get('/upload/presigned-url', {
+          params: { folder: 'avatars', fileName: f.name, contentType: f.type },
+        });
+        await fetch(upData.uploadUrl, { method: 'PUT', body: f, headers: { 'Content-Type': f.type } });
+        setStep1({ avatarS3Key: upData.key });
+        pendingFile.current = null;
       }
 
       const displayName = `${step1.firstName} ${step1.lastName}`.trim();
@@ -139,6 +144,58 @@ export function Step1Profile() {
       setError(Array.isArray(msg) ? msg.join(', ') : msg);
     } finally { setLoading(false); }
   };
+
+  // ── Post-register "check your inbox" view ──────────────────────────────
+  if (awaitingVerification) {
+    return (
+      <div style={{ padding: '40px 0', textAlign: 'center' }}>
+        <div style={{
+          fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase',
+          color: '#E8B84B', marginBottom: '14px', fontWeight: 500,
+        }}>
+          ✦ Almost there
+        </div>
+        <h1 className="font-cormorant" style={{
+          fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, lineHeight: 1.1,
+          color: '#3A3530', marginBottom: '14px',
+        }}>
+          Check your <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>inbox</em>
+        </h1>
+        <p style={{
+          fontSize: '15px', color: '#8A8278', lineHeight: 1.7,
+          maxWidth: '480px', margin: '0 auto 12px',
+        }}>
+          We&rsquo;ve sent a verification link to:
+        </p>
+        <p style={{
+          fontSize: '14px', color: '#3A3530', fontWeight: 500,
+          background: '#FDF6E3', border: '1px solid rgba(232,184,75,0.3)',
+          padding: '10px 18px', borderRadius: 6, display: 'inline-block',
+          marginBottom: '24px',
+        }}>
+          {awaitingVerification}
+        </p>
+        <p style={{
+          fontSize: '14px', color: '#8A8278', lineHeight: 1.7,
+          maxWidth: '480px', margin: '0 auto 32px',
+        }}>
+          Click the link to verify your email. Then you&rsquo;ll come back
+          here to finish setting up your guide profile. The details you
+          entered are saved — you won&rsquo;t lose them.
+        </p>
+        <p style={{ fontSize: '12px', color: '#8A8278' }}>
+          Didn&rsquo;t receive it? Check your spam folder, or{' '}
+          <button
+            onClick={() => setAwaitingVerification(null)}
+            style={{ background: 'none', border: 'none', color: '#E8B84B', cursor: 'pointer', textDecoration: 'underline', padding: 0, fontSize: '12px' }}
+          >
+            edit your details and try again
+          </button>
+          .
+        </p>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit}>

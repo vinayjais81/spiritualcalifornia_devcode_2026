@@ -78,7 +78,17 @@ function SignInContent() {
       }
     } catch (err: any) {
       const msg = err?.response?.data?.message ?? 'Invalid email or password.';
-      setError(Array.isArray(msg) ? msg.join(', ') : msg);
+      // Backend uses the sentinel string EMAIL_NOT_VERIFIED (returned with
+      // 401) to signal "credentials valid, but email isn't verified yet."
+      // Translate that into a clear, actionable message rather than the
+      // generic "invalid credentials" wording.
+      if (msg === 'EMAIL_NOT_VERIFIED') {
+        setError(
+          'Your email address hasn\u2019t been verified yet. Please click the link we emailed you when you registered. Check your spam folder if you can\u2019t find it.',
+        );
+      } else {
+        setError(Array.isArray(msg) ? msg.join(', ') : msg);
+      }
     } finally {
       setLoading(false);
     }

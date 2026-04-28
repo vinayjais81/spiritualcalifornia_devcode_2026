@@ -40,13 +40,14 @@ export class AuthController {
   @Public()
   @Post('register')
   @StrictThrottle()
-  @ApiOperation({ summary: 'Register a new seeker account' })
-  @ApiResponse({ status: 201, description: 'User registered successfully' })
+  @ApiOperation({ summary: 'Register a new account (seeker or guide)' })
+  @ApiResponse({ status: 201, description: 'Verification email sent — user must verify before login' })
   @ApiResponse({ status: 409, description: 'Email already registered' })
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: true }) res: Response) {
-    const result = await this.authService.register(dto);
-    this.setRefreshTokenCookie(res, result.refreshToken);
-    return { user: result.user, accessToken: result.accessToken };
+  async register(@Body() dto: RegisterDto) {
+    // No tokens issued, no refresh cookie set. The user must click the
+    // verification link in their email; /auth/verify-email will mint
+    // tokens at that point.
+    return this.authService.register(dto);
   }
 
   // ─── Login ──────────────────────────────────────────────────────────────────
@@ -102,9 +103,22 @@ export class AuthController {
 
   @Public()
   @Get('verify-email')
-  @ApiOperation({ summary: 'Verify email address via token' })
-  async verifyEmail(@Query('token') token: string) {
-    return this.authService.verifyEmail(token);
+  @ApiOperation({
+    summary:
+      'Verify email address via token. On success, mints session tokens — this is the first time the user gets a session, so the response sets the refresh cookie and returns an access token like /login does.',
+  })
+  async verifyEmail(
+    @Query('token') token: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.verifyEmail(token);
+    this.setRefreshTokenCookie(res, result.refreshToken);
+    return {
+      message: 'Email verified successfully',
+      user: result.user,
+      accessToken: result.accessToken,
+      intent: result.intent,
+    };
   }
 
   // ─── Forgot Password ────────────────────────────────────────────────────────

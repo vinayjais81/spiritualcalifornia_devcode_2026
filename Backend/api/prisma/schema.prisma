@@ -176,6 +176,11 @@ model User {
   passwordResetExpiry DateTime?
   lastLoginAt         DateTime?
   marketingEmails     Boolean   @default(true)
+  // Captured at registration so /auth/verify-email knows what side-effects
+  // to run after email is verified (assign role, create profile). Cleared
+  // once those side-effects fire. Values: 'seeker' | 'guide'. Null for
+  // users registered before this flow shipped or via other paths (Google).
+  pendingIntent       String?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
