@@ -78,10 +78,36 @@ async function attemptRefresh(): Promise<string> {
   }
 }
 
+// Auth endpoints that ARE the auth — a 401 from them means "credentials
+// rejected", not "session expired". Trying to refresh and chaining a
+// /signin redirect on these would clobber the form's error state, so we
+// always let those 401s propagate untouched to the caller's catch block.
+//
+// Match by URL substring so it works regardless of `baseURL` shape.
+const AUTH_ENDPOINTS = [
+  '/auth/login',
+  '/auth/register',
+  '/auth/refresh',
+  '/auth/verify-email',
+  '/auth/forgot-password',
+  '/auth/reset-password',
+];
+function isAuthEndpoint(config: { url?: string } | undefined): boolean {
+  const url = config?.url ?? '';
+  return AUTH_ENDPOINTS.some((p) => url.includes(p));
+}
+
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
+
+    // Don't try to refresh on 401s from auth endpoints — those are
+    // credential failures (e.g. wrong password, EMAIL_NOT_VERIFIED). Let
+    // the page handle the error message.
+    if (isAuthEndpoint(original)) {
+      return Promise.reject(error);
+    }
 
     if (error.response?.status === 401 && !original._retry) {
       if (isRefreshing) {
