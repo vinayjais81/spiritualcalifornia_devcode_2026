@@ -33,13 +33,23 @@ export function Navbar() {
   const storedCartCount = useCartStore((s) => s.getItemCount());
   const cartItemCount = mounted ? storedCartCount : 0;
 
-  // Hide "List Your Practice" for authenticated seekers (no GUIDE / ADMIN role)
+  // The top-nav "List Your Practice" CTA is for prospective guides only.
+  //   - Visitors see it (acquisition CTA).
+  //   - Authenticated SEEKERs DON'T see it (they already chose seeker; the
+  //     SEEKER ↔ GUIDE mutex means they can't also become a guide on the
+  //     same email — see docs/seeker-guide-role-mutex.md).
+  //   - Authenticated GUIDEs DON'T see it either: the user-menu dropdown
+  //     already exposes "My Dashboard", so a second link in the nav slot
+  //     was rendering duplicate "My Dashboard" entries.
+  //   - ADMIN/SUPER_ADMIN (without GUIDE) still see it so they can walk
+  //     through the guide flow for testing.
   const isGuide = (user?.roles ?? []).includes('GUIDE');
+  const isAdminClass =
+    (user?.roles ?? []).some((r) => r === 'ADMIN' || r === 'SUPER_ADMIN');
   const showListYourPractice =
-    !isAuthenticated || isGuide ||
-    (user?.roles ?? []).some(r => r === 'ADMIN' || r === 'SUPER_ADMIN');
-  const practiceCtaLabel = isGuide ? 'My Dashboard' : 'List Your Practice';
-  const practiceCtaHref = isGuide ? '/guide/dashboard' : '/onboarding/guide';
+    !isAuthenticated || (!isGuide && isAdminClass);
+  const practiceCtaLabel = 'List Your Practice';
+  const practiceCtaHref = '/onboarding/guide';
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
