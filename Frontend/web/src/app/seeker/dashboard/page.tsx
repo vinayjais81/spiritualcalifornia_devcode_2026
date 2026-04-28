@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { C, font, PageHeader, Panel, StatCard } from '@/components/guide/dashboard-ui';
 import { NeedsAttentionPanel } from '@/components/seeker/NeedsAttentionPanel';
+import { ProfileCompletenessWidget } from '@/components/seeker/ProfileCompletenessWidget';
 
 export default function SeekerDashboardPage() {
   const { user } = useAuthStore();
@@ -19,6 +20,11 @@ export default function SeekerDashboardPage() {
   return (
     <div>
       <PageHeader title={`Welcome back, ${user?.firstName || 'Seeker'}`} subtitle="Your spiritual journey at a glance." />
+
+      {/* Profile-completeness nudge — shown when the seeker hasn't filled
+          out the registration wizard's deferred fields (interests,
+          experience, practices, journey, bio). Self-hides at 100%. */}
+      <ProfileCompletenessWidget />
 
       {/* Unified "Needs your attention" block — cart + pending tours +
           pending service bookings + pending ticket purchases. Hidden

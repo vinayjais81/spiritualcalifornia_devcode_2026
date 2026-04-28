@@ -157,26 +157,33 @@ function RegisterContent() {
 
   // ─── On mount: pre-fill / resume ───────────────────────────────────────────
   useEffect(() => {
-    if (isGoogleUser && user) {
-      setFirstName(user.firstName ?? '');
-      setLastName(user.lastName ?? '');
-      setEmail(user.email ?? '');
-      // Honour ?step=N if returning Google user was mid-registration, otherwise start at 2
-      const stepParam = searchParams.get('step');
-      const resumeStep = stepParam ? Math.max(2, parseInt(stepParam, 10)) : 2;
-      setStep(resumeStep);
-      return;
-    }
-    // Resume for email-registered users returning to finish registration
-    if (isAuthenticated && !fromGoogle) {
-      api.get('/seekers/onboarding/status')
-        .then(({ data }) => {
-          if (data.completed) { router.replace('/'); return; }
-          // If step is 1 but user is already authenticated, they have an account — start at 2
-          setStep(data.step > 1 ? data.step : 2);
-        })
-        .catch(() => {});
-    }
+    if (!isAuthenticated) return;
+
+    // Common handler: once the user's email is verified we treat them as
+    // registered and bounce them to the dashboard. Steps 3+ become deferred
+    // profile fields, surfaced via the dashboard's profile-completeness
+    // widget — see SeekersService.computeProfileCompleteness on the backend.
+    api.get('/seekers/onboarding/status')
+      .then(({ data }) => {
+        const dest = searchParams.get('redirect') ?? '/seeker/dashboard';
+        if (data.completed || data.isEmailVerified) {
+          router.replace(dest);
+          return;
+        }
+        // Email NOT yet verified → keep them in the wizard so they see the
+        // "Check your inbox" notice and can pick interests while waiting.
+        if (isGoogleUser && user) {
+          setFirstName(user.firstName ?? '');
+          setLastName(user.lastName ?? '');
+          setEmail(user.email ?? '');
+          const stepParam = searchParams.get('step');
+          const resumeStep = stepParam ? Math.max(2, parseInt(stepParam, 10)) : 2;
+          setStep(resumeStep);
+          return;
+        }
+        setStep(data.step > 1 ? data.step : 2);
+      })
+      .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

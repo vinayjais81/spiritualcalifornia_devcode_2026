@@ -45,7 +45,17 @@ export class SeekersController {
   @ApiOperation({ summary: 'Update seeker profile' })
   updateProfile(
     @CurrentUser() user: CurrentUserData,
-    @Body() dto: { bio?: string; location?: string; timezone?: string; interests?: string[] },
+    @Body()
+    dto: {
+      bio?: string;
+      location?: string;
+      timezone?: string;
+      interests?: string[];
+      // The wizard's deferred fields, now editable from the dashboard.
+      experienceLevel?: string | null;
+      practices?: string[];
+      journeyText?: string | null;
+    },
   ) {
     return this.seekersService.updateProfile(user.id, dto);
   }

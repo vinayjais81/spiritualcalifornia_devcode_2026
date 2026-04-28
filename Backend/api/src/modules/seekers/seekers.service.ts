@@ -11,10 +11,28 @@ export class SeekersService {
 
   // ─── Onboarding ────────────────────────────────────────────────────────────
 
+  /**
+   * Returns the seeker's onboarding state for the registration wizard.
+   *
+   * Important: once `User.isEmailVerified` flips to true, we treat the
+   * seeker as "registered enough" and report `completed: true` regardless of
+   * how far they got in the wizard. The remaining wizard steps (interests,
+   * experience, journey) become deferred profile fields the user fills in
+   * from /seeker/dashboard/profile, and the dashboard surfaces a completeness
+   * widget to nudge them.
+   */
   async getOnboardingStatus(userId: string) {
-    const profile = await this.prisma.seekerProfile.findUnique({ where: { userId } });
-    if (!profile) return { step: 1, completed: false };
-    return { step: profile.onboardingStep, completed: profile.onboardingCompleted };
+    const profile = await this.prisma.seekerProfile.findUnique({
+      where: { userId },
+      include: { user: { select: { isEmailVerified: true } } },
+    });
+    if (!profile) return { step: 1, completed: false, isEmailVerified: false };
+    const isEmailVerified = profile.user.isEmailVerified;
+    return {
+      step: profile.onboardingStep,
+      completed: profile.onboardingCompleted || isEmailVerified,
+      isEmailVerified,
+    };
   }
 
   async updateOnboardingStep(userId: string, step: number, completed = false) {
@@ -41,10 +59,64 @@ export class SeekersService {
       },
     });
     if (!profile) throw new NotFoundException('Seeker profile not found');
-    return profile;
+    return {
+      ...profile,
+      completeness: this.computeProfileCompleteness(profile),
+    };
   }
 
-  async updateProfile(userId: string, dto: { bio?: string; location?: string; timezone?: string; interests?: string[] }) {
+  /**
+   * Five equally-weighted sections drive the dashboard's profile-
+   * completeness widget. Each section that has a non-trivial value counts
+   * 20%. Bio + location are intentionally not in here because they don't
+   * meaningfully change matching quality; the AI matcher uses interests +
+   * practices + journeyText, and `experienceLevel` shapes the recommended
+   * difficulty curve.
+   */
+  private computeProfileCompleteness(profile: {
+    bio: string | null;
+    interests: string[];
+    experienceLevel: string | null;
+    practices: string[];
+    journeyText: string | null;
+  }) {
+    const sections = [
+      { key: 'bio', filled: !!profile.bio && profile.bio.trim().length > 0, label: 'About you' },
+      { key: 'interests', filled: profile.interests.length > 0, label: 'Interests' },
+      {
+        key: 'experienceLevel',
+        filled: !!profile.experienceLevel,
+        label: 'Experience level',
+      },
+      { key: 'practices', filled: profile.practices.length > 0, label: 'Practices' },
+      {
+        key: 'journeyText',
+        filled: !!profile.journeyText && profile.journeyText.trim().length > 0,
+        label: 'Your journey',
+      },
+    ];
+    const filledCount = sections.filter((s) => s.filled).length;
+    return {
+      sections,
+      filledCount,
+      totalSections: sections.length,
+      percent: Math.round((filledCount / sections.length) * 100),
+      isComplete: filledCount === sections.length,
+    };
+  }
+
+  async updateProfile(
+    userId: string,
+    dto: {
+      bio?: string;
+      location?: string;
+      timezone?: string;
+      interests?: string[];
+      experienceLevel?: string | null;
+      practices?: string[];
+      journeyText?: string | null;
+    },
+  ) {
     const profile = await this.prisma.seekerProfile.findUnique({ where: { userId } });
     if (!profile) throw new NotFoundException('Seeker profile not found');
     return this.prisma.seekerProfile.update({

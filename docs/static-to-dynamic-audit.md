@@ -212,7 +212,8 @@ Total findings: **~88**. P0 count: **~21** (21 ✅ shipped). P1 count: **~35** (
 
 - ✅ [signin/page.tsx, register/page.tsx] Already fully dynamic.
 - ✅ [onboarding/guide/…] Already fetches categories from `/guides/categories`.
-- [ ] **P2** [register/page.tsx:25-58] Seeker-onboarding interest tags (24 modalities + 5 languages). → Derive from same `/guides/categories` + `Language` list instead of duplicating.
+- [x] **UX** [register/page.tsx, verify-email/page.tsx, /seeker/dashboard/profile, /seeker/dashboard] **Seeker deferred onboarding shipped.** Once email is verified, the wizard's steps 3–5 (interests / experience / practices / journey) become deferred profile fields, surfaced via a `ProfileCompletenessWidget` on the dashboard. New `experienceLevel`, `practices`, `journeyText` columns on `SeekerProfile`; migration backfills `onboardingCompleted=true` for already-verified stuck users. Full spec: [docs/seeker-deferred-onboarding.md](./seeker-deferred-onboarding.md). ✅ SHIPPED 2026-04-28
+- [ ] **P2** [register/page.tsx:25-58] Seeker-onboarding interest tags (24 modalities + 5 languages). → Derive from same `/guides/categories` + `Language` list instead of duplicating. *(Unchanged by 2026-04-28 work — same hardcoded list now also lives on the profile page; both will move together.)*
 
 ### Downloads / verify-ticket / reviews
 
@@ -351,5 +352,6 @@ Both pages are now fully CMS-managed via the `StaticPage` model, rendered throug
 - **2026-04-22** — Initial audit. Baseline for production-readiness tracking.
 - **2026-04-17** — Implementation sweep. Every P0 that did not require a new Prisma schema shipped. New backend endpoint `/config/public` + frontend `useSiteConfig()` hook centralize fees/policies/emails. Typecheck clean on backend (src) + frontend. Remaining open P0s are schema-blocked (`Product.subtitle`, `Product.digitalFiles.format/duration`) or awaiting a feature that isn't built yet (AI product finder, PromoCode hero banner).
 - **2026-04-23** — Static Pages CMS pass. Shipped `StaticPage` Prisma model + backend module + admin CRUD page + rich-text editor + seed script + dynamic `/p/[slug]` route. Privacy + Terms fully DB-driven; hardcoded bodies and `POLICY_AUTHORED_DATE` interim removed. **Same-day follow-up:** About + Mission also migrated to the CMS via a new `marketing` layout variant on `StaticPageRenderer`. All 4 public static pages now editable from `/static-pages`. Full `tsc --noEmit` + `next build` clean; 64/64 pages generated.
+- **2026-04-28** — Seeker deferred onboarding. Email-verified seekers no longer get trapped in the wizard if they leave mid-flow; `/register` redirects them to the dashboard, where a self-hiding `ProfileCompletenessWidget` nudges them to fill the deferred wizard fields (`experienceLevel`, `practices`, `journeyText`) via the profile page. New columns + idempotent backfill in one migration. Full spec at [seeker-deferred-onboarding.md](./seeker-deferred-onboarding.md).
 
 *Maintainer: update checkboxes as items ship. New findings discovered later should be appended to the right module with today's date.*

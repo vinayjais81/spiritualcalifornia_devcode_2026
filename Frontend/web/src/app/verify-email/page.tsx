@@ -43,11 +43,13 @@ function VerifyEmailContent() {
       });
   }, [token]);
 
-  // Countdown redirect on success
+  // Countdown redirect on success — drop the user on their dashboard so
+  // they see the profile-completeness widget (which now hosts the wizard's
+  // step 3+ fields) instead of bouncing to the public homepage.
   useEffect(() => {
     if (status !== 'success') return;
     if (countdown <= 0) {
-      router.push('/');
+      router.push('/seeker/dashboard');
       return;
     }
     const t = setTimeout(() => setCountdown((c) => c - 1), 1000);

@@ -235,6 +235,15 @@ model SeekerProfile {
   location            String?
   timezone            String?
   interests           String[]
+  // Captured in the registration wizard step 4 ("Experience"). One of:
+  // 'beginner' | 'explorer' | 'practitioner' | 'teacher'. Stored as plain
+  // string rather than enum so admins can extend without a migration.
+  experienceLevel     String?
+  // Practices the seeker has tried — e.g. ['meditation', 'breathwork'].
+  practices           String[] @default([])
+  // Free-text "what brings you here" from wizard step 5. Used by the AI
+  // matcher to tailor recommendations.
+  journeyText         String?
   onboardingStep      Int      @default(1)
   onboardingCompleted Boolean  @default(false)
   createdAt           DateTime @default(now())
