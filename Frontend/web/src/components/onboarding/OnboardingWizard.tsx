@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useOnboardingStore } from '@/store/onboarding.store';
@@ -19,6 +20,8 @@ import type { Category } from '@/types/onboarding';
 export function OnboardingWizard() {
   const { step, status, categories, setCategories, setStatus, setStep } = useOnboardingStore();
   const { isAuthenticated } = useAuthStore();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
 
   // Wait for Zustand hydration before rendering
@@ -40,12 +43,22 @@ export function OnboardingWizard() {
       .catch(() => {});
   }, [isAuthenticated, categories.length, setCategories]);
 
+  // Once email is verified we treat the guide as "registered enough" and
+  // drop them onto /guide/dashboard. The remaining wizard steps (categories,
+  // profile, credentials, submit-for-verification) are surfaced as a
+  // ProfileCompletenessWidget on the dashboard. A guide who explicitly
+  // wants the linear wizard back can opt in via `?resume=1`.
   useEffect(() => {
     if (!isAuthenticated) return;
+    const wantsResume = searchParams.get('resume') === '1';
     api
       .get('/guides/onboarding/status')
       .then((res) => {
         setStatus(res.data);
+        if (res.data?.isEmailVerified && !wantsResume) {
+          router.replace('/guide/dashboard');
+          return;
+        }
         const completedSteps: number[] = res.data.completedSteps ?? [];
         // Always start at step 1 minimum — account creation is handled externally
         const resumeStep = Math.max(1, Math.min(7, completedSteps.length)) as 1 | 2 | 3 | 4 | 5 | 6 | 7;
@@ -54,7 +67,7 @@ export function OnboardingWizard() {
       .catch(() => {
         setStep(1);
       });
-  }, [isAuthenticated, setStatus, setStep]);
+  }, [isAuthenticated, setStatus, setStep, router, searchParams]);
 
   const completedSteps = status?.completedSteps ?? [];
 

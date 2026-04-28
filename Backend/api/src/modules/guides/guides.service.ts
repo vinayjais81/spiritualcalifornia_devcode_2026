@@ -282,10 +282,24 @@ export class GuidesService {
   async getOnboardingStatus(userId: string) {
     const guide = await this.prisma.guideProfile.findUnique({
       where: { userId },
-      include: { categories: true, credentials: true },
+      include: {
+        categories: true,
+        credentials: true,
+        user: { select: { isEmailVerified: true, avatarUrl: true } },
+      },
     });
 
-    if (!guide) return { started: false };
+    if (!guide) {
+      // Caller may still be a freshly-registered user who hasn't started the
+      // wizard at all. Surface email-verified separately so the frontend can
+      // decide whether to drop them on the dashboard or push them through
+      // the wizard.
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { isEmailVerified: true },
+      });
+      return { started: false, isEmailVerified: !!user?.isEmailVerified };
+    }
 
     return {
       started: true,
@@ -294,9 +308,87 @@ export class GuidesService {
       verificationStatus: guide.verificationStatus,
       isPublished: guide.isPublished,
       isVerified: guide.isVerified,
+      isEmailVerified: guide.user.isEmailVerified,
       categoriesSet: guide.categories.length > 0,
       credentialsCount: guide.credentials.length,
       completedSteps: this.resolveCompletedSteps(guide),
+      // Five-section completeness for the dashboard widget. Same shape as
+      // SeekersService.computeProfileCompleteness so the frontend can share
+      // a Type and the widget UX mirrors the seeker version.
+      completeness: this.computeProfileCompleteness({
+        bio: guide.bio,
+        displayName: guide.displayName,
+        avatarUrl: guide.user.avatarUrl,
+        location: guide.location,
+        calendlyConnected: guide.calendlyConnected,
+        categoriesCount: guide.categories.length,
+        credentialsCount: guide.credentials.length,
+        verificationStatus: guide.verificationStatus,
+      }),
+    };
+  }
+
+  /**
+   * Five equally-weighted sections drive the guide dashboard's profile-
+   * completeness widget. Mirrors SeekersService.computeProfileCompleteness
+   * in shape so the frontend widget can share types.
+   *
+   * Stripe Connect (`stripeOnboardingDone`) is intentionally NOT in here —
+   * it's a separate post-approval lifecycle stage, surfaced via its own
+   * prompt on the dashboard once verification is approved.
+   */
+  private computeProfileCompleteness(input: {
+    bio: string | null;
+    displayName: string;
+    avatarUrl: string | null;
+    location: string | null;
+    calendlyConnected: boolean;
+    categoriesCount: number;
+    credentialsCount: number;
+    verificationStatus: VerificationStatus;
+  }) {
+    const sections = [
+      {
+        key: 'categories',
+        label: 'Categories',
+        filled: input.categoriesCount > 0,
+      },
+      {
+        key: 'profile',
+        label: 'Profile basics',
+        // Display name is required at registration so we don't gate on it;
+        // bio + avatar are the meaningful "profile filled" signals.
+        filled:
+          !!input.bio && input.bio.trim().length > 0 && !!input.avatarUrl,
+      },
+      {
+        key: 'locationSchedule',
+        label: 'Location & schedule',
+        filled: !!input.location || input.calendlyConnected,
+      },
+      {
+        key: 'credentials',
+        label: 'Credentials',
+        filled: input.credentialsCount > 0,
+      },
+      {
+        key: 'submittedForVerification',
+        label: 'Submitted for verification',
+        filled: (
+          [
+            VerificationStatus.IN_REVIEW,
+            VerificationStatus.APPROVED,
+          ] as VerificationStatus[]
+        ).includes(input.verificationStatus),
+      },
+    ];
+    const filledCount = sections.filter((s) => s.filled).length;
+    return {
+      sections,
+      filledCount,
+      totalSections: sections.length,
+      percent: Math.round((filledCount / sections.length) * 100),
+      isComplete: filledCount === sections.length,
     };
   }
 
@@ -363,6 +455,16 @@ export class GuidesService {
       identityVerification: personaVerification
         ? { status: personaVerification.status, completedAt: personaVerification.completedAt }
         : null,
+      completeness: this.computeProfileCompleteness({
+        bio: guide.bio,
+        displayName: guide.displayName,
+        avatarUrl: guide.user.avatarUrl,
+        location: guide.location,
+        calendlyConnected: guide.calendlyConnected,
+        categoriesCount: guide.categories.length,
+        credentialsCount: guide.credentials.length,
+        verificationStatus: guide.verificationStatus,
+      }),
     };
   }
 
