@@ -44,27 +44,47 @@ export class AuthService {
       lastName: dto.lastName,
     });
 
-    // Set email verify token + create seeker profile + assign SEEKER role
-    await Promise.all([
+    // SEEKER and GUIDE are mutually exclusive on the same email. The two
+    // intents take different paths here:
+    //
+    //   intent='guide'  → no role and no profile assigned now. The
+    //                     /guides/onboarding/start endpoint will create the
+    //                     GuideProfile and assign GUIDE.
+    //   intent='seeker' → existing behaviour: assign SEEKER + create
+    //                     SeekerProfile so the user can immediately use
+    //                     the marketplace as a seeker.
+    const isGuideIntent = dto.intent === 'guide';
+
+    const sideEffects: Promise<unknown>[] = [
       this.usersService.update(user.id, {
         emailVerifyToken,
         emailVerifyExpiry,
         ...(dto.phone ? { phone: dto.phone } : {}),
-        ...(dto.newsletterOptIn !== undefined ? { marketingEmails: dto.newsletterOptIn } : {}),
+        ...(dto.newsletterOptIn !== undefined
+          ? { marketingEmails: dto.newsletterOptIn }
+          : {}),
       }),
-      this.usersService.createSeekerProfile(user.id, dto.location),
-      this.usersService.assignRole(user.id, Role.SEEKER),
-    ]);
+    ];
+    if (!isGuideIntent) {
+      sideEffects.push(
+        this.usersService.createSeekerProfile(user.id, dto.location),
+        this.usersService.assignRole(user.id, Role.SEEKER),
+      );
+    }
+    await Promise.all(sideEffects);
 
     // Send verification email — fire-and-forget (never block register response)
     void this.sendVerificationEmail(user.email, user.firstName, emailVerifyToken);
 
-    const roles = [Role.SEEKER];
+    const roles: Role[] = isGuideIntent ? [] : [Role.SEEKER];
     const tokens = await this.generateTokens(user.id, user.email, roles);
     await this.saveRefreshToken(user.id, tokens.refreshToken);
 
     return {
-      user: this.sanitizeUser({ ...user, roles: [{ role: Role.SEEKER }] }),
+      user: this.sanitizeUser({
+        ...user,
+        roles: roles.map((role) => ({ role })),
+      }),
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     };

@@ -19,10 +19,24 @@ import type { Category } from '@/types/onboarding';
 
 export function OnboardingWizard() {
   const { step, status, categories, setCategories, setStatus, setStep } = useOnboardingStore();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
+
+  // Cross-role guard: SEEKER and GUIDE are mutually exclusive on the same
+  // email. If a logged-in seeker lands here, we render a friendly block
+  // instead of the wizard. ADMIN/SUPER_ADMIN are exempt — staff can wear
+  // both hats for testing.
+  const userRoles = user?.roles ?? [];
+  const isAdminClass =
+    userRoles.includes('ADMIN' as never) ||
+    userRoles.includes('SUPER_ADMIN' as never);
+  const isExistingSeeker =
+    isAuthenticated &&
+    !isAdminClass &&
+    userRoles.includes('SEEKER' as never) &&
+    !userRoles.includes('GUIDE' as never);
 
   // Wait for Zustand hydration before rendering
   useEffect(() => { setMounted(true); }, []);
@@ -84,6 +98,11 @@ export function OnboardingWizard() {
 
   // Wait for Zustand hydration before rendering
   if (!mounted) return null;
+
+  // Cross-role block: an existing seeker cannot also become a guide on the
+  // same email. Render a clear page instead of the wizard so the user
+  // knows exactly what to do (sign out → register again with a new email).
+  if (isExistingSeeker) return <CrossRoleBlock />;
 
   return (
     <div style={{ minHeight: '100vh', background: '#FAFAF7', fontFamily: 'var(--font-inter), sans-serif' }}>
@@ -209,6 +228,131 @@ export function OnboardingWizard() {
           main { padding: 140px 16px 60px !important; }
         }
       `}</style>
+    </div>
+  );
+}
+
+// ─── Cross-role block ────────────────────────────────────────────────────────
+
+/**
+ * Shown when a logged-in seeker tries to enter the guide wizard. Seekers
+ * and guides are mutually exclusive on the same email — they need to sign
+ * out and register again with a different email if they want to also be
+ * a guide. ADMIN/SUPER_ADMIN are exempt from this rule and never reach
+ * this branch.
+ */
+function CrossRoleBlock() {
+  const { logout } = useAuthStore();
+  const router = useRouter();
+
+  const handleSignOutAndRegister = async () => {
+    try {
+      await logout();
+    } catch {
+      // logout API may fail; we still want to wipe local state and route
+      // the user to the registration form.
+    }
+    router.push('/onboarding/guide');
+  };
+
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        background: '#FAFAF7',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px 24px',
+        fontFamily: 'var(--font-inter), sans-serif',
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 520,
+          textAlign: 'center',
+          background: '#fff',
+          border: '1px solid rgba(232,184,75,0.25)',
+          borderRadius: 12,
+          padding: '40px 36px',
+        }}
+      >
+        <div
+          style={{
+            fontSize: 11,
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            color: '#E8B84B',
+            marginBottom: 14,
+            fontWeight: 500,
+          }}
+        >
+          ✦ This email is already a seeker
+        </div>
+        <h1
+          style={{
+            fontFamily: 'var(--font-cormorant-garamond), serif',
+            fontSize: 32,
+            fontWeight: 400,
+            color: '#3A3530',
+            lineHeight: 1.2,
+            margin: '0 0 14px',
+          }}
+        >
+          One email,{' '}
+          <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>one role</em>
+        </h1>
+        <p
+          style={{
+            fontSize: 14,
+            color: '#8A8278',
+            lineHeight: 1.7,
+            margin: '0 0 28px',
+          }}
+        >
+          Your account is already registered as a seeker on Spiritual
+          California. Seekers and guides are kept separate so each profile
+          stays focused. To register as a guide, please sign out and register
+          again using a different email address.
+        </p>
+
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button
+            onClick={handleSignOutAndRegister}
+            style={{
+              padding: '12px 24px',
+              background: '#3A3530',
+              color: '#fff',
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 500,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              border: 'none',
+              cursor: 'pointer',
+            }}
+          >
+            Sign out & register as guide
+          </button>
+          <Link
+            href="/seeker/dashboard"
+            style={{
+              padding: '12px 24px',
+              border: '1px solid rgba(232,184,75,0.4)',
+              color: '#3A3530',
+              borderRadius: 6,
+              fontSize: 12,
+              fontWeight: 500,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              textDecoration: 'none',
+            }}
+          >
+            Back to my dashboard
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

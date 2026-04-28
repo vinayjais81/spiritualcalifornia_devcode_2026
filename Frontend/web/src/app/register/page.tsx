@@ -327,6 +327,102 @@ function RegisterContent() {
     fontFamily: 'var(--font-inter), sans-serif',
   };
 
+  // Cross-role guard: SEEKER and GUIDE are mutually exclusive on the same
+  // email. If a logged-in guide lands on /register, render a clear block
+  // instead of the seeker wizard. ADMIN/SUPER_ADMIN are exempt — staff can
+  // wear both hats for testing.
+  const userRoles = (user?.roles ?? []) as string[];
+  const isAdminClass = userRoles.includes('ADMIN') || userRoles.includes('SUPER_ADMIN');
+  const isExistingGuide =
+    isAuthenticated &&
+    !isAdminClass &&
+    userRoles.includes('GUIDE') &&
+    !userRoles.includes('SEEKER');
+  if (isExistingGuide) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          background: G.offWhite,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '40px 24px',
+          fontFamily: 'var(--font-inter), sans-serif',
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 520,
+            textAlign: 'center',
+            background: '#fff',
+            border: '1px solid rgba(232,184,75,0.25)',
+            borderRadius: 12,
+            padding: '40px 36px',
+          }}
+        >
+          <div
+            style={{
+              fontSize: 11,
+              letterSpacing: '0.22em',
+              textTransform: 'uppercase',
+              color: G.gold,
+              marginBottom: 14,
+              fontWeight: 500,
+            }}
+          >
+            ✦ This email is already a guide
+          </div>
+          <h1
+            style={{
+              fontFamily: 'var(--font-cormorant-garamond), serif',
+              fontSize: 32,
+              fontWeight: 400,
+              color: G.charcoal,
+              lineHeight: 1.2,
+              margin: '0 0 14px',
+            }}
+          >
+            One email,{' '}
+            <em style={{ fontStyle: 'italic', color: G.gold }}>one role</em>
+          </h1>
+          <p
+            style={{
+              fontSize: 14,
+              color: G.warmGray,
+              lineHeight: 1.7,
+              margin: '0 0 28px',
+            }}
+          >
+            Your account is already registered as a guide on Spiritual
+            California. Seekers and guides are kept separate so each profile
+            stays focused. To explore the platform as a seeker, please sign
+            out and register again using a different email address.
+          </p>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link
+              href="/guide/dashboard"
+              style={{
+                padding: '12px 24px',
+                background: G.charcoal,
+                color: '#fff',
+                borderRadius: 6,
+                fontSize: 12,
+                fontWeight: 500,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                textDecoration: 'none',
+              }}
+            >
+              Go to my guide dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="public-site" style={{ minHeight: '100vh', position: 'relative' }}>
       <BotanicalBg />

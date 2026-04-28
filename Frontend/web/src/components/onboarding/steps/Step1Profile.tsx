@@ -93,11 +93,16 @@ export function Step1Profile() {
       // For new (unauthenticated) users: create account first, then start onboarding
       if (!isAuthenticated) {
         if (!email || !password) { setError('Email and password are required.'); setLoading(false); return; }
+        // intent='guide' tells the backend to NOT assign SEEKER / create a
+        // SeekerProfile — guides and seekers are mutually exclusive on the
+        // same email. The GUIDE role is assigned by /guides/onboarding/start
+        // immediately below.
         const { data: authData } = await api.post('/auth/register', {
           firstName: step1.firstName,
           lastName: step1.lastName,
           email,
           password,
+          intent: 'guide',
         });
         setAuth(authData.user, authData.accessToken);
         await api.post('/guides/onboarding/start');

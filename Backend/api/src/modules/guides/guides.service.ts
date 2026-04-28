@@ -63,14 +63,30 @@ export class GuidesService {
 
   // ─── Onboarding: Start ──────────────────────────────────────────────────────
 
+  /**
+   * Idempotent: if the user already has a GuideProfile we just return it
+   * (covers re-tries after a frontend network blip).
+   *
+   * Cross-role guard: SEEKER and GUIDE are mutually exclusive on the same
+   * email. If the caller already has the SEEKER role we reject with a clear
+   * 409 — they need to register with a different email. ADMIN/SUPER_ADMIN
+   * are exempt (platform staff can wear both hats for testing).
+   */
   async startOnboarding(userId: string) {
     const existing = await this.prisma.guideProfile.findUnique({ where: { userId } });
     if (existing) return existing;
 
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { id: userId },
-      select: { firstName: true, lastName: true },
+      select: { firstName: true, lastName: true, roles: { select: { role: true } } },
     });
+
+    const userRoles = user.roles.map((r) => r.role);
+    if (userRoles.includes(Role.SEEKER)) {
+      throw new ConflictException(
+        'This email is already registered as a seeker. Please sign out and register as a guide using a different email.',
+      );
+    }
 
     const baseSlug = slugify(`${user.firstName} ${user.lastName}`);
     const slug = await this.ensureUniqueSlug(baseSlug);

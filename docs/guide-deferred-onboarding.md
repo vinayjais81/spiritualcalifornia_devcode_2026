@@ -67,12 +67,13 @@ The completeness widget reads its 5 sections from existing schema columns (`bio`
 
 | User state | What `/onboarding/guide` does | Where the widget shows |
 |---|---|---|
-| Unauthenticated | Step 1 form (account creation embedded in wizard) | n/a |
+| Unauthenticated | Step 1 form (account creation embedded in wizard, calls `/auth/register` with `intent: 'guide'`) | n/a |
 | Authenticated, email NOT verified, GuideProfile not yet created | Resume wizard at step 1 | n/a |
-| Authenticated, email verified, **GuideProfile NOT yet created** | Wizard runs (so they can hit `/guides/onboarding/start` and receive the GUIDE role) | n/a |
-| Authenticated, email verified, GuideProfile started, completeness <100% | Redirect to `/guide/dashboard` (unless `?resume=1`) | Yes, on dashboard |
-| Authenticated, email verified, GuideProfile started, `?resume=1` set | Wizard renders, resumes at completed-steps boundary | Yes (still useful — verification might not be submitted) |
-| Authenticated, email verified, completeness 100% | Redirect to `/guide/dashboard` | No (auto-hides) |
+| **Authenticated as a SEEKER (cross-role)** | **Friendly block page: "This email is already registered as a seeker." User must sign out and re-register with a different email.** Per the SEEKER ↔ GUIDE mutex policy. | n/a |
+| Authenticated, GUIDE role assigned, email verified, completeness <100% | Redirect to `/guide/dashboard` (unless `?resume=1`) | Yes, on dashboard |
+| Authenticated, GUIDE role assigned, email verified, `?resume=1` set | Wizard renders, resumes at completed-steps boundary | Yes (still useful — verification might not be submitted) |
+| Authenticated, GUIDE role assigned, email verified, completeness 100% | Redirect to `/guide/dashboard` | No (auto-hides) |
+| Admin / super-admin (no SEEKER role) | Wizard runs — admins are exempt from the mutex | n/a until they have a GuideProfile |
 
 ## Verification checklist (post-deploy)
 
