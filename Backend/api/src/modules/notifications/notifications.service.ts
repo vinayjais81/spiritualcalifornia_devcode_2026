@@ -93,6 +93,97 @@ export class NotificationsService {
     await this.emailService.sendVerificationApproved(data.email, data.guideName);
   }
 
+  // ─── Payouts v2 ────────────────────────────────────────────────────────────
+
+  async notifyPayoutCompleted(data: {
+    userId: string;
+    email: string;
+    guideName: string;
+    amount: string;
+    transferId: string;
+    earningsUrl: string;
+  }) {
+    await this.create(
+      data.userId,
+      'PAYOUT_PROCESSED',
+      'Payout Sent',
+      `Your payout of ${data.amount} is on its way.`,
+      { transferId: data.transferId },
+    );
+    await this.emailService.sendPayoutNotification(data.email, {
+      subject: `Payout Sent — ${data.amount}`,
+      headline: 'Payout Sent ✓',
+      body: `Hi ${data.guideName},\n\nYour payout of ${data.amount} has been sent to your bank via Stripe. Most banks deposit within 1–2 business days.\n\nReference: ${data.transferId}`,
+      ctaLabel: 'View Earnings',
+      ctaUrl: data.earningsUrl,
+    });
+  }
+
+  async notifyPayoutFailed(data: {
+    userId: string;
+    email: string;
+    guideName: string;
+    amount: string;
+    reason: string;
+    earningsUrl: string;
+  }) {
+    await this.create(
+      data.userId,
+      'PAYOUT_PROCESSED',
+      'Payout Failed',
+      `Your payout of ${data.amount} could not be sent — your balance has been restored.`,
+    );
+    await this.emailService.sendPayoutNotification(data.email, {
+      subject: `Payout Failed — ${data.amount}`,
+      headline: 'Payout Failed',
+      body: `Hi ${data.guideName},\n\nYour payout of ${data.amount} could not be sent. Stripe reported: "${data.reason}". Your balance has been restored — please check your Stripe Connect dashboard for details (often: missing bank info or KYC requirement) and try again.`,
+      ctaLabel: 'Open Stripe Dashboard',
+      ctaUrl: data.earningsUrl,
+    });
+  }
+
+  async notifyPayoutHeld(data: {
+    userId: string;
+    email: string;
+    guideName: string;
+    reason: string;
+    supportEmail: string;
+  }) {
+    await this.create(
+      data.userId,
+      'PAYOUT_PROCESSED',
+      'Payout Hold Placed',
+      'Payouts on your account are temporarily on hold pending review.',
+    );
+    await this.emailService.sendPayoutNotification(data.email, {
+      subject: 'Payouts Temporarily on Hold',
+      headline: 'Payouts on Hold',
+      body: `Hi ${data.guideName},\n\nWe've temporarily placed your payouts on hold while we review your account. Reason: ${data.reason}.\n\nIf you have questions, reply to this email or write to ${data.supportEmail}.`,
+    });
+  }
+
+  async notifyPayoutEarningsCleared(data: {
+    userId: string;
+    email: string;
+    guideName: string;
+    amount: string;
+    earningsUrl: string;
+  }) {
+    await this.create(
+      data.userId,
+      'PAYMENT_RECEIVED',
+      'Earnings Available',
+      `${data.amount} cleared and is available for payout.`,
+    );
+    await this.emailService.sendPayoutNotification(data.email, {
+      subject: `${data.amount} Available for Payout`,
+      headline: 'Earnings Cleared ✦',
+      body: `Hi ${data.guideName},\n\n${data.amount} of your recent earnings has cleared the holding period and is now available for payout.\n\nMinimum payout amount: $50.`,
+      ctaLabel: 'Request Payout',
+      ctaUrl: data.earningsUrl,
+    });
+  }
+
   // ─── Soul Tour: Deposit / Booking Confirmed ────────────────────────────────
 
   async notifyTourDepositConfirmed(data: {

@@ -195,4 +195,30 @@ export class StripeService {
   async retrievePaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
     return this.stripe.paymentIntents.retrieve(paymentIntentId);
   }
+
+  async retrieveCharge(chargeId: string): Promise<Stripe.Charge> {
+    return this.stripe.charges.retrieve(chargeId);
+  }
+
+  // ─── Reconciliation: balance transactions ──────────────────────────────────
+
+  async listBalanceTransactions(params: {
+    since: Date;
+    until?: Date;
+    limit?: number;
+  }): Promise<Stripe.BalanceTransaction[]> {
+    const sinceUnix = Math.floor(params.since.getTime() / 1000);
+    const untilUnix = params.until ? Math.floor(params.until.getTime() / 1000) : undefined;
+    const out: Stripe.BalanceTransaction[] = [];
+    for await (const txn of this.stripe.balanceTransactions.list({
+      created: {
+        gte: sinceUnix,
+        ...(untilUnix !== undefined ? { lt: untilUnix } : {}),
+      },
+      limit: params.limit ?? 100,
+    })) {
+      out.push(txn);
+    }
+    return out;
+  }
 }

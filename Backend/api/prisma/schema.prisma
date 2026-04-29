@@ -81,6 +81,34 @@ enum PayoutStatus {
   PROCESSING
   COMPLETED
   FAILED
+  REJECTED
+  CANCELLED
+}
+
+enum LedgerEntryType {
+  SALE
+  COMMISSION
+  STRIPE_FEE
+  NET_PAYABLE
+  REFUND_REVERSAL
+  PAYOUT
+  PAYOUT_REVERSAL
+  ADJUSTMENT
+}
+
+enum LedgerStatus {
+  PENDING_CLEARANCE
+  AVAILABLE
+  PAID_OUT
+  REVERSED
+  HELD
+}
+
+enum EarningCategory {
+  SERVICE
+  EVENT
+  TOUR
+  PRODUCT
 }
 
 enum ProductType {
@@ -184,15 +212,15 @@ model User {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
-  roles               UserRole[]
-  seekerProfile       SeekerProfile?
-  guideProfile        GuideProfile?
-  refreshTokens       RefreshToken[]
-  reviewsGiven        Review[]       @relation("ReviewAuthor")
-  reviewsReceived     Review[]       @relation("ReviewTarget")
-  testimonialsGiven   Testimonial[]  @relation("TestimonialAuthor")
-  notifications       Notification[]
-  auditLogs           AuditLog[]
+  roles             UserRole[]
+  seekerProfile     SeekerProfile?
+  guideProfile      GuideProfile?
+  refreshTokens     RefreshToken[]
+  reviewsGiven      Review[]       @relation("ReviewAuthor")
+  reviewsReceived   Review[]       @relation("ReviewTarget")
+  testimonialsGiven Testimonial[]  @relation("TestimonialAuthor")
+  notifications     Notification[]
+  auditLogs         AuditLog[]
 
   @@map("users")
 }
@@ -203,26 +231,26 @@ model UserRole {
   role      Role
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, role])
   @@map("user_roles")
 }
 
 model RefreshToken {
-  id                  String    @id @default(cuid())
-  userId              String
-  token               String    @unique
-  expiresAt           DateTime
-  isRevoked           Boolean   @default(false)
+  id                String    @id @default(cuid())
+  userId            String
+  token             String    @unique
+  expiresAt         DateTime
+  isRevoked         Boolean   @default(false)
   // When the token was rotated / revoked. Used with `replacedByTokenId`
   // to grant a 60-second grace window so concurrent refresh calls from
   // multiple tabs don't log each other out.
-  revokedAt           DateTime?
-  replacedByTokenId   String?
-  createdAt           DateTime  @default(now())
+  revokedAt         DateTime?
+  replacedByTokenId String?
+  createdAt         DateTime  @default(now())
 
-  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
   @@index([replacedByTokenId])
@@ -281,7 +309,7 @@ model GuideProfile {
   city                 String?
   state                String?
   zipCode              String?
-  country              String?          @default("United States")
+  country              String?            @default("United States")
   timezone             String?
   websiteUrl           String?
   instagramUrl         String?
@@ -290,13 +318,13 @@ model GuideProfile {
   modalities           String[]           @default([])
   issuesHelped         String[]           @default([])
   yearsExperience      Int?
-  calendarType              String?
-  calendarLink              String?
-  sessionPricingJson        String?
-  calendlyConnected         Boolean  @default(false)
-  calendlyAccessToken       String?
-  calendlyRefreshToken      String?
-  calendlyUserUri           String?
+  calendarType         String?
+  calendarLink         String?
+  sessionPricingJson   String?
+  calendlyConnected    Boolean            @default(false)
+  calendlyAccessToken  String?
+  calendlyRefreshToken String?
+  calendlyUserUri      String?
   isPublished          Boolean            @default(false)
   isVerified           Boolean            @default(false)
   verificationStatus   VerificationStatus @default(PENDING)
@@ -313,7 +341,7 @@ model GuideProfile {
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
-  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   categories      GuideCategory[]
   services        Service[]
   credentials     Credential[]
@@ -326,6 +354,8 @@ model GuideProfile {
   payoutAccount   PayoutAccount?
   payoutRequests  PayoutRequest[]
   subscription    GuideSubscription?
+  ledgerEntries   LedgerEntry[]
+  commissionRates CommissionRate[]
 
   @@index([slug])
   @@index([isPublished, isVerified])
@@ -333,16 +363,16 @@ model GuideProfile {
 }
 
 model GuideMedia {
-  id           String       @id @default(cuid())
+  id           String   @id @default(cuid())
   guideId      String
-  type         String       // 'image' | 'video_url' | 'video_s3'
+  type         String // 'image' | 'video_url' | 'video_s3'
   url          String
   thumbnailUrl String?
   caption      String?
-  sortOrder    Int          @default(0)
-  createdAt    DateTime     @default(now())
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
 
-  guide        GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  guide GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
 
   @@map("guide_media")
 }
@@ -352,14 +382,14 @@ model GuideMedia {
 // ─────────────────────────────────────────────
 
 model Category {
-  id            String        @id @default(cuid())
-  name          String        @unique
-  slug          String        @unique
-  description   String?
-  iconUrl       String?
-  sortOrder     Int           @default(0)
-  isActive      Boolean       @default(true)
-  createdAt     DateTime      @default(now())
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  iconUrl     String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
 
   subcategories Subcategory[]
   guides        GuideCategory[]
@@ -368,30 +398,30 @@ model Category {
 }
 
 model Subcategory {
-  id         String          @id @default(cuid())
+  id         String   @id @default(cuid())
   categoryId String
   name       String
   slug       String
-  isApproved Boolean         @default(false)
-  isCustom   Boolean         @default(false)
-  createdAt  DateTime        @default(now())
+  isApproved Boolean  @default(false)
+  isCustom   Boolean  @default(false)
+  createdAt  DateTime @default(now())
 
-  category   Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  guides     GuideCategory[]
+  category Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  guides   GuideCategory[]
 
   @@unique([categoryId, slug])
   @@map("subcategories")
 }
 
 model GuideCategory {
-  id            String       @id @default(cuid())
+  id            String  @id @default(cuid())
   guideId       String
   categoryId    String
   subcategoryId String?
 
-  guide         GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
-  category      Category     @relation(fields: [categoryId], references: [id])
-  subcategory   Subcategory? @relation(fields: [subcategoryId], references: [id])
+  guide       GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  category    Category     @relation(fields: [categoryId], references: [id])
+  subcategory Subcategory? @relation(fields: [subcategoryId], references: [id])
 
   @@unique([guideId, categoryId, subcategoryId])
   @@map("guide_categories")
@@ -416,21 +446,21 @@ model Credential {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
-  guide              GuideProfile             @relation(fields: [guideId], references: [id], onDelete: Cascade)
-  verificationLog    CredentialVerification[]
+  guide           GuideProfile             @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  verificationLog CredentialVerification[]
 
   @@map("credentials")
 }
 
 model CredentialVerification {
-  id           String     @id @default(cuid())
+  id           String   @id @default(cuid())
   credentialId String
-  stage        String     // 'textract' | 'claude_nlp' | 'admin_review'
+  stage        String // 'textract' | 'claude_nlp' | 'admin_review'
   status       String
   result       Json?
-  processedAt  DateTime   @default(now())
+  processedAt  DateTime @default(now())
 
-  credential   Credential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
+  credential Credential @relation(fields: [credentialId], references: [id], onDelete: Cascade)
 
   @@map("credential_verifications")
 }
@@ -453,7 +483,7 @@ model InstitutionReference {
   name      String
   aliases   String[]
   country   String?
-  type      String?  // 'university' | 'certification_body' | 'wellness_school'
+  type      String? // 'university' | 'certification_body' | 'wellness_school'
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 
@@ -477,24 +507,24 @@ model Service {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  guide       GuideProfile  @relation(fields: [guideId], references: [id], onDelete: Cascade)
-  slots       ServiceSlot[]
-  bookings    Booking[]
+  guide    GuideProfile  @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  slots    ServiceSlot[]
+  bookings Booking[]
 
   @@map("services")
 }
 
 model Availability {
-  id          String       @id @default(cuid())
+  id          String   @id @default(cuid())
   guideId     String
-  dayOfWeek   Int          // 0=Sun … 6=Sat
-  startTime   String       // "09:00"
-  endTime     String       // "17:00"
-  isRecurring Boolean      @default(true)
-  bufferMin   Int          @default(0)
-  createdAt   DateTime     @default(now())
+  dayOfWeek   Int // 0=Sun … 6=Sat
+  startTime   String // "09:00"
+  endTime     String // "17:00"
+  isRecurring Boolean  @default(true)
+  bufferMin   Int      @default(0)
+  createdAt   DateTime @default(now())
 
-  guide       GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  guide GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
 
   @@map("availability")
 }
@@ -508,8 +538,8 @@ model ServiceSlot {
   isBlocked Boolean  @default(false)
   createdAt DateTime @default(now())
 
-  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  booking   Booking?
+  service Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  booking Booking?
 
   @@index([serviceId, startTime])
   @@map("service_slots")
@@ -535,11 +565,11 @@ model Booking {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  seeker    SeekerProfile @relation(fields: [seekerId], references: [id])
-  service   Service       @relation(fields: [serviceId], references: [id])
-  slot      ServiceSlot   @relation(fields: [slotId], references: [id])
-  payment   Payment?
-  review    Review?
+  seeker  SeekerProfile @relation(fields: [seekerId], references: [id])
+  service Service       @relation(fields: [serviceId], references: [id])
+  slot    ServiceSlot   @relation(fields: [slotId], references: [id])
+  payment Payment?
+  review  Review?
 
   @@index([seekerId])
   @@index([serviceId])
@@ -551,47 +581,59 @@ model Booking {
 // ─────────────────────────────────────────────
 
 model Payment {
-  id                    String        @id @default(cuid())
-  bookingId             String?       @unique
-  orderId               String?       @unique
-  ticketPurchaseId      String?       @unique
-  tourBookingId         String?
-  stripePaymentIntentId String        @unique
+  id                      String        @id @default(cuid())
+  bookingId               String?       @unique
+  orderId                 String?       @unique
+  ticketPurchaseId        String?       @unique
+  tourBookingId           String?
+  stripePaymentIntentId   String        @unique
   stripeCheckoutSessionId String?
-  stripeTransferId      String?
-  amount                Decimal       @db.Decimal(10, 2)
-  currency              String        @default("USD")
-  platformFee           Decimal       @db.Decimal(10, 2)
-  guideAmount           Decimal       @db.Decimal(10, 2)
-  paymentType           PaymentType   @default(FULL)
-  status                PaymentStatus @default(PENDING)
-  refundedAmount        Decimal?      @db.Decimal(10, 2)
-  stripeRefundId        String?
-  paymentMethod         String?       // "card", "apple_pay", "google_pay", "bank_transfer"
-  metadata              Json?
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  stripeTransferId        String?
+  amount                  Decimal       @db.Decimal(10, 2)
+  currency                String        @default("USD")
+  platformFee             Decimal       @db.Decimal(10, 2)
+  guideAmount             Decimal       @db.Decimal(10, 2)
+  paymentType             PaymentType   @default(FULL)
+  status                  PaymentStatus @default(PENDING)
+  refundedAmount          Decimal?      @db.Decimal(10, 2)
+  stripeRefundId          String?
+  paymentMethod           String? // "card", "apple_pay", "google_pay", "bank_transfer"
+  metadata                Json?
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
 
   booking        Booking?        @relation(fields: [bookingId], references: [id])
   order          Order?          @relation(fields: [orderId], references: [id])
   ticketPurchase TicketPurchase? @relation(fields: [ticketPurchaseId], references: [id])
   tourBooking    TourBooking?    @relation("TourBookingPayments", fields: [tourBookingId], references: [id])
+  ledgerEntries  LedgerEntry[]
 
   @@index([status, createdAt])
   @@map("payments")
 }
 
 model PayoutAccount {
-  id               String   @id @default(cuid())
-  guideId          String   @unique
-  stripeAccountId  String   @unique
-  availableBalance Decimal  @default(0) @db.Decimal(10, 2)
-  pendingBalance   Decimal  @default(0) @db.Decimal(10, 2)
-  totalEarned      Decimal  @default(0) @db.Decimal(10, 2)
-  totalPaidOut     Decimal  @default(0) @db.Decimal(10, 2)
-  currency         String   @default("USD")
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                String    @id @default(cuid())
+  guideId           String    @unique
+  stripeAccountId   String    @unique
+  availableBalance  Decimal   @default(0) @db.Decimal(12, 2)
+  pendingBalance    Decimal   @default(0) @db.Decimal(12, 2)
+  totalEarned       Decimal   @default(0) @db.Decimal(12, 2)
+  totalPaidOut      Decimal   @default(0) @db.Decimal(12, 2)
+  currency          String    @default("USD")
+  // Mirrors Stripe Connect `payouts_enabled`. Stripe can disable mid-flight
+  // (e.g. requires more info); v2 reads this directly to gate claim attempts.
+  payoutsEnabled    Boolean   @default(false)
+  // Cleared transactions count — drives the +7d first-3-txn extended hold.
+  completedTxnCount Int       @default(0)
+  // Admin-imposed freeze (compliance, dispute, suspicion). When true,
+  // clearance cron skips this guide and claim endpoint refuses.
+  holdActive        Boolean   @default(false)
+  holdReason        String?
+  holdSetAt         DateTime?
+  holdSetBy         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   guide          GuideProfile    @relation(fields: [guideId], references: [id], onDelete: Cascade)
   payoutRequests PayoutRequest[]
@@ -603,17 +645,148 @@ model PayoutRequest {
   id              String       @id @default(cuid())
   guideId         String
   payoutAccountId String
-  amount          Decimal      @db.Decimal(10, 2)
+  amount          Decimal      @db.Decimal(12, 2)
   currency        String       @default("USD")
   status          PayoutStatus @default(PENDING)
   stripePayoutId  String?
   processedAt     DateTime?
+  rejectedReason  String?
+  cancelledAt     DateTime?
+  failureReason   String?
   createdAt       DateTime     @default(now())
 
   guide         GuideProfile  @relation(fields: [guideId], references: [id])
   payoutAccount PayoutAccount @relation(fields: [payoutAccountId], references: [id])
+  ledgerEntries LedgerEntry[]
 
+  @@index([status, createdAt])
   @@map("payout_requests")
+}
+
+// ─────────────────────────────────────────────
+// LEDGER (v2 — source of truth for all guide money flow)
+// ─────────────────────────────────────────────
+
+model LedgerEntry {
+  id              String          @id @default(cuid())
+  guideId         String
+  entryType       LedgerEntryType
+  amount          Decimal         @db.Decimal(12, 2) // Signed: +credit / −debit
+  currency        String          @default("USD")
+  status          LedgerStatus
+  // Nullable: PAYOUT and ADJUSTMENT entries aren't tied to a single category
+  // (a payout aggregates earnings across categories). Category-filtered
+  // queries naturally exclude these rows.
+  category        EarningCategory?
+  // When PENDING_CLEARANCE flips to AVAILABLE. Null for entries that don't
+  // clear (PAYOUT, ADJUSTMENT, etc.).
+  clearanceAt     DateTime?
+  paymentId       String?
+  orderItemId     String?
+  // Set when this entry is consumed by a payout. Used to keep the entry
+  // out of the "available" pool while still showing AVAILABLE status until
+  // the payout completes (then status flips to PAID_OUT).
+  payoutRequestId String?
+  // For reversal entries — pointer to the original entry being reversed.
+  reversalOfId    String?
+  description     String?
+  metadata        Json?
+  createdAt       DateTime        @default(now())
+
+  guide         GuideProfile   @relation(fields: [guideId], references: [id])
+  payment       Payment?       @relation(fields: [paymentId], references: [id])
+  orderItem     OrderItem?     @relation(fields: [orderItemId], references: [id])
+  payoutRequest PayoutRequest? @relation(fields: [payoutRequestId], references: [id])
+  reversalOf    LedgerEntry?   @relation("Reversal", fields: [reversalOfId], references: [id])
+  reversedBy    LedgerEntry[]  @relation("Reversal")
+
+  @@index([guideId, status])
+  @@index([guideId, clearanceAt])
+  @@index([paymentId])
+  @@index([payoutRequestId])
+  @@map("ledger_entries")
+}
+
+model CommissionRate {
+  id             String          @id @default(cuid())
+  category       EarningCategory
+  // Null = platform default. Set = per-guide override (takes precedence).
+  guideId        String?
+  percent        Decimal         @db.Decimal(5, 2) // 15.00 = 15%
+  effectiveFrom  DateTime        @default(now())
+  effectiveUntil DateTime?
+  createdBy      String?
+  createdAt      DateTime        @default(now())
+
+  guide GuideProfile? @relation(fields: [guideId], references: [id])
+
+  @@index([category, guideId, effectiveFrom])
+  @@map("commission_rates")
+}
+
+model ClearanceRule {
+  id        String          @id @default(cuid())
+  category  EarningCategory @unique
+  days      Int
+  updatedAt DateTime        @updatedAt
+  createdAt DateTime        @default(now())
+
+  @@map("clearance_rules")
+}
+
+model PayoutAuditLog {
+  id              String   @id @default(cuid())
+  actorUserId     String
+  action          String // 'HOLD' | 'RELEASE' | 'PROCESS' | 'REJECT' | 'ADJUST' | 'CANCEL' | 'OVERRIDE_RATE'
+  payoutRequestId String?
+  ledgerEntryId   String?
+  // Nullable: platform-level events (e.g. setting a default commission rate
+  // that has no per-guide override) don't target a specific guide.
+  guideId         String?
+  reason          String
+  beforeState     Json?
+  afterState      Json?
+  createdAt       DateTime @default(now())
+
+  @@index([guideId, createdAt])
+  @@index([payoutRequestId])
+  @@map("payout_audit_logs")
+}
+
+// Drift between Stripe truth and our ledger, surfaced by the daily
+// reconciliation cron. Operators triage each row in /admin/reconciliation
+// and either resolve it (write the missing entry) or dismiss it.
+model ReconciliationMismatch {
+  id                       String    @id @default(cuid())
+  stripeBalanceTxnId       String    @unique
+  stripeType               String    // 'charge' | 'refund' | 'transfer' | 'application_fee' | 'stripe_fee' | other
+  stripeAmount             Decimal   @db.Decimal(12, 2)
+  stripeCurrency           String    @default("USD")
+  stripeCreatedAt          DateTime
+  expectedLedgerEntryType  String?
+  paymentId                String?
+  details                  Json?
+  resolved                 Boolean   @default(false)
+  resolvedAt               DateTime?
+  resolvedBy               String?
+  resolutionNote           String?
+  createdAt                DateTime  @default(now())
+
+  @@index([resolved, createdAt])
+  @@map("reconciliation_mismatches")
+}
+
+// Idempotency cache for Stripe webhook events. confirmPayment is already
+// idempotent on payment.status, but Connect / dispute / refund webhooks
+// need a generic dedupe so reconciliation doesn't replay them.
+model StripeWebhookEvent {
+  id          String   @id // Stripe event.id
+  type        String
+  processedAt DateTime @default(now())
+  payload     Json?
+
+  @@index([type, processedAt])
+  @@map("stripe_webhook_events")
 }
 
 // ─────────────────────────────────────────────
@@ -666,24 +839,24 @@ model EventTicketTier {
 }
 
 model TicketPurchase {
-  id               String   @id @default(cuid())
-  purchaseGroupId  String   // Groups all tickets from one checkout session
-  seekerId         String
-  tierId           String
-  quantity         Int      @default(1)
-  totalAmount      Decimal  @db.Decimal(10, 2)
-  bookingFee       Decimal  @default(0) @db.Decimal(10, 2)
-  status           TicketStatus @default(PENDING)
-  qrCode           String?
-  checkedInAt      DateTime?         // Set when QR is scanned at the door
-  checkedInBy      String?           // userId of the guide/admin who checked in
-  createdAt        DateTime @default(now())
+  id              String       @id @default(cuid())
+  purchaseGroupId String // Groups all tickets from one checkout session
+  seekerId        String
+  tierId          String
+  quantity        Int          @default(1)
+  totalAmount     Decimal      @db.Decimal(10, 2)
+  bookingFee      Decimal      @default(0) @db.Decimal(10, 2)
+  status          TicketStatus @default(PENDING)
+  qrCode          String?
+  checkedInAt     DateTime? // Set when QR is scanned at the door
+  checkedInBy     String? // userId of the guide/admin who checked in
+  createdAt       DateTime     @default(now())
 
   // Per-attendee details (one TicketPurchase per attendee)
-  attendeeName          String?
-  attendeeEmail         String?
-  dietaryNeeds          String?
-  accessibilityNeeds    String?
+  attendeeName       String?
+  attendeeEmail      String?
+  dietaryNeeds       String?
+  accessibilityNeeds String?
 
   seeker  SeekerProfile   @relation(fields: [seekerId], references: [id])
   tier    EventTicketTier @relation(fields: [tierId], references: [id])
@@ -706,23 +879,23 @@ enum TicketStatus {
 // ─────────────────────────────────────────────
 
 model Product {
-  id              String      @id @default(cuid())
+  id              String           @id @default(cuid())
   guideId         String
   name            String
   description     String?
   type            ProductType
-  category        ProductCategory?   // Drives shop page category tabs
-  price           Decimal     @db.Decimal(10, 2)
-  currency        String      @default("USD")
+  category        ProductCategory? // Drives shop page category tabs
+  price           Decimal          @db.Decimal(10, 2)
+  currency        String           @default("USD")
   stockQuantity   Int?
   imageUrls       String[]
   fileS3Key       String?
-  digitalFiles    Json?           // Array of { name, size, url } for digital downloads
+  digitalFiles    Json? // Array of { name, size, url } for digital downloads
   shippingInfo    Json?
-  isActive        Boolean     @default(true)
+  isActive        Boolean          @default(true)
   algoliaObjectId String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   guide      GuideProfile     @relation(fields: [guideId], references: [id], onDelete: Cascade)
   variants   ProductVariant[]
@@ -735,26 +908,27 @@ model Product {
 }
 
 model Order {
-  id              String      @id @default(cuid())
-  seekerId        String
-  status          OrderStatus @default(PENDING)
-  subtotal        Decimal     @db.Decimal(10, 2) @default(0)
-  discountAmount  Decimal     @db.Decimal(10, 2) @default(0)
-  shippingCost    Decimal     @db.Decimal(10, 2) @default(0)
-  taxAmount       Decimal     @db.Decimal(10, 2) @default(0)
-  taxRate         Decimal?    @db.Decimal(6, 4)   // Snapshot of rate at time of order
-  totalAmount     Decimal     @db.Decimal(10, 2)
-  currency        String      @default("USD")
-  shippingAddress Json?
-  contactEmail    String?
+  id               String      @id @default(cuid())
+  seekerId         String
+  status           OrderStatus @default(PENDING)
+  subtotal         Decimal     @default(0) @db.Decimal(10, 2)
+  discountAmount   Decimal     @default(0) @db.Decimal(10, 2)
+  shippingCost     Decimal     @default(0) @db.Decimal(10, 2)
+  taxAmount        Decimal     @default(0) @db.Decimal(10, 2)
+  taxRate          Decimal?    @db.Decimal(6, 4) // Snapshot of rate at time of order
+  totalAmount      Decimal     @db.Decimal(10, 2)
+  currency         String      @default("USD")
+  shippingAddress  Json?
+  contactEmail     String?
   contactFirstName String?
   contactLastName  String?
-  contactPhone    String?
-  promoCodeId     String?
+  contactPhone     String?
+  promoCodeId      String?
   shippingMethodId String?
-  notes           String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  notes            String?
+  paidAt           DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 
   seeker         SeekerProfile   @relation(fields: [seekerId], references: [id])
   promoCode      PromoCode?      @relation("OrderPromoCode", fields: [promoCodeId], references: [id])
@@ -768,21 +942,25 @@ model Order {
 }
 
 model OrderItem {
-  id                    String    @id @default(cuid())
-  orderId               String
-  productId             String
-  variantId             String?   // Which ProductVariant was selected (if applicable)
-  quantity              Int       @default(1)
-  unitPrice             Decimal   @db.Decimal(10, 2)
+  id                   String    @id @default(cuid())
+  orderId              String
+  productId            String
+  variantId            String? // Which ProductVariant was selected (if applicable)
+  quantity             Int       @default(1)
+  unitPrice            Decimal   @db.Decimal(10, 2)
   // Digital download: pre-signed S3 URL generated at order-PAID, valid ~7 days.
   // Dashboard regenerates on-demand when this expires.
-  downloadUrl           String?
-  downloadUrlExpiresAt  DateTime?
-  downloadCount         Int       @default(0)
-  createdAt             DateTime  @default(now())
+  downloadUrl          String?
+  downloadUrlExpiresAt DateTime?
+  downloadCount        Int       @default(0)
+  // Drives PRODUCT clearance window. Digital items: set at order PAID.
+  // Physical items: set when carrier confirms delivery (or admin marks delivered).
+  deliveredAt          DateTime?
+  createdAt            DateTime  @default(now())
 
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id])
+  ledgerEntries LedgerEntry[]
 
   @@map("order_items")
 }
@@ -792,7 +970,7 @@ model OrderItem {
 // ─────────────────────────────────────────────
 
 model BlogPost {
-  id              String       @id @default(cuid())
+  id              String    @id @default(cuid())
   guideId         String
   title           String
   slug            String
@@ -800,11 +978,11 @@ model BlogPost {
   excerpt         String?
   coverImageUrl   String?
   tags            String[]
-  isPublished     Boolean      @default(false)
+  isPublished     Boolean   @default(false)
   publishedAt     DateTime?
   algoliaObjectId String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   guide GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
 
@@ -856,10 +1034,10 @@ model Testimonial {
 // ─────────────────────────────────────────────
 
 model Favorite {
-  id        String        @id @default(cuid())
+  id        String   @id @default(cuid())
   seekerId  String
   guideId   String
-  createdAt DateTime      @default(now())
+  createdAt DateTime @default(now())
 
   seeker SeekerProfile @relation(fields: [seekerId], references: [id], onDelete: Cascade)
 
@@ -999,19 +1177,19 @@ model Cart {
 }
 
 model CartItem {
-  id          String       @id @default(cuid())
-  cartId      String
-  itemType    CartItemType
-  itemId      String       // Polymorphic: productId, tierId, tourId, serviceId
-  variantId   String?      // For ProductVariant selection
-  quantity    Int          @default(1)
+  id         String       @id @default(cuid())
+  cartId     String
+  itemType   CartItemType
+  itemId     String // Polymorphic: productId, tierId, tourId, serviceId
+  variantId  String? // For ProductVariant selection
+  quantity   Int          @default(1)
   // Snapshot of the unit price when this row was added. Lets the cart API
   // detect "price changed since you added this" without needing to remember
   // history elsewhere. Nullable for legacy rows created before this column.
-  priceAtAdd  Decimal?     @db.Decimal(10, 2)
-  metadata    Json?        // Extra data (e.g., selected date for service, room type for tour)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  priceAtAdd Decimal?     @db.Decimal(10, 2)
+  metadata   Json? // Extra data (e.g., selected date for service, room type for tour)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
 
   cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade)
 
@@ -1024,49 +1202,49 @@ model CartItem {
 // ─────────────────────────────────────────────
 
 model SoulTour {
-  id            String   @id @default(cuid())
-  guideId       String
-  title         String
-  slug          String   @unique
-  description   String?
-  shortDesc     String?
+  id                   String     @id @default(cuid())
+  guideId              String
+  title                String
+  slug                 String     @unique
+  description          String?
+  shortDesc            String?
   // startDate/endDate kept for back-compat with existing data + as the
   // tour's "primary" departure summary; bookings always reference TourDeparture.
-  startDate     DateTime
-  endDate       DateTime
-  timezone      String   @default("America/Los_Angeles")
-  location      String?
-  address       String?
-  city          String?
-  state         String?
-  country       String?  @default("United States")
-  basePrice     Decimal  @db.Decimal(10, 2)
-  currency      String   @default("USD")
-  capacity      Int
-  spotsRemaining Int
-  coverImageUrl String?
-  imageUrls     String[]
-  highlights    String[] // Key selling points
-  included      String[] // What's included in the price
-  notIncluded   String[] // What's NOT included
-  requirements  String?  // Participation requirements
-  depositMin    Decimal? @db.Decimal(10, 2) // Legacy: total min deposit (kept for back-compat)
+  startDate            DateTime
+  endDate              DateTime
+  timezone             String     @default("America/Los_Angeles")
+  location             String?
+  address              String?
+  city                 String?
+  state                String?
+  country              String?    @default("United States")
+  basePrice            Decimal    @db.Decimal(10, 2)
+  currency             String     @default("USD")
+  capacity             Int
+  spotsRemaining       Int
+  coverImageUrl        String?
+  imageUrls            String[]
+  highlights           String[] // Key selling points
+  included             String[] // What's included in the price
+  notIncluded          String[] // What's NOT included
+  requirements         String? // Participation requirements
+  depositMin           Decimal?   @db.Decimal(10, 2) // Legacy: total min deposit (kept for back-compat)
   // ── Phase A additions ──
-  difficultyLevel       String?   // EASY | MODERATE | CHALLENGING
-  languages             String[]  // ["English", "Spanish"]
-  meetingPoint          String?   // "Kathmandu Tribhuvan International Airport (KTM)"
-  cancellationPolicy    Json?     // { fullRefundDaysBefore: 90, halfRefundDaysBefore: 60 } — falls back to platform default
-  balanceDueDaysBefore  Int       @default(60)
-  minDepositPerPerson   Decimal?  @db.Decimal(10, 2)
+  difficultyLevel      String? // EASY | MODERATE | CHALLENGING
+  languages            String[] // ["English", "Spanish"]
+  meetingPoint         String? // "Kathmandu Tribhuvan International Airport (KTM)"
+  cancellationPolicy   Json? // { fullRefundDaysBefore: 90, halfRefundDaysBefore: 60 } — falls back to platform default
+  balanceDueDaysBefore Int        @default(60)
+  minDepositPerPerson  Decimal?   @db.Decimal(10, 2)
   // ── Listing-page additions (2026-04-17) ──
-  trackType             TourTrack?   // ADVENTURE | HEALING — drives public listing tabs
-  latestUpdate          String?      // Guide's latest announcement shown on tour card
-  latestUpdateAt        DateTime?
+  trackType            TourTrack? // ADVENTURE | HEALING — drives public listing tabs
+  latestUpdate         String? // Guide's latest announcement shown on tour card
+  latestUpdateAt       DateTime?
   // ─────────────────────
-  isPublished   Boolean  @default(false)
-  isCancelled   Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  isPublished          Boolean    @default(false)
+  isCancelled          Boolean    @default(false)
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
 
   guide      GuideProfile       @relation(fields: [guideId], references: [id], onDelete: Cascade)
   roomTypes  TourRoomType[]
@@ -1085,17 +1263,17 @@ model SoulTour {
 // ─────────────────────────────────────────────
 
 model TourDeparture {
-  id              String          @id @default(cuid())
-  tourId          String
-  startDate       DateTime
-  endDate         DateTime
-  capacity        Int
-  spotsRemaining  Int
-  status          DepartureStatus @default(SCHEDULED)
-  priceOverride   Decimal?        @db.Decimal(10, 2)
-  notes           String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id             String          @id @default(cuid())
+  tourId         String
+  startDate      DateTime
+  endDate        DateTime
+  capacity       Int
+  spotsRemaining Int
+  status         DepartureStatus @default(SCHEDULED)
+  priceOverride  Decimal?        @db.Decimal(10, 2)
+  notes          String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
 
   tour     SoulTour      @relation(fields: [tourId], references: [id], onDelete: Cascade)
   bookings TourBooking[]
@@ -1129,16 +1307,16 @@ model TourItineraryDay {
 }
 
 model TourRoomType {
-  id            String  @id @default(cuid())
+  id            String   @id @default(cuid())
   tourId        String
-  name          String  // "Standard", "Deluxe", "Premium"
+  name          String // "Standard", "Deluxe", "Premium"
   description   String?
-  pricePerNight Decimal @db.Decimal(10, 2)
-  totalPrice    Decimal @db.Decimal(10, 2) // Pre-calculated for full stay
+  pricePerNight Decimal  @db.Decimal(10, 2)
+  totalPrice    Decimal  @db.Decimal(10, 2) // Pre-calculated for full stay
   capacity      Int
   available     Int
   amenities     String[]
-  sortOrder     Int     @default(0)
+  sortOrder     Int      @default(0)
   createdAt     DateTime @default(now())
 
   tour     SoulTour      @relation(fields: [tourId], references: [id], onDelete: Cascade)
@@ -1148,47 +1326,47 @@ model TourRoomType {
 }
 
 model TourBooking {
-  id               String            @id @default(cuid())
-  tourId           String
-  departureId      String?           // Phase A: bookings now reference a specific departure
-  seekerId         String
-  roomTypeId       String
-  travelers        Int               @default(1)
-  totalAmount      Decimal           @db.Decimal(10, 2)
-  depositAmount    Decimal?          @db.Decimal(10, 2)
-  chosenDepositAmount Decimal?       @db.Decimal(10, 2) // What the user actually picked in checkout
-  depositPaidAt    DateTime?
-  balanceAmount    Decimal?          @db.Decimal(10, 2)
-  balanceDueAt     DateTime?
+  id                    String            @id @default(cuid())
+  tourId                String
+  departureId           String? // Phase A: bookings now reference a specific departure
+  seekerId              String
+  roomTypeId            String
+  travelers             Int               @default(1)
+  totalAmount           Decimal           @db.Decimal(10, 2)
+  depositAmount         Decimal?          @db.Decimal(10, 2)
+  chosenDepositAmount   Decimal?          @db.Decimal(10, 2) // What the user actually picked in checkout
+  depositPaidAt         DateTime?
+  balanceAmount         Decimal?          @db.Decimal(10, 2)
+  balanceDueAt          DateTime?
   balanceReminderSentAt DateTime?
-  balancePaidAt    DateTime?
-  holdExpiresAt    DateTime?         // 24h hold; cleared on DEPOSIT_PAID
-  bookingReference String?           @unique // Short human code e.g. "SCT-NEPAL-A1B2"
-  paymentMethod    String?           // STRIPE_CARD (Phase 2: BANK_TRANSFER, CRYPTO)
-  currency         String            @default("USD")
-  status           TourBookingStatus @default(PENDING)
+  balancePaidAt         DateTime?
+  holdExpiresAt         DateTime? // 24h hold; cleared on DEPOSIT_PAID
+  bookingReference      String?           @unique // Short human code e.g. "SCT-NEPAL-A1B2"
+  paymentMethod         String? // STRIPE_CARD (Phase 2: BANK_TRANSFER, CRYPTO)
+  currency              String            @default("USD")
+  status                TourBookingStatus @default(PENDING)
   // Booking-level health & preference fields (per design Step 3)
-  dietaryRequirements String?        // e.g. "vegetarian"
-  dietaryNotes        String?
-  healthConditions    String?
-  intentions          String?
+  dietaryRequirements   String? // e.g. "vegetarian"
+  dietaryNotes          String?
+  healthConditions      String?
+  intentions            String?
   // Legacy free-text catch-all
-  specialRequests  String?
+  specialRequests       String?
   // Primary contact (kept for back-compat; now mirrors first traveler in TourBookingTraveler)
-  contactFirstName String
-  contactLastName  String
-  contactEmail     String
-  contactPhone     String?
-  cancelledAt      DateTime?
-  cancellationReason String?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  contactFirstName      String
+  contactLastName       String
+  contactEmail          String
+  contactPhone          String?
+  cancelledAt           DateTime?
+  cancellationReason    String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
 
-  tour      SoulTour              @relation(fields: [tourId], references: [id])
-  departure TourDeparture?        @relation(fields: [departureId], references: [id])
-  seeker    SeekerProfile         @relation(fields: [seekerId], references: [id])
-  roomType  TourRoomType          @relation(fields: [roomTypeId], references: [id])
-  payments  Payment[]             @relation("TourBookingPayments")
+  tour          SoulTour              @relation(fields: [tourId], references: [id])
+  departure     TourDeparture?        @relation(fields: [departureId], references: [id])
+  seeker        SeekerProfile         @relation(fields: [seekerId], references: [id])
+  roomType      TourRoomType          @relation(fields: [roomTypeId], references: [id])
+  payments      Payment[]             @relation("TourBookingPayments")
   travelers_rel TourBookingTraveler[]
 
   @@index([tourId])
@@ -1205,18 +1383,18 @@ model TourBooking {
 // ─────────────────────────────────────────────
 
 model TourBookingTraveler {
-  id              String   @id @default(cuid())
-  bookingId       String
-  isPrimary       Boolean  @default(false)
-  firstName       String
-  lastName        String
-  dateOfBirth     DateTime
-  nationality     String
-  passportNumber  String?  // AES-256-GCM encrypted (optional)
-  passportExpiry  DateTime?
-  email           String?
-  phone           String?
-  createdAt       DateTime @default(now())
+  id             String    @id @default(cuid())
+  bookingId      String
+  isPrimary      Boolean   @default(false)
+  firstName      String
+  lastName       String
+  dateOfBirth    DateTime
+  nationality    String
+  passportNumber String? // AES-256-GCM encrypted (optional)
+  passportExpiry DateTime?
+  email          String?
+  phone          String?
+  createdAt      DateTime  @default(now())
 
   booking TourBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
@@ -1231,11 +1409,11 @@ model TourBookingTraveler {
 model ProductVariant {
   id            String   @id @default(cuid())
   productId     String
-  name          String   // "Size 7", "Blue - Large"
+  name          String // "Size 7", "Blue - Large"
   sku           String?  @unique
   price         Decimal? @db.Decimal(10, 2) // Override product price if set
   stockQuantity Int      @default(0)
-  attributes    Json?    // { "size": "7", "color": "Silver" }
+  attributes    Json? // { "size": "7", "color": "Silver" }
   sortOrder     Int      @default(0)
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
@@ -1252,20 +1430,20 @@ model ProductVariant {
 // ─────────────────────────────────────────────
 
 model PromoCode {
-  id              String        @id @default(cuid())
-  code            String        @unique
-  type            PromoCodeType
-  amount          Decimal       @db.Decimal(10, 2) // Percentage (0-100) or fixed dollar amount
-  minOrderAmount  Decimal?      @db.Decimal(10, 2)
-  maxDiscountAmount Decimal?    @db.Decimal(10, 2) // Cap for percentage discounts
-  maxUses         Int?          // null = unlimited
-  usedCount       Int           @default(0)
-  appliesToType   String?       // null = all, "DIGITAL", "PHYSICAL", "EVENT", "TOUR"
-  startsAt        DateTime?
-  expiresAt       DateTime?
-  isActive        Boolean       @default(true)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                String        @id @default(cuid())
+  code              String        @unique
+  type              PromoCodeType
+  amount            Decimal       @db.Decimal(10, 2) // Percentage (0-100) or fixed dollar amount
+  minOrderAmount    Decimal?      @db.Decimal(10, 2)
+  maxDiscountAmount Decimal?      @db.Decimal(10, 2) // Cap for percentage discounts
+  maxUses           Int? // null = unlimited
+  usedCount         Int           @default(0)
+  appliesToType     String? // null = all, "DIGITAL", "PHYSICAL", "EVENT", "TOUR"
+  startsAt          DateTime?
+  expiresAt         DateTime?
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
   orders Order[] @relation("OrderPromoCode")
 
@@ -1279,17 +1457,17 @@ model PromoCode {
 // ─────────────────────────────────────────────
 
 model ShippingMethod {
-  id              String   @id @default(cuid())
-  name            String   // "Standard", "Express", "International Priority"
-  description     String?
-  price           Decimal  @db.Decimal(10, 2)
-  currency        String   @default("USD")
-  estimatedDaysMin Int     // 7
-  estimatedDaysMax Int     // 14
-  isActive        Boolean  @default(true)
-  sortOrder       Int      @default(0)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(cuid())
+  name             String // "Standard", "Express", "International Priority"
+  description      String?
+  price            Decimal  @db.Decimal(10, 2)
+  currency         String   @default("USD")
+  estimatedDaysMin Int // 7
+  estimatedDaysMax Int // 14
+  isActive         Boolean  @default(true)
+  sortOrder        Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   orders Order[] @relation("OrderShippingMethod")
 
@@ -1298,10 +1476,10 @@ model ShippingMethod {
 
 model TaxRate {
   id        String   @id @default(cuid())
-  state     String   // "CA", "NY"
+  state     String // "CA", "NY"
   country   String   @default("US")
   rate      Decimal  @db.Decimal(6, 4) // 0.0863 = 8.63%
-  name      String   // "California State Tax"
+  name      String // "California State Tax"
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1319,11 +1497,11 @@ model TaxRate {
 model StaticPage {
   id              String    @id @default(cuid())
   slug            String    @unique // e.g. "privacy", "terms", "about"
-  title           String    // on-page H1
-  metaTitle       String?   // <title> tag override
-  metaDescription String?   // <meta name="description">
-  eyebrow         String?   // small all-caps label above H1 (optional)
-  subtitle        String?   // italic serif intro paragraph (optional)
+  title           String // on-page H1
+  metaTitle       String? // <title> tag override
+  metaDescription String? // <meta name="description">
+  eyebrow         String? // small all-caps label above H1 (optional)
+  subtitle        String? // italic serif intro paragraph (optional)
   body            String    @db.Text // rich-text HTML
   isPublished     Boolean   @default(true)
   publishedAt     DateTime? // null while in draft

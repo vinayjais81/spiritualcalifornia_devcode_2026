@@ -124,6 +124,41 @@ export default function PayoutsPage() {
     },
   });
 
+  const rejectMutation = useMutation({
+    mutationFn: async (input: { id: string; reason: string }) => {
+      const { data } = await api.post(`/admin/payout-requests/${input.id}/reject`, {
+        reason: input.reason,
+      });
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Payout request rejected');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'payout-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'guide-balances'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message ?? 'Failed to reject payout');
+    },
+  });
+
+  const holdMutation = useMutation({
+    mutationFn: async (input: { guideId: string; reason: string }) => {
+      const { data } = await api.post(
+        `/admin/guides/${input.guideId}/payouts/hold`,
+        { reason: input.reason },
+      );
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Guide payouts placed on hold');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'payout-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'guide-balances'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message ?? 'Failed to hold payouts');
+    },
+  });
+
   const totalAll = Object.values(requestsData?.statusCounts ?? {}).reduce((a, b) => a + b, 0);
 
   return (
@@ -219,25 +254,57 @@ export default function PayoutsPage() {
                             </td>
                             <td className="px-4 py-3 text-xs text-gray-500">{fmtDate(r.createdAt)}</td>
                             <td className="px-4 py-3">
-                              {r.status === 'PENDING' && r.guide.stripeConnected && (
-                                <button
-                                  onClick={() => {
-                                    if (confirm(`Process ${fmtMoney(r.amount)} payout to ${r.guide.displayName || r.guide.name}?`)) {
-                                      processMutation.mutate(r.id);
-                                    }
-                                  }}
-                                  disabled={processMutation.isPending}
-                                  className="flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
-                                >
-                                  <ArrowUpRight className="h-3 w-3" /> Process
-                                </button>
-                              )}
-                              {r.status === 'PENDING' && !r.guide.stripeConnected && (
-                                <span className="text-xs text-red-500">Stripe needed</span>
-                              )}
-                              {r.status === 'COMPLETED' && r.stripePayoutId && (
-                                <span className="font-mono text-[10px] text-gray-400">{r.stripePayoutId.slice(0, 18)}...</span>
-                              )}
+                              <div className="flex flex-wrap items-center gap-2">
+                                {r.status === 'PENDING' && r.guide.stripeConnected && (
+                                  <button
+                                    onClick={() => {
+                                      if (confirm(`Process ${fmtMoney(r.amount)} payout to ${r.guide.displayName || r.guide.name}?`)) {
+                                        processMutation.mutate(r.id);
+                                      }
+                                    }}
+                                    disabled={processMutation.isPending}
+                                    className="flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                                  >
+                                    <ArrowUpRight className="h-3 w-3" /> Process
+                                  </button>
+                                )}
+                                {r.status === 'PENDING' && (
+                                  <button
+                                    onClick={() => {
+                                      const reason = prompt('Reason for rejecting this payout request?');
+                                      if (reason && reason.trim()) {
+                                        rejectMutation.mutate({ id: r.id, reason: reason.trim() });
+                                      }
+                                    }}
+                                    disabled={rejectMutation.isPending}
+                                    className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+                                  >
+                                    Reject
+                                  </button>
+                                )}
+                                {r.status === 'PENDING' && (
+                                  <button
+                                    onClick={() => {
+                                      const reason = prompt(
+                                        `Place ${r.guide.displayName || r.guide.name} on payout hold?\n\nEnter a reason (compliance, dispute, suspicion, etc.):`,
+                                      );
+                                      if (reason && reason.trim()) {
+                                        holdMutation.mutate({ guideId: r.guide.id, reason: reason.trim() });
+                                      }
+                                    }}
+                                    disabled={holdMutation.isPending}
+                                    className="rounded-lg border border-amber-200 bg-white px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50"
+                                  >
+                                    Hold
+                                  </button>
+                                )}
+                                {r.status === 'PENDING' && !r.guide.stripeConnected && (
+                                  <span className="text-xs text-red-500">Stripe needed</span>
+                                )}
+                                {r.status === 'COMPLETED' && r.stripePayoutId && (
+                                  <span className="font-mono text-[10px] text-gray-400">{r.stripePayoutId.slice(0, 18)}...</span>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}

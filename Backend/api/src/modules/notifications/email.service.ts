@@ -125,6 +125,28 @@ export class EmailService {
     `);
   }
 
+  // ─── Payouts ───────────────────────────────────────────────────────────────
+
+  async sendPayoutNotification(to: string, data: {
+    subject: string;
+    headline: string;
+    body: string;
+    ctaLabel?: string;
+    ctaUrl?: string;
+  }) {
+    const cta = data.ctaUrl
+      ? `<div style="text-align: center; margin-top: 24px;"><a href="${data.ctaUrl}" style="display: inline-block; padding: 14px 32px; background: #E8B84B; color: #3A3530; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;">${data.ctaLabel ?? 'View Details'}</a></div>`
+      : '';
+    return this.send(to, data.subject, `
+      <div style="font-family: 'Inter', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
+        <div style="text-align: center; margin-bottom: 24px;"><div style="font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #E8B84B;">Spiritual California</div></div>
+        <h1 style="font-family: Georgia, serif; font-size: 28px; font-weight: 400; color: #3A3530; text-align: center; margin-bottom: 8px;">${data.headline}</h1>
+        <p style="text-align: center; color: #8A8278; font-size: 14px; line-height: 1.6; margin-bottom: 32px; white-space: pre-line;">${data.body}</p>
+        ${cta}
+      </div>
+    `);
+  }
+
   // ─── Soul Tour: shared layout helper ───────────────────────────────────────
 
   private tourEmailShell(opts: {

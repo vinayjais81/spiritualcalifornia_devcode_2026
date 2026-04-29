@@ -9,6 +9,13 @@ import { useSiteConfigOrFallback } from '@/lib/siteConfig';
 
 interface EarningsData {
   balance: { available: number; pending: number; totalEarned: number; totalPaidOut: number };
+  v2?: {
+    firstPayoutHoldActive: boolean;
+    completedTxnCount: number;
+    holdActive: boolean;
+    holdReason: string | null;
+    payoutsEnabled: boolean;
+  };
   recentPayments: Array<{
     id: string; amount: string | number; guideAmount: string | number; platformFee: string | number;
     paymentType: string; paymentMethod: string | null; createdAt: string; status: string;
@@ -94,6 +101,7 @@ export default function EarningsPage() {
   };
 
   const available = earnings?.balance.available ?? 0;
+  const pending = earnings?.balance.pending ?? 0;
   const totalEarned = earnings?.balance.totalEarned ?? 0;
   const totalPaidOut = earnings?.balance.totalPaidOut ?? 0;
 
@@ -106,30 +114,64 @@ export default function EarningsPage() {
         background: 'linear-gradient(135deg, #2C2420 0%, #4A3C30 100%)', borderRadius: 12,
         padding: 32, color: C.white, marginBottom: 28,
       }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24, marginBottom: 24 }}>
+        {/* Two large actionable figures up top: Available (claimable now) +
+            Pending Clearance (in the holding window). Total Earned + Total
+            Paid Out are historical context underneath. */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 20 }}>
           <div>
             <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>Available Balance</div>
             <div style={{ fontFamily: serif, fontSize: 48, fontWeight: 400, color: C.gold, lineHeight: 1 }}>
               {isLoading ? '...' : fmtMoney(available)}
             </div>
+            <div style={{ fontFamily: font, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>
+              Cleared and claimable now
+            </div>
           </div>
           <div>
-            <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>Total Earned</div>
-            <div style={{ fontFamily: serif, fontSize: 32, fontWeight: 400, color: 'rgba(255,255,255,0.8)', lineHeight: 1 }}>
+            <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>Pending Clearance</div>
+            <div style={{ fontFamily: serif, fontSize: 48, fontWeight: 400, color: 'rgba(255,255,255,0.85)', lineHeight: 1 }}>
+              {isLoading ? '...' : fmtMoney(pending)}
+            </div>
+            <div style={{ fontFamily: font, fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 6 }}>
+              In the holding window — clears automatically
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <div>
+            <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>Total Earned</div>
+            <div style={{ fontFamily: serif, fontSize: 24, fontWeight: 400, color: 'rgba(255,255,255,0.7)', lineHeight: 1 }}>
               {isLoading ? '...' : fmtMoney(totalEarned)}
             </div>
           </div>
           <div>
-            <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>Total Paid Out</div>
-            <div style={{ fontFamily: serif, fontSize: 32, fontWeight: 400, color: 'rgba(255,255,255,0.8)', lineHeight: 1 }}>
+            <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>Total Paid Out</div>
+            <div style={{ fontFamily: serif, fontSize: 24, fontWeight: 400, color: 'rgba(255,255,255,0.7)', lineHeight: 1 }}>
               {isLoading ? '...' : fmtMoney(totalPaidOut)}
             </div>
           </div>
         </div>
 
         <div style={{ fontFamily: font, fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 20 }}>
-          From services, events, and tours on Spiritual California. Platform commission: {commissionPercent}%.
+          From services, events, and tours on Spiritual California. Platform commission varies by category (services {commissionPercent}%, events 12%, tours 15%, products 10%).
         </div>
+
+        {/* v2 banners */}
+        {earnings?.v2?.holdActive && (
+          <div style={{ fontFamily: font, fontSize: 13, padding: 12, marginBottom: 16, background: 'rgba(220, 38, 38, 0.15)', border: '1px solid rgba(220, 38, 38, 0.4)', borderRadius: 8, color: '#fecaca' }}>
+            <strong>Payouts on hold.</strong> Reason: {earnings.v2.holdReason ?? 'under review'}. Reach out to support if you have questions.
+          </div>
+        )}
+        {!earnings?.v2?.holdActive && earnings?.v2?.firstPayoutHoldActive && earnings?.stripeConnected && (
+          <div style={{ fontFamily: font, fontSize: 12, padding: 10, marginBottom: 16, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: 'rgba(255,255,255,0.7)' }}>
+            New-guide payouts include a 7-day extended hold for your first 3 transactions ({earnings.v2.completedTxnCount}/3 cleared). The hold lifts automatically after that.
+          </div>
+        )}
+        {available < 0 && (
+          <div style={{ fontFamily: font, fontSize: 13, padding: 12, marginBottom: 16, background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.4)', borderRadius: 8, color: '#fde68a' }}>
+            <strong>Negative balance.</strong> A recent refund was deducted from your earnings. New earnings will absorb the difference before the next payout becomes available.
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
           {earnings?.stripeConnected ? (
@@ -143,8 +185,9 @@ export default function EarningsPage() {
               <button
                 onClick={() => connectMutation.mutate()}
                 style={{ padding: '12px 24px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.1)', color: C.white, fontFamily: font, fontSize: 13, cursor: 'pointer' }}
+                title="Open the Stripe Express dashboard — this is also where 1099-NEC tax documents appear at year-end."
               >
-                Stripe Dashboard
+                Stripe Dashboard / Tax Docs
               </button>
             </>
           ) : (

@@ -3,12 +3,20 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service';
 import { Role, VerificationStatus, PaymentStatus, BookingStatus, TourBookingStatus, PayoutStatus } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
+import { LedgerService } from '../payments/ledger.service';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notifications: NotificationsService,
+    private readonly config: ConfigService,
+    private readonly ledger: LedgerService,
+  ) {}
 
   // ─── Dashboard ───────────────────────────────────────────────────────────────
 
@@ -1184,5 +1192,395 @@ export class AdminService {
       counter++;
       slug = `${baseSlug}-${counter}`;
     }
+  }
+
+  // ─── Payouts v2 — admin actions ────────────────────────────────────────────
+
+  /**
+   * Freeze a guide's payouts. Clearance cron skips them, claim endpoint
+   * refuses. Audit-logged.
+   */
+  async holdGuidePayouts(input: {
+    guideId: string;
+    actorUserId: string;
+    reason: string;
+  }) {
+    if (!input.reason?.trim()) {
+      throw new BadRequestException('A reason is required when placing a payout hold');
+    }
+    const account = await this.prisma.payoutAccount.findUnique({
+      where: { guideId: input.guideId },
+      include: {
+        guide: {
+          select: {
+            displayName: true,
+            user: { select: { id: true, email: true } },
+          },
+        },
+      },
+    });
+    if (!account) throw new NotFoundException('Payout account not found');
+
+    const before = {
+      holdActive: account.holdActive,
+      holdReason: account.holdReason,
+      holdSetAt: account.holdSetAt,
+      holdSetBy: account.holdSetBy,
+    };
+
+    const updated = await this.prisma.payoutAccount.update({
+      where: { guideId: input.guideId },
+      data: {
+        holdActive: true,
+        holdReason: input.reason,
+        holdSetAt: new Date(),
+        holdSetBy: input.actorUserId,
+      },
+    });
+
+    await this.prisma.payoutAuditLog.create({
+      data: {
+        actorUserId: input.actorUserId,
+        action: 'HOLD',
+        guideId: input.guideId,
+        reason: input.reason,
+        beforeState: before,
+        afterState: {
+          holdActive: updated.holdActive,
+          holdReason: updated.holdReason,
+          holdSetAt: updated.holdSetAt,
+          holdSetBy: updated.holdSetBy,
+        },
+      },
+    });
+
+    // Fire-and-forget notification to the guide.
+    if (account.guide?.user?.email && account.guide.user.id) {
+      this.notifications
+        .notifyPayoutHeld({
+          userId: account.guide.user.id,
+          email: account.guide.user.email,
+          guideName: account.guide.displayName,
+          reason: input.reason,
+          supportEmail:
+            this.config.get<string>('SUPPORT_EMAIL') ?? 'support@spiritualcalifornia.com',
+        })
+        .catch(() => undefined);
+    }
+
+    return { ok: true };
+  }
+
+  async releaseGuidePayouts(input: {
+    guideId: string;
+    actorUserId: string;
+    reason: string;
+  }) {
+    if (!input.reason?.trim()) {
+      throw new BadRequestException('A reason is required when releasing a payout hold');
+    }
+    const account = await this.prisma.payoutAccount.findUnique({
+      where: { guideId: input.guideId },
+    });
+    if (!account) throw new NotFoundException('Payout account not found');
+
+    const before = {
+      holdActive: account.holdActive,
+      holdReason: account.holdReason,
+    };
+
+    await this.prisma.payoutAccount.update({
+      where: { guideId: input.guideId },
+      data: {
+        holdActive: false,
+        holdReason: null,
+        holdSetAt: null,
+        holdSetBy: null,
+      },
+    });
+
+    await this.prisma.payoutAuditLog.create({
+      data: {
+        actorUserId: input.actorUserId,
+        action: 'RELEASE',
+        guideId: input.guideId,
+        reason: input.reason,
+        beforeState: before,
+        afterState: { holdActive: false },
+      },
+    });
+    return { ok: true };
+  }
+
+  /**
+   * Reject a PENDING payout request without sending money. Releases the
+   * reservation (v2) or restores the cached balance (v1). Audit-logged.
+   */
+  async rejectPayoutRequest(input: {
+    payoutRequestId: string;
+    actorUserId: string;
+    reason: string;
+  }) {
+    if (!input.reason?.trim()) {
+      throw new BadRequestException('A reason is required when rejecting a payout');
+    }
+    const payout = await this.prisma.payoutRequest.findUnique({
+      where: { id: input.payoutRequestId },
+    });
+    if (!payout) throw new NotFoundException('Payout request not found');
+    if (payout.status !== 'PENDING')
+      throw new BadRequestException(`Cannot reject — payout is ${payout.status}`);
+
+    const before = { status: payout.status };
+
+    await this.prisma.payoutRequest.update({
+      where: { id: payout.id },
+      data: {
+        status: 'REJECTED',
+        rejectedReason: input.reason,
+      },
+    });
+
+    // Release the reservation. Critical: branch on the active path so we
+    // don't double-credit. v1 owns availableBalance directly; v2 derives it
+    // from ledger SUM via recomputeCachedBalance, so clearing payoutRequestId
+    // is enough — incrementing the column on top would double the credit.
+    if (this.ledger.isV2Live()) {
+      await this.prisma.ledgerEntry.updateMany({
+        where: { payoutRequestId: payout.id },
+        data: { payoutRequestId: null },
+      });
+      await this.ledger.recomputeCachedBalance(payout.guideId);
+    } else {
+      await this.prisma.payoutAccount.update({
+        where: { id: payout.payoutAccountId },
+        data: { availableBalance: { increment: Number(payout.amount) } },
+      });
+    }
+
+    await this.prisma.payoutAuditLog.create({
+      data: {
+        actorUserId: input.actorUserId,
+        action: 'REJECT',
+        guideId: payout.guideId,
+        payoutRequestId: payout.id,
+        reason: input.reason,
+        beforeState: before,
+        afterState: { status: 'REJECTED' },
+      },
+    });
+    return { ok: true };
+  }
+
+  // ─── Payouts v2 — commission rate management ──────────────────────────────
+
+  async listCommissionRates() {
+    const rates = await this.prisma.commissionRate.findMany({
+      orderBy: [{ category: 'asc' }, { effectiveFrom: 'desc' }],
+      include: {
+        guide: { select: { id: true, displayName: true } },
+      },
+    });
+    return rates.map((r) => ({
+      id: r.id,
+      category: r.category,
+      guideId: r.guideId,
+      guideName: r.guide?.displayName ?? null,
+      percent: Number(r.percent),
+      effectiveFrom: r.effectiveFrom,
+      effectiveUntil: r.effectiveUntil,
+      createdBy: r.createdBy,
+      createdAt: r.createdAt,
+    }));
+  }
+
+  async upsertCommissionRate(input: {
+    actorUserId: string;
+    category: 'SERVICE' | 'EVENT' | 'TOUR' | 'PRODUCT';
+    guideId?: string | null;
+    percent: number;
+    effectiveFrom?: Date;
+    effectiveUntil?: Date | null;
+  }) {
+    if (input.percent < 0 || input.percent > 100) {
+      throw new BadRequestException('Commission percent must be between 0 and 100');
+    }
+
+    // Close out any currently-effective row for this (category, guideId)
+    // by setting effectiveUntil = now. Then insert the new row.
+    const now = new Date();
+    await this.prisma.commissionRate.updateMany({
+      where: {
+        category: input.category,
+        guideId: input.guideId ?? null,
+        effectiveFrom: { lte: now },
+        OR: [{ effectiveUntil: null }, { effectiveUntil: { gt: now } }],
+      },
+      data: { effectiveUntil: now },
+    });
+
+    const created = await this.prisma.commissionRate.create({
+      data: {
+        category: input.category,
+        guideId: input.guideId ?? null,
+        percent: input.percent,
+        effectiveFrom: input.effectiveFrom ?? now,
+        effectiveUntil: input.effectiveUntil ?? null,
+        createdBy: input.actorUserId,
+      },
+    });
+
+    await this.prisma.payoutAuditLog.create({
+      data: {
+        actorUserId: input.actorUserId,
+        action: 'OVERRIDE_RATE',
+        // Null for platform-default rate changes (no specific guide targeted).
+        guideId: input.guideId ?? null,
+        reason: `Set ${input.category} rate to ${input.percent}%${input.guideId ? ` for guide ${input.guideId}` : ' (platform default)'}`,
+        afterState: {
+          rateId: created.id,
+          category: input.category,
+          percent: input.percent,
+        },
+      },
+    });
+
+    return created;
+  }
+
+  // ─── Payouts v2 — audit log read ──────────────────────────────────────────
+
+  async getPayoutAuditLog(params: { guideId?: string; payoutRequestId?: string; limit?: number }) {
+    return this.prisma.payoutAuditLog.findMany({
+      where: {
+        ...(params.guideId ? { guideId: params.guideId } : {}),
+        ...(params.payoutRequestId ? { payoutRequestId: params.payoutRequestId } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: params.limit ?? 50,
+    });
+  }
+
+  // ─── Payouts v2 — reconciliation ──────────────────────────────────────────
+
+  async listReconciliationMismatches(params: { resolved?: boolean; limit?: number }) {
+    const where: any = {};
+    if (params.resolved !== undefined) where.resolved = params.resolved;
+    return this.prisma.reconciliationMismatch.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: params.limit ?? 100,
+    });
+  }
+
+  async resolveReconciliationMismatch(input: {
+    id: string;
+    actorUserId: string;
+    note: string;
+  }) {
+    if (!input.note?.trim()) {
+      throw new BadRequestException('A resolution note is required');
+    }
+    const row = await this.prisma.reconciliationMismatch.findUnique({
+      where: { id: input.id },
+    });
+    if (!row) throw new NotFoundException('Mismatch row not found');
+    if (row.resolved) throw new BadRequestException('Already resolved');
+    return this.prisma.reconciliationMismatch.update({
+      where: { id: input.id },
+      data: {
+        resolved: true,
+        resolvedAt: new Date(),
+        resolvedBy: input.actorUserId,
+        resolutionNote: input.note,
+      },
+    });
+  }
+
+  // ─── Payouts v2 — financials summary ──────────────────────────────────────
+
+  /**
+   * Aggregate dashboard for ops: gross volume, commission revenue, Stripe
+   * fees, paid out, and outstanding payable. Bounded by date range and
+   * optionally filtered by category. Reads from ledger when v2 is live;
+   * pre-cutover reads from `payments` table for compatibility.
+   */
+  async getPayoutsSummary(params: {
+    since: Date;
+    until: Date;
+    category?: 'SERVICE' | 'EVENT' | 'TOUR' | 'PRODUCT';
+  }) {
+    const dateFilter = { createdAt: { gte: params.since, lt: params.until } };
+
+    const [
+      grossSales,
+      commission,
+      stripeFee,
+      netPayable,
+      paidOut,
+      outstanding,
+    ] = await Promise.all([
+      this.prisma.ledgerEntry.aggregate({
+        where: {
+          ...dateFilter,
+          entryType: 'SALE',
+          ...(params.category ? { category: params.category } : {}),
+        },
+        _sum: { amount: true },
+      }),
+      this.prisma.ledgerEntry.aggregate({
+        where: {
+          ...dateFilter,
+          entryType: 'COMMISSION',
+          ...(params.category ? { category: params.category } : {}),
+        },
+        _sum: { amount: true },
+      }),
+      this.prisma.ledgerEntry.aggregate({
+        where: {
+          ...dateFilter,
+          entryType: 'STRIPE_FEE',
+          ...(params.category ? { category: params.category } : {}),
+        },
+        _sum: { amount: true },
+      }),
+      this.prisma.ledgerEntry.aggregate({
+        where: {
+          ...dateFilter,
+          entryType: 'NET_PAYABLE',
+          ...(params.category ? { category: params.category } : {}),
+        },
+        _sum: { amount: true },
+      }),
+      this.prisma.ledgerEntry.aggregate({
+        where: {
+          ...dateFilter,
+          entryType: 'PAYOUT',
+        },
+        _sum: { amount: true },
+      }),
+      // Outstanding payable = AVAILABLE + PENDING_CLEARANCE NET_PAYABLE not
+      // yet consumed (across all time, not date-bounded — represents what
+      // the platform owes guides right now).
+      this.prisma.ledgerEntry.aggregate({
+        where: {
+          status: { in: ['AVAILABLE', 'PENDING_CLEARANCE'] },
+          payoutRequestId: null,
+          entryType: { in: ['NET_PAYABLE', 'REFUND_REVERSAL', 'ADJUSTMENT', 'PAYOUT_REVERSAL'] },
+        },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    return {
+      window: { since: params.since, until: params.until },
+      category: params.category ?? 'ALL',
+      grossSales: Number(grossSales._sum.amount ?? 0),
+      commissionRevenue: Math.abs(Number(commission._sum.amount ?? 0)),
+      stripeFees: Math.abs(Number(stripeFee._sum.amount ?? 0)),
+      netPayableAccrued: Number(netPayable._sum.amount ?? 0),
+      paidOut: Math.abs(Number(paidOut._sum.amount ?? 0)),
+      outstandingPayable: Number(outstanding._sum.amount ?? 0),
+    };
   }
 }

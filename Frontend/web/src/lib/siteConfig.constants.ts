@@ -55,7 +55,7 @@ export interface SiteConfig {
  */
 export const SITE_CONFIG_FALLBACK: SiteConfig = {
   fees: { platformCommissionPercent: 15, eventBookingFeePercent: 5 },
-  payouts: { minUsd: 10 },
+  payouts: { minUsd: 50 },
   cancellationPolicies: {
     service: {
       fullRefundHoursBefore: 48,

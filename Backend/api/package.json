@@ -19,7 +19,9 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
-    "seed:pages": "ts-node -r tsconfig-paths/register prisma/seed-static-pages.ts"
+    "seed:pages": "ts-node -r tsconfig-paths/register prisma/seed-static-pages.ts",
+    "backfill:ledger:verify": "ts-node -r tsconfig-paths/register scripts/backfill-ledger.ts --mode=verify",
+    "backfill:ledger:write": "ts-node -r tsconfig-paths/register scripts/backfill-ledger.ts --mode=write"
   },
   "prisma": {
     "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts"

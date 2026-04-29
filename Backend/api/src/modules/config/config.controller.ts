@@ -27,7 +27,7 @@ export class ConfigController {
     const eventBookingFeePercent = Number(
       this.config.get<string>('EVENT_BOOKING_FEE_PERCENT') ?? '5',
     );
-    const minPayoutUsd = Number(this.config.get<string>('MIN_PAYOUT_USD') ?? '10');
+    const minPayoutUsd = Number(this.config.get<string>('MIN_PAYOUT_USD') ?? '50');
     const returnWindowDays = Number(this.config.get<string>('RETURN_WINDOW_DAYS') ?? '30');
 
     return {

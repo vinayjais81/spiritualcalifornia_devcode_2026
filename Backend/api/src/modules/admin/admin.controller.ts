@@ -27,10 +27,11 @@ import { BanUserDto } from './dto/ban-user.dto';
 import { UpdateRolesDto } from './dto/update-roles.dto';
 import { RejectGuideDto } from './dto/reject-guide.dto';
 import { AdminCreatePostDto, AdminUpdatePostDto } from './dto/admin-blog.dto';
-import { VerificationStatus, TourBookingStatus, BookingStatus, PayoutStatus } from '@prisma/client';
+import { VerificationStatus, TourBookingStatus, BookingStatus, PayoutStatus, EarningCategory } from '@prisma/client';
 import { PaymentsService } from '../payments/payments.service';
-import { IsOptional, IsEnum, IsString } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.decorator';
+import { IsOptional, IsEnum, IsString, IsNumber, Min, Max, IsDateString } from 'class-validator';
+import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 
 class GuidesQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ enum: VerificationStatus })
@@ -68,6 +69,56 @@ class ServiceBookingsQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
   guideId?: string;
+}
+
+class ReasonDto {
+  @ApiProperty({ description: 'Required reason — surfaced in audit log + guide notification' })
+  @IsString()
+  reason!: string;
+}
+
+class CommissionRateUpsertDto {
+  @ApiProperty({ enum: EarningCategory })
+  @IsEnum(EarningCategory)
+  category!: EarningCategory;
+
+  @ApiPropertyOptional({ description: 'Per-guide override; omit for platform default' })
+  @IsOptional()
+  @IsString()
+  guideId?: string;
+
+  @ApiProperty({ description: 'Commission percent — 15 = 15%' })
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  percent!: number;
+
+  @ApiPropertyOptional({ description: 'ISO date when this rate becomes effective' })
+  @IsOptional()
+  @IsDateString()
+  effectiveFrom?: string;
+
+  @ApiPropertyOptional({ description: 'ISO date when this rate stops being effective' })
+  @IsOptional()
+  @IsDateString()
+  effectiveUntil?: string;
+}
+
+class PayoutsSummaryQueryDto {
+  @ApiPropertyOptional({ description: 'ISO date — start of window (inclusive). Defaults to 30 days ago.' })
+  @IsOptional()
+  @IsDateString()
+  since?: string;
+
+  @ApiPropertyOptional({ description: 'ISO date — end of window (exclusive). Defaults to now.' })
+  @IsOptional()
+  @IsDateString()
+  until?: string;
+
+  @ApiPropertyOptional({ enum: EarningCategory })
+  @IsOptional()
+  @IsEnum(EarningCategory)
+  category?: EarningCategory;
 }
 
 @ApiTags('Admin')
@@ -342,6 +393,141 @@ export class AdminController {
   @ApiOperation({ summary: 'Process a pending payout request (triggers Stripe transfer)' })
   processPayout(@Param('id') id: string) {
     return this.paymentsService.processPayout(id);
+  }
+
+  @Post('orders/:id/mark-delivered')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Mark an order delivered. Stamps deliveredAt on every item and writes the deferred ledger fan-out for physical products (which is skipped at charge time so the clearance window starts at delivery, not purchase).',
+  })
+  markOrderDelivered(@Param('id') id: string) {
+    return this.paymentsService.markOrderDelivered(id);
+  }
+
+  // ─── Payouts v2 admin actions ─────────────────────────────────────────────
+
+  @Post('payout-requests/:id/reject')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reject a pending payout request without sending money' })
+  rejectPayoutRequest(
+    @Param('id') id: string,
+    @Body() body: ReasonDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.adminService.rejectPayoutRequest({
+      payoutRequestId: id,
+      actorUserId: user.id,
+      reason: body.reason,
+    });
+  }
+
+  @Post('guides/:guideId/payouts/hold')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Freeze a guide\'s payouts (clearance + claim)' })
+  holdGuidePayouts(
+    @Param('guideId') guideId: string,
+    @Body() body: ReasonDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.adminService.holdGuidePayouts({
+      guideId,
+      actorUserId: user.id,
+      reason: body.reason,
+    });
+  }
+
+  @Post('guides/:guideId/payouts/release')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Lift a payout hold for a guide' })
+  releaseGuidePayouts(
+    @Param('guideId') guideId: string,
+    @Body() body: ReasonDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.adminService.releaseGuidePayouts({
+      guideId,
+      actorUserId: user.id,
+      reason: body.reason,
+    });
+  }
+
+  @Get('commission-rates')
+  @ApiOperation({ summary: 'List platform default + per-guide commission rates' })
+  listCommissionRates() {
+    return this.adminService.listCommissionRates();
+  }
+
+  @Post('commission-rates')
+  @ApiOperation({ summary: 'Set or override a commission rate' })
+  upsertCommissionRate(
+    @Body() body: CommissionRateUpsertDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.adminService.upsertCommissionRate({
+      actorUserId: user.id,
+      category: body.category,
+      guideId: body.guideId ?? null,
+      percent: body.percent,
+      effectiveFrom: body.effectiveFrom ? new Date(body.effectiveFrom) : undefined,
+      effectiveUntil: body.effectiveUntil ? new Date(body.effectiveUntil) : null,
+    });
+  }
+
+  @Get('payout-audit-log')
+  @ApiOperation({ summary: 'Read the payout audit log (filterable)' })
+  getPayoutAuditLog(
+    @Query('guideId') guideId?: string,
+    @Query('payoutRequestId') payoutRequestId?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.adminService.getPayoutAuditLog({
+      guideId,
+      payoutRequestId,
+      limit: limit ? Number(limit) : 50,
+    });
+  }
+
+  @Get('reconciliation/mismatches')
+  @ApiOperation({ summary: 'List unmatched Stripe ↔ ledger entries (drift surface)' })
+  listReconciliationMismatches(
+    @Query('resolved') resolved?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.adminService.listReconciliationMismatches({
+      resolved:
+        resolved === 'true' ? true : resolved === 'false' ? false : undefined,
+      limit: limit ? Number(limit) : 100,
+    });
+  }
+
+  @Post('reconciliation/mismatches/:id/resolve')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Mark a reconciliation mismatch as resolved' })
+  resolveReconciliationMismatch(
+    @Param('id') id: string,
+    @Body() body: ReasonDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.adminService.resolveReconciliationMismatch({
+      id,
+      actorUserId: user.id,
+      note: body.reason,
+    });
+  }
+
+  @Get('financials/payouts-summary')
+  @ApiOperation({ summary: 'Aggregate payouts P&L (gross / commission / fees / paid / outstanding)' })
+  getPayoutsSummary(@Query() query: PayoutsSummaryQueryDto) {
+    const until = query.until ? new Date(query.until) : new Date();
+    const defaultSince = new Date(until);
+    defaultSince.setDate(defaultSince.getDate() - 30);
+    const since = query.since ? new Date(query.since) : defaultSince;
+    return this.adminService.getPayoutsSummary({
+      since,
+      until,
+      category: query.category,
+    });
   }
 
   // ─── Blog Management ─────────────────────────────────────────────────────
