@@ -5,6 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { PaymentsService } from '../payments/payments.service';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 
@@ -12,12 +13,23 @@ import { UpdateServiceDto } from './dto/update-service.dto';
 export class ServicesService {
   private readonly logger = new Logger(ServicesService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly payments: PaymentsService,
+  ) {}
 
   // ─── Create ─────────────────────────────────────────────────────────────────
 
   async create(userId: string, dto: CreateServiceDto) {
     const guide = await this.findGuideOrFail(userId);
+
+    // Payments gate: services default to isActive=true. If this is a paid
+    // service and the guide hasn't completed Stripe Connect, save the
+    // record as a draft (isActive=false) so the form data isn't lost,
+    // then throw 403 so the UI can show the publish-blocked modal.
+    const isPaid = Number(dto.price) > 0;
+    const gate = isPaid ? await this.payments.canPublishPaidOffering(guide.id) : null;
+    const blocked = !!gate && !gate.allowed;
 
     const service = await this.prisma.service.create({
       data: {
@@ -27,10 +39,15 @@ export class ServicesService {
         type: dto.type,
         price: dto.price,
         durationMin: dto.durationMin,
+        isActive: blocked ? false : true,
       },
     });
 
-    this.logger.log(`Service "${service.name}" created for guide ${guide.id}`);
+    this.logger.log(
+      `Service "${service.name}" created for guide ${guide.id}${blocked ? ' (saved as draft — payments gate blocked)' : ''}`,
+    );
+
+    if (blocked && gate) this.payments.assertCanPublishPaidOffering(gate);
     return service;
   }
 
@@ -91,6 +108,19 @@ export class ServicesService {
       throw new ForbiddenException('You can only edit your own services');
     }
 
+    // Payments gate: if this update would result in a paid+active service,
+    // require the guide's Stripe Connect to be set up. Lets free + draft
+    // edits pass; only blocks the moment the guide tries to make money
+    // visible without payment receipt configured.
+    const finalPrice = dto.price !== undefined ? Number(dto.price) : Number(service.price);
+    const finalActive = (dto as { isActive?: boolean }).isActive !== undefined
+      ? !!(dto as { isActive?: boolean }).isActive
+      : service.isActive;
+    if (finalActive && finalPrice > 0) {
+      const gate = await this.payments.canPublishPaidOffering(guide.id);
+      this.payments.assertCanPublishPaidOffering(gate);
+    }
+
     const updated = await this.prisma.service.update({
       where: { id: serviceId },
       data: dto,
@@ -119,10 +149,40 @@ export class ServicesService {
   // ─── Activate All (called from onboarding Go Live) ──────────────────────────
 
   async activateAll(guideId: string) {
-    await this.prisma.service.updateMany({
+    // Programmatic "Go Live" from onboarding. New guides typically don't
+    // have Stripe Connect yet, so activate free services unconditionally
+    // but skip paid services if the gate fails — they stay as drafts
+    // until the guide finishes Stripe onboarding. Never throws here so
+    // onboarding flow isn't disrupted.
+    const services = await this.prisma.service.findMany({
       where: { guideId },
-      data: { isActive: true },
+      select: { id: true, price: true },
     });
+    const hasPaid = services.some((s) => Number(s.price) > 0);
+
+    let activateAll = true;
+    if (hasPaid) {
+      const gate = await this.payments.canPublishPaidOffering(guideId);
+      activateAll = gate.allowed;
+    }
+
+    if (activateAll) {
+      await this.prisma.service.updateMany({
+        where: { guideId },
+        data: { isActive: true },
+      });
+    } else {
+      const freeIds = services.filter((s) => Number(s.price) === 0).map((s) => s.id);
+      if (freeIds.length > 0) {
+        await this.prisma.service.updateMany({
+          where: { id: { in: freeIds } },
+          data: { isActive: true },
+        });
+      }
+      this.logger.log(
+        `activateAll: guide ${guideId} has paid services but no Stripe Connect — only ${freeIds.length} free service(s) activated`,
+      );
+    }
   }
 
   // ─── Helpers ────────────────────────────────────────────────────────────────

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { parsePaymentsGateError } from '@/lib/payments-gate';
 import { toast } from 'sonner';
 import { C, font, formatPrice, PageHeader, Panel, Btn, EmptyState, EventDateBox, Modal, FormGroup, Input, Select } from '@/components/guide/dashboard-ui';
 import { RichTextEditor } from '@/components/guide/RichTextEditor';
@@ -133,6 +134,11 @@ export default function EventsPage() {
       closeModal();
       load();
     } catch (err: any) {
+      // Payments Publish Gate: backend returns structured 403 when a guide
+      // tries to publish a paid event without Stripe Connect. The global
+      // axios interceptor already opens the PaymentsGateModal — silence the
+      // generic toast in that case so the user only sees the modal.
+      if (parsePaymentsGateError(err)) return;
       toast.error(err?.response?.data?.message || `Failed to ${editingId ? 'update' : 'create'} event`);
     }
   };

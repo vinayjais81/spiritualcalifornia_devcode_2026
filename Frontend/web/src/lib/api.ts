@@ -102,6 +102,23 @@ api.interceptors.response.use(
   async (error) => {
     const original = error.config;
 
+    // Payments Publish Gate: backend throws structured 403 with
+    // error: 'PAYMENT_GATE_BLOCKED' when a guide tries to publish a paid
+    // offering without Stripe Connect. Dispatch the global event so the
+    // mounted PaymentsGateModal can render. Still reject — caller's mutation
+    // sees the error, but the user gets a friendly modal instead of a toast.
+    if (
+      error.response?.status === 403 &&
+      error.response?.data?.error === 'PAYMENT_GATE_BLOCKED'
+    ) {
+      // Lazy require: avoid an import cycle in case payments-gate.ts ever
+      // imports api in the future.
+      void import('./payments-gate').then(({ handlePaymentsGateError }) => {
+        handlePaymentsGateError(error);
+      });
+      return Promise.reject(error);
+    }
+
     // Don't try to refresh on 401s from auth endpoints — those are
     // credential failures (e.g. wrong password, EMAIL_NOT_VERIFIED). Let
     // the page handle the error message.

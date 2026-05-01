@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { parsePaymentsGateError } from '@/lib/payments-gate';
 import { toast } from 'sonner';
 import {
   C, font, formatPrice, PageHeader, Panel, Btn, EmptyState,
@@ -74,14 +75,28 @@ export default function ServicesPage() {
         toast.success('Service updated');
       } else {
         await api.post('/services', payload);
-        toast.success('Service created');
+        toast.success('Service created — saved as draft. Publish from your service list once payments are set up.');
       }
       setShowModal(false);
       setForm(EMPTY_FORM);
       setEditingId(null);
       load();
-    } catch {
-      toast.error(editingId ? 'Failed to update service' : 'Failed to create service');
+    } catch (err: unknown) {
+      // The Payments Publish Gate (paid offering + no Stripe Connect)
+      // surfaces as a structured 403; the global axios interceptor opens
+      // the PaymentsGateModal automatically. Suppress the generic toast
+      // in that case so the user only sees the modal.
+      if (parsePaymentsGateError(err)) {
+        // For create: the server still saves the service as a draft, so
+        // refresh the list and clear the form like a happy-path save.
+        if (!editingId) {
+          setShowModal(false);
+          setForm(EMPTY_FORM);
+          load();
+        }
+      } else {
+        toast.error(editingId ? 'Failed to update service' : 'Failed to create service');
+      }
     } finally {
       setSaving(false);
     }

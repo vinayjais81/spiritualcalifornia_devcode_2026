@@ -1,11 +1,30 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { PaymentsService } from '../payments/payments.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 
 @Injectable()
 export class EventsService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(EventsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly payments: PaymentsService,
+  ) {}
+
+  /**
+   * An event is "paid" if any of its currently-active ticket tiers has price > 0.
+   * If no tiers exist yet (event still being authored), treat as not-paid —
+   * the gate fires later when tiers are added.
+   */
+  private async eventIsPaid(eventId: string): Promise<boolean> {
+    const tiers = await this.prisma.eventTicketTier.findMany({
+      where: { eventId, isActive: true },
+      select: { price: true },
+    });
+    return tiers.some((t) => Number(t.price) > 0);
+  }
 
   private async requireGuide(userId: string) {
     const guide = await this.prisma.guideProfile.findUnique({ where: { userId } });
@@ -46,6 +65,8 @@ export class EventsService {
         },
       });
     }
+
+    this.logger.log(`Event "${event.title}" created (draft) for guide ${guide.id}`);
 
     return this.prisma.event.findUnique({
       where: { id: event.id },
@@ -127,6 +148,15 @@ export class EventsService {
     if (!event) throw new NotFoundException('Event not found');
     if (event.guideId !== guide.id) throw new ForbiddenException('Not your event');
 
+    // Payments gate: if this update would result in a paid+published event,
+    // require Stripe Connect. The gate fires only on the transition to
+    // published (or while-published) — editing a draft event is unaffected.
+    const finalPublished = dto.isPublished !== undefined ? !!dto.isPublished : event.isPublished;
+    if (finalPublished && (await this.eventIsPaid(eventId))) {
+      const gate = await this.payments.canPublishPaidOffering(guide.id);
+      this.payments.assertCanPublishPaidOffering(gate);
+    }
+
     const data: any = {};
     if (dto.title !== undefined) data.title = dto.title;
     if (dto.type !== undefined) data.type = dto.type;
@@ -160,9 +190,43 @@ export class EventsService {
   // ─── Publish All (Go Live) ─────────────────────────────────────────────────
 
   async publishAll(guideId: string) {
-    await this.prisma.event.updateMany({
+    // Programmatic "Go Live" from onboarding. Only publish events with
+    // all-free tiers (or no tiers) when Stripe Connect isn't ready yet —
+    // paid events stay drafts until the guide finishes onboarding.
+    const drafts = await this.prisma.event.findMany({
       where: { guideId, isPublished: false },
-      data: { isPublished: true },
+      select: { id: true, ticketTiers: { where: { isActive: true }, select: { price: true } } },
     });
+    if (drafts.length === 0) return;
+
+    const hasPaidEvent = drafts.some((e) =>
+      e.ticketTiers.some((t) => Number(t.price) > 0),
+    );
+
+    let publishAll = true;
+    if (hasPaidEvent) {
+      const gate = await this.payments.canPublishPaidOffering(guideId);
+      publishAll = gate.allowed;
+    }
+
+    if (publishAll) {
+      await this.prisma.event.updateMany({
+        where: { guideId, isPublished: false },
+        data: { isPublished: true },
+      });
+    } else {
+      const freeIds = drafts
+        .filter((e) => e.ticketTiers.every((t) => Number(t.price) === 0))
+        .map((e) => e.id);
+      if (freeIds.length > 0) {
+        await this.prisma.event.updateMany({
+          where: { id: { in: freeIds } },
+          data: { isPublished: true },
+        });
+      }
+      this.logger.log(
+        `publishAll: guide ${guideId} has paid events but no Stripe Connect — only ${freeIds.length} free event(s) published`,
+      );
+    }
   }
 }

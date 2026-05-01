@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EarningCategory } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
@@ -212,6 +212,76 @@ export class PaymentsService {
 
     this.logger.log(`Payment confirmed: ${payment.id}`);
     return updated;
+  }
+
+  // ─── Payments publish gate ─────────────────────────────────────────────────
+
+  /**
+   * Returns whether a guide is permitted to publish a paid offering
+   * (service / event / tour / product) right now. The gate is two-prong:
+   *   - Stripe Connect onboarding completed (`stripeOnboardingDone`)
+   *   - Stripe currently has payouts enabled (`payoutAccount.payoutsEnabled`)
+   *
+   * Free offerings (price == 0) bypass the gate entirely; the caller checks
+   * the price first and only invokes this helper when paid.
+   *
+   * Spec: docs/payments-publish-gate.md §5.
+   */
+  async canPublishPaidOffering(guideId: string): Promise<{
+    allowed: boolean;
+    reason?: 'no-stripe-account' | 'onboarding-incomplete' | 'payouts-disabled';
+    stripeOnboardingDone: boolean;
+    payoutsEnabled: boolean;
+    ctaUrl: string;
+  }> {
+    const guide = await this.prisma.guideProfile.findUnique({
+      where: { id: guideId },
+      select: { stripeAccountId: true, stripeOnboardingDone: true },
+    });
+    const account = await this.prisma.payoutAccount.findUnique({
+      where: { guideId },
+      select: { payoutsEnabled: true },
+    });
+
+    const ctaUrl = `${this.config.get('FRONTEND_URL') ?? ''}/guide/dashboard/earnings`;
+    const stripeOnboardingDone = !!guide?.stripeOnboardingDone;
+    const payoutsEnabled = !!account?.payoutsEnabled;
+
+    // 'pending-setup' is a sentinel from a half-finished v1 onboarding.
+    const hasRealAccount =
+      !!guide?.stripeAccountId && guide.stripeAccountId !== 'pending-setup';
+
+    if (!hasRealAccount) {
+      return { allowed: false, reason: 'no-stripe-account', stripeOnboardingDone, payoutsEnabled, ctaUrl };
+    }
+    if (!stripeOnboardingDone) {
+      return { allowed: false, reason: 'onboarding-incomplete', stripeOnboardingDone, payoutsEnabled, ctaUrl };
+    }
+    if (!payoutsEnabled) {
+      return { allowed: false, reason: 'payouts-disabled', stripeOnboardingDone, payoutsEnabled, ctaUrl };
+    }
+    return { allowed: true, stripeOnboardingDone: true, payoutsEnabled: true, ctaUrl };
+  }
+
+  /**
+   * Throws a structured 403 the frontend axios interceptor can catch
+   * (`error: 'PAYMENT_GATE_BLOCKED'`) and render as a modal instead of a
+   * generic toast. Centralized so every publish endpoint shapes the same
+   * payload.
+   */
+  assertCanPublishPaidOffering(gate: {
+    allowed: boolean;
+    reason?: string;
+    ctaUrl: string;
+  }): void {
+    if (gate.allowed) return;
+    throw new ForbiddenException({
+      error: 'PAYMENT_GATE_BLOCKED',
+      message: 'Set up payment receipt before publishing a paid offering.',
+      reason: gate.reason,
+      ctaUrl: gate.ctaUrl,
+      ctaLabel: 'Set Up Payments',
+    });
   }
 
   // ─── Physical product delivery hook ───────────────────────────────────────

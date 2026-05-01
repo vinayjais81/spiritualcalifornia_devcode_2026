@@ -8,6 +8,7 @@ import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { BookTourDto, PayBalanceDto, CancelBookingDto } from './dto/book-tour.dto';
 import { StripeService } from '../payments/stripe.service';
+import { PaymentsService } from '../payments/payments.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
 const HOLD_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
@@ -24,6 +25,7 @@ export class SoulToursService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly stripeService: StripeService,
+    private readonly payments: PaymentsService,
     private readonly notifications: NotificationsService,
   ) {}
 
@@ -61,6 +63,17 @@ export class SoulToursService {
   async create(userId: string, dto: CreateTourDto) {
     const guide = await this.requireGuide(userId);
     const { roomTypes, departures, itinerary, cancellationPolicy, ...tourData } = dto;
+
+    // Payments gate: tours always have a basePrice, so any tour-create
+    // attempt with isPublished=true requires Stripe Connect to be ready.
+    // If the guide is creating as a draft (isPublished=false or unset),
+    // no gate — they can build the tour now and publish later.
+    const wantsPublished = tourData.isPublished === true;
+    const isPaid = Number(tourData.basePrice ?? 0) > 0;
+    if (wantsPublished && isPaid) {
+      const gate = await this.payments.canPublishPaidOffering(guide.id);
+      this.payments.assertCanPublishPaidOffering(gate);
+    }
 
     return this.prisma.soulTour.create({
       data: {
@@ -266,6 +279,19 @@ export class SoulToursService {
     if (tour.guideId !== guide.id) throw new ForbiddenException('Not your tour');
 
     const { roomTypes, departures, itinerary, startDate, endDate, cancellationPolicy, trackType, latestUpdate, ...rest } = dto;
+
+    // Payments gate: if this update would result in a paid+published tour,
+    // require Stripe Connect.
+    const finalPublished = (rest as { isPublished?: boolean }).isPublished !== undefined
+      ? !!(rest as { isPublished?: boolean }).isPublished
+      : tour.isPublished;
+    const finalBasePrice = (rest as { basePrice?: number | string }).basePrice !== undefined
+      ? Number((rest as { basePrice?: number | string }).basePrice)
+      : Number(tour.basePrice);
+    if (finalPublished && finalBasePrice > 0) {
+      const gate = await this.payments.canPublishPaidOffering(guide.id);
+      this.payments.assertCanPublishPaidOffering(gate);
+    }
 
     return this.prisma.soulTour.update({
       where: { id: tourId },

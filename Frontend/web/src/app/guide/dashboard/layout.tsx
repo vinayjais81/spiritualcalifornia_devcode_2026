@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth.store';
 import { C, font, serif } from '@/components/guide/dashboard-ui';
+import { PaymentsGateModal } from '@/components/payments/PaymentsGateModal';
 
 function NavAvatar({ src, name, size }: { src: string; name: string; size: number }) {
   const [failed, setFailed] = useState(false);
@@ -191,6 +192,11 @@ export default function GuideDashboardLayout({ children }: { children: React.Rea
       <footer style={{ marginLeft: '240px', padding: '24px 48px', borderTop: '1px solid rgba(232,184,75,0.12)', fontFamily: font, fontSize: '11px', color: C.warmGray, letterSpacing: '0.08em', textAlign: 'center' }}>
         © {new Date().getFullYear()} Spiritual California LLC · All rights reserved
       </footer>
+
+      {/* Payments Publish Gate modal — listens for the global event,
+          renders when a publish action is blocked. Mounted once here so
+          every page under /guide/dashboard surfaces the same UX. */}
+      <PaymentsGateModal />
     </div>
   );
 }

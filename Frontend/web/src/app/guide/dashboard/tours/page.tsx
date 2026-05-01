@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { parsePaymentsGateError } from '@/lib/payments-gate';
 import {
   C, font, serif, PageHeader, Btn, StatCard, EmptyState, StatusBadge, formatDate,
 } from '@/components/guide/dashboard-ui';
@@ -69,6 +70,11 @@ export default function GuideToursPage() {
       setTours((t) => t.map((x) => (x.id === tour.id ? { ...x, isPublished: !tour.isPublished } : x)));
       toast.success(tour.isPublished ? 'Tour unpublished' : 'Tour published');
     } catch (err: any) {
+      // Payments Publish Gate: backend returns structured 403 when a guide
+      // tries to publish a paid tour without Stripe Connect. The global
+      // axios interceptor already opens the PaymentsGateModal — silence
+      // the redundant toast.
+      if (parsePaymentsGateError(err)) return;
       toast.error(err?.response?.data?.message || 'Failed to update');
     }
   };

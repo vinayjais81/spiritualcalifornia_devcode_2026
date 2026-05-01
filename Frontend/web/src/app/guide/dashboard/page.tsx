@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import { C, font, formatDate, PageHeader, Panel, StatCard, Btn, EventDateBox, StatusBadge, EmptyState } from '@/components/guide/dashboard-ui';
 import { GuideProfileCompletenessWidget } from '@/components/guide/GuideProfileCompletenessWidget';
+import { GuidePaymentsChip } from '@/components/guide/GuidePaymentsChip';
 
 interface GuideEvent { id: string; title: string; startTime: string; location: string | null; ticketTiers: { sold: number }[]; }
 interface BlogPost { id: string; title: string; coverImageUrl: string | null; isPublished: boolean; publishedAt: string | null; createdAt: string; }
@@ -46,6 +47,10 @@ export default function DashboardOverview() {
           all wizard sections (categories, profile, location/schedule,
           credentials, submit-for-verification). Self-hides at 100%. */}
       <GuideProfileCompletenessWidget completeness={profile?.completeness} />
+
+      {/* Payments setup nudge — surfaces Stripe Connect status. Self-hides
+          when fully connected. Spec: docs/payments-publish-gate.md §6.1. */}
+      <GuidePaymentsChip />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '28px' }}>
         <StatCard value="$0" label="Current Balance" accent />

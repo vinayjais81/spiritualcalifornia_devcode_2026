@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
+import { parsePaymentsGateError } from '@/lib/payments-gate';
 import { toast } from 'sonner';
 import { C, font, formatPrice, PageHeader, Panel, Btn, EmptyState, ProductThumb, Modal, FormGroup, Input, TextArea, Select } from '@/components/guide/dashboard-ui';
 
@@ -260,6 +261,15 @@ export default function ProductsPage() {
       closeModal();
       load();
     } catch (err: any) {
+      // Payments Publish Gate: paid product without Stripe Connect returns
+      // a structured 403; the server still saved the row as a draft. The
+      // global axios interceptor opens the PaymentsGateModal — silence the
+      // generic toast and refresh the list so the draft shows up.
+      if (parsePaymentsGateError(err)) {
+        closeModal();
+        load();
+        return;
+      }
       toast.error(err?.response?.data?.message || 'Failed to save product');
     }
   };
