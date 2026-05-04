@@ -404,7 +404,7 @@ ${ocrText}`;
     const apiKey = this.config.get<string>('PERSONA_API_KEY')!;
     const templateId = this.config.get<string>('PERSONA_TEMPLATE_ID')!;
 
-    const response = await fetch('https://withpersona.com/api/v1/inquiries', {
+    const response = await fetch('https://api.withpersona.com/api/v1/inquiries', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
