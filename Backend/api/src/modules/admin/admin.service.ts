@@ -8,6 +8,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { Role, VerificationStatus, PaymentStatus, BookingStatus, TourBookingStatus, PayoutStatus } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { LedgerService } from '../payments/ledger.service';
+import { VerificationService } from '../verification/verification.service';
 
 @Injectable()
 export class AdminService {
@@ -16,6 +17,7 @@ export class AdminService {
     private readonly notifications: NotificationsService,
     private readonly config: ConfigService,
     private readonly ledger: LedgerService,
+    private readonly verification: VerificationService,
   ) {}
 
   // ─── Dashboard ───────────────────────────────────────────────────────────────
@@ -357,14 +359,26 @@ export class AdminService {
       where: { id: guideId },
     });
     if (!guide) throw new NotFoundException('Guide profile not found');
-    if (guide.verificationStatus !== VerificationStatus.PENDING) {
-      throw new BadRequestException('Guide is not in pending status');
+    if (
+      guide.verificationStatus !== VerificationStatus.PENDING &&
+      guide.verificationStatus !== VerificationStatus.IN_REVIEW
+    ) {
+      throw new BadRequestException('Guide is not in pending or in-review status');
     }
 
-    return this.prisma.guideProfile.update({
+    // Delegate to VerificationService.reviewGuide so the visibility flags
+    // (isVerified, isPublished) flip together with verificationStatus —
+    // single source of truth for the approval transition.
+    await this.verification.reviewGuide(guideId, 'approve');
+
+    return this.prisma.guideProfile.findUnique({
       where: { id: guideId },
-      data: { verificationStatus: VerificationStatus.APPROVED },
-      select: { id: true, verificationStatus: true },
+      select: {
+        id: true,
+        verificationStatus: true,
+        isVerified: true,
+        isPublished: true,
+      },
     });
   }
 
