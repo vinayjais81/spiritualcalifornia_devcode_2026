@@ -1104,6 +1104,36 @@ export class PaymentsService {
     }
 
     const status = await this.stripeService.getConnectAccountStatus(guide.stripeAccountId);
+
+    // Self-heal drift between Stripe and our cached columns. Source of
+    // truth is Stripe; the DB columns are caches kept in sync by the
+    // `account.updated` webhook. If a webhook drops (network blip, redeploy
+    // mid-event, wrong destination), the DB stays stale forever and the
+    // publish gate keeps blocking even though Stripe is fully set up.
+    // Running this on every Settings page load means the guide naturally
+    // unblocks themselves the moment they revisit settings — no cron, no
+    // manual SQL fixes.
+    const liveOnboardingDone =
+      !!status.chargesEnabled && !!status.detailsSubmitted;
+    const livePayoutsEnabled = !!status.payoutsEnabled;
+    if (liveOnboardingDone !== guide.stripeOnboardingDone) {
+      await this.prisma.guideProfile.update({
+        where: { id: guide.id },
+        data: { stripeOnboardingDone: liveOnboardingDone },
+      });
+      await this.prisma.payoutAccount.updateMany({
+        where: { stripeAccountId: guide.stripeAccountId },
+        data: { payoutsEnabled: livePayoutsEnabled },
+      });
+      // Only sweep on the false→true transition (matches webhook policy).
+      if (liveOnboardingDone && !guide.stripeOnboardingDone && livePayoutsEnabled) {
+        await this.reactivateBlockedPaidOfferings(guide.id);
+      }
+      this.logger.log(
+        `[Connect Sync] guide=${guide.id} drift fixed — stripeOnboardingDone ${guide.stripeOnboardingDone} → ${liveOnboardingDone}`,
+      );
+    }
+
     return { connected: true, ...status };
   }
 
