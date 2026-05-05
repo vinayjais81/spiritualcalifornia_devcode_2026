@@ -42,7 +42,13 @@ jobs:
             # Safe to re-run: only creates slugs that don't already exist, so
             # admin edits in `/static-pages` are preserved across deploys.
             npm run seed:pages
+            # Clean before build so stale layouts (e.g. nested dist/src/ from
+            # a prior tsconfig misconfig) can't be served by the next process.
+            rm -rf dist
             npm run build
+            # Hard fail the deploy if main.js is missing — better to abort
+            # than to swap PM2 onto a broken build and 502 the site.
+            test -f dist/main.js || { echo "ERROR: dist/main.js missing after build"; ls -la dist; exit 1; }
 
             echo "==> Frontend: install + build"
             cd ../../Frontend/web
@@ -52,8 +58,11 @@ jobs:
             npm run build
 
             echo "==> Restart PM2 processes"
-            pm2 reload sc-api --update-env
-            pm2 reload sc-web --update-env
+            # Use restart (not reload) so the Node process re-reads .env via
+            # dotenv. --update-env captures the current shell env, which can
+            # cache stale values — restart starts a fresh process.
+            pm2 restart sc-api
+            pm2 restart sc-web
             pm2 save
 
             echo "==> Deploy completed at $(date)"
