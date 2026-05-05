@@ -315,6 +315,14 @@ export class AdminController {
     return this.adminService.rejectGuide(guideId, dto.reason);
   }
 
+  @Get('verification/credentials/:credentialId/document')
+  @ApiOperation({
+    summary: 'Get a short-lived signed URL to view a credential document',
+  })
+  getCredentialDocumentUrl(@Param('credentialId') credentialId: string) {
+    return this.adminService.getCredentialDocumentUrl(credentialId);
+  }
+
   // ─── Tour Bookings ─────────────────────────────────────────────────────────
 
   @Get('tour-bookings')

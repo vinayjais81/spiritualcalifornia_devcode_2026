@@ -105,15 +105,25 @@ function GuideCard({ guide, onApprove, onReject, isPending }: {
                   </div>
                   <div className="flex items-center gap-2">
                     {cred.documentUrl && (
-                      <a
-                        href={cred.documentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            const { data } = await api.get<{ url: string }>(
+                              `/admin/verification/credentials/${cred.id}/document`,
+                            );
+                            window.open(data.url, '_blank', 'noopener,noreferrer');
+                          } catch (err: any) {
+                            toast.error(
+                              err?.response?.data?.message ?? 'Failed to load document',
+                            );
+                          }
+                        }}
                         className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
                       >
                         <FileText className="h-3.5 w-3.5" />
                         View doc
-                      </a>
+                      </button>
                     )}
                     <Badge
                       className={

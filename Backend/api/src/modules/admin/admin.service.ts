@@ -9,6 +9,7 @@ import { Role, VerificationStatus, PaymentStatus, BookingStatus, TourBookingStat
 import { NotificationsService } from '../notifications/notifications.service';
 import { LedgerService } from '../payments/ledger.service';
 import { VerificationService } from '../verification/verification.service';
+import { UploadService } from '../upload/upload.service';
 
 @Injectable()
 export class AdminService {
@@ -18,7 +19,40 @@ export class AdminService {
     private readonly config: ConfigService,
     private readonly ledger: LedgerService,
     private readonly verification: VerificationService,
+    private readonly upload: UploadService,
   ) {}
+
+  /**
+   * Mint a short-lived signed S3 GET URL so an admin can preview a guide's
+   * uploaded credential document. Storing a public CloudFront URL on the
+   * row is enough for the OCR pipeline to download the bytes server-side,
+   * but the bucket is private and the public URL 403s in the admin's
+   * browser. Signed URLs sidestep that without making the bucket public.
+   */
+  async getCredentialDocumentUrl(credentialId: string): Promise<{ url: string }> {
+    const credential = await this.prisma.credential.findUnique({
+      where: { id: credentialId },
+      select: { documentUrl: true },
+    });
+    if (!credential) throw new NotFoundException('Credential not found');
+    if (!credential.documentUrl) {
+      throw new BadRequestException('No document uploaded for this credential');
+    }
+
+    // Pull the S3 key out of the stored URL (works for CloudFront + S3-direct).
+    let key: string;
+    try {
+      key = new URL(credential.documentUrl).pathname.replace(/^\/+/, '');
+    } catch {
+      throw new BadRequestException('Stored document URL is malformed');
+    }
+    if (!key) throw new BadRequestException('Stored document URL has no key');
+
+    // 10-minute TTL: enough for the admin to open + review, short enough
+    // that a leaked link can't be replayed long-term.
+    const url = await this.upload.getPresignedDownloadUrl(key, 600);
+    return { url };
+  }
 
   // ─── Dashboard ───────────────────────────────────────────────────────────────
 

@@ -175,8 +175,11 @@ export class VerificationService implements OnModuleInit, OnModuleDestroy {
 
     // ── Step 2: OCR + NLP each credential document ────────────────────────
     for (const credential of guide.credentials) {
-      // Only process credentials that have an uploaded document
-      const s3Key = (credential as any).documentS3Key as string | null;
+      // The schema stores `documentUrl` (CloudFront or S3 public URL); the
+      // S3 key for Textract is the URL pathname minus the leading slash.
+      // The previous code read a non-existent `documentS3Key` field, so OCR
+      // was silently skipped for every credential.
+      const s3Key = this.extractS3Key(credential.documentUrl);
       if (!s3Key) {
         this.logger.debug(
           `[Verification] Credential ${credential.id} has no document — skipping OCR`,
@@ -262,6 +265,23 @@ export class VerificationService implements OnModuleInit, OnModuleDestroy {
   // Alias for BullMQ worker + inline stub
   private async runStubPipeline(guideId: string): Promise<void> {
     return this.processVerificationJob(guideId);
+  }
+
+  /**
+   * Pull the S3 object key out of a stored documentUrl. Supports both
+   *   • CloudFront:  https://d3xxx.cloudfront.net/credentials/abc.pdf
+   *   • S3 direct:   https://bucket.s3.region.amazonaws.com/credentials/abc.pdf
+   * Returns null for empty/malformed URLs so callers can skip cleanly.
+   */
+  private extractS3Key(documentUrl: string | null | undefined): string | null {
+    if (!documentUrl) return null;
+    try {
+      const url = new URL(documentUrl);
+      const key = url.pathname.replace(/^\/+/, '');
+      return key.length > 0 ? key : null;
+    } catch {
+      return null;
+    }
   }
 
   // ─── Textract Integration ──────────────────────────────────────────────────
@@ -584,13 +604,19 @@ ${ocrText}`;
       include: { user: { select: { email: true, firstName: true } } },
     });
 
-    // Persist admin notes on any flagged credentials
-    if (adminNotes) {
-      await this.prisma.credential.updateMany({
-        where: { guideId },
-        data: { adminNotes },
-      });
-    }
+    // Cascade the admin's decision to every credential. The public profile
+    // surfaces credentials based on (verificationStatus = APPROVED OR
+    // verifiedAt set) — see guides.service.ts:591 — so without this update
+    // the green "Verified" tick never appears on the seeker-facing page.
+    // adminNotes is optional and only persisted when supplied.
+    await this.prisma.credential.updateMany({
+      where: { guideId },
+      data: {
+        verificationStatus: status as any,
+        verifiedAt: decision === 'approve' ? new Date() : null,
+        ...(adminNotes ? { adminNotes } : {}),
+      },
+    });
 
     // Log to CredentialVerification audit trail
     const credentials = await this.prisma.credential.findMany({ where: { guideId } });
