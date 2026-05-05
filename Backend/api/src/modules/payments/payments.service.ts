@@ -284,6 +284,34 @@ export class PaymentsService {
     });
   }
 
+  /**
+   * Re-enables paid Services and Products for a guide that the publish
+   * gate had previously saved as drafts (`isActive: false`) because Stripe
+   * Connect wasn't ready. Called from the `account.updated` webhook on
+   * the false→true onboarding transition. Idempotent.
+   *
+   * Skips Events and SoulTours: both use explicit user-driven publish
+   * flows where draft state usually means the guide isn't ready yet.
+   */
+  private async reactivateBlockedPaidOfferings(guideId: string): Promise<void> {
+    const [services, products] = await Promise.all([
+      this.prisma.service.updateMany({
+        where: { guideId, isActive: false, price: { gt: 0 } },
+        data: { isActive: true },
+      }),
+      this.prisma.product.updateMany({
+        where: { guideId, isActive: false, price: { gt: 0 } },
+        data: { isActive: true },
+      }),
+    ]);
+
+    if (services.count > 0 || products.count > 0) {
+      this.logger.log(
+        `[Connect Sweep] guide=${guideId} reactivated services=${services.count} products=${products.count}`,
+      );
+    }
+  }
+
   // ─── Physical product delivery hook ───────────────────────────────────────
 
   /**
@@ -964,6 +992,15 @@ export class PaymentsService {
         const account = event.data.object as any;
         const onboardingDone =
           !!account.charges_enabled && !!account.details_submitted;
+        const payoutsEnabled = !!account.payouts_enabled;
+
+        // Snapshot pre-update state so we can detect the false→true
+        // onboarding transition. We only auto-reactivate gate-blocked
+        // drafts on that transition, not on every webhook.
+        const guidesBeforeUpdate = await this.prisma.guideProfile.findMany({
+          where: { stripeAccountId: account.id },
+          select: { id: true, stripeOnboardingDone: true },
+        });
 
         await this.prisma.guideProfile.updateMany({
           where: { stripeAccountId: account.id },
@@ -972,11 +1009,25 @@ export class PaymentsService {
 
         await this.prisma.payoutAccount.updateMany({
           where: { stripeAccountId: account.id },
-          data: { payoutsEnabled: !!account.payouts_enabled },
+          data: { payoutsEnabled },
         });
 
+        // Auto-reactivate paid Services / Products that the publish gate
+        // saved as drafts (isActive=false) before the guide finished Stripe
+        // Connect. Without this sweep, the offerings stay invisible on the
+        // public profile forever — the gate has no symmetric "unblock"
+        // path. Events and SoulTours are intentionally skipped: both have
+        // explicit user-driven publish flows and a draft there usually
+        // means the guide isn't ready to publish yet.
+        if (onboardingDone && payoutsEnabled) {
+          for (const guide of guidesBeforeUpdate) {
+            if (guide.stripeOnboardingDone) continue; // not a transition
+            await this.reactivateBlockedPaidOfferings(guide.id);
+          }
+        }
+
         this.logger.log(
-          `Connect ${account.id}: onboarded=${onboardingDone} payouts_enabled=${!!account.payouts_enabled}`,
+          `Connect ${account.id}: onboarded=${onboardingDone} payouts_enabled=${payoutsEnabled}`,
         );
         break;
       }
