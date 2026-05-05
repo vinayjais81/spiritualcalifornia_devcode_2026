@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useRef, Suspense } from 'react';
+import { useState, useRef, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { api } from '@/lib/api';
+import { PasswordStrengthMeter, evaluatePassword } from '@/components/auth/PasswordStrengthMeter';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -20,6 +21,11 @@ function ResetPasswordContent() {
   const [showPass, setShowPass] = useState(false);
   const [focused, setFocused] = useState<'password' | 'confirm' | null>(null);
 
+  // Live password policy evaluation. We don't have name/email at this
+  // point in the reset flow (only the token), so the cross-field check
+  // for personal info runs server-side after the token is resolved.
+  const pwdStrength = useMemo(() => evaluatePassword(password), [password]);
+
   if (!token) {
     return <ErrorLayout message="No reset token found. Please use the link from your email." />;
   }
@@ -27,8 +33,9 @@ function ResetPasswordContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password.length < 8) {
-      setErrorMsg('Password must be at least 8 characters.');
+    if (!pwdStrength.allPassed) {
+      const firstFailing = pwdStrength.rules.find((r) => !r.passed);
+      setErrorMsg(firstFailing ? `Password: ${firstFailing.label}` : 'Password does not meet the requirements.');
       return;
     }
     if (password !== confirm) {
@@ -177,7 +184,7 @@ function ResetPasswordContent() {
               margin: 0,
             }}
           >
-            Choose a strong password with at least 8 characters.
+            Choose a strong password — at least 10 characters with mixed case, a digit, and a special character.
           </p>
         </div>
 
@@ -198,11 +205,17 @@ function ResetPasswordContent() {
             </label>
             <div style={{ position: 'relative' }}>
               <input
+                id="reset-password-input"
                 type={showPass ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="At least 8 characters"
+                placeholder="At least 10 characters with mixed case, number, and symbol"
                 required
+                minLength={10}
+                maxLength={128}
+                autoComplete="new-password"
+                aria-invalid={password.length > 0 && !pwdStrength.allPassed}
+                aria-describedby="reset-password-strength"
                 onFocus={() => setFocused('password')}
                 onBlur={() => setFocused(null)}
                 style={inputStyle('password')}
@@ -210,6 +223,7 @@ function ResetPasswordContent() {
               <button
                 type="button"
                 onClick={() => setShowPass((s) => !s)}
+                aria-label={showPass ? 'Hide password' : 'Show password'}
                 style={{
                   position: 'absolute',
                   right: '12px',
@@ -234,6 +248,9 @@ function ResetPasswordContent() {
                   </svg>
                 )}
               </button>
+            </div>
+            <div id="reset-password-strength">
+              <PasswordStrengthMeter password={password} />
             </div>
           </div>
 
@@ -307,9 +324,16 @@ function ResetPasswordContent() {
             >
               ← Cancel
             </Link>
+            {(() => {
+              const submitDisabled =
+                status === 'loading' ||
+                !pwdStrength.allPassed ||
+                password !== confirm ||
+                confirm.length === 0;
+              return (
             <button
               type="submit"
-              disabled={status === 'loading'}
+              disabled={submitDisabled}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -323,9 +347,9 @@ function ResetPasswordContent() {
                 textTransform: 'uppercase',
                 borderRadius: '8px',
                 border: 'none',
-                background: status === 'loading' ? '#B5AFA8' : '#3A3530',
+                background: submitDisabled ? '#B5AFA8' : '#3A3530',
                 color: '#FFFFFF',
-                cursor: status === 'loading' ? 'not-allowed' : 'pointer',
+                cursor: submitDisabled ? 'not-allowed' : 'pointer',
               }}
             >
               {status === 'loading' && (
@@ -344,6 +368,8 @@ function ResetPasswordContent() {
               {status === 'loading' ? 'Saving…' : 'Reset Password'}
               <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </button>
+              );
+            })()}
           </div>
         </form>
       </div>

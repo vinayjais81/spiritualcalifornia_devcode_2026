@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { C, font, serif, PageHeader, Panel } from '@/components/guide/dashboard-ui';
 import { toast } from 'sonner';
 import { useSiteConfigOrFallback } from '@/lib/siteConfig';
+import { PasswordStrengthMeter, evaluatePassword } from '@/components/auth/PasswordStrengthMeter';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,18 @@ export default function SettingsPage() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Live password policy evaluation. Includes the cross-field check for
+  // personal info using the current user's name + email — same rules the
+  // backend enforces in AuthService.changePassword.
+  const newPwdStrength = useMemo(
+    () => evaluatePassword(newPassword, {
+      email: user?.email,
+      firstName: user?.firstName,
+      lastName: user?.lastName,
+    }),
+    [newPassword, user?.email, user?.firstName, user?.lastName],
+  );
 
   // Stripe Connect data
   const { data: connectStatus, isLoading: connectLoading } = useQuery<ConnectStatus>({
@@ -79,7 +92,11 @@ export default function SettingsPage() {
 
   const handleChangePassword = () => {
     if (!currentPassword) { toast.error('Enter your current password'); return; }
-    if (newPassword.length < 8) { toast.error('New password must be at least 8 characters'); return; }
+    if (!newPwdStrength.allPassed) {
+      const firstFailing = newPwdStrength.rules.find((r) => !r.passed);
+      toast.error(firstFailing ? `Password: ${firstFailing.label}` : 'Password does not meet the requirements.');
+      return;
+    }
     if (newPassword !== confirmPassword) { toast.error('Passwords do not match'); return; }
     passwordMutation.mutate();
   };
@@ -210,12 +227,26 @@ export default function SettingsPage() {
               <div>
                 <FieldLabel>New Password</FieldLabel>
                 <input
+                  id="settings-new-password"
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Minimum 8 characters"
+                  placeholder="At least 10 characters with mixed case, number, and symbol"
+                  minLength={10}
+                  maxLength={128}
+                  autoComplete="new-password"
+                  aria-invalid={newPassword.length > 0 && !newPwdStrength.allPassed}
+                  aria-describedby="settings-new-password-strength"
                   style={inputStyle}
                 />
+                <div id="settings-new-password-strength">
+                  <PasswordStrengthMeter
+                    password={newPassword}
+                    email={user?.email}
+                    firstName={user?.firstName}
+                    lastName={user?.lastName}
+                  />
+                </div>
               </div>
               <div>
                 <FieldLabel>Confirm New Password</FieldLabel>
@@ -224,10 +255,20 @@ export default function SettingsPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Re-enter new password"
+                  autoComplete="new-password"
                   style={inputStyle}
                 />
               </div>
-              <ActionButton onClick={handleChangePassword} loading={passwordMutation.isPending}>
+              <ActionButton
+                onClick={handleChangePassword}
+                loading={passwordMutation.isPending}
+                disabled={
+                  !currentPassword ||
+                  !newPwdStrength.allPassed ||
+                  newPassword !== confirmPassword ||
+                  confirmPassword.length === 0
+                }
+              >
                 Update Password
               </ActionButton>
             </div>
@@ -282,18 +323,20 @@ function BalanceItem({ label, value, highlight }: { label: string; value: string
   );
 }
 
-function ActionButton({ children, onClick, loading, variant }: { children: React.ReactNode; onClick: () => void; loading?: boolean; variant?: 'secondary' }) {
+function ActionButton({ children, onClick, loading, disabled, variant }: { children: React.ReactNode; onClick: () => void; loading?: boolean; disabled?: boolean; variant?: 'secondary' }) {
   const isSecondary = variant === 'secondary';
+  const inactive = loading || disabled;
   return (
     <button
       onClick={onClick}
-      disabled={loading}
+      disabled={inactive}
       style={{
         padding: '12px 24px', borderRadius: 8, border: isSecondary ? `1px solid rgba(232,184,75,0.3)` : 'none',
-        background: loading ? '#C4BDB5' : isSecondary ? C.white : C.charcoal,
-        color: loading ? C.white : isSecondary ? C.charcoal : C.gold,
+        background: inactive ? '#C4BDB5' : isSecondary ? C.white : C.charcoal,
+        color: inactive ? C.white : isSecondary ? C.charcoal : C.gold,
         fontFamily: font, fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
-        cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+        cursor: inactive ? 'not-allowed' : 'pointer', transition: 'all 0.2s',
+        opacity: disabled && !loading ? 0.7 : 1,
       }}
     >
       {loading ? 'Processing...' : children}

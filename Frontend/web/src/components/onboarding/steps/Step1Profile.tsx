@@ -1,10 +1,11 @@
 'use client';
 
-import { useRef, ChangeEvent, useState, useEffect } from 'react';
+import { useRef, ChangeEvent, useState, useEffect, useMemo } from 'react';
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
 import { LocationAutocomplete } from '@/components/shared/LocationAutocomplete';
+import { PasswordStrengthMeter, evaluatePassword } from '@/components/auth/PasswordStrengthMeter';
 
 
 const LANGUAGES = [
@@ -49,6 +50,18 @@ export function Step1Profile() {
   const [showPass, setShowPass] = useState(false);
   const [awaitingVerification, setAwaitingVerification] = useState<string | null>(null);
   const [terms, setTerms] = useState(false);
+
+  // Live password policy evaluation — drives submit gate, aria signaling,
+  // and the strength meter UI. Only meaningful for unauthenticated users
+  // (returning users skip the password field entirely).
+  const pwdStrength = useMemo(
+    () => evaluatePassword(password, {
+      email,
+      firstName: step1.firstName,
+      lastName: step1.lastName,
+    }),
+    [password, email, step1.firstName, step1.lastName],
+  );
 
   // Pre-fill name from auth store on first load
   useEffect(() => {
@@ -99,6 +112,12 @@ export function Step1Profile() {
       //    is pre-filled when the user comes back from the verify link.
       if (!isAuthenticated) {
         if (!email || !password) { setError('Email and password are required.'); setLoading(false); return; }
+        if (!pwdStrength.allPassed) {
+          const firstFailing = pwdStrength.rules.find((r) => !r.passed);
+          setError(firstFailing ? `Password: ${firstFailing.label}` : 'Password does not meet the requirements.');
+          setLoading(false);
+          return;
+        }
         await api.post('/auth/register', {
           firstName: step1.firstName,
           lastName: step1.lastName,
@@ -264,23 +283,35 @@ export function Step1Profile() {
       {/* Password — only for new (unauthenticated) users */}
       {!isAuthenticated && (
         <div style={{ marginBottom: '20px' }}>
-          <label style={lbl}>Password</label>
+          <label style={lbl} htmlFor="onboarding-guide-password">Password</label>
           <div style={{ position: 'relative' }}>
             <input
+              id="onboarding-guide-password"
               style={{ ...iStyle('pw'), paddingRight: '52px' }}
               type={showPass ? 'text' : 'password'}
-              placeholder="Create a secure password (min 8 characters)"
+              placeholder="At least 10 characters with mixed case, number, and symbol"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onFocus={() => setFocused('pw')}
               onBlur={() => setFocused(null)}
               required
-              minLength={8}
+              minLength={10}
+              maxLength={128}
               autoComplete="new-password"
+              aria-invalid={password.length > 0 && !pwdStrength.allPassed}
+              aria-describedby="onboarding-guide-password-strength"
             />
-            <button type="button" onClick={() => setShowPass((p) => !p)} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 500, color: '#8A8278', fontFamily: 'var(--font-inter), sans-serif' }}>
+            <button type="button" onClick={() => setShowPass((p) => !p)} aria-label={showPass ? 'Hide password' : 'Show password'} style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 500, color: '#8A8278', fontFamily: 'var(--font-inter), sans-serif' }}>
               {showPass ? 'Hide' : 'Show'}
             </button>
+          </div>
+          <div id="onboarding-guide-password-strength">
+            <PasswordStrengthMeter
+              password={password}
+              email={email}
+              firstName={step1.firstName}
+              lastName={step1.lastName}
+            />
           </div>
         </div>
       )}
@@ -336,9 +367,26 @@ export function Step1Profile() {
       )}
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px', paddingTop: '28px', borderTop: '1px solid rgba(232,184,75,0.15)' }}>
-        <button type="submit" disabled={isLoading} style={{ padding: '14px 36px', borderRadius: '8px', background: isLoading ? '#C4BDB5' : '#3A3530', color: '#FFFFFF', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', border: 'none', cursor: isLoading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-inter), sans-serif', transition: 'background 0.3s' }}>
-          {isLoading ? 'Saving…' : 'Continue → Services'}
-        </button>
+        {(() => {
+          const submitDisabled = isLoading || (!isAuthenticated && !pwdStrength.allPassed);
+          return (
+            <button
+              type="submit"
+              disabled={submitDisabled}
+              style={{
+                padding: '14px 36px', borderRadius: '8px',
+                background: submitDisabled ? '#C4BDB5' : '#3A3530',
+                color: '#FFFFFF', fontSize: '12px', letterSpacing: '0.12em',
+                textTransform: 'uppercase', border: 'none',
+                cursor: submitDisabled ? 'not-allowed' : 'pointer',
+                fontFamily: 'var(--font-inter), sans-serif',
+                transition: 'background 0.3s',
+              }}
+            >
+              {isLoading ? 'Saving…' : 'Continue → Services'}
+            </button>
+          );
+        })()}
       </div>
     </form>
   );
