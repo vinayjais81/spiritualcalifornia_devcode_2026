@@ -1,11 +1,15 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, useMemo, FormEvent } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
+import {
+  PasswordStrengthMeter,
+  evaluatePassword,
+} from '@/components/auth/PasswordStrengthMeter';
 
 const G = {
   gold:      '#E8B84B',
@@ -51,8 +55,21 @@ export default function GuideRegisterPage() {
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState<string | null>(null);
 
+  // Live password policy evaluation — drives submit button disabled state,
+  // aria-invalid signaling for screen readers, and the strength meter UI.
+  const pwdStrength = useMemo(
+    () => evaluatePassword(password, { email, firstName, lastName }),
+    [password, email, firstName, lastName],
+  );
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    const pwdResult = evaluatePassword(password, { email, firstName, lastName });
+    if (!pwdResult.allPassed) {
+      const firstFailing = pwdResult.rules.find((r) => !r.passed);
+      setError(firstFailing ? `Password: ${firstFailing.label}` : 'Password does not meet the requirements.');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -61,6 +78,7 @@ export default function GuideRegisterPage() {
         lastName,
         email,
         password,
+        intent: 'guide',
       });
       setAuth(authData.user, authData.accessToken);
       // Start guide onboarding record then enter wizard
@@ -189,19 +207,26 @@ export default function GuideRegisterPage() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={labelStyle}>Password</label>
+              <label style={labelStyle} htmlFor="guide-password">Password</label>
               <div style={{ position: 'relative' }}>
                 <input
+                  id="guide-password"
                   style={{ ...inputStyle, paddingRight: 60 }}
                   type={showPass ? 'text' : 'password'}
-                  placeholder="At least 8 characters"
+                  placeholder="At least 10 characters with mixed case, number, and symbol"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  required minLength={8}
+                  required
+                  minLength={10}
+                  maxLength={128}
+                  autoComplete="new-password"
+                  aria-invalid={password.length > 0 && !pwdStrength.allPassed}
+                  aria-describedby="guide-password-strength"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPass(p => !p)}
+                  aria-label={showPass ? 'Hide password' : 'Show password'}
                   style={{
                     position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
                     background: 'none', border: 'none', cursor: 'pointer',
@@ -211,18 +236,27 @@ export default function GuideRegisterPage() {
                   {showPass ? 'Hide' : 'Show'}
                 </button>
               </div>
+              <div id="guide-password-strength">
+                <PasswordStrengthMeter
+                  password={password}
+                  email={email}
+                  firstName={firstName}
+                  lastName={lastName}
+                />
+              </div>
             </div>
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !pwdStrength.allPassed}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
                 background: G.charcoal, color: G.white,
                 fontFamily: 'var(--font-inter), sans-serif', fontSize: 11, fontWeight: 500,
                 letterSpacing: '0.14em', textTransform: 'uppercase',
                 border: 'none', borderRadius: 4, padding: '16px 36px',
-                cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1,
+                cursor: (loading || !pwdStrength.allPassed) ? 'not-allowed' : 'pointer',
+                opacity: (loading || !pwdStrength.allPassed) ? 0.6 : 1,
                 marginTop: 4,
               }}
             >

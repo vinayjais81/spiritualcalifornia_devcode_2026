@@ -1,12 +1,16 @@
 'use client';
 
-import { useState, useEffect, FormEvent,Suspense  } from 'react';
+import { useState, useEffect, useMemo, FormEvent, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { LocationAutocomplete } from '@/components/shared/LocationAutocomplete';
 import { useAuthStore } from '@/store/auth.store';
+import {
+  PasswordStrengthMeter,
+  evaluatePassword,
+} from '@/components/auth/PasswordStrengthMeter';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const G = {
@@ -138,8 +142,16 @@ function RegisterContent() {
   const [location, setLocation]   = useState('');
   const [languages, setLanguages] = useState<string[]>(['en']);
   const [password, setPassword]   = useState('');
+  const [showPass, setShowPass]   = useState(false);
   const [newsletter, setNewsletter] = useState(true);
   const [terms, setTerms]         = useState(false);
+
+  // Live password policy evaluation — drives submit button disabled state,
+  // aria-invalid signaling for screen readers, and the strength meter UI.
+  const pwdStrength = useMemo(
+    () => evaluatePassword(password, { email, firstName, lastName }),
+    [password, email, firstName, lastName],
+  );
 
   // Step 2 interests
   const [interests, setInterests]       = useState<string[]>([]);
@@ -196,6 +208,12 @@ function RegisterContent() {
   const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
     if (!terms) { setError('Please accept the Terms of Service to continue.'); return; }
+    const pwdResult = evaluatePassword(password, { email, firstName, lastName });
+    if (!pwdResult.allPassed) {
+      const firstFailing = pwdResult.rules.find((r) => !r.passed);
+      setError(firstFailing ? `Password: ${firstFailing.label}` : 'Password does not meet the requirements.');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -535,8 +553,43 @@ function RegisterContent() {
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
-                    <label style={labelStyle}>Password</label>
-                    <input style={inputStyle} type="password" placeholder="Create a secure password (8+ characters)" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+                    <label style={labelStyle} htmlFor="seeker-password">Password</label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        id="seeker-password"
+                        style={{ ...inputStyle, paddingRight: 60 }}
+                        type={showPass ? 'text' : 'password'}
+                        placeholder="At least 10 characters with mixed case, number, and symbol"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        minLength={10}
+                        maxLength={128}
+                        autoComplete="new-password"
+                        aria-invalid={password.length > 0 && !pwdStrength.allPassed}
+                        aria-describedby="seeker-password-strength"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPass((p) => !p)}
+                        aria-label={showPass ? 'Hide password' : 'Show password'}
+                        style={{
+                          position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          fontSize: 12, color: G.warmGray, fontFamily: 'var(--font-inter), sans-serif',
+                        }}
+                      >
+                        {showPass ? 'Hide' : 'Show'}
+                      </button>
+                    </div>
+                    <div id="seeker-password-strength">
+                      <PasswordStrengthMeter
+                        password={password}
+                        email={email}
+                        firstName={firstName}
+                        lastName={lastName}
+                      />
+                    </div>
                   </div>
 
                   {/* Checkboxes */}
@@ -565,7 +618,11 @@ function RegisterContent() {
                 </>
               )}
 
-              <button type="submit" style={{ ...btnPrimary, marginTop: isGoogleUser ? 8 : 0 }} disabled={loading}>
+              <button
+                type="submit"
+                style={{ ...btnPrimary, marginTop: isGoogleUser ? 8 : 0 }}
+                disabled={loading || (!isGoogleUser && !pwdStrength.allPassed)}
+              >
                 {isGoogleUser
                   ? <>Continue <span style={{ fontSize: 16 }}>→</span></>
                   : loading ? 'Creating Account…' : <>Create Account <span style={{ fontSize: 16 }}>→</span></>

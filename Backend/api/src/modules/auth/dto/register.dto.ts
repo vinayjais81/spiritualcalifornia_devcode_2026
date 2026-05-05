@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsString, MinLength, MaxLength, IsOptional, IsBoolean, IsIn } from 'class-validator';
+import { IsEmail, IsString, MaxLength, IsOptional, IsBoolean, IsIn } from 'class-validator';
+import { IsStrongPassword } from '../../../common/validators/is-strong-password.validator';
 
 export class RegisterDto {
   @ApiProperty({ example: 'John' })
@@ -16,10 +17,13 @@ export class RegisterDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: 'Password123!' })
+  @ApiProperty({
+    example: 'Sun$hine-Path7',
+    description:
+      '10–128 chars, must include uppercase, lowercase, digit, and special character. Cannot be a common password.',
+  })
   @IsString()
-  @MinLength(8)
-  @MaxLength(64)
+  @IsStrongPassword()
   password: string;
 
   @ApiPropertyOptional({ example: '+1 (415) 000-0000' })

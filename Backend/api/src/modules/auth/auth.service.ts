@@ -12,6 +12,7 @@ import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Role, VerificationStatus } from '@prisma/client';
+import { checkPasswordPolicy } from '../../common/validators/is-strong-password.validator';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { Resend } from 'resend';
@@ -26,6 +27,33 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
+
+  /**
+   * Reject passwords that are too easily guessed from public-facing user
+   * data: email local-part, first name, last name. Composition rules are
+   * already enforced by IsStrongPassword on the DTO; this is the cross-
+   * field check that needs the surrounding form values.
+   */
+  private assertPasswordNotPersonal(
+    password: string,
+    fields: { email: string; firstName?: string; lastName?: string },
+  ): void {
+    const lowerPwd = password.toLowerCase();
+    const localPart = fields.email.split('@')[0]?.toLowerCase() ?? '';
+    const candidates = [
+      localPart,
+      fields.firstName?.toLowerCase() ?? '',
+      fields.lastName?.toLowerCase() ?? '',
+    ].filter((s) => s.length >= 4); // ignore very short names like "Li"
+
+    for (const candidate of candidates) {
+      if (lowerPwd.includes(candidate)) {
+        throw new BadRequestException(
+          'Password cannot contain your name or email.',
+        );
+      }
+    }
+  }
 
   // ─── Register ───────────────────────────────────────────────────────────────
 
@@ -47,6 +75,12 @@ export class AuthService {
   async register(dto: RegisterDto) {
     const existing = await this.usersService.findByEmail(dto.email);
     if (existing) throw new ConflictException('Email already registered');
+
+    this.assertPasswordNotPersonal(dto.password, {
+      email: dto.email,
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+    });
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
     const emailVerifyToken = randomBytes(32).toString('hex');
@@ -402,6 +436,12 @@ export class AuthService {
       throw new BadRequestException('Reset token expired');
     }
 
+    this.assertPasswordNotPersonal(newPassword, {
+      email: user.email,
+      firstName: user.firstName ?? undefined,
+      lastName: user.lastName ?? undefined,
+    });
+
     const passwordHash = await bcrypt.hash(newPassword, 12);
 
     await this.usersService.update(user.id, {
@@ -428,7 +468,14 @@ export class AuthService {
     const valid = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!valid) throw new BadRequestException('Current password is incorrect');
 
-    if (newPassword.length < 8) throw new BadRequestException('New password must be at least 8 characters');
+    const policy = checkPasswordPolicy(newPassword);
+    if (!policy.valid) throw new BadRequestException(policy.errors.join(' '));
+
+    this.assertPasswordNotPersonal(newPassword, {
+      email: user.email,
+      firstName: user.firstName ?? undefined,
+      lastName: user.lastName ?? undefined,
+    });
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
     await this.usersService.update(userId, { passwordHash });
