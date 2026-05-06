@@ -32,7 +32,7 @@ const C = {
 // it in. Lets the widget render section chips as direct links rather than
 // always sending the user to a single "complete profile" page.
 const SECTION_HREF: Record<string, string> = {
-  categories: '/guide/dashboard/profile',
+  categories: '/guide/dashboard/categories',
   profile: '/guide/dashboard/profile',
   locationSchedule: '/guide/dashboard/location',
   credentials: '/guide/dashboard/verification',

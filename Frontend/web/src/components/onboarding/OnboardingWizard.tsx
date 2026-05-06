@@ -76,12 +76,27 @@ export function OnboardingWizard() {
   useEffect(() => {
     if (!isAuthenticated) return;
     const wantsResume = searchParams.get('resume') === '1';
+    // Optional explicit step deeplink: /onboarding/guide?resume=1&step=2
+    // Used by the dashboard completeness widget to send the guide directly
+    // to the specific step they need (e.g. Categories lives on step 2).
+    // Clamped to the wizard's valid 1..7 range; falls back to auto-resume
+    // if absent or unparseable.
+    const stepParam = searchParams.get('step');
+    const requestedStep = stepParam ? Number.parseInt(stepParam, 10) : NaN;
+    const explicitStep =
+      Number.isFinite(requestedStep) && requestedStep >= 1 && requestedStep <= 7
+        ? (requestedStep as 1 | 2 | 3 | 4 | 5 | 6 | 7)
+        : null;
     api
       .get('/guides/onboarding/status')
       .then((res) => {
         setStatus(res.data);
-        if (res.data?.started && res.data?.isEmailVerified && !wantsResume) {
+        if (res.data?.started && res.data?.isEmailVerified && !wantsResume && !explicitStep) {
           router.replace('/guide/dashboard');
+          return;
+        }
+        if (explicitStep) {
+          setStep(explicitStep);
           return;
         }
         const completedSteps: number[] = res.data.completedSteps ?? [];
@@ -90,7 +105,7 @@ export function OnboardingWizard() {
         setStep(resumeStep);
       })
       .catch(() => {
-        setStep(1);
+        setStep(explicitStep ?? 1);
       });
   }, [isAuthenticated, setStatus, setStep, router, searchParams]);
 

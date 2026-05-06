@@ -43,6 +43,7 @@ const sidebarSections = [
   { label: 'Overview', items: [{ href: '/guide/dashboard', icon: '🏠', name: 'Dashboard' }] },
   { label: 'My Profile', items: [
     { href: '/guide/dashboard/profile', icon: '👤', name: 'Profile & Bio' },
+    { href: '/guide/dashboard/categories', icon: '🏷️', name: 'Categories' },
     { href: '/guide/dashboard/verification', icon: '✅', name: 'Verification' },
     { href: '/guide/dashboard/location', icon: '📍', name: 'Location' },
   ]},
