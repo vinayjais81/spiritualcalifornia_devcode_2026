@@ -16,8 +16,10 @@ export class AddCredentialDto {
   @ApiPropertyOptional({ example: 2021 })
   @IsOptional()
   @IsInt()
-  @Min(1950)
-  @Max(new Date().getFullYear())
+  @Min(1950, { message: 'Issued year must be 1950 or later.' })
+  @Max(new Date().getFullYear(), {
+    message: 'Issued year cannot be in the future.',
+  })
   issuedYear?: number;
 
   @ApiPropertyOptional({ description: 'S3 key of uploaded credential document' })

@@ -83,6 +83,18 @@ export function Step3Credentials() {
 
   const persistCredential = async (entry: CredentialEntry): Promise<boolean> => {
     if (!entry.title.trim()) return false;
+    // Client-side check on issuedYear before round-tripping to the server.
+    // The HTML5 max attribute on the input deters most typos, but the form
+    // is submitted via a button click (not <form onSubmit>), so the browser
+    // won't actually block out-of-range values. Backend still validates as
+    // the final gate; this just gives faster, clearer feedback.
+    if (entry.issuedYear) {
+      const yr = parseInt(entry.issuedYear, 10);
+      if (Number.isNaN(yr) || yr < 1950 || yr > CURRENT_YEAR) {
+        setError(`Year Issued for "${entry.title}" must be between 1950 and ${CURRENT_YEAR}.`);
+        return false;
+      }
+    }
     try {
       const payload: Record<string, unknown> = { title: entry.title };
       if (entry.institution) payload.institution = entry.institution;
@@ -148,7 +160,7 @@ export function Step3Credentials() {
               <div><label style={lbl}>Credential Title</label><input style={iBase} type="text" placeholder="e.g. 500hr Yoga Teacher Training" value={entry.title} onChange={(e) => updateCredential(entry.localId, { title: e.target.value })} /></div>
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
                 <div><label style={lbl}>Issuing Institution</label><input style={iBase} type="text" placeholder="e.g. Yoga Alliance" value={entry.institution} onChange={(e) => updateCredential(entry.localId, { institution: e.target.value })} /></div>
-                <div><label style={lbl}>Year Issued</label><input style={iBase} type="number" placeholder={String(CURRENT_YEAR)} value={entry.issuedYear} onChange={(e) => updateCredential(entry.localId, { issuedYear: e.target.value })} /></div>
+                <div><label style={lbl}>Year Issued</label><input style={iBase} type="number" min={1950} max={CURRENT_YEAR} placeholder={String(CURRENT_YEAR)} value={entry.issuedYear} onChange={(e) => updateCredential(entry.localId, { issuedYear: e.target.value })} /></div>
               </div>
               <div>
                 <label style={lbl}>Certificate Document</label>
