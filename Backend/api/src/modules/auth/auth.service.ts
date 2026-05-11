@@ -415,12 +415,21 @@ export class AuthService {
       emailVerifyToken: null,
       emailVerifyExpiry: null,
       pendingIntent: null,
-      // Always null the pending payload — it's a one-shot relay. If verify
-      // ran without creating a profile (e.g. guide already had a profile
-      // from a previous lifecycle), we still clear it; the data is best
-      // re-entered on the dashboard rather than left lingering.
-      pendingProfileJson: Prisma.DbNull,
     });
+
+    // Clear the one-shot pending payload via Prisma directly. The
+    // usersService.update wrapper types pendingProfileJson against the User
+    // READ type (JsonValue | null), which can't accept Prisma.DbNull — the
+    // INPUT marker required to nullify a JSON column. Bypass the wrapper
+    // for this single call. Stale residue would be harmless (the token is
+    // consumed and verifyEmail won't run again), but nulling keeps the row
+    // tidy and avoids ever surprising a future reader.
+    if (user.pendingProfileJson !== null) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { pendingProfileJson: Prisma.DbNull },
+      });
+    }
 
     // Mint a session for the freshly-verified user.
     const fullUser = await this.usersService.findByIdOrThrow(user.id);
