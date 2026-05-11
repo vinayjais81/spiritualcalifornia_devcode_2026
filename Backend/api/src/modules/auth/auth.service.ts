@@ -130,8 +130,20 @@ export class AuthService {
       ...(dto.newsletterOptIn !== undefined
         ? { marketingEmails: dto.newsletterOptIn }
         : {}),
-      ...(pendingProfile ? { pendingProfileJson: pendingProfile } : {}),
     });
+
+    // Write pendingProfileJson via Prisma directly. Same reason as the clear
+    // in verifyEmail: the usersService.update wrapper's Pick<>-based type
+    // can't accommodate Prisma's JSON-column INPUT shape
+    // (NullableJsonNullValueInput | InputJsonValue) — only the READ shape
+    // (JsonValue | null). Bypassing the wrapper here keeps the wrapper's
+    // type surface narrow and lets Prisma's own input typing do its job.
+    if (pendingProfile) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { pendingProfileJson: pendingProfile as Prisma.InputJsonValue },
+      });
+    }
 
     // Send verification email — fire-and-forget. The user MUST click the
     // link before they can log in; there's no fallback path that issues

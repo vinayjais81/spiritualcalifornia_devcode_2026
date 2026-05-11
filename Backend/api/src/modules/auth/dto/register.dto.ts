@@ -76,12 +76,6 @@ export class RegisterDto {
   @MaxLength(2000)
   bio?: string;
 
-  @ApiPropertyOptional({ example: 'Los Angeles, CA' })
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  location?: string;
-
   @ApiPropertyOptional({ example: 'America/Los_Angeles' })
   @IsOptional()
   @IsString()
