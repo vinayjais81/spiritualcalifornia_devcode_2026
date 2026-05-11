@@ -60,6 +60,7 @@ export class UsersService {
         | 'lastLoginAt'
         | 'marketingEmails'
         | 'pendingIntent'
+        | 'pendingProfileJson'
       >
     >,
   ) {

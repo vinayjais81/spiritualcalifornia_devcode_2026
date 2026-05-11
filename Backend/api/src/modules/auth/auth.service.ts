@@ -11,7 +11,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { Role, VerificationStatus } from '@prisma/client';
+import { Role, VerificationStatus, Prisma } from '@prisma/client';
 import { checkPasswordPolicy } from '../../common/validators/is-strong-password.validator';
 import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
@@ -27,6 +27,24 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
+
+  /**
+   * Build the JSON blob for `pendingProfileJson` from the wizard's optional
+   * step-1 fields on the register DTO. Returns null when no fields are
+   * present so we don't store empty objects on seeker registrations.
+   * Whitelist-only: any future register-DTO field needs explicit pickup
+   * here AND a matching apply path in `applyPendingGuideProfile`.
+   */
+  private buildPendingGuideProfile(dto: RegisterDto): Record<string, unknown> | null {
+    const profile: Record<string, unknown> = {};
+    if (dto.tagline) profile.tagline = dto.tagline;
+    if (dto.bio) profile.bio = dto.bio;
+    if (dto.location) profile.location = dto.location;
+    if (dto.timezone) profile.timezone = dto.timezone;
+    if (dto.websiteUrl) profile.websiteUrl = dto.websiteUrl;
+    if (dto.languages && dto.languages.length > 0) profile.languages = dto.languages;
+    return Object.keys(profile).length > 0 ? profile : null;
+  }
 
   /**
    * Reject passwords that are too easily guessed from public-facing user
@@ -95,6 +113,15 @@ export class AuthService {
 
     const intent: 'seeker' | 'guide' = dto.intent === 'guide' ? 'guide' : 'seeker';
 
+    // Stash wizard step 1 profile fields (guide intent only) so verifyEmail
+    // can apply them when creating GuideProfile. Without this the user types
+    // data into the wizard, sees "check your inbox", and the data dies in
+    // browser-local state because the register API didn't see it.
+    const pendingProfile =
+      intent === 'guide'
+        ? this.buildPendingGuideProfile(dto)
+        : null;
+
     await this.usersService.update(user.id, {
       emailVerifyToken,
       emailVerifyExpiry,
@@ -103,6 +130,7 @@ export class AuthService {
       ...(dto.newsletterOptIn !== undefined
         ? { marketingEmails: dto.newsletterOptIn }
         : {}),
+      ...(pendingProfile ? { pendingProfileJson: pendingProfile } : {}),
     });
 
     // Send verification email — fire-and-forget. The user MUST click the
@@ -352,6 +380,22 @@ export class AuthService {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/(^-|-$)/g, '');
       const slug = await this.ensureUniqueGuideSlug(baseSlug);
+
+      // Apply any wizard step 1 profile data stashed at register time so
+      // the user doesn't lose what they typed. Whitelisted fields only.
+      const pending = (user.pendingProfileJson ?? null) as Record<string, unknown> | null;
+      const profileExtras: Record<string, unknown> = {};
+      if (pending) {
+        if (typeof pending.tagline === 'string') profileExtras.tagline = pending.tagline;
+        if (typeof pending.bio === 'string') profileExtras.bio = pending.bio;
+        if (typeof pending.location === 'string') profileExtras.location = pending.location;
+        if (typeof pending.timezone === 'string') profileExtras.timezone = pending.timezone;
+        if (typeof pending.websiteUrl === 'string') profileExtras.websiteUrl = pending.websiteUrl;
+        if (Array.isArray(pending.languages)) {
+          profileExtras.languages = pending.languages.filter((l) => typeof l === 'string');
+        }
+      }
+
       await Promise.all([
         this.prisma.guideProfile.create({
           data: {
@@ -359,6 +403,7 @@ export class AuthService {
             slug,
             displayName: `${user.firstName} ${user.lastName}`,
             verificationStatus: VerificationStatus.PENDING,
+            ...profileExtras,
           },
         }),
         this.prisma.userRole.create({ data: { userId: user.id, role: Role.GUIDE } }),
@@ -370,6 +415,11 @@ export class AuthService {
       emailVerifyToken: null,
       emailVerifyExpiry: null,
       pendingIntent: null,
+      // Always null the pending payload — it's a one-shot relay. If verify
+      // ran without creating a profile (e.g. guide already had a profile
+      // from a previous lifecycle), we still clear it; the data is best
+      // re-entered on the dashboard rather than left lingering.
+      pendingProfileJson: Prisma.DbNull,
     });
 
     // Mint a session for the freshly-verified user.

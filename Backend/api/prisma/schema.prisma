@@ -209,6 +209,13 @@ model User {
   // once those side-effects fire. Values: 'seeker' | 'guide'. Null for
   // users registered before this flow shipped or via other paths (Google).
   pendingIntent       String?
+  // Wizard step 1 profile data stashed at register time (bio, tagline,
+  // location, languages, websiteUrl, timezone). Applied when verifyEmail
+  // creates the GuideProfile, then cleared. Without this, fields the user
+  // typed in the wizard would silently disappear because the register API
+  // doesn't see them. JSON keeps the schema simple — fields are sparse
+  // and only read at one well-defined point.
+  pendingProfileJson  Json?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 

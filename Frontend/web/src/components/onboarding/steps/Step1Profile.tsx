@@ -118,6 +118,11 @@ export function Step1Profile() {
           setLoading(false);
           return;
         }
+        // Pass the wizard's profile fields along with register so they
+        // survive the email-verification round-trip. Backend stashes them
+        // on the user row and applies to GuideProfile in /auth/verify-email.
+        // Without this, the user types data into the wizard, sees the
+        // "check your inbox" screen, and the data dies in browser state.
         await api.post('/auth/register', {
           firstName: step1.firstName,
           lastName: step1.lastName,
@@ -125,6 +130,12 @@ export function Step1Profile() {
           password,
           intent: 'guide',
           phone: step1.phone || undefined,
+          tagline: step1.tagline || undefined,
+          bio: step1.bio || undefined,
+          location: step1.location || undefined,
+          timezone: step1.timezone || undefined,
+          websiteUrl: step1.websiteUrl || undefined,
+          languages: step1.languages && step1.languages.length > 0 ? step1.languages : undefined,
         });
         setAwaitingVerification(email);
         setLoading(false);
