@@ -48,6 +48,17 @@ export function evaluatePassword(
       passed: password.length >= MIN_LENGTH && password.length <= MAX_LENGTH,
     },
     {
+      // Backend's checkPasswordPolicy rejects any leading/trailing whitespace.
+      // Pasted passwords from password managers commonly include a trailing
+      // space the user can't see — without this rule the strength meter
+      // would show all green and the server would 400. Treat empty as
+      // not-yet-evaluated so the meter doesn't shout "whitespace!" on a
+      // pristine input.
+      key: 'noWhitespace',
+      label: 'No spaces at the start or end',
+      passed: password.length === 0 ? false : password === password.trim(),
+    },
+    {
       key: 'upper',
       label: 'One uppercase letter (A–Z)',
       passed: /[A-Z]/.test(password),
