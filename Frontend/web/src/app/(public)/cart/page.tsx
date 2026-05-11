@@ -103,19 +103,19 @@ function PendingRow({
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 16,
-        padding: '14px 18px',
-        marginBottom: 10,
-        background: '#fff',
-        border: '1px solid rgba(232,184,75,0.18)',
-        borderRadius: 10,
+        gap: 14,
+        padding: '12px 14px',
+        marginBottom: 8,
+        background: '#FAFAF7',
+        border: '1px solid rgba(138,130,120,0.18)',
+        borderRadius: 8,
       }}
     >
       <div
         style={{
-          width: 64,
-          height: 64,
-          borderRadius: 8,
+          width: 48,
+          height: 48,
+          borderRadius: 6,
           overflow: 'hidden',
           flexShrink: 0,
           background: badgeColor,
@@ -127,31 +127,31 @@ function PendingRow({
         {coverUrl ? (
           <img src={coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         ) : (
-          <span style={{ fontSize: 26 }}>{icon}</span>
+          <span style={{ fontSize: 20 }}>{icon}</span>
         )}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div
           style={{
-            fontSize: 10,
+            fontSize: 9,
             letterSpacing: '0.08em',
             textTransform: 'uppercase',
             color: '#8A8278',
-            marginBottom: 4,
+            marginBottom: 2,
             fontWeight: 600,
           }}
         >
           {badge}
         </div>
-        <div style={{ fontSize: 14, fontWeight: 500, color: '#3A3530', marginBottom: 2 }}>
+        <div style={{ fontSize: 13, fontWeight: 500, color: '#3A3530', marginBottom: 2 }}>
           {title}
         </div>
-        <div style={{ fontSize: 12, color: '#8A8278' }}>{subtitle}</div>
+        <div style={{ fontSize: 11, color: '#8A8278' }}>{subtitle}</div>
         {deadline && (
           <div
             style={{
-              marginTop: 6,
-              fontSize: 11,
+              marginTop: 4,
+              fontSize: 10,
               fontWeight: 500,
               color: deadline.urgent ? '#C0392B' : '#8A8278',
             }}
@@ -163,12 +163,13 @@ function PendingRow({
       <Link
         href={primaryHref}
         style={{
-          padding: '10px 18px',
+          padding: '8px 14px',
           borderRadius: 6,
-          background: '#3A3530',
-          color: '#E8B84B',
+          background: 'transparent',
+          color: '#3A3530',
+          border: '1px solid rgba(58,53,48,0.4)',
           textDecoration: 'none',
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: 600,
           letterSpacing: '0.08em',
           textTransform: 'uppercase',
@@ -272,27 +273,117 @@ export default function CartPage() {
     return '/checkout';
   };
 
-  // Empty-state only when there's NOTHING for the seeker to act on — neither
-  // cart items nor pending reservations. Otherwise we still render the page
-  // so the pending items get a place to live.
-  if (items.length === 0 && pendingCount === 0) {
+  // Cart empty path: show the splash empty-state. If there are also pending
+  // reservations, render the secondary widget UNDER the splash so the seeker
+  // still sees what they need to act on. Wrapped in the same outer container
+  // as the populated-cart return so spacing matches.
+  if (items.length === 0) {
     return (
-      <div style={{ maxWidth: 600, margin: '0 auto', padding: '100px 32px', textAlign: 'center' }}>
-        <span style={{ fontSize: 64, display: 'block', marginBottom: 24 }}>🛍️</span>
-        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 32, fontWeight: 400, color: '#3A3530', marginBottom: 10 }}>
-          Your cart is empty
-        </h1>
-        <p style={{ fontSize: 14, color: '#8A8278', marginBottom: 32 }}>
-          Discover curated spiritual tools, digital resources, and experiences from verified practitioners.
-        </p>
-        <Link href="/shop" style={{
-          display: 'inline-block', padding: '14px 32px', borderRadius: 8,
-          background: '#E8B84B', color: '#3A3530',
-          fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
-          textDecoration: 'none',
-        }}>
-          Browse the Shop
-        </Link>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 48px 80px' }}>
+        <div style={{ maxWidth: 600, margin: '0 auto', padding: '60px 0', textAlign: 'center' }}>
+          <span style={{ fontSize: 64, display: 'block', marginBottom: 24 }}>🛍️</span>
+          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 32, fontWeight: 400, color: '#3A3530', marginBottom: 10 }}>
+            Your cart is empty
+          </h1>
+          <p style={{ fontSize: 14, color: '#8A8278', marginBottom: 32 }}>
+            Discover curated spiritual tools, digital resources, and experiences from verified practitioners.
+          </p>
+          <Link href="/shop" style={{
+            display: 'inline-block', padding: '14px 32px', borderRadius: 8,
+            background: '#E8B84B', color: '#3A3530',
+            fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
+            textDecoration: 'none',
+          }}>
+            Browse the Shop
+          </Link>
+        </div>
+
+        {pendingCount > 0 && (
+          <div
+            style={{
+              marginTop: 32,
+              paddingTop: 32,
+              borderTop: '1px solid rgba(138,130,120,0.2)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 6 }}>
+              <h2
+                style={{
+                  fontFamily: 'var(--font-inter), sans-serif',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: '#8A8278',
+                  margin: 0,
+                }}
+              >
+                Needs your attention
+              </h2>
+              <span
+                style={{
+                  fontSize: 11,
+                  color: '#8A8278',
+                  background: 'rgba(138,130,120,0.12)',
+                  padding: '2px 10px',
+                  borderRadius: 10,
+                  fontWeight: 500,
+                }}
+              >
+                {pendingCount}
+              </span>
+            </div>
+            <p style={{ fontSize: 12, color: '#8A8278', marginBottom: 18, maxWidth: 640 }}>
+              Reservations awaiting payment from earlier sessions. Each has its
+              own checkout — complete them before they expire.
+            </p>
+            {pendingTours.map((tour) => {
+              const deadline = formatHoldDeadline(tour.holdHoursLeft);
+              return (
+                <PendingRow
+                  key={`tour-${tour.id}`}
+                  badge="Tour · Deposit due"
+                  badgeColor="rgba(232,184,75,0.18)"
+                  icon="🌍"
+                  coverUrl={tour.coverImageUrl}
+                  title={tour.title}
+                  subtitle={`${tour.travelers} traveller${tour.travelers > 1 ? 's' : ''} · Deposit due ${fmtMoney(tour.depositDue)} of ${fmtMoney(tour.totalAmount)}`}
+                  deadline={deadline}
+                  primaryHref={`/seeker/dashboard/tours/${tour.id}`}
+                  primaryLabel="Pay Deposit →"
+                />
+              );
+            })}
+            {pendingBookings.map((booking) => (
+              <PendingRow
+                key={`booking-${booking.id}`}
+                badge="Session · Awaiting payment"
+                badgeColor="rgba(90,138,106,0.18)"
+                icon="📅"
+                coverUrl={booking.guideAvatar}
+                title={booking.serviceName}
+                subtitle={`With ${booking.guideName} · ${fmtSlot(booking.slotStart)} · ${fmtMoney(booking.totalAmount)}`}
+                deadline={null}
+                primaryHref={`/seeker/dashboard/bookings/${booking.id}`}
+                primaryLabel="Complete Payment →"
+              />
+            ))}
+            {pendingTickets.map((ticket) => (
+              <PendingRow
+                key={`ticket-${ticket.id}`}
+                badge="Ticket reservation · Awaiting payment"
+                badgeColor="rgba(240,120,32,0.15)"
+                icon="🎫"
+                coverUrl={ticket.coverImageUrl}
+                title={ticket.eventTitle}
+                subtitle={`${ticket.quantity} × ${ticket.tierName} · ${fmtMoney(ticket.totalAmount)} · ${fmtSlot(ticket.eventStart)}`}
+                deadline={null}
+                primaryHref={`/events/${ticket.eventId}/checkout`}
+                primaryLabel="Complete Purchase →"
+              />
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -356,95 +447,9 @@ export default function CartPage() {
         </div>
       )}
 
-      <div
-        style={{
-          display: 'grid',
-          // Collapse to single column when there's no Order Summary to render
-          // (cart empty + pending items only). Avoids the 360px right gutter
-          // sitting empty next to the pending-items list.
-          gridTemplateColumns: items.length > 0 ? '1fr 360px' : '1fr',
-          gap: 48,
-        }}
-      >
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 48 }}>
         {/* Left: Cart items */}
         <div>
-          {/* Pending reservations from prior flows (tour deposits, service
-              bookings, event ticket holds). Surfaced here so seekers see
-              everything they need to act on in one place. Each has its own
-              dedicated checkout — the Order Summary on the right deliberately
-              ignores these because they don't share a Stripe intent with
-              the cart's bulk-checkout flow. */}
-          {pendingCount > 0 && (
-            <div style={{ marginBottom: 40 }}>
-              <div style={{
-                fontFamily: "'Cormorant Garamond', serif",
-                fontSize: 20, fontWeight: 500, color: '#3A3530',
-                marginBottom: 6,
-              }}>
-                ✦ Needs your attention
-              </div>
-              <p style={{ fontSize: 12, color: '#8A8278', marginBottom: 18 }}>
-                These items are reserved but waiting on payment. Each has its
-                own checkout — complete them before they expire.
-              </p>
-
-              {/* Tour deposits */}
-              {pendingTours.map((tour) => {
-                const deadline = formatHoldDeadline(tour.holdHoursLeft);
-                return (
-                  <PendingRow
-                    key={`tour-${tour.id}`}
-                    badge="Tour · Deposit due"
-                    badgeColor="rgba(232,184,75,0.18)"
-                    icon="🌍"
-                    coverUrl={tour.coverImageUrl}
-                    title={tour.title}
-                    subtitle={`${tour.travelers} traveller${tour.travelers > 1 ? 's' : ''} · Deposit due ${fmtMoney(tour.depositDue)} of ${fmtMoney(tour.totalAmount)}`}
-                    deadline={deadline}
-                    primaryHref={`/seeker/dashboard/tours/${tour.id}`}
-                    primaryLabel="Pay Deposit →"
-                  />
-                );
-              })}
-
-              {/* Service bookings */}
-              {pendingBookings.map((booking) => (
-                <PendingRow
-                  key={`booking-${booking.id}`}
-                  badge="Session · Awaiting payment"
-                  badgeColor="rgba(90,138,106,0.18)"
-                  icon="📅"
-                  coverUrl={booking.guideAvatar}
-                  title={booking.serviceName}
-                  subtitle={`With ${booking.guideName} · ${fmtSlot(booking.slotStart)} · ${fmtMoney(booking.totalAmount)}`}
-                  deadline={null}
-                  primaryHref={`/seeker/dashboard/bookings/${booking.id}`}
-                  primaryLabel="Complete Payment →"
-                />
-              ))}
-
-              {/* Event ticket reservations */}
-              {pendingTickets.map((ticket) => (
-                <PendingRow
-                  key={`ticket-${ticket.id}`}
-                  badge="Ticket reservation · Awaiting payment"
-                  badgeColor="rgba(240,120,32,0.15)"
-                  icon="🎫"
-                  coverUrl={ticket.coverImageUrl}
-                  title={ticket.eventTitle}
-                  subtitle={`${ticket.quantity} × ${ticket.tierName} · ${fmtMoney(ticket.totalAmount)} · ${fmtSlot(ticket.eventStart)}`}
-                  deadline={null}
-                  primaryHref={`/events/${ticket.eventId}/checkout`}
-                  primaryLabel="Complete Purchase →"
-                />
-              ))}
-            </div>
-          )}
-
-          {/* If the seeker has pending items but no cart items, the cart-items
-              loop below will render nothing — that's intentional. The whole
-              page already justifies its existence via the pending section. */}
-
           {/* Group by type */}
           {[
             { label: 'Physical Items', filter: (i: typeof items[0]) => i.productType === 'PHYSICAL', note: 'Ships within 3-5 business days' },
@@ -509,12 +514,9 @@ export default function CartPage() {
         </div>
 
         {/* Right: Summary
-            Hidden when there's nothing to bulk-check-out — that happens when
-            the seeker has pending reservations (handled via their own CTAs)
-            but no items in the active cart. Showing a $0 Order Summary then
-            would be confusing. The cart's "Continue Shopping" still appears
-            as a fallback below. */}
-        {items.length > 0 ? (
+            Cart-empty case is handled by an earlier early-return, so by the
+            time we're here items.length is guaranteed > 0 and the summary
+            always renders. */}
         <div>
           <div style={{ background: '#fff', border: '1px solid rgba(232,184,75,0.15)', borderRadius: 12, position: 'sticky', top: 100, padding: 24 }}>
             <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 500, color: '#3A3530', marginBottom: 20 }}>
@@ -577,8 +579,119 @@ export default function CartPage() {
             )}
           </div>
         </div>
-        ) : null}
       </div>
+
+      {/* ───────────────────────────────────────────────────────────────────
+          Pending reservations widget — placed BELOW the active cart so it
+          doesn't compete with the primary "Proceed to Checkout" CTA. These
+          are tour deposits / service bookings / event ticket holds from
+          prior flows that the seeker still needs to act on. Each item has
+          its own dedicated checkout — the Order Summary above deliberately
+          ignores them because they don't share a Stripe intent with the
+          cart's bulk-checkout flow.
+
+          Styled less prominently than the cart sections: smaller cards,
+          muted heading, outline CTAs. Visible but secondary.
+          ─────────────────────────────────────────────────────────────── */}
+      {pendingCount > 0 && (
+        <div
+          style={{
+            marginTop: 56,
+            paddingTop: 32,
+            borderTop: '1px solid rgba(138,130,120,0.2)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: 12,
+              marginBottom: 6,
+            }}
+          >
+            <h2
+              style={{
+                fontFamily: 'var(--font-inter), sans-serif',
+                fontSize: 13,
+                fontWeight: 600,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase',
+                color: '#8A8278',
+                margin: 0,
+              }}
+            >
+              Needs your attention
+            </h2>
+            <span
+              style={{
+                fontSize: 11,
+                color: '#8A8278',
+                background: 'rgba(138,130,120,0.12)',
+                padding: '2px 10px',
+                borderRadius: 10,
+                fontWeight: 500,
+              }}
+            >
+              {pendingCount}
+            </span>
+          </div>
+          <p style={{ fontSize: 12, color: '#8A8278', marginBottom: 18, maxWidth: 640 }}>
+            Reservations awaiting payment from earlier sessions. Each has its
+            own checkout — complete them before they expire.
+          </p>
+
+          {/* Tour deposits */}
+          {pendingTours.map((tour) => {
+            const deadline = formatHoldDeadline(tour.holdHoursLeft);
+            return (
+              <PendingRow
+                key={`tour-${tour.id}`}
+                badge="Tour · Deposit due"
+                badgeColor="rgba(232,184,75,0.18)"
+                icon="🌍"
+                coverUrl={tour.coverImageUrl}
+                title={tour.title}
+                subtitle={`${tour.travelers} traveller${tour.travelers > 1 ? 's' : ''} · Deposit due ${fmtMoney(tour.depositDue)} of ${fmtMoney(tour.totalAmount)}`}
+                deadline={deadline}
+                primaryHref={`/seeker/dashboard/tours/${tour.id}`}
+                primaryLabel="Pay Deposit →"
+              />
+            );
+          })}
+
+          {/* Service bookings */}
+          {pendingBookings.map((booking) => (
+            <PendingRow
+              key={`booking-${booking.id}`}
+              badge="Session · Awaiting payment"
+              badgeColor="rgba(90,138,106,0.18)"
+              icon="📅"
+              coverUrl={booking.guideAvatar}
+              title={booking.serviceName}
+              subtitle={`With ${booking.guideName} · ${fmtSlot(booking.slotStart)} · ${fmtMoney(booking.totalAmount)}`}
+              deadline={null}
+              primaryHref={`/seeker/dashboard/bookings/${booking.id}`}
+              primaryLabel="Complete Payment →"
+            />
+          ))}
+
+          {/* Event ticket reservations */}
+          {pendingTickets.map((ticket) => (
+            <PendingRow
+              key={`ticket-${ticket.id}`}
+              badge="Ticket reservation · Awaiting payment"
+              badgeColor="rgba(240,120,32,0.15)"
+              icon="🎫"
+              coverUrl={ticket.coverImageUrl}
+              title={ticket.eventTitle}
+              subtitle={`${ticket.quantity} × ${ticket.tierName} · ${fmtMoney(ticket.totalAmount)} · ${fmtSlot(ticket.eventStart)}`}
+              deadline={null}
+              primaryHref={`/events/${ticket.eventId}/checkout`}
+              primaryLabel="Complete Purchase →"
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
