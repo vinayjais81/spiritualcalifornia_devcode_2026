@@ -87,11 +87,14 @@ Click **Save**.
 - Click **Upload Certificate (PDF or JPG)** to add a credential.
   - Title: `Yoga Teacher Training 200hr`
   - Institution: `Yoga Alliance`
-  - Year: `2023`
+  - Year: any past year between 1950 and the current year (e.g. `2023`)
   - Upload any sample PDF or image
 - Click **Submit for Review** at the bottom.
 
-> The "Verify My Identity" button currently routes through a sandbox-only Persona check. You can skip this step for QA — credentials + admin approval are sufficient to publish the profile.
+> **About "Verify My Identity":**
+> This button starts a Persona identity check. The Persona sandbox tier we use for QA may be temporarily inactive — if you see a 502 Bad Gateway error after clicking, **skip this step**. Credentials plus admin approval are enough to publish the profile for testing.
+>
+> The "Verified" badge on the public profile depends on Persona — it'll be missing during QA but will appear in production once the Persona account is fully activated.
 
 ---
 
@@ -119,12 +122,12 @@ Switch back to the **Guide** browser session.
 
 1. Go to `/guide/dashboard/settings`.
 2. Click **Set up Stripe Connect**.
-3. You'll be redirected to Stripe's secure onboarding form. Use these **sandbox test values exactly** (Stripe rejects random/real data in test mode):
+3. You'll be redirected to Stripe's secure onboarding form. Use these **sandbox test values exactly** — Stripe rejects random/real data in test mode:
 
 | Field | Test value |
 |---|---|
 | Email | (already pre-filled) |
-| Phone | `+1 415 555 0100` |
+| Phone | `+1 000 000 0000` |
 | Phone OTP code | `000000` |
 | First name | `Test` |
 | Last name | `Guide01` |
@@ -133,6 +136,14 @@ Switch back to the **Guide** browser session.
 | Address | `123 Main St, Los Angeles, CA 90001` |
 | Bank routing number | `110000000` |
 | Bank account number | `000123456789` |
+
+> **About the phone number and OTP:**
+> Stripe's sandbox doesn't actually send a text. The value `+1 000 000 0000` is the recommended test number — Stripe auto-recognizes it and accepts `000000` as the verification code.
+>
+> If the screen says **"Incorrect verification code"** after entering `000000`:
+> - Click **Resend code** once, wait 5 seconds, then re-enter `000000` carefully. Multiple wrong attempts trigger a short rate-limit that shows the same generic error.
+> - If still failing, click **"Use a different phone number"** and try `+1 000 000 0000` (or `+1 202 555 0100` as a fallback).
+> - Avoid any real phone number — Stripe sandbox won't actually deliver SMS to it.
 
 4. Click **Submit** at the end of the form.
 
@@ -274,8 +285,10 @@ PASSWORDS
   Seeker            Moon$Light-Path9
 
 STRIPE CONNECT (sandbox onboarding)
+  Phone             +1 000 000 0000   (fallback: +1 202 555 0100)
+  Phone OTP         000000            (click "Resend code" once if rejected)
   SSN               000-00-0000
-  Phone OTP         000000
+  DOB               any date ≥ 18 years ago
   Bank routing      110000000
   Bank account      000123456789
 
@@ -298,10 +311,15 @@ LOCATION (US-only at launch)
 If anything blocks you during the walkthrough, take a screenshot of the page and the browser's developer-tools Network tab if visible, and share with the development team. Most issues are resolved within minutes once we can see what's happening.
 
 Common things that aren't bugs:
+
+- **"Incorrect verification code" after typing `000000` in Stripe Connect onboarding** — see the phone/OTP guidance in Step 5. Click **Resend code** once, then re-enter. If still failing, use phone `+1 000 000 0000` instead.
+- **"Verify My Identity" returns a 502 Bad Gateway error** — Persona sandbox is temporarily inactive. Skip this step and proceed; admin approval based on uploaded credentials is sufficient for QA.
 - **A red "client_secret does not match" message at checkout** — happens briefly right after a Stripe key rotation. Try again 5 minutes later.
 - **A status card stays "No" after Stripe onboarding** — refresh the Settings page once; the system self-corrects on the next visit.
 - **Verification email doesn't arrive within 30 seconds** — Mailinator can lag; refresh the inbox.
+- **"issuedYear must not be greater than YYYY" when uploading a credential** — you entered a future year. Use any year between 1950 and the current year.
+- **Password strength meter shows green but server rejects** — make sure there are no leading/trailing spaces in the password (often happens when pasting from a password manager).
 
 ---
 
-*Last updated: 2026-05-11 — applies to the QA environment at spiritualcalifornia.nityo.in*
+*Last updated: 2026-05-11 (rev 2: corrected Stripe phone/OTP guidance, expanded Persona note, added common-issues list) — applies to the QA environment at spiritualcalifornia.nityo.in*
