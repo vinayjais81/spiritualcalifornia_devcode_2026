@@ -93,9 +93,33 @@ async function main() {
       update: {},
       create: { name: 'Creative Arts', slug: 'creative-arts', description: 'Art therapy, music therapy and expressive arts', sortOrder: 5, isActive: true },
     }),
+    // Added 2026-05-11 to match the 9-card grid shown in the onboarding
+    // wizard (Step2Services.tsx) and the new /guide/dashboard/categories
+    // page. The frontend had been offering these for a while; the seed
+    // hadn't caught up, causing "Category X not found" save errors.
+    prisma.category.upsert({
+      where: { slug: 'soul-spirit' },
+      update: {},
+      create: { name: 'Soul & Spirit', slug: 'soul-spirit', description: 'Shamanism, astrology, human design, ritual and ceremony', sortOrder: 6, isActive: true },
+    }),
+    prisma.category.upsert({
+      where: { slug: 'nutrition-food' },
+      update: {},
+      create: { name: 'Nutrition & Food', slug: 'nutrition-food', description: 'Ayurvedic nutrition, herbal medicine and functional food', sortOrder: 7, isActive: true },
+    }),
+    prisma.category.upsert({
+      where: { slug: 'integrative-health' },
+      update: {},
+      create: { name: 'Integrative Health', slug: 'integrative-health', description: 'Naturopathy, functional medicine and holistic wellness', sortOrder: 8, isActive: true },
+    }),
+    prisma.category.upsert({
+      where: { slug: 'family-children' },
+      update: {},
+      create: { name: 'Family & Children', slug: 'family-children', description: "Parenting guidance, children's wellness and family healing", sortOrder: 9, isActive: true },
+    }),
   ]);
 
-  const [mindCat, bodyCat, soulCat, coachCat, artsCat] = categories;
+  const [mindCat, bodyCat, soulCat, coachCat, artsCat, soulSpiritCat, nutritionCat, integrativeCat, familyCat] = categories;
 
   const subcatData = [
     { categoryId: mindCat.id, name: 'Meditation', slug: 'meditation', isApproved: true },
@@ -118,6 +142,20 @@ async function main() {
     { categoryId: artsCat.id, name: 'Art Therapy', slug: 'art-therapy', isApproved: true },
     { categoryId: artsCat.id, name: 'Music Therapy', slug: 'music-therapy', isApproved: true },
     { categoryId: artsCat.id, name: 'Dance Movement Therapy', slug: 'dance-movement-therapy', isApproved: true },
+    // Subcategories for the 4 categories added 2026-05-11.
+    { categoryId: soulSpiritCat.id, name: 'Shamanism', slug: 'shamanism', isApproved: true },
+    { categoryId: soulSpiritCat.id, name: 'Astrology', slug: 'astrology', isApproved: true },
+    { categoryId: soulSpiritCat.id, name: 'Human Design', slug: 'human-design', isApproved: true },
+    { categoryId: soulSpiritCat.id, name: 'Ritual & Ceremony', slug: 'ritual-ceremony', isApproved: true },
+    { categoryId: nutritionCat.id, name: 'Ayurvedic Nutrition', slug: 'ayurvedic-nutrition', isApproved: true },
+    { categoryId: nutritionCat.id, name: 'Herbal Medicine', slug: 'herbal-medicine', isApproved: true },
+    { categoryId: nutritionCat.id, name: 'Functional Nutrition', slug: 'functional-nutrition', isApproved: true },
+    { categoryId: integrativeCat.id, name: 'Naturopathy', slug: 'naturopathy', isApproved: true },
+    { categoryId: integrativeCat.id, name: 'Functional Medicine', slug: 'functional-medicine', isApproved: true },
+    { categoryId: integrativeCat.id, name: 'Homeopathy', slug: 'homeopathy', isApproved: true },
+    { categoryId: familyCat.id, name: 'Parenting Guidance', slug: 'parenting-guidance', isApproved: true },
+    { categoryId: familyCat.id, name: "Children's Wellness", slug: 'childrens-wellness', isApproved: true },
+    { categoryId: familyCat.id, name: 'Family Healing', slug: 'family-healing', isApproved: true },
   ];
 
   for (const sub of subcatData) {

@@ -142,44 +142,62 @@ export class GuidesService {
   async setCategories(userId: string, dto: SetCategoriesDto) {
     const guide = await this.findGuideByUserId(userId);
 
-    await this.prisma.guideCategory.deleteMany({ where: { guideId: guide.id } });
+    // Pre-validate ALL incoming categoryIds before touching the DB. The
+    // previous version deleted the guide's existing rows first and then
+    // validated inside the loop — so a single invalid id (e.g. a stale
+    // seed mismatch like "Soul & Spirit") wiped out the guide's previously
+    // saved selections before throwing 404. Validating up-front means the
+    // bad-input path is a pure read; nothing changes if it fails.
+    const incomingCategoryIds = Array.from(new Set(dto.categories.map((c) => c.categoryId)));
+    const foundCategories = await this.prisma.category.findMany({
+      where: { id: { in: incomingCategoryIds } },
+      select: { id: true },
+    });
+    const foundIds = new Set(foundCategories.map((c) => c.id));
+    const missing = incomingCategoryIds.filter((id) => !foundIds.has(id));
+    if (missing.length > 0) {
+      throw new NotFoundException(`Category ${missing[0]} not found`);
+    }
 
-    for (const selection of dto.categories) {
-      const category = await this.prisma.category.findUnique({ where: { id: selection.categoryId } });
-      if (!category) throw new NotFoundException(`Category ${selection.categoryId} not found`);
+    // All ids valid — now apply the change atomically. If any step throws,
+    // Prisma rolls back the delete + every create as a single unit.
+    await this.prisma.$transaction(async (tx) => {
+      await tx.guideCategory.deleteMany({ where: { guideId: guide.id } });
 
-      const customSubIds: string[] = [];
-      for (const name of selection.customSubcategoryNames ?? []) {
-        const slug = slugify(name);
-        const sub = await this.prisma.subcategory.upsert({
-          where: { categoryId_slug: { categoryId: selection.categoryId, slug } },
-          create: { categoryId: selection.categoryId, name, slug, isCustom: true, isApproved: false },
-          update: {},
-        });
-        customSubIds.push(sub.id);
-      }
+      for (const selection of dto.categories) {
+        const customSubIds: string[] = [];
+        for (const name of selection.customSubcategoryNames ?? []) {
+          const slug = slugify(name);
+          const sub = await tx.subcategory.upsert({
+            where: { categoryId_slug: { categoryId: selection.categoryId, slug } },
+            create: { categoryId: selection.categoryId, name, slug, isCustom: true, isApproved: false },
+            update: {},
+          });
+          customSubIds.push(sub.id);
+        }
 
-      const allSubIds = [...(selection.subcategoryIds ?? []), ...customSubIds];
+        const allSubIds = [...(selection.subcategoryIds ?? []), ...customSubIds];
 
-      if (allSubIds.length > 0) {
-        for (const subcategoryId of allSubIds) {
-          await this.prisma.guideCategory.create({
-            data: { guideId: guide.id, categoryId: selection.categoryId, subcategoryId },
+        if (allSubIds.length > 0) {
+          for (const subcategoryId of allSubIds) {
+            await tx.guideCategory.create({
+              data: { guideId: guide.id, categoryId: selection.categoryId, subcategoryId },
+            });
+          }
+        } else {
+          await tx.guideCategory.create({
+            data: { guideId: guide.id, categoryId: selection.categoryId },
           });
         }
-      } else {
-        await this.prisma.guideCategory.create({
-          data: { guideId: guide.id, categoryId: selection.categoryId },
-        });
       }
-    }
 
-    const profilePatch: Record<string, unknown> = {};
-    if (dto.modalities !== undefined) profilePatch['modalities'] = dto.modalities;
-    if (dto.issuesHelped !== undefined) profilePatch['issuesHelped'] = dto.issuesHelped;
-    if (Object.keys(profilePatch).length > 0) {
-      await this.prisma.guideProfile.update({ where: { id: guide.id }, data: profilePatch });
-    }
+      const profilePatch: Record<string, unknown> = {};
+      if (dto.modalities !== undefined) profilePatch['modalities'] = dto.modalities;
+      if (dto.issuesHelped !== undefined) profilePatch['issuesHelped'] = dto.issuesHelped;
+      if (Object.keys(profilePatch).length > 0) {
+        await tx.guideProfile.update({ where: { id: guide.id }, data: profilePatch });
+      }
+    });
 
     return this.prisma.guideProfile.findUnique({
       where: { id: guide.id },
