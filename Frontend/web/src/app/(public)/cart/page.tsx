@@ -1,9 +1,185 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { useCartStore } from '@/store/cart.store';
+import { useAuthStore } from '@/store/auth.store';
+import { api } from '@/lib/api';
+
+// ─── Pending-actions types (shape mirrors /seekers/dashboard/pending-actions) ─
+
+interface PendingTour {
+  id: string;
+  title: string;
+  coverImageUrl: string | null;
+  tourSlug: string;
+  travelers: number;
+  depositDue: number;
+  totalAmount: number;
+  currency: string;
+  holdExpiresAt: string | null;
+  holdHoursLeft: number | null;
+  departureStart: string | null;
+}
+
+interface PendingBooking {
+  id: string;
+  serviceName: string;
+  guideName: string;
+  guideAvatar: string | null;
+  slotStart: string;
+  durationMin: number;
+  totalAmount: number;
+  currency: string;
+}
+
+interface PendingTicket {
+  id: string;
+  eventId: string;
+  eventTitle: string;
+  coverImageUrl: string | null;
+  tierName: string;
+  quantity: number;
+  totalAmount: number;
+  eventStart: string;
+}
+
+interface PendingActionsResponse {
+  cart: unknown;
+  pendingTours: PendingTour[];
+  pendingBookings: PendingBooking[];
+  pendingTickets: PendingTicket[];
+}
+
+function fmtMoney(n: number) {
+  return `$${n.toFixed(2)}`;
+}
+
+function fmtSlot(iso: string) {
+  const d = new Date(iso);
+  return (
+    d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+    + ' · '
+    + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+  );
+}
+
+function formatHoldDeadline(hoursLeft: number | null): { label: string; urgent: boolean } | null {
+  if (hoursLeft == null) return null;
+  if (hoursLeft <= 0) return { label: 'Hold expires any moment', urgent: true };
+  if (hoursLeft < 1) return { label: 'Hold expires in under an hour', urgent: true };
+  if (hoursLeft < 24) return { label: `Hold expires in ${hoursLeft}h`, urgent: true };
+  const days = Math.floor(hoursLeft / 24);
+  return { label: `Hold expires in ${days} day${days > 1 ? 's' : ''}`, urgent: false };
+}
+
+// ─── PendingRow ─────────────────────────────────────────────────────────────
+// One card per abandoned reservation. Visually consistent with the cart-item
+// rows below but with a dedicated CTA per item (no shared checkout flow).
+function PendingRow({
+  badge,
+  badgeColor,
+  icon,
+  coverUrl,
+  title,
+  subtitle,
+  deadline,
+  primaryHref,
+  primaryLabel,
+}: {
+  badge: string;
+  badgeColor: string;
+  icon: string;
+  coverUrl: string | null;
+  title: string;
+  subtitle: string;
+  deadline: { label: string; urgent: boolean } | null;
+  primaryHref: string;
+  primaryLabel: string;
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16,
+        padding: '14px 18px',
+        marginBottom: 10,
+        background: '#fff',
+        border: '1px solid rgba(232,184,75,0.18)',
+        borderRadius: 10,
+      }}
+    >
+      <div
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: 8,
+          overflow: 'hidden',
+          flexShrink: 0,
+          background: badgeColor,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {coverUrl ? (
+          <img src={coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ) : (
+          <span style={{ fontSize: 26 }}>{icon}</span>
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: 10,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: '#8A8278',
+            marginBottom: 4,
+            fontWeight: 600,
+          }}
+        >
+          {badge}
+        </div>
+        <div style={{ fontSize: 14, fontWeight: 500, color: '#3A3530', marginBottom: 2 }}>
+          {title}
+        </div>
+        <div style={{ fontSize: 12, color: '#8A8278' }}>{subtitle}</div>
+        {deadline && (
+          <div
+            style={{
+              marginTop: 6,
+              fontSize: 11,
+              fontWeight: 500,
+              color: deadline.urgent ? '#C0392B' : '#8A8278',
+            }}
+          >
+            {deadline.urgent ? '⏱ ' : ''}{deadline.label}
+          </div>
+        )}
+      </div>
+      <Link
+        href={primaryHref}
+        style={{
+          padding: '10px 18px',
+          borderRadius: 6,
+          background: '#3A3530',
+          color: '#E8B84B',
+          textDecoration: 'none',
+          fontSize: 11,
+          fontWeight: 600,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {primaryLabel}
+      </Link>
+    </div>
+  );
+}
 
 const typeBadge = (type: string) => {
   const map: Record<string, { label: string; bg: string }> = {
@@ -27,12 +203,49 @@ export default function CartPage() {
   const itemCount = getItemCount();
   const hasPhysical = items.some(i => i.productType === 'PHYSICAL');
   const hasDigital = items.some(i => i.productType === 'DIGITAL');
-  const hasEvents = items.some(i => i.itemType === 'EVENT_TICKET');
+
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  // Pending items from prior reservations (tour deposits, service bookings,
+  // event ticket holds). Each has its own dedicated checkout flow — we
+  // surface them here as a convenience so seekers who land on /cart see
+  // everything they owe in one place. Same data source as the dashboard's
+  // NeedsAttentionPanel; the right-side Order Summary deliberately ignores
+  // these because they don't share a Stripe payment intent with the cart.
+  const [pendingTours, setPendingTours] = useState<PendingTour[]>([]);
+  const [pendingBookings, setPendingBookings] = useState<PendingBooking[]>([]);
+  const [pendingTickets, setPendingTickets] = useState<PendingTicket[]>([]);
 
   // Refresh from server on mount so stale items, price changes, etc. are
   // surfaced the moment the seeker lands on /cart — even if the navbar already
   // primed a sync earlier. Cheap: single GET.
   useEffect(() => { syncFromServer(); }, [syncFromServer]);
+
+  // Load abandoned items (signed-in seekers only). Guests have nothing to
+  // fetch and an unauthenticated call would 401, so skip cleanly.
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setPendingTours([]);
+      setPendingBookings([]);
+      setPendingTickets([]);
+      return;
+    }
+    api
+      .get<PendingActionsResponse>('/seekers/dashboard/pending-actions')
+      .then((r) => {
+        setPendingTours(r.data.pendingTours ?? []);
+        setPendingBookings(r.data.pendingBookings ?? []);
+        setPendingTickets(r.data.pendingTickets ?? []);
+      })
+      .catch(() => {
+        // Soft-fail: a pending-actions error shouldn't break the cart.
+        setPendingTours([]);
+        setPendingBookings([]);
+        setPendingTickets([]);
+      });
+  }, [isAuthenticated]);
+
+  const pendingCount = pendingTours.length + pendingBookings.length + pendingTickets.length;
 
   // Toast "removed" warnings once each — store them in a ref so re-renders
   // don't spam the same message. Blocking warnings (price + overstock) stay
@@ -59,7 +272,10 @@ export default function CartPage() {
     return '/checkout';
   };
 
-  if (items.length === 0) {
+  // Empty-state only when there's NOTHING for the seeker to act on — neither
+  // cart items nor pending reservations. Otherwise we still render the page
+  // so the pending items get a place to live.
+  if (items.length === 0 && pendingCount === 0) {
     return (
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '100px 32px', textAlign: 'center' }}>
         <span style={{ fontSize: 64, display: 'block', marginBottom: 24 }}>🛍️</span>
@@ -140,9 +356,95 @@ export default function CartPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 48 }}>
+      <div
+        style={{
+          display: 'grid',
+          // Collapse to single column when there's no Order Summary to render
+          // (cart empty + pending items only). Avoids the 360px right gutter
+          // sitting empty next to the pending-items list.
+          gridTemplateColumns: items.length > 0 ? '1fr 360px' : '1fr',
+          gap: 48,
+        }}
+      >
         {/* Left: Cart items */}
         <div>
+          {/* Pending reservations from prior flows (tour deposits, service
+              bookings, event ticket holds). Surfaced here so seekers see
+              everything they need to act on in one place. Each has its own
+              dedicated checkout — the Order Summary on the right deliberately
+              ignores these because they don't share a Stripe intent with
+              the cart's bulk-checkout flow. */}
+          {pendingCount > 0 && (
+            <div style={{ marginBottom: 40 }}>
+              <div style={{
+                fontFamily: "'Cormorant Garamond', serif",
+                fontSize: 20, fontWeight: 500, color: '#3A3530',
+                marginBottom: 6,
+              }}>
+                ✦ Needs your attention
+              </div>
+              <p style={{ fontSize: 12, color: '#8A8278', marginBottom: 18 }}>
+                These items are reserved but waiting on payment. Each has its
+                own checkout — complete them before they expire.
+              </p>
+
+              {/* Tour deposits */}
+              {pendingTours.map((tour) => {
+                const deadline = formatHoldDeadline(tour.holdHoursLeft);
+                return (
+                  <PendingRow
+                    key={`tour-${tour.id}`}
+                    badge="Tour · Deposit due"
+                    badgeColor="rgba(232,184,75,0.18)"
+                    icon="🌍"
+                    coverUrl={tour.coverImageUrl}
+                    title={tour.title}
+                    subtitle={`${tour.travelers} traveller${tour.travelers > 1 ? 's' : ''} · Deposit due ${fmtMoney(tour.depositDue)} of ${fmtMoney(tour.totalAmount)}`}
+                    deadline={deadline}
+                    primaryHref={`/seeker/dashboard/tours/${tour.id}`}
+                    primaryLabel="Pay Deposit →"
+                  />
+                );
+              })}
+
+              {/* Service bookings */}
+              {pendingBookings.map((booking) => (
+                <PendingRow
+                  key={`booking-${booking.id}`}
+                  badge="Session · Awaiting payment"
+                  badgeColor="rgba(90,138,106,0.18)"
+                  icon="📅"
+                  coverUrl={booking.guideAvatar}
+                  title={booking.serviceName}
+                  subtitle={`With ${booking.guideName} · ${fmtSlot(booking.slotStart)} · ${fmtMoney(booking.totalAmount)}`}
+                  deadline={null}
+                  primaryHref={`/seeker/dashboard/bookings/${booking.id}`}
+                  primaryLabel="Complete Payment →"
+                />
+              ))}
+
+              {/* Event ticket reservations */}
+              {pendingTickets.map((ticket) => (
+                <PendingRow
+                  key={`ticket-${ticket.id}`}
+                  badge="Ticket reservation · Awaiting payment"
+                  badgeColor="rgba(240,120,32,0.15)"
+                  icon="🎫"
+                  coverUrl={ticket.coverImageUrl}
+                  title={ticket.eventTitle}
+                  subtitle={`${ticket.quantity} × ${ticket.tierName} · ${fmtMoney(ticket.totalAmount)} · ${fmtSlot(ticket.eventStart)}`}
+                  deadline={null}
+                  primaryHref={`/events/${ticket.eventId}/checkout`}
+                  primaryLabel="Complete Purchase →"
+                />
+              ))}
+            </div>
+          )}
+
+          {/* If the seeker has pending items but no cart items, the cart-items
+              loop below will render nothing — that's intentional. The whole
+              page already justifies its existence via the pending section. */}
+
           {/* Group by type */}
           {[
             { label: 'Physical Items', filter: (i: typeof items[0]) => i.productType === 'PHYSICAL', note: 'Ships within 3-5 business days' },
@@ -206,7 +508,13 @@ export default function CartPage() {
           })}
         </div>
 
-        {/* Right: Summary */}
+        {/* Right: Summary
+            Hidden when there's nothing to bulk-check-out — that happens when
+            the seeker has pending reservations (handled via their own CTAs)
+            but no items in the active cart. Showing a $0 Order Summary then
+            would be confusing. The cart's "Continue Shopping" still appears
+            as a fallback below. */}
+        {items.length > 0 ? (
         <div>
           <div style={{ background: '#fff', border: '1px solid rgba(232,184,75,0.15)', borderRadius: 12, position: 'sticky', top: 100, padding: 24 }}>
             <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 500, color: '#3A3530', marginBottom: 20 }}>
@@ -269,6 +577,7 @@ export default function CartPage() {
             )}
           </div>
         </div>
+        ) : null}
       </div>
     </div>
   );
