@@ -130,6 +130,25 @@ export class StripeService {
     return link.url;
   }
 
+  /**
+   * Generate a fresh onboarding link for an EXISTING Connect account.
+   *
+   * Critical: this does NOT create a new account — it only mints a new
+   * one-time URL that lets the guide resume Stripe's hosted onboarding for
+   * the account they already have. Use this when a guide returns to finish
+   * setup; `createConnectAccount` would (silently) create a duplicate
+   * account in Stripe and orphan the one our DB is tracking.
+   */
+  async createConnectOnboardingLink(accountId: string): Promise<string> {
+    const accountLink = await this.stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: `${this.config.get('FRONTEND_URL')}/guide/dashboard/earnings?stripe=refresh`,
+      return_url: `${this.config.get('FRONTEND_URL')}/guide/dashboard/earnings?stripe=success`,
+      type: 'account_onboarding',
+    });
+    return accountLink.url;
+  }
+
   async getConnectAccountStatus(accountId: string): Promise<{
     chargesEnabled: boolean;
     payoutsEnabled: boolean;

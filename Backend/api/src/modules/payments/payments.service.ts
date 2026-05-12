@@ -1053,20 +1053,26 @@ export class PaymentsService {
     });
     if (!guide) throw new NotFoundException('Guide profile not found');
 
-    // If already has account, create new onboarding link
+    // If the guide already has an account, route based on Stripe's view of
+    // its onboarding state. NEVER call createConnectAccount here — it always
+    // creates a fresh Stripe account, which orphans the existing one in our
+    // DB. (That bug was the root cause of the 2026-05-12 multiple-accounts
+    // issue: every retry minted a new acct_… and left the DB pointing at
+    // the abandoned one.)
     if (guide.stripeAccountId && guide.stripeAccountId !== 'pending-setup') {
       const status = await this.stripeService.getConnectAccountStatus(guide.stripeAccountId);
       if (status.detailsSubmitted) {
-        // Already onboarded — return dashboard link
+        // Onboarding form already submitted — return the Express dashboard
+        // login link so the guide can review or update their info.
         const dashboardUrl = await this.stripeService.createConnectLoginLink(guide.stripeAccountId);
         return { alreadyOnboarded: true, dashboardUrl, status };
       }
-      // Resume onboarding
-      const { onboardingUrl } = await this.stripeService.createConnectAccount({
-        email: guide.user.email,
-        guideId: guide.id,
-        displayName: guide.displayName,
-      });
+      // Onboarding still in progress — mint a fresh account-link for the
+      // SAME account so the guide can resume where they left off. Their
+      // partial progress on Stripe's side is preserved.
+      const onboardingUrl = await this.stripeService.createConnectOnboardingLink(
+        guide.stripeAccountId,
+      );
       return { onboardingUrl };
     }
 
