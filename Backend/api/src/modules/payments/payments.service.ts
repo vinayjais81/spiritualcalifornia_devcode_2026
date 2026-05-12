@@ -1110,27 +1110,50 @@ export class PaymentsService {
     // `account.updated` webhook. If a webhook drops (network blip, redeploy
     // mid-event, wrong destination), the DB stays stale forever and the
     // publish gate keeps blocking even though Stripe is fully set up.
-    // Running this on every Settings page load means the guide naturally
-    // unblocks themselves the moment they revisit settings — no cron, no
-    // manual SQL fixes.
+    // Running this on every page load that calls /payments/connect/status
+    // (Settings + Earnings) means the guide naturally unblocks themselves
+    // the moment they revisit those pages — no cron, no manual SQL fixes.
+    //
+    // Earlier version only triggered on stripeOnboardingDone drift, which
+    // missed the case where onboardingDone was already true but payouts
+    // came online later (Stripe can enable payouts in a separate webhook
+    // after charges). Now we check both columns independently.
     const liveOnboardingDone =
       !!status.chargesEnabled && !!status.detailsSubmitted;
     const livePayoutsEnabled = !!status.payoutsEnabled;
-    if (liveOnboardingDone !== guide.stripeOnboardingDone) {
-      await this.prisma.guideProfile.update({
-        where: { id: guide.id },
-        data: { stripeOnboardingDone: liveOnboardingDone },
-      });
-      await this.prisma.payoutAccount.updateMany({
-        where: { stripeAccountId: guide.stripeAccountId },
-        data: { payoutsEnabled: livePayoutsEnabled },
-      });
-      // Only sweep on the false→true transition (matches webhook policy).
-      if (liveOnboardingDone && !guide.stripeOnboardingDone && livePayoutsEnabled) {
+
+    const onboardingDrift = liveOnboardingDone !== guide.stripeOnboardingDone;
+    const payoutAccount = await this.prisma.payoutAccount.findUnique({
+      where: { guideId: guide.id },
+      select: { payoutsEnabled: true },
+    });
+    const payoutsDrift =
+      payoutAccount !== null && livePayoutsEnabled !== payoutAccount.payoutsEnabled;
+
+    if (onboardingDrift || payoutsDrift) {
+      if (onboardingDrift) {
+        await this.prisma.guideProfile.update({
+          where: { id: guide.id },
+          data: { stripeOnboardingDone: liveOnboardingDone },
+        });
+      }
+      if (payoutsDrift) {
+        await this.prisma.payoutAccount.updateMany({
+          where: { stripeAccountId: guide.stripeAccountId },
+          data: { payoutsEnabled: livePayoutsEnabled },
+        });
+      }
+      // Sweep paid drafts when we transition INTO the fully-enabled state
+      // (both onboardingDone AND payoutsEnabled now true), regardless of
+      // which specific column drifted. Matches webhook policy: only fire
+      // on the false→true transition into ready-to-receive-money.
+      const wasReady = guide.stripeOnboardingDone && (payoutAccount?.payoutsEnabled ?? false);
+      const nowReady = liveOnboardingDone && livePayoutsEnabled;
+      if (!wasReady && nowReady) {
         await this.reactivateBlockedPaidOfferings(guide.id);
       }
       this.logger.log(
-        `[Connect Sync] guide=${guide.id} drift fixed — stripeOnboardingDone ${guide.stripeOnboardingDone} → ${liveOnboardingDone}`,
+        `[Connect Sync] guide=${guide.id} drift fixed — onboardingDone ${guide.stripeOnboardingDone}→${liveOnboardingDone}, payouts ${payoutAccount?.payoutsEnabled ?? 'null'}→${livePayoutsEnabled}`,
       );
     }
 
