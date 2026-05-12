@@ -702,7 +702,9 @@ async function main() {
     await prisma.review.create({
       data: {
         authorId: seekerUser.id,
-        targetId: guideForService.userId,
+        guideId: guideForService.userId,
+        targetType: 'SERVICE',
+        targetEntityId: service.id,
         bookingId: booking.id,
         rating: reviewText.rating,
         title: reviewText.title,

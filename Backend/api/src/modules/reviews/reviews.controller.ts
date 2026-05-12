@@ -1,7 +1,7 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards, BadRequestException } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
-import { CreateReviewDto } from './dto/create-review.dto';
+import { CreateReviewDto, ReviewTargetType } from './dto/create-review.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -16,22 +16,39 @@ import { Role } from '@prisma/client';
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
-  // ─── Create Review (Seeker, post-booking) ──────────────────────────────────
+  // ─── Create Review (Seeker, post-purchase) ─────────────────────────────────
 
   @Post()
   @Roles(Role.SEEKER)
-  @ApiOperation({ summary: 'Submit a review for a completed booking' })
+  @ApiOperation({ summary: 'Submit a review for a completed purchase (service / event / tour / product)' })
   create(@CurrentUser() user: CurrentUserData, @Body() dto: CreateReviewDto) {
     return this.reviewsService.create(user.id, dto);
   }
 
-  // ─── Check Eligibility ─────────────────────────────────────────────────────
+  // ─── Eligibility (polymorphic) ─────────────────────────────────────────────
 
+  @Get('eligibility')
+  @Roles(Role.SEEKER)
+  @ApiOperation({ summary: 'Check whether a purchase is reviewable' })
+  @ApiQuery({ name: 'targetType', enum: ReviewTargetType })
+  @ApiQuery({ name: 'transactionId', type: String })
+  checkEligibility(
+    @CurrentUser() user: CurrentUserData,
+    @Query('targetType') targetType: ReviewTargetType,
+    @Query('transactionId') transactionId: string,
+  ) {
+    if (!targetType || !transactionId) {
+      throw new BadRequestException('targetType and transactionId are required');
+    }
+    return this.reviewsService.checkEligibility(user.id, targetType, transactionId);
+  }
+
+  // Legacy alias: /reviews/eligibility/:bookingId  →  service-booking eligibility.
+  // Kept so older review emails / browser tabs don't 404 after the v2 rollout.
   @Get('eligibility/:bookingId')
   @Roles(Role.SEEKER)
-  @ApiOperation({ summary: 'Check if a booking is eligible for review' })
-  checkEligibility(@CurrentUser() user: CurrentUserData, @Param('bookingId') bookingId: string) {
-    return this.reviewsService.checkEligibility(user.id, bookingId);
+  checkEligibilityLegacy(@CurrentUser() user: CurrentUserData, @Param('bookingId') bookingId: string) {
+    return this.reviewsService.checkEligibility(user.id, ReviewTargetType.SERVICE, bookingId);
   }
 
   // ─── My Reviews ────────────────────────────────────────────────────────────
@@ -43,20 +60,46 @@ export class ReviewsController {
     return this.reviewsService.findMyReviews(user.id);
   }
 
-  // ─── Reviewable Bookings ───────────────────────────────────────────────────
+  // ─── Reviewable Purchases (all types) ──────────────────────────────────────
 
   @Get('reviewable')
   @Roles(Role.SEEKER)
-  @ApiOperation({ summary: 'List completed bookings that can be reviewed' })
+  @ApiOperation({ summary: 'List completed purchases (services + events + tours + products) awaiting review' })
   getReviewable(@CurrentUser() user: CurrentUserData) {
-    return this.reviewsService.getReviewableBookings(user.id);
+    return this.reviewsService.getReviewable(user.id);
   }
 
-  // ─── Public: Get Reviews for a Guide ───────────────────────────────────────
+  // ─── Public: Reviews for a single offering ─────────────────────────────────
+
+  @Public()
+  @Get('for')
+  @ApiOperation({ summary: 'Get reviews for a single offering (service / event / tour / product)' })
+  @ApiQuery({ name: 'targetType', enum: ReviewTargetType })
+  @ApiQuery({ name: 'targetEntityId', type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  findForEntity(
+    @Query('targetType') targetType: ReviewTargetType,
+    @Query('targetEntityId') targetEntityId: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    if (!targetType || !targetEntityId) {
+      throw new BadRequestException('targetType and targetEntityId are required');
+    }
+    return this.reviewsService.findForEntity(
+      targetType,
+      targetEntityId,
+      page ? Number(page) : 1,
+      limit ? Math.min(Number(limit), 50) : 10,
+    );
+  }
+
+  // ─── Public: Reviews for a Guide (cross-offering) ──────────────────────────
 
   @Public()
   @Get('guide/:userId')
-  @ApiOperation({ summary: 'Get reviews for a guide by their user ID (public)' })
+  @ApiOperation({ summary: 'Get all reviews for a guide across all their offerings (public)' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   findByGuide(
@@ -71,7 +114,17 @@ export class ReviewsController {
     );
   }
 
-  // ─── Public: Get Testimonials ──────────────────────────────────────────────
+  // ─── Guide dashboard: reviews received, filterable by offering type ────────
+
+  @Get('received')
+  @Roles(Role.GUIDE)
+  @ApiOperation({ summary: 'Reviews received by the current guide, optionally filtered by offering type' })
+  @ApiQuery({ name: 'targetType', required: false, enum: ReviewTargetType })
+  findReceived(@CurrentUser() user: CurrentUserData, @Query('targetType') targetType?: ReviewTargetType) {
+    return this.reviewsService.findReceivedByGuide(user.id, targetType);
+  }
+
+  // ─── Public: Testimonials (unchanged) ──────────────────────────────────────
 
   @Public()
   @Get('testimonials/:guideId')

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
+import { ReviewsBlock } from '@/components/public/shared/ReviewsBlock';
 
 interface TicketTier {
   id: string;
@@ -290,6 +291,8 @@ export default function EventDetailPage() {
           </div>
         </div>
       </div>
+
+      <ReviewsBlock targetType="EVENT" targetEntityId={event.id} />
     </>
   );
 }

@@ -9,7 +9,7 @@ import { CreatorCard } from '@/components/public/shop/CreatorCard';
 import { ImageGallery } from '@/components/public/shop/ImageGallery';
 import { SizeSelector } from '@/components/public/shop/SizeSelector';
 import { ProductTabs } from '@/components/public/shop/ProductTabs';
-import { ReviewsSection } from '@/components/public/shop/ReviewsSection';
+import { ReviewsBlock } from '@/components/public/shared/ReviewsBlock';
 import { RelatedProducts } from '@/components/public/shop/RelatedProducts';
 
 interface ProductVariant {
@@ -439,15 +439,9 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* Reviews — only render once we have data from the backend */}
-      {reviews.length > 0 && (
-        <ReviewsSection
-          reviews={reviews}
-          averageRating={averageRating}
-          totalReviews={reviews.length}
-          columns={isDigital ? 3 : 2}
-        />
-      )}
+      {/* Reviews v2: live, polymorphic, paginated; renders an empty-state when there are none */}
+      <ReviewsBlock targetType="PRODUCT" targetEntityId={product.id} columns={isDigital ? 3 : 2} />
+
 
       {/* Related Products — RelatedProducts already no-ops on empty */}
       <RelatedProducts

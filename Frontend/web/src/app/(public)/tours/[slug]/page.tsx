@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { ReviewsBlock } from '@/components/public/shared/ReviewsBlock';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -684,6 +685,8 @@ export default function TourDetailPage() {
           </p>
         </aside>
       </section>
+
+      <ReviewsBlock targetType="TOUR" targetEntityId={tour.id} />
     </div>
   );
 }

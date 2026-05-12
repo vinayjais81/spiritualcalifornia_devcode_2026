@@ -224,7 +224,7 @@ model User {
   guideProfile      GuideProfile?
   refreshTokens     RefreshToken[]
   reviewsGiven      Review[]       @relation("ReviewAuthor")
-  reviewsReceived   Review[]       @relation("ReviewTarget")
+  reviewsReceived   Review[]       @relation("ReviewGuide")
   testimonialsGiven Testimonial[]  @relation("TestimonialAuthor")
   notifications     Notification[]
   auditLogs         AuditLog[]
@@ -502,17 +502,19 @@ model InstitutionReference {
 // ─────────────────────────────────────────────
 
 model Service {
-  id          String      @id @default(cuid())
-  guideId     String
-  name        String
-  description String?
-  type        ServiceType @default(IN_PERSON)
-  price       Decimal     @db.Decimal(10, 2)
-  currency    String      @default("USD")
-  durationMin Int
-  isActive    Boolean     @default(true)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id            String      @id @default(cuid())
+  guideId       String
+  name          String
+  description   String?
+  type          ServiceType @default(IN_PERSON)
+  price         Decimal     @db.Decimal(10, 2)
+  currency      String      @default("USD")
+  durationMin   Int
+  isActive      Boolean     @default(true)
+  averageRating Float       @default(0)
+  reviewCount   Int         @default(0)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   guide    GuideProfile  @relation(fields: [guideId], references: [id], onDelete: Cascade)
   slots    ServiceSlot[]
@@ -817,6 +819,8 @@ model Event {
   isPublished     Boolean   @default(false)
   isCancelled     Boolean   @default(false)
   algoliaObjectId String?
+  averageRating   Float     @default(0)
+  reviewCount     Int       @default(0)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -868,6 +872,7 @@ model TicketPurchase {
   seeker  SeekerProfile   @relation(fields: [seekerId], references: [id])
   tier    EventTicketTier @relation(fields: [tierId], references: [id])
   payment Payment?
+  review  Review?
 
   @@index([purchaseGroupId])
   @@index([seekerId])
@@ -901,6 +906,8 @@ model Product {
   shippingInfo    Json?
   isActive        Boolean          @default(true)
   algoliaObjectId String?
+  averageRating   Float            @default(0)
+  reviewCount     Int              @default(0)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -968,6 +975,7 @@ model OrderItem {
   order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product       Product       @relation(fields: [productId], references: [id])
   ledgerEntries LedgerEntry[]
+  review        Review?
 
   @@map("order_items")
 }
@@ -1002,25 +1010,49 @@ model BlogPost {
 // REVIEWS & TESTIMONIALS
 // ─────────────────────────────────────────────
 
+// Reviews v2 (2026-05-12): polymorphic across SERVICE / EVENT / TOUR / PRODUCT.
+// Every review attaches to (a) the offering reviewed via (targetType, targetEntityId)
+// and (b) the guide who sold it via guideId — so listing pages can show per-offering
+// ratings and GuideProfile.averageRating rolls up across the guide's whole catalogue.
+// Verification is enforced by the per-source unique FKs below; exactly one of
+// {bookingId, ticketPurchaseId, tourBookingId, orderItemId} is set per row.
 model Review {
-  id         String   @id @default(cuid())
-  authorId   String
-  targetId   String
-  bookingId  String   @unique
-  rating     Int
-  title      String?
-  body       String?
-  isApproved Boolean  @default(true)
-  isFlagged  Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id              String       @id @default(cuid())
+  authorId        String
+  guideId         String       // The guide (User.id) whose offering was reviewed — for roll-up aggregation
+  targetType      ReviewTarget // What kind of offering: SERVICE | EVENT | TOUR | PRODUCT
+  targetEntityId  String       // Service.id, Event.id, SoulTour.id, or Product.id
+  bookingId        String?     @unique
+  ticketPurchaseId String?     @unique
+  tourBookingId    String?     @unique
+  orderItemId      String?     @unique
+  rating          Int
+  title           String?
+  body            String?
+  guideReply      String?
+  guideRepliedAt  DateTime?
+  isApproved      Boolean      @default(true)
+  isFlagged       Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  author  User    @relation("ReviewAuthor", fields: [authorId], references: [id])
-  target  User    @relation("ReviewTarget", fields: [targetId], references: [id])
-  booking Booking @relation(fields: [bookingId], references: [id])
+  author         User            @relation("ReviewAuthor", fields: [authorId], references: [id])
+  guide          User            @relation("ReviewGuide", fields: [guideId], references: [id])
+  booking        Booking?        @relation(fields: [bookingId], references: [id])
+  ticketPurchase TicketPurchase? @relation(fields: [ticketPurchaseId], references: [id])
+  tourBooking    TourBooking?    @relation(fields: [tourBookingId], references: [id])
+  orderItem      OrderItem?      @relation(fields: [orderItemId], references: [id])
 
-  @@index([targetId, isApproved])
+  @@index([guideId, isApproved])
+  @@index([targetType, targetEntityId, isApproved])
   @@map("reviews")
+}
+
+enum ReviewTarget {
+  SERVICE
+  EVENT
+  TOUR
+  PRODUCT
 }
 
 model Testimonial {
@@ -1250,6 +1282,8 @@ model SoulTour {
   // ─────────────────────
   isPublished          Boolean    @default(false)
   isCancelled          Boolean    @default(false)
+  averageRating        Float      @default(0)
+  reviewCount          Int        @default(0)
   createdAt            DateTime   @default(now())
   updatedAt            DateTime   @updatedAt
 
@@ -1375,6 +1409,7 @@ model TourBooking {
   roomType      TourRoomType          @relation(fields: [roomTypeId], references: [id])
   payments      Payment[]             @relation("TourBookingPayments")
   travelers_rel TourBookingTraveler[]
+  review        Review?
 
   @@index([tourId])
   @@index([departureId])

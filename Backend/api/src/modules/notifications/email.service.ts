@@ -86,15 +86,29 @@ export class EmailService {
     `);
   }
 
-  // ─── Review Request (after completed session) ──────────────────────────────
+  // ─── Review Request (polymorphic — services, events, tours, products) ─────
 
-  async sendReviewRequest(to: string, data: { seekerName: string; guideName: string; serviceName: string; bookingId: string }) {
-    return this.send(to, `How was your session with ${data.guideName}?`, `
+  async sendReviewRequest(to: string, data: {
+    seekerName: string;
+    guideName: string;
+    offeringLabel: string; // human label for the email body, e.g. "session" / "event" / "tour" / "order"
+    offeringName: string;  // the title shown in the body
+    targetType: 'SERVICE' | 'EVENT' | 'TOUR' | 'PRODUCT';
+    transactionId: string;
+  }) {
+    const subjectByType: Record<typeof data.targetType, string> = {
+      SERVICE: `How was your session with ${data.guideName}?`,
+      EVENT: `How was ${data.offeringName}?`,
+      TOUR: `How was your journey on ${data.offeringName}?`,
+      PRODUCT: `How was ${data.offeringName}?`,
+    };
+    const reviewUrl = `${this.config.get('FRONTEND_URL')}/reviews/new?targetType=${data.targetType}&transactionId=${data.transactionId}`;
+    return this.send(to, subjectByType[data.targetType], `
       <div style="font-family: 'Inter', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
         <div style="text-align: center; margin-bottom: 24px;"><div style="font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #E8B84B;">Spiritual California</div></div>
         <h1 style="font-family: Georgia, serif; font-size: 28px; font-weight: 400; color: #3A3530; text-align: center; margin-bottom: 8px;">Share Your Experience</h1>
-        <p style="text-align: center; color: #8A8278; font-size: 14px; margin-bottom: 32px;">Hi ${data.seekerName}, how was your ${data.serviceName} session with ${data.guideName}? Your feedback helps other seekers and supports practitioners.</p>
-        <div style="text-align: center;"><a href="${this.config.get('FRONTEND_URL')}/reviews/new/${data.bookingId}" style="display: inline-block; padding: 14px 32px; background: #E8B84B; color: #3A3530; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;">Write a Review</a></div>
+        <p style="text-align: center; color: #8A8278; font-size: 14px; margin-bottom: 32px;">Hi ${data.seekerName}, how was your ${data.offeringLabel} <strong>${data.offeringName}</strong> with ${data.guideName}? Your feedback helps other seekers and supports practitioners.</p>
+        <div style="text-align: center;"><a href="${reviewUrl}" style="display: inline-block; padding: 14px 32px; background: #E8B84B; color: #3A3530; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;">Write a Review</a></div>
       </div>
     `);
   }

@@ -83,8 +83,23 @@ export class NotificationsService {
     await this.emailService.sendOrderConfirmation(order.email, order);
   }
 
-  async notifyReviewRequest(data: { userId: string; email: string; seekerName: string; guideName: string; serviceName: string; bookingId: string }) {
-    await this.create(data.userId, 'REVIEW_RECEIVED', 'Share Your Experience', `How was your session with ${data.guideName}?`, { bookingId: data.bookingId });
+  async notifyReviewRequest(data: {
+    userId: string;
+    email: string;
+    seekerName: string;
+    guideName: string;
+    offeringLabel: string; // "session" | "event" | "tour" | "order"
+    offeringName: string;
+    targetType: 'SERVICE' | 'EVENT' | 'TOUR' | 'PRODUCT';
+    transactionId: string;
+  }) {
+    await this.create(
+      data.userId,
+      'REVIEW_RECEIVED',
+      'Share Your Experience',
+      `How was your ${data.offeringLabel} ${data.offeringName}?`,
+      { targetType: data.targetType, transactionId: data.transactionId },
+    );
     await this.emailService.sendReviewRequest(data.email, data);
   }
 

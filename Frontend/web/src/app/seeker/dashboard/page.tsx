@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { C, font, PageHeader, Panel, StatCard } from '@/components/guide/dashboard-ui';
 import { NeedsAttentionPanel } from '@/components/seeker/NeedsAttentionPanel';
 import { ProfileCompletenessWidget } from '@/components/seeker/ProfileCompletenessWidget';
+import { PendingReviewsWidget } from '@/components/seeker/PendingReviewsWidget';
 
 export default function SeekerDashboardPage() {
   const { user } = useAuthStore();
@@ -30,6 +31,10 @@ export default function SeekerDashboardPage() {
           pending service bookings + pending ticket purchases. Hidden
           entirely when nothing is pending. */}
       <NeedsAttentionPanel />
+
+      {/* Reviews v2: prompts seekers to review completed services / events
+          / tours / products. Hidden when there are no reviewable purchases. */}
+      <PendingReviewsWidget />
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>

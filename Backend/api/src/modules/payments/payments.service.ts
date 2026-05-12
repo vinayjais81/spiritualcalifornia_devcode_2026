@@ -312,6 +312,38 @@ export class PaymentsService {
     }
   }
 
+  // ─── Review prompt fan-out for newly-delivered OrderItems ────────────────
+  // Idempotent in practice: per-orderItem unique constraint on Review prevents
+  // dupes if the prompt is replayed. Failures are logged but never blocking —
+  // the in-app /reviews/reviewable widget is the canonical surface.
+
+  private async firePostDeliveryReviewPrompts(orderItemIds: string[]): Promise<void> {
+    if (orderItemIds.length === 0) return;
+    const items = await this.prisma.orderItem.findMany({
+      where: { id: { in: orderItemIds } },
+      include: {
+        order: { select: { seeker: { select: { user: { select: { id: true, email: true, firstName: true } } } } } },
+        product: { select: { name: true, guide: { select: { displayName: true } } } },
+      },
+    });
+    for (const item of items) {
+      try {
+        await this.notifications.notifyReviewRequest({
+          userId: item.order.seeker.user.id,
+          email: item.order.seeker.user.email,
+          seekerName: item.order.seeker.user.firstName,
+          guideName: item.product.guide.displayName,
+          offeringLabel: 'order',
+          offeringName: item.product.name,
+          targetType: 'PRODUCT',
+          transactionId: item.id,
+        });
+      } catch (err: any) {
+        this.logger.warn(`Review prompt failed for orderItem ${item.id}: ${err.message}`);
+      }
+    }
+  }
+
   // ─── Physical product delivery hook ───────────────────────────────────────
 
   /**
@@ -354,6 +386,10 @@ export class PaymentsService {
         where: { id: { in: undelivered.map((i) => i.id) } },
         data: { deliveredAt: now },
       });
+      // Fire the review prompt for the items that just became reviewable
+      this.firePostDeliveryReviewPrompts(undelivered.map((i) => i.id)).catch((err) =>
+        this.logger.warn(`Review prompt batch failed for order ${order.id}: ${err.message}`),
+      );
     }
 
     // Flip Order.status if not already DELIVERED. Don't downgrade past states
@@ -508,6 +544,10 @@ export class PaymentsService {
           where: { id: { in: digitalItemIds } },
           data: { deliveredAt: now },
         });
+        // Digital items become reviewable the moment they're delivered (== paid)
+        this.firePostDeliveryReviewPrompts(digitalItemIds).catch((err) =>
+          this.logger.warn(`Review prompt batch failed for order ${order.id} digital items: ${err.message}`),
+        );
       }
 
       // One fan-out per item, attributed to its product's guide.

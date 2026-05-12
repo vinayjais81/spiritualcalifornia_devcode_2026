@@ -1,6 +1,7 @@
 import { Injectable, ForbiddenException, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { PaymentsService } from '../payments/payments.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { CreateServiceBookingDto } from './dto/create-service-booking.dto';
 
@@ -11,6 +12,7 @@ export class BookingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly paymentsService: PaymentsService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   // ─── Service Booking Checkout (Calendly-first flow) ─────────────────────────
@@ -300,14 +302,33 @@ export class BookingsService {
   async complete(userId: string, bookingId: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { service: { select: { guide: { select: { userId: true } } } } },
+      include: {
+        seeker: { select: { user: { select: { id: true, email: true, firstName: true } } } },
+        service: { select: { name: true, guide: { select: { userId: true, displayName: true } } } },
+      },
     });
     if (!booking) throw new NotFoundException('Booking not found');
     if (booking.service.guide.userId !== userId) throw new ForbiddenException('Not your booking');
 
-    return this.prisma.booking.update({
+    const updated = await this.prisma.booking.update({
       where: { id: bookingId },
       data: { status: 'COMPLETED', completedAt: new Date() },
     });
+
+    // Fire-and-forget review prompt — booking.review uniqueness prevents dupes on retry
+    this.notifications
+      .notifyReviewRequest({
+        userId: booking.seeker.user.id,
+        email: booking.seeker.user.email,
+        seekerName: booking.seeker.user.firstName,
+        guideName: booking.service.guide.displayName,
+        offeringLabel: 'session',
+        offeringName: booking.service.name,
+        targetType: 'SERVICE',
+        transactionId: bookingId,
+      })
+      .catch((err) => this.logger.warn(`Review prompt failed for booking ${bookingId}: ${err.message}`));
+
+    return updated;
   }
 }
