@@ -19,24 +19,13 @@ import { Role } from '@prisma/client';
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
-  // ─── Get Payment Details ───────────────────────────────────────────────────
-
-  @Get(':id')
-  @ApiOperation({ summary: 'Get payment details' })
-  findOne(@Param('id') id: string) {
-    return this.paymentsService.findOne(id);
-  }
-
-  // ─── Refund ────────────────────────────────────────────────────────────────
-
-  @Post(':id/refund')
-  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Refund a payment (full or partial)' })
-  refund(@Param('id') id: string, @Body('amount') amount?: number) {
-    return this.paymentsService.refund(id, amount);
-  }
-
   // ─── Stripe Webhook (raw body for signature verification) ──────────────────
+  // NOTE on route ordering: the catch-all `@Get(':id')` for payment details
+  // sits at the BOTTOM of this controller (not the top, where it used to be).
+  // NestJS resolves routes in declaration order, so a `:id` wildcard at the
+  // top swallows every specific literal route below it — that bug caused
+  // GET /payments/earnings to throw "Payment not found" (id=earnings) until
+  // 2026-05-12 when the order was corrected.
 
   @Public()
   @Post('webhook/stripe')
@@ -111,5 +100,24 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Confirm payment after successful Stripe charge (fallback for webhook)' })
   confirmPayment(@Body() data: { paymentIntentId: string }) {
     return this.paymentsService.confirmPayment(data.paymentIntentId);
+  }
+
+  // ─── Get Payment Details ───────────────────────────────────────────────────
+  // KEEP THIS BELOW ALL SPECIFIC ROUTES. NestJS resolves routes in declaration
+  // order; a `:id` wildcard above any literal route swallows it.
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get payment details' })
+  findOne(@Param('id') id: string) {
+    return this.paymentsService.findOne(id);
+  }
+
+  // ─── Refund ────────────────────────────────────────────────────────────────
+
+  @Post(':id/refund')
+  @Roles(Role.ADMIN, Role.SUPER_ADMIN)
+  @ApiOperation({ summary: 'Refund a payment (full or partial)' })
+  refund(@Param('id') id: string, @Body('amount') amount?: number) {
+    return this.paymentsService.refund(id, amount);
   }
 }
