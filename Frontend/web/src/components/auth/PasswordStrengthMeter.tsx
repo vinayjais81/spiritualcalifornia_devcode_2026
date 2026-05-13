@@ -95,18 +95,25 @@ export function evaluatePassword(
   const allPassed = passedCount === totalCount;
 
   // Map raw rule pass count → 0..4 strength bucket for the bar.
+  // Critical: scores 1-3 all use amber/red to signal "not done yet".
+  // We only enter the green "Strong" state (score 4) when *every*
+  // rule passes. Otherwise the meter would show green while the
+  // backend rejects the password — a misleading UX that buries the
+  // missing requirement under positive-language cues.
   let score: 0 | 1 | 2 | 3 | 4 = 0;
   if (password.length === 0) score = 0;
-  else if (passedCount <= 2) score = 1;
-  else if (passedCount <= 4) score = 2;
-  else if (passedCount <= 6) score = 3;
-  else score = 4;
+  else if (allPassed) score = 4;
+  else if (passedCount <= 3) score = 1;
+  else if (passedCount <= 5) score = 2;
+  else score = 3;
 
   return { rules, passedCount, totalCount, allPassed, score };
 }
 
-const SCORE_LABEL = ['', 'Weak', 'Fair', 'Good', 'Strong'] as const;
-const SCORE_COLOR = ['#E0DDD7', '#C0392B', '#E8A33D', '#5AA85A', '#3A8B4D'];
+// Labels never imply success until `allPassed`. Colors progress from
+// red → amber → green only when policy is fully satisfied.
+const SCORE_LABEL = ['', 'Weak', 'Keep going', 'Almost there', 'Strong'] as const;
+const SCORE_COLOR = ['#E0DDD7', '#C0392B', '#E8A33D', '#E8A33D', '#3A8B4D'];
 
 export interface PasswordStrengthMeterProps {
   password: string;
@@ -179,21 +186,34 @@ export function PasswordStrengthMeter({
           gap: '4px 12px',
         }}
       >
-        {result.rules.map((rule) => (
-          <li
-            key={rule.key}
-            style={{
-              fontSize: 12,
-              color: rule.passed ? '#3A8B4D' : '#8A8278',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
-            <span aria-hidden="true">{rule.passed ? '✓' : '○'}</span>
-            <span>{rule.label}</span>
-          </li>
-        ))}
+        {result.rules.map((rule) => {
+          // Three states: passed (green ✓), failed-and-typed (red ✕),
+          // not-yet-typed (gray ○). Calling out failures in red makes
+          // the missing requirement obvious instead of blending it in
+          // with passing checks.
+          const isFailedWithInput = !rule.passed && password.length > 0;
+          const color = rule.passed
+            ? '#3A8B4D'
+            : isFailedWithInput
+              ? 'var(--color-error)'
+              : '#8A8278';
+          const icon = rule.passed ? '✓' : isFailedWithInput ? '✕' : '○';
+          return (
+            <li
+              key={rule.key}
+              style={{
+                fontSize: 12,
+                color,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <span aria-hidden="true" style={{ fontWeight: isFailedWithInput ? 700 : 400 }}>{icon}</span>
+              <span>{rule.label}</span>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
