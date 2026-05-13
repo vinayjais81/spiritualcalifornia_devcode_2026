@@ -8,6 +8,7 @@ import {
   C, font, serif, Panel, Btn, FormGroup, Input, TextArea, Select,
 } from '@/components/guide/dashboard-ui';
 import { RichTextEditor } from '@/components/guide/RichTextEditor';
+import { FormLegend } from '@/components/forms';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -415,18 +416,24 @@ export function TourForm({ initial, tourId }: Props) {
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <FormLegend />
+
       {/* ─── BASICS ───────────────────────────────────────────────────────── */}
       <Panel title="Basics" icon="📝">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
-          <FormGroup label="Tour Title" full>
+          <FormGroup label="Tour Title" required full>
             <Input
+              required
+              aria-required="true"
               value={form.title}
               onChange={(e) => set('title', e.target.value)}
               placeholder="e.g. Nepal — Himalayan Awakening"
             />
           </FormGroup>
-          <FormGroup label="Short Description (≤300 chars)" full>
+          <FormGroup label="Short Description (≤300 chars)" required full>
             <TextArea
+              required
+              aria-required="true"
               value={form.shortDesc}
               onChange={(e) => set('shortDesc', e.target.value)}
               maxLength={300}
@@ -435,7 +442,7 @@ export function TourForm({ initial, tourId }: Props) {
               style={{ minHeight: 60 }}
             />
           </FormGroup>
-          <FormGroup label="Full Description" full>
+          <FormGroup label="Full Description" required full>
             <RichTextEditor
               value={form.description}
               onChange={(html) => set('description', html)}
@@ -527,8 +534,8 @@ export function TourForm({ initial, tourId }: Props) {
           <FormGroup label="Location (display name)">
             <Input value={form.location} onChange={(e) => set('location', e.target.value)} placeholder="Kathmandu · Pokhara · Lumbini" />
           </FormGroup>
-          <FormGroup label="Country">
-            <Input value={form.country} onChange={(e) => set('country', e.target.value)} />
+          <FormGroup label="Country" required>
+            <Input required aria-required="true" value={form.country} onChange={(e) => set('country', e.target.value)} />
           </FormGroup>
           <FormGroup label="City">
             <Input value={form.city} onChange={(e) => set('city', e.target.value)} />
@@ -539,11 +546,11 @@ export function TourForm({ initial, tourId }: Props) {
           <FormGroup label="Meeting Point" full>
             <Input value={form.meetingPoint} onChange={(e) => set('meetingPoint', e.target.value)} placeholder="e.g. Tribhuvan International Airport (KTM), Day 1 at 14:00" />
           </FormGroup>
-          <FormGroup label="Primary Start Date">
-            <Input type="date" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} />
+          <FormGroup label="Primary Start Date" required>
+            <Input required aria-required="true" type="date" value={form.startDate} onChange={(e) => set('startDate', e.target.value)} />
           </FormGroup>
-          <FormGroup label="Primary End Date">
-            <Input type="date" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} />
+          <FormGroup label="Primary End Date" required>
+            <Input required aria-required="true" type="date" value={form.endDate} onChange={(e) => set('endDate', e.target.value)} />
           </FormGroup>
           <FormGroup label="Timezone" full>
             <Input value={form.timezone} onChange={(e) => set('timezone', e.target.value)} />
@@ -571,14 +578,14 @@ export function TourForm({ initial, tourId }: Props) {
               <Btn variant="danger" size="sm" onClick={() => removeDeparture(i)}>Remove</Btn>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
-              <FormGroup label="Start">
-                <Input type="date" value={d.startDate} onChange={(e) => updateDeparture(i, { startDate: e.target.value })} />
+              <FormGroup label="Start" required>
+                <Input required aria-required="true" type="date" value={d.startDate} onChange={(e) => updateDeparture(i, { startDate: e.target.value })} />
               </FormGroup>
-              <FormGroup label="End">
-                <Input type="date" value={d.endDate} onChange={(e) => updateDeparture(i, { endDate: e.target.value })} />
+              <FormGroup label="End" required>
+                <Input required aria-required="true" type="date" value={d.endDate} onChange={(e) => updateDeparture(i, { endDate: e.target.value })} />
               </FormGroup>
-              <FormGroup label="Capacity">
-                <Input type="number" min={1} value={d.capacity} onChange={(e) => updateDeparture(i, { capacity: e.target.value })} />
+              <FormGroup label="Capacity" required>
+                <Input required aria-required="true" type="number" min={1} value={d.capacity} onChange={(e) => updateDeparture(i, { capacity: e.target.value })} />
               </FormGroup>
               <FormGroup label="Price Override">
                 <Input type="number" min={0} value={d.priceOverride} onChange={(e) => updateDeparture(i, { priceOverride: e.target.value })} placeholder="Optional" />
@@ -600,11 +607,11 @@ export function TourForm({ initial, tourId }: Props) {
       {/* ─── ROOM TYPES ──────────────────────────────────────────────────── */}
       <Panel title="Room Types & Pricing" icon="🛏️">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 18, marginBottom: 18 }}>
-          <FormGroup label="Base Price (per person, USD)">
-            <Input type="number" min={0} value={form.basePrice} onChange={(e) => set('basePrice', e.target.value)} />
+          <FormGroup label="Base Price (per person, USD)" required>
+            <Input required aria-required="true" type="number" min={0} value={form.basePrice} onChange={(e) => set('basePrice', e.target.value)} />
           </FormGroup>
-          <FormGroup label="Total Capacity (max travelers per departure)">
-            <Input type="number" min={1} value={form.capacity} onChange={(e) => set('capacity', e.target.value)} />
+          <FormGroup label="Total Capacity (max travelers per departure)" required>
+            <Input required aria-required="true" type="number" min={1} value={form.capacity} onChange={(e) => set('capacity', e.target.value)} />
           </FormGroup>
           <FormGroup label="Min Deposit (per person, USD)">
             <Input type="number" min={0} value={form.minDepositPerPerson} onChange={(e) => set('minDepositPerPerson', e.target.value)} />
@@ -623,17 +630,17 @@ export function TourForm({ initial, tourId }: Props) {
               <Btn variant="danger" size="sm" onClick={() => removeRoomType(i)}>Remove</Btn>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <FormGroup label="Name">
-                <Input value={rt.name} onChange={(e) => updateRoomType(i, { name: e.target.value })} placeholder="e.g. Shared Double Room" />
+              <FormGroup label="Name" required>
+                <Input required aria-required="true" value={rt.name} onChange={(e) => updateRoomType(i, { name: e.target.value })} placeholder="e.g. Shared Double Room" />
               </FormGroup>
-              <FormGroup label="Capacity (travelers per room)">
-                <Input type="number" min={1} value={rt.capacity} onChange={(e) => updateRoomType(i, { capacity: e.target.value })} />
+              <FormGroup label="Capacity (travelers per room)" required>
+                <Input required aria-required="true" type="number" min={1} value={rt.capacity} onChange={(e) => updateRoomType(i, { capacity: e.target.value })} />
               </FormGroup>
-              <FormGroup label="Price per night">
-                <Input type="number" min={0} value={rt.pricePerNight} onChange={(e) => updateRoomType(i, { pricePerNight: e.target.value })} />
+              <FormGroup label="Price per night" required>
+                <Input required aria-required="true" type="number" min={0} value={rt.pricePerNight} onChange={(e) => updateRoomType(i, { pricePerNight: e.target.value })} />
               </FormGroup>
-              <FormGroup label="Total price (full stay, per person)">
-                <Input type="number" min={0} value={rt.totalPrice} onChange={(e) => updateRoomType(i, { totalPrice: e.target.value })} />
+              <FormGroup label="Total price (full stay, per person)" required>
+                <Input required aria-required="true" type="number" min={0} value={rt.totalPrice} onChange={(e) => updateRoomType(i, { totalPrice: e.target.value })} />
               </FormGroup>
               <FormGroup label="Description" full>
                 <TextArea
@@ -667,17 +674,19 @@ export function TourForm({ initial, tourId }: Props) {
               <Btn variant="danger" size="sm" onClick={() => removeItineraryDay(i)}>Remove</Btn>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr 1fr', gap: 12 }}>
-              <FormGroup label="Day #">
-                <Input type="number" min={1} value={day.dayNumber} onChange={(e) => updateItineraryDay(i, { dayNumber: e.target.value })} />
+              <FormGroup label="Day #" required>
+                <Input required aria-required="true" type="number" min={1} value={day.dayNumber} onChange={(e) => updateItineraryDay(i, { dayNumber: e.target.value })} />
               </FormGroup>
-              <FormGroup label="Title">
-                <Input value={day.title} onChange={(e) => updateItineraryDay(i, { title: e.target.value })} placeholder="Arrival in Kathmandu" />
+              <FormGroup label="Title" required>
+                <Input required aria-required="true" value={day.title} onChange={(e) => updateItineraryDay(i, { title: e.target.value })} placeholder="Arrival in Kathmandu" />
               </FormGroup>
               <FormGroup label="Location">
                 <Input value={day.location} onChange={(e) => updateItineraryDay(i, { location: e.target.value })} placeholder="Kathmandu" />
               </FormGroup>
-              <FormGroup label="Description" full>
+              <FormGroup label="Description" required full>
                 <TextArea
+                  required
+                  aria-required="true"
                   value={day.description}
                   onChange={(e) => updateItineraryDay(i, { description: e.target.value })}
                   rows={3}

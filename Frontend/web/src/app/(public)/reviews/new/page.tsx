@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { FieldLabel, FormLegend } from '@/components/forms';
 
 type TargetType = 'SERVICE' | 'EVENT' | 'TOUR' | 'PRODUCT';
 
@@ -139,9 +140,13 @@ function WriteReviewInner() {
         </p>
       </div>
 
+      <div style={{ textAlign: 'center', marginBottom: 16 }}>
+        <FormLegend />
+      </div>
+
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
-        <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8A8278', marginBottom: 12 }}>
-          Your Rating
+        <div role="group" aria-required="true" style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8A8278', marginBottom: 12 }}>
+          Your Rating <span aria-hidden="true" style={{ color: 'var(--color-error)' }}>*</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8 }}>
           {[1, 2, 3, 4, 5].map((star) => (
@@ -168,10 +173,11 @@ function WriteReviewInner() {
 
       <div style={{ background: '#fff', border: '1px solid rgba(232,184,75,0.15)', borderRadius: 12, padding: 28 }}>
         <div style={{ marginBottom: 20 }}>
-          <label style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#8A8278', marginBottom: 8, display: 'block' }}>
-            Review Title (optional)
-          </label>
+          <FieldLabel htmlFor="review-title" style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#8A8278', marginBottom: 8, display: 'block' }}>
+            Review Title
+          </FieldLabel>
           <input
+            id="review-title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder='e.g. "Transformative experience" or "Exactly what I needed"'
@@ -181,10 +187,11 @@ function WriteReviewInner() {
         </div>
 
         <div style={{ marginBottom: 20 }}>
-          <label style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#8A8278', marginBottom: 8, display: 'block' }}>
+          <FieldLabel htmlFor="review-body" style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#8A8278', marginBottom: 8, display: 'block' }}>
             Your Experience
-          </label>
+          </FieldLabel>
           <textarea
+            id="review-body"
             value={body}
             onChange={(e) => setBody(e.target.value)}
             placeholder={

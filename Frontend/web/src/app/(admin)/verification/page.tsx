@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ShieldCheck, FileText, CheckCircle, XCircle, User, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
+import { FieldLabel } from '@/components/forms';
 
 interface Credential {
   id: string;
@@ -165,12 +166,17 @@ function GuideCard({ guide, onApprove, onReject, isPending }: {
           </div>
         ) : (
           <div className="space-y-2 pt-1">
-            <p className="text-sm font-medium text-gray-700">Rejection reason:</p>
+            <FieldLabel htmlFor={`reject-reason-${guide.id}`} required className="text-sm font-medium text-gray-700">
+              Rejection reason
+            </FieldLabel>
             <textarea
+              id={`reject-reason-${guide.id}`}
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               placeholder="Explain why this guide is being rejected…"
               className="w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-300"
+              required
+              aria-required="true"
               rows={3}
             />
             <div className="flex gap-2">

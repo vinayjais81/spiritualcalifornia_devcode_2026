@@ -6,6 +6,7 @@ import { Navbar } from '@/components/public/layout/Navbar';
 import { Footer } from '@/components/public/layout/Footer';
 import { api } from '@/lib/api';
 import { useSiteConfigOrFallback } from '@/lib/siteConfig';
+import { FieldLabel, FormLegend } from '@/components/forms';
 
 const G = {
   gold:     '#E8B84B',
@@ -175,6 +176,9 @@ export default function ContactPage() {
             ) : (
               /* Contact form */
               <form onSubmit={handleSubmit} style={{ background: G.white, border: '1px solid rgba(232,184,75,0.15)', borderRadius: 16, padding: 40 }}>
+                <div style={{ marginBottom: 20 }}>
+                  <FormLegend />
+                </div>
 
                 {error && (
                   <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: '#DC2626', fontFamily: 'var(--font-inter), sans-serif', marginBottom: 24 }}>
@@ -185,24 +189,25 @@ export default function ContactPage() {
                 {/* Name + Email */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
                   <div>
-                    <label style={lbl}>Your Name</label>
-                    <input style={iStyle('name')} type="text" placeholder="Maya Rosenberg" value={name} onChange={e => setName(e.target.value)} onFocus={() => setFocused('name')} onBlur={() => setFocused(null)} required />
+                    <FieldLabel htmlFor="contact-name" required style={lbl}>Your Name</FieldLabel>
+                    <input id="contact-name" style={iStyle('name')} type="text" placeholder="Maya Rosenberg" value={name} onChange={e => setName(e.target.value)} onFocus={() => setFocused('name')} onBlur={() => setFocused(null)} required aria-required="true" />
                   </div>
                   <div>
-                    <label style={lbl}>Email Address</label>
-                    <input style={iStyle('email')} type="email" placeholder="maya@example.com" value={email} onChange={e => setEmail(e.target.value)} onFocus={() => setFocused('email')} onBlur={() => setFocused(null)} required autoComplete="email" />
+                    <FieldLabel htmlFor="contact-email" required style={lbl}>Email Address</FieldLabel>
+                    <input id="contact-email" style={iStyle('email')} type="email" placeholder="maya@example.com" value={email} onChange={e => setEmail(e.target.value)} onFocus={() => setFocused('email')} onBlur={() => setFocused(null)} required aria-required="true" autoComplete="email" />
                   </div>
                 </div>
 
                 {/* Phone + Type */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
                   <div>
-                    <label style={lbl}>Phone <span style={{ textTransform: 'none', letterSpacing: 0, fontSize: 11, fontWeight: 400 }}>(optional)</span></label>
-                    <input style={iStyle('phone')} type="tel" placeholder="+1 (415) 000-0000" value={phone} onChange={e => setPhone(e.target.value)} onFocus={() => setFocused('phone')} onBlur={() => setFocused(null)} />
+                    <FieldLabel htmlFor="contact-phone" style={lbl}>Phone</FieldLabel>
+                    <input id="contact-phone" style={iStyle('phone')} type="tel" placeholder="+1 (415) 000-0000" value={phone} onChange={e => setPhone(e.target.value)} onFocus={() => setFocused('phone')} onBlur={() => setFocused(null)} />
                   </div>
                   <div>
-                    <label style={lbl}>Inquiry Type</label>
+                    <FieldLabel htmlFor="contact-type" style={lbl}>Inquiry Type</FieldLabel>
                     <select
+                      id="contact-type"
                       value={type}
                       onChange={e => setType(e.target.value)}
                       onFocus={() => setFocused('type')}
@@ -218,14 +223,15 @@ export default function ContactPage() {
 
                 {/* Subject */}
                 <div style={{ marginBottom: 20 }}>
-                  <label style={lbl}>Subject</label>
-                  <input style={iStyle('subject')} type="text" placeholder="How can we help?" value={subject} onChange={e => setSubject(e.target.value)} onFocus={() => setFocused('subject')} onBlur={() => setFocused(null)} required maxLength={150} />
+                  <FieldLabel htmlFor="contact-subject" required style={lbl}>Subject</FieldLabel>
+                  <input id="contact-subject" style={iStyle('subject')} type="text" placeholder="How can we help?" value={subject} onChange={e => setSubject(e.target.value)} onFocus={() => setFocused('subject')} onBlur={() => setFocused(null)} required aria-required="true" maxLength={150} />
                 </div>
 
                 {/* Message */}
                 <div style={{ marginBottom: 28 }}>
-                  <label style={lbl}>Message</label>
+                  <FieldLabel htmlFor="contact-message" required style={lbl}>Message</FieldLabel>
                   <textarea
+                    id="contact-message"
                     style={{ ...iStyle('msg'), resize: 'vertical', minHeight: 140 } as React.CSSProperties}
                     placeholder="Tell us more about your inquiry, question, or idea…"
                     value={message}
@@ -233,6 +239,7 @@ export default function ContactPage() {
                     onFocus={() => setFocused('msg')}
                     onBlur={() => setFocused(null)}
                     required
+                    aria-required="true"
                     minLength={10}
                     maxLength={2000}
                     rows={6}
