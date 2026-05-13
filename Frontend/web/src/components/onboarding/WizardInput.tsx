@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode, useState } from 'react';
+import { FieldLabel } from '@/components/forms';
 
 interface Props {
   label: string;
@@ -49,7 +50,8 @@ export function WizardInput({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-      <label
+      <FieldLabel
+        required={required}
         style={{
           fontFamily: 'var(--font-inter), sans-serif',
           fontSize: '12px',
@@ -60,8 +62,7 @@ export function WizardInput({
         }}
       >
         {label}
-        {required && <span style={{ color: '#E8B84B', marginLeft: '3px' }}>*</span>}
-      </label>
+      </FieldLabel>
 
       <div style={{ position: 'relative' }}>
         {multiline ? (
@@ -71,6 +72,7 @@ export function WizardInput({
             placeholder={placeholder}
             rows={rows}
             required={required}
+            aria-required={required || undefined}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}
             style={inputStyle}
@@ -82,6 +84,7 @@ export function WizardInput({
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             required={required}
+            aria-required={required || undefined}
             autoComplete={autoComplete}
             onFocus={() => setFocused(true)}
             onBlur={() => setFocused(false)}

@@ -8,6 +8,7 @@ import { refreshAuthWithLatestRoles } from '@/lib/refreshAuth';
 import { WizardFormCard } from '../WizardFormCard';
 import { WizardInput } from '../WizardInput';
 import { WizardButton } from '../WizardButton';
+import { FormLegend } from '@/components/forms';
 
 export function Step0Account() {
   const { step0, setStep0, setLoading, isLoading, setError, error, nextStep } = useOnboardingStore();
@@ -116,6 +117,7 @@ export function Step0Account() {
         subtitle="Use your existing Spiritual California account."
       >
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <FormLegend />
           {error && <ErrorBanner message={error} />}
           <WizardInput
             label="Email address"
@@ -160,6 +162,7 @@ export function Step0Account() {
       subtitle="Start your journey as a verified guide on Spiritual California."
     >
       <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <FormLegend />
         {error && <ErrorBanner message={error} />}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>

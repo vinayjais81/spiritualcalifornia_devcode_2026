@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { parsePaymentsGateError } from '@/lib/payments-gate';
 import { toast } from 'sonner';
 import { C, font, formatPrice, PageHeader, Panel, Btn, EmptyState, ProductThumb, Modal, FormGroup, Input, TextArea, Select } from '@/components/guide/dashboard-ui';
+import { FormLegend } from '@/components/forms';
 
 interface DigitalFile {
   name: string;
@@ -359,18 +360,21 @@ export default function ProductsPage() {
           </button>
         </div>
 
+        <div style={{ marginBottom: '16px' }}>
+          <FormLegend />
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          <FormGroup label="Product Name" full>
-            <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Himalayan Singing Bowl Set" />
+          <FormGroup label="Product Name" required full>
+            <Input required aria-required="true" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Himalayan Singing Bowl Set" />
           </FormGroup>
           <FormGroup label="Description" full>
             <TextArea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe the product..." />
           </FormGroup>
-          <FormGroup label="Price (USD)">
-            <Input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="85" min="0" />
+          <FormGroup label="Price (USD)" required>
+            <Input required aria-required="true" type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))} placeholder="85" min="0" />
           </FormGroup>
-          <FormGroup label="Product Type">
-            <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
+          <FormGroup label="Product Type" required>
+            <Select required aria-required="true" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
               <option value="DIGITAL">Digital Download</option>
               <option value="PHYSICAL">Physical Product</option>
             </Select>

@@ -4,6 +4,7 @@ import { useRef, ChangeEvent } from 'react';
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { api } from '@/lib/api';
 import type { CredentialEntry } from '@/types/onboarding';
+import { FieldLabel, FormLegend } from '@/components/forms';
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -136,6 +137,10 @@ export function Step3Credentials() {
         <p style={{ fontSize: '13px', color: '#8A8278', lineHeight: 1.6, fontFamily: 'var(--font-inter), sans-serif', margin: 0 }}>Verified credentials earn you a <strong>✦ Verified Modality</strong> badge on each practice you have proven training in. Seekers trust verified practitioners 3× more and are significantly more likely to book. You can skip this step and complete it later from your dashboard.</p>
       </div>
 
+      <div style={{ marginBottom: '20px' }}>
+        <FormLegend />
+      </div>
+
       {error && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '12px 16px', fontSize: '13px', color: '#DC2626', fontFamily: 'var(--font-inter), sans-serif', marginBottom: '20px' }}>{error}</div>}
 
       <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,application/pdf" onChange={handleDocumentChange} style={{ display: 'none' }} />
@@ -157,13 +162,13 @@ export function Step3Credentials() {
             <button onClick={() => removeCredential(entry)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#B5AFA8', lineHeight: 1 }}>×</button>
             {entry.persisted && <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#22C55E', color: '#FFFFFF', fontSize: '10px', fontFamily: 'var(--font-inter), sans-serif', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', borderRadius: '50px', padding: '3px 10px', marginBottom: '12px' }}>✓ Saved</div>}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div><label style={lbl}>Credential Title</label><input style={iBase} type="text" placeholder="e.g. 500hr Yoga Teacher Training" value={entry.title} onChange={(e) => updateCredential(entry.localId, { title: e.target.value })} /></div>
+              <div><FieldLabel required style={lbl}>Credential Title</FieldLabel><input style={iBase} type="text" placeholder="e.g. 500hr Yoga Teacher Training" value={entry.title} onChange={(e) => updateCredential(entry.localId, { title: e.target.value })} aria-required="true" /></div>
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '12px' }}>
-                <div><label style={lbl}>Issuing Institution</label><input style={iBase} type="text" placeholder="e.g. Yoga Alliance" value={entry.institution} onChange={(e) => updateCredential(entry.localId, { institution: e.target.value })} /></div>
-                <div><label style={lbl}>Year Issued</label><input style={iBase} type="number" min={1950} max={CURRENT_YEAR} placeholder={String(CURRENT_YEAR)} value={entry.issuedYear} onChange={(e) => updateCredential(entry.localId, { issuedYear: e.target.value })} /></div>
+                <div><FieldLabel style={lbl}>Issuing Institution</FieldLabel><input style={iBase} type="text" placeholder="e.g. Yoga Alliance" value={entry.institution} onChange={(e) => updateCredential(entry.localId, { institution: e.target.value })} /></div>
+                <div><FieldLabel style={lbl}>Year Issued</FieldLabel><input style={iBase} type="number" min={1950} max={CURRENT_YEAR} placeholder={String(CURRENT_YEAR)} value={entry.issuedYear} onChange={(e) => updateCredential(entry.localId, { issuedYear: e.target.value })} /></div>
               </div>
               <div>
-                <label style={lbl}>Certificate Document</label>
+                <FieldLabel style={lbl}>Certificate Document</FieldLabel>
                 <button type="button" onClick={() => triggerDocumentUpload(entry.localId)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', width: '100%', border: '1.5px dashed #D5CFC8', borderRadius: '10px', background: entry.documentS3Key ? '#F0FDF4' : '#FAFAF7', cursor: 'pointer', textAlign: 'left' }}>
                   <span style={{ fontSize: '20px' }}>{entry.documentS3Key ? '📄' : '⬆️'}</span>
                   <span style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: '13px', color: '#3A3530' }}>{entry.documentFileName || 'Upload certificate (PDF or image)'}</span>
@@ -183,11 +188,11 @@ export function Step3Credentials() {
       <p style={{ fontSize: '13px', color: '#8A8278', marginBottom: '20px', lineHeight: 1.6, fontFamily: 'var(--font-inter), sans-serif' }}>For traditional lineage-based practices (Tibetan medicine, Shamanism, etc.), you may provide your teacher's contact for attestation instead of a formal certificate.</p>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-        <div><label style={lbl}>Teacher / Lineage Holder Name</label><input style={iBase} type="text" placeholder="e.g. Lama Tenzin Dorje" value={step3.teacherName} onChange={(e) => setStep3({ teacherName: e.target.value })} /></div>
-        <div><label style={lbl}>Teacher's Email or Website</label><input style={iBase} type="text" placeholder="teacher@example.com" value={step3.teacherContact} onChange={(e) => setStep3({ teacherContact: e.target.value })} /></div>
+        <div><FieldLabel style={lbl}>Teacher / Lineage Holder Name</FieldLabel><input style={iBase} type="text" placeholder="e.g. Lama Tenzin Dorje" value={step3.teacherName} onChange={(e) => setStep3({ teacherName: e.target.value })} /></div>
+        <div><FieldLabel style={lbl}>Teacher's Email or Website</FieldLabel><input style={iBase} type="text" placeholder="teacher@example.com" value={step3.teacherContact} onChange={(e) => setStep3({ teacherContact: e.target.value })} /></div>
       </div>
       <div style={{ marginBottom: '20px' }}>
-        <label style={lbl}>Allowance to Teach or Guide Others <span style={{ textTransform: 'none', letterSpacing: 0, fontSize: '11px', fontWeight: 400 }}>— does your teacher authorize you to teach?</span></label>
+        <FieldLabel style={lbl}>Allowance to Teach or Guide Others <span style={{ textTransform: 'none', letterSpacing: 0, fontSize: '11px', fontWeight: 400 }}>— does your teacher authorize you to teach?</span></FieldLabel>
         <select style={iBase} value={step3.authorization} onChange={(e) => setStep3({ authorization: e.target.value })}>
           <option value="">Select…</option>
           <option value="formal">Yes — I have formal authorization to teach</option>

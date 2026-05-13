@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { C, font, PageHeader, Panel, Btn, FormGroup, Input, FormActions } from '@/components/guide/dashboard-ui';
+import { FormLegend } from '@/components/forms';
 
 export default function LocationPage() {
   const [loading, setLoading] = useState(true);
@@ -84,8 +85,11 @@ export default function LocationPage() {
       <PageHeader title="Location" subtitle="Your location helps seekers find practitioners near them." />
 
       <Panel title="Practice Location" icon="📍">
+        <div style={{ marginBottom: '16px' }}>
+          <FormLegend />
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          <FormGroup label="Studio / Practice Name (optional)" full>
+          <FormGroup label="Studio / Practice Name" full>
             <Input
               value={form.studioName}
               onChange={e => setForm(f => ({ ...f, studioName: e.target.value }))}
@@ -99,8 +103,10 @@ export default function LocationPage() {
               placeholder="1234 Sunset Blvd"
             />
           </FormGroup>
-          <FormGroup label="City">
+          <FormGroup label="City" required>
             <Input
+              required
+              aria-required="true"
               value={form.city}
               onChange={e => setForm(f => ({ ...f, city: e.target.value }))}
               placeholder="Los Angeles"

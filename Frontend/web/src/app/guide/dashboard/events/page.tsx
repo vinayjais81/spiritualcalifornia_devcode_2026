@@ -6,6 +6,7 @@ import { parsePaymentsGateError } from '@/lib/payments-gate';
 import { toast } from 'sonner';
 import { C, font, formatPrice, PageHeader, Panel, Btn, EmptyState, EventDateBox, Modal, FormGroup, Input, Select } from '@/components/guide/dashboard-ui';
 import { RichTextEditor } from '@/components/guide/RichTextEditor';
+import { FormLegend } from '@/components/forms';
 
 interface TicketTier { price: number | string; capacity: number; sold: number; }
 interface GuideEvent {
@@ -175,23 +176,26 @@ export default function EventsPage() {
 
       {/* Create / Edit Modal */}
       <Modal open={showModal} onClose={closeModal} title={editingId ? 'Edit Event' : 'Add New Event'}>
+        <div style={{ marginBottom: '16px' }}>
+          <FormLegend />
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          <FormGroup label="Event Title" full>
-            <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Spring Equinox Meditation Retreat" />
+          <FormGroup label="Event Title" required full>
+            <Input required aria-required="true" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Spring Equinox Meditation Retreat" />
           </FormGroup>
-          <FormGroup label="Date & Start Time">
-            <Input type="datetime-local" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))} />
+          <FormGroup label="Date & Start Time" required>
+            <Input required aria-required="true" type="datetime-local" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))} />
           </FormGroup>
-          <FormGroup label="End Time">
-            <Input type="datetime-local" value={form.endTime} onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))} />
+          <FormGroup label="End Time" required>
+            <Input required aria-required="true" type="datetime-local" value={form.endTime} onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))} />
           </FormGroup>
           {!editingId && (
-            <FormGroup label="Price (USD, 0 for free)">
-              <Input type="number" value={form.ticketPrice} onChange={e => setForm(f => ({ ...f, ticketPrice: e.target.value }))} placeholder="45" min="0" />
+            <FormGroup label="Price (USD, 0 for free)" required>
+              <Input required aria-required="true" type="number" value={form.ticketPrice} onChange={e => setForm(f => ({ ...f, ticketPrice: e.target.value }))} placeholder="45" min="0" />
             </FormGroup>
           )}
-          <FormGroup label="Event Type">
-            <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
+          <FormGroup label="Event Type" required>
+            <Select required aria-required="true" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
               <option value="IN_PERSON">In-Person</option>
               <option value="VIRTUAL">Virtual</option>
               <option value="RETREAT">Retreat</option>

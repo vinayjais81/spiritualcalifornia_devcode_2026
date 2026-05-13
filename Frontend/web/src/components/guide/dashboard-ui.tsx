@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Image from 'next/image';
+import { FieldLabel } from '@/components/forms';
 
 // ─── Design tokens ───────────────────────────────────────────────────────────
 export const C = {
@@ -66,10 +67,12 @@ export function Btn({ children, variant = 'primary', size = 'md', onClick, style
 }
 
 // ─── Form Components ─────────────────────────────────────────────────────────
-export function FormGroup({ label, children, full }: { label: string; children: React.ReactNode; full?: boolean }) {
+export function FormGroup({ label, children, full, required, htmlFor }: { label: string; children: React.ReactNode; full?: boolean; required?: boolean; htmlFor?: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', ...(full ? { gridColumn: '1 / -1' } : {}) }}>
-      <label style={{ fontFamily: font, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray, fontWeight: 500 }}>{label}</label>
+      <FieldLabel htmlFor={htmlFor} required={required} style={{ fontFamily: font, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray, fontWeight: 500 }}>
+        {label}
+      </FieldLabel>
       {children}
     </div>
   );

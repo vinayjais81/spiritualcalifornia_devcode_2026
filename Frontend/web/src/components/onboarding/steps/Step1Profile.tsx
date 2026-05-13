@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
 import { LocationAutocomplete } from '@/components/shared/LocationAutocomplete';
 import { PasswordStrengthMeter, evaluatePassword } from '@/components/auth/PasswordStrengthMeter';
+import { FieldLabel, FormLegend } from '@/components/forms';
 
 
 const LANGUAGES = [
@@ -238,11 +239,15 @@ export function Step1Profile() {
           This is the first thing seekers will see. Make it authentic — your story, your presence, your invitation.
         </p>
       </div>
+      <div style={{ marginBottom: '20px' }}>
+        <FormLegend />
+      </div>
+
       {error && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '12px 16px', fontSize: '13px', color: '#DC2626', fontFamily: 'var(--font-inter), sans-serif', marginBottom: '20px' }}>{error}</div>}
 
       {/* Avatar */}
       <div style={{ marginBottom: '20px' }}>
-        <label style={lbl}>Profile Photo</label>
+        <FieldLabel style={lbl}>Profile Photo</FieldLabel>
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginTop: '6px' }}>
           <button type="button" onClick={() => fileInputRef.current?.click()} style={{ width: '140px', height: '140px', borderRadius: '50%', border: '2px dashed rgba(232,184,75,0.5)', background: step1.avatarPreviewUrl ? 'transparent' : '#FDF6E3', cursor: 'pointer', overflow: 'hidden', padding: 0, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {step1.avatarPreviewUrl
@@ -260,41 +265,47 @@ export function Step1Profile() {
 
       {/* Name row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-        <div><label style={lbl}>First Name</label><input style={iStyle('fn')} type="text" placeholder="Maya" value={step1.firstName} onChange={(e) => setStep1({ firstName: e.target.value })} onFocus={() => setFocused('fn')} onBlur={() => setFocused(null)} required /></div>
-        <div><label style={lbl}>Last Name</label><input style={iStyle('ln')} type="text" placeholder="Rosenberg" value={step1.lastName} onChange={(e) => setStep1({ lastName: e.target.value })} onFocus={() => setFocused('ln')} onBlur={() => setFocused(null)} required /></div>
+        <div>
+          <FieldLabel htmlFor="step1-first-name" required style={lbl}>First Name</FieldLabel>
+          <input id="step1-first-name" style={iStyle('fn')} type="text" placeholder="Maya" value={step1.firstName} onChange={(e) => setStep1({ firstName: e.target.value })} onFocus={() => setFocused('fn')} onBlur={() => setFocused(null)} required aria-required="true" />
+        </div>
+        <div>
+          <FieldLabel htmlFor="step1-last-name" required style={lbl}>Last Name</FieldLabel>
+          <input id="step1-last-name" style={iStyle('ln')} type="text" placeholder="Rosenberg" value={step1.lastName} onChange={(e) => setStep1({ lastName: e.target.value })} onFocus={() => setFocused('ln')} onBlur={() => setFocused(null)} required aria-required="true" />
+        </div>
       </div>
 
       <div style={{ marginBottom: '20px' }}>
-        <label style={lbl}>Tagline <span style={{ textTransform: 'none', letterSpacing: 0, fontSize: '11px', fontWeight: 400 }}>— your one-line introduction (like LinkedIn)</span></label>
-        <input style={iStyle('tg')} type="text" placeholder="Ayurvedic practitioner & meditation guide · helping you return to balance" maxLength={100} value={step1.tagline} onChange={(e) => setStep1({ tagline: e.target.value })} onFocus={() => setFocused('tg')} onBlur={() => setFocused(null)} />
+        <FieldLabel htmlFor="step1-tagline" style={lbl}>Tagline <span style={{ textTransform: 'none', letterSpacing: 0, fontSize: '11px', fontWeight: 400 }}>— your one-line introduction (like LinkedIn)</span></FieldLabel>
+        <input id="step1-tagline" style={iStyle('tg')} type="text" placeholder="Ayurvedic practitioner & meditation guide · helping you return to balance" maxLength={100} value={step1.tagline} onChange={(e) => setStep1({ tagline: e.target.value })} onFocus={() => setFocused('tg')} onBlur={() => setFocused(null)} />
         <div style={{ fontSize: '11px', color: '#8A8278', textAlign: 'right', marginTop: '4px', fontFamily: 'var(--font-inter), sans-serif' }}>{step1.tagline.length}/100</div>
       </div>
 
       <div style={{ marginBottom: '20px' }}>
-        <label style={lbl}>About You <span style={{ textTransform: 'none', letterSpacing: 0, fontSize: '11px', fontWeight: 400 }}>— your story, approach, and what makes you unique</span></label>
-        <textarea style={{ ...iStyle('bio'), resize: 'vertical', minHeight: '130px' } as React.CSSProperties} placeholder="Share your journey — what led you to this work, what you believe in, and how you guide others…" rows={5} maxLength={800} value={step1.bio} onChange={(e) => setStep1({ bio: e.target.value })} onFocus={() => setFocused('bio')} onBlur={() => setFocused(null)} />
+        <FieldLabel htmlFor="step1-bio" required style={lbl}>About You <span style={{ textTransform: 'none', letterSpacing: 0, fontSize: '11px', fontWeight: 400 }}>— your story, approach, and what makes you unique</span></FieldLabel>
+        <textarea id="step1-bio" style={{ ...iStyle('bio'), resize: 'vertical', minHeight: '130px' } as React.CSSProperties} placeholder="Share your journey — what led you to this work, what you believe in, and how you guide others…" rows={5} maxLength={800} value={step1.bio} onChange={(e) => setStep1({ bio: e.target.value })} onFocus={() => setFocused('bio')} onBlur={() => setFocused(null)} required aria-required="true" minLength={30} />
         <div style={{ fontSize: '11px', color: '#8A8278', textAlign: 'right', marginTop: '4px', fontFamily: 'var(--font-inter), sans-serif' }}>{step1.bio.length}/800</div>
       </div>
 
       {/* Email + Phone row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
         <div>
-          <label style={lbl}>Email Address</label>
+          <FieldLabel htmlFor="step1-email" required={!isAuthenticated} style={lbl}>Email Address</FieldLabel>
           {isAuthenticated
-            ? <input style={{ ...iBase, background: '#FAFAF7', color: '#8A8278' }} type="email" value={user?.email ?? ''} readOnly />
-            : <input style={iStyle('em')} type="email" placeholder="maya@example.com" value={email} onChange={(e) => setEmail(e.target.value)} onFocus={() => setFocused('em')} onBlur={() => setFocused(null)} required autoComplete="email" />
+            ? <input id="step1-email" style={{ ...iBase, background: '#FAFAF7', color: '#8A8278' }} type="email" value={user?.email ?? ''} readOnly />
+            : <input id="step1-email" style={iStyle('em')} type="email" placeholder="maya@example.com" value={email} onChange={(e) => setEmail(e.target.value)} onFocus={() => setFocused('em')} onBlur={() => setFocused(null)} required aria-required="true" autoComplete="email" />
           }
         </div>
         <div>
-          <label style={lbl}>Phone Number <span style={{ textTransform: 'none', letterSpacing: 0, fontSize: '11px', fontWeight: 400 }}>(optional)</span></label>
-          <input style={iStyle('ph')} type="tel" placeholder="+1 (415) 000-0000" value={step1.phone} onChange={(e) => setStep1({ phone: e.target.value })} onFocus={() => setFocused('ph')} onBlur={() => setFocused(null)} />
+          <FieldLabel htmlFor="step1-phone" style={lbl}>Phone Number</FieldLabel>
+          <input id="step1-phone" style={iStyle('ph')} type="tel" placeholder="+1 (415) 000-0000" value={step1.phone} onChange={(e) => setStep1({ phone: e.target.value })} onFocus={() => setFocused('ph')} onBlur={() => setFocused(null)} />
         </div>
       </div>
 
       {/* Password — only for new (unauthenticated) users */}
       {!isAuthenticated && (
         <div style={{ marginBottom: '20px' }}>
-          <label style={lbl} htmlFor="onboarding-guide-password">Password</label>
+          <FieldLabel htmlFor="onboarding-guide-password" required style={lbl}>Password</FieldLabel>
           <div style={{ position: 'relative' }}>
             <input
               id="onboarding-guide-password"
@@ -306,6 +317,7 @@ export function Step1Profile() {
               onFocus={() => setFocused('pw')}
               onBlur={() => setFocused(null)}
               required
+              aria-required="true"
               minLength={10}
               maxLength={128}
               autoComplete="new-password"
@@ -328,7 +340,7 @@ export function Step1Profile() {
       )}
 
       <div style={{ marginBottom: '20px' }}>
-        <label style={lbl}>Location / City</label>
+        <FieldLabel style={lbl}>Location / City</FieldLabel>
         <LocationAutocomplete
           value={step1.location}
           onChange={(v) => setStep1({ location: v })}
@@ -340,7 +352,7 @@ export function Step1Profile() {
       </div>
 
       <div style={{ marginBottom: '20px' }}>
-        <label style={lbl}>Preferred Language(s) <span style={{ textTransform: 'none', letterSpacing: 0, fontSize: '11px', fontWeight: 400 }}>— select all that apply</span></label>
+        <FieldLabel style={lbl}>Preferred Language(s) <span style={{ textTransform: 'none', letterSpacing: 0, fontSize: '11px', fontWeight: 400 }}>— select all that apply</span></FieldLabel>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '6px' }}>
           {LANGUAGES.map(({ flag, label }) => {
             const sel = (step1.languages ?? ['English']).includes(label);
@@ -354,8 +366,8 @@ export function Step1Profile() {
       </div>
 
       <div style={{ marginBottom: '20px' }}>
-        <label style={lbl}>Website or Social Link <span style={{ textTransform: 'none', letterSpacing: 0, fontSize: '11px', fontWeight: 400 }}>(optional)</span></label>
-        <input style={iStyle('web')} type="url" placeholder="https://your-website.com or instagram.com/yourhandle" value={step1.websiteUrl} onChange={(e) => setStep1({ websiteUrl: e.target.value })} onFocus={() => setFocused('web')} onBlur={() => setFocused(null)} />
+        <FieldLabel htmlFor="step1-website" style={lbl}>Website or Social Link</FieldLabel>
+        <input id="step1-website" style={iStyle('web')} type="url" placeholder="https://your-website.com or instagram.com/yourhandle" value={step1.websiteUrl} onChange={(e) => setStep1({ websiteUrl: e.target.value })} onFocus={() => setFocused('web')} onBlur={() => setFocused(null)} />
       </div>
 
       {/* Terms — only shown for new (unauthenticated) users */}

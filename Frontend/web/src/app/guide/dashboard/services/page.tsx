@@ -8,6 +8,7 @@ import {
   C, font, formatPrice, PageHeader, Panel, Btn, EmptyState,
   ServiceTypeBadge, Modal, FormGroup, Input, TextArea, Select,
 } from '@/components/guide/dashboard-ui';
+import { FormLegend } from '@/components/forms';
 
 interface Service {
   id: string;
@@ -213,9 +214,14 @@ export default function ServicesPage() {
         onClose={() => { setShowModal(false); setEditingId(null); }}
         title={editingId ? 'Edit Service' : 'Add New Service'}
       >
+        <div style={{ marginBottom: '16px' }}>
+          <FormLegend />
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-          <FormGroup label="Service Name" full>
+          <FormGroup label="Service Name" required full>
             <Input
+              required
+              aria-required="true"
               value={form.name}
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               placeholder="e.g. 1:1 Reiki Session"
@@ -230,8 +236,8 @@ export default function ServicesPage() {
               maxLength={1000}
             />
           </FormGroup>
-          <FormGroup label="Duration">
-            <Select value={form.durationMin} onChange={e => setForm(f => ({ ...f, durationMin: e.target.value }))}>
+          <FormGroup label="Duration" required>
+            <Select required aria-required="true" value={form.durationMin} onChange={e => setForm(f => ({ ...f, durationMin: e.target.value }))}>
               <option value="30">30 min</option>
               <option value="45">45 min</option>
               <option value="60">60 min</option>
@@ -239,8 +245,10 @@ export default function ServicesPage() {
               <option value="120">2 hours</option>
             </Select>
           </FormGroup>
-          <FormGroup label="Price (USD)">
+          <FormGroup label="Price (USD)" required>
             <Input
+              required
+              aria-required="true"
               type="number"
               value={form.price}
               onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
@@ -249,8 +257,8 @@ export default function ServicesPage() {
               step="0.01"
             />
           </FormGroup>
-          <FormGroup label="Session Format" full>
-            <Select value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
+          <FormGroup label="Session Format" required full>
+            <Select required aria-required="true" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
               <option value="VIRTUAL">Online Only</option>
               <option value="IN_PERSON">In-Person Only</option>
               <option value="HYBRID">Online & In-Person</option>
