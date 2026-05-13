@@ -1,4 +1,4 @@
-import { IsArray, IsString, IsOptional, ArrayMinSize, ArrayMaxSize, ValidateNested } from 'class-validator';
+import { IsArray, IsString, IsOptional, ArrayMinSize, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -21,10 +21,9 @@ export class CategorySelectionDto {
 }
 
 export class SetCategoriesDto {
-  @ApiProperty({ type: [CategorySelectionDto], minItems: 1, maxItems: 5 })
+  @ApiProperty({ type: [CategorySelectionDto], minItems: 1 })
   @IsArray()
   @ArrayMinSize(1)
-  @ArrayMaxSize(5)
   @ValidateNested({ each: true })
   @Type(() => CategorySelectionDto)
   categories: CategorySelectionDto[];
