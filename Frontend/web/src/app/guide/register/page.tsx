@@ -10,6 +10,7 @@ import {
   PasswordStrengthMeter,
   evaluatePassword,
 } from '@/components/auth/PasswordStrengthMeter';
+import { FieldLabel, FormLegend } from '@/components/forms';
 
 const G = {
   gold:      '#E8B84B',
@@ -177,6 +178,8 @@ export default function GuideRegisterPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <FormLegend />
+
             {error && (
               <div style={{
                 background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8,
@@ -189,25 +192,25 @@ export default function GuideRegisterPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={labelStyle}>First Name</label>
-                <input style={inputStyle} type="text" placeholder="Maya" value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)} required />
+                <FieldLabel htmlFor="guide-first-name" required style={labelStyle}>First Name</FieldLabel>
+                <input id="guide-first-name" style={inputStyle} type="text" placeholder="Maya" value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)} required aria-required="true" />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={labelStyle}>Last Name</label>
-                <input style={inputStyle} type="text" placeholder="Rosenberg" value={lastName}
-                  onChange={(e) => setLastName(e.target.value)} required />
+                <FieldLabel htmlFor="guide-last-name" required style={labelStyle}>Last Name</FieldLabel>
+                <input id="guide-last-name" style={inputStyle} type="text" placeholder="Rosenberg" value={lastName}
+                  onChange={(e) => setLastName(e.target.value)} required aria-required="true" />
               </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={labelStyle}>Email Address</label>
-              <input style={inputStyle} type="email" placeholder="maya@example.com" value={email}
-                onChange={(e) => setEmail(e.target.value)} required />
+              <FieldLabel htmlFor="guide-email" required style={labelStyle}>Email Address</FieldLabel>
+              <input id="guide-email" style={inputStyle} type="email" placeholder="maya@example.com" value={email}
+                onChange={(e) => setEmail(e.target.value)} required aria-required="true" />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={labelStyle} htmlFor="guide-password">Password</label>
+              <FieldLabel htmlFor="guide-password" required style={labelStyle}>Password</FieldLabel>
               <div style={{ position: 'relative' }}>
                 <input
                   id="guide-password"
@@ -217,6 +220,7 @@ export default function GuideRegisterPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  aria-required="true"
                   minLength={10}
                   maxLength={128}
                   autoComplete="new-password"

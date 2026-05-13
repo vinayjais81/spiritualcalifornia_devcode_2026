@@ -11,6 +11,7 @@ import {
   PasswordStrengthMeter,
   evaluatePassword,
 } from '@/components/auth/PasswordStrengthMeter';
+import { FieldLabel, FormLegend } from '@/components/forms';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const G = {
@@ -480,6 +481,12 @@ function RegisterContent() {
             )}
 
             <form onSubmit={isGoogleUser ? (e) => { e.preventDefault(); setStep(2); } : handleRegister}>
+              {!isGoogleUser && (
+                <div style={{ marginBottom: 20 }}>
+                  <FormLegend />
+                </div>
+              )}
+
               {error && (
                 <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '12px 16px', fontSize: 13, color: '#DC2626', marginBottom: 20, fontFamily: 'var(--font-inter), sans-serif' }}>
                   {error}
@@ -489,44 +496,47 @@ function RegisterContent() {
               {/* Name row */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={labelStyle}>First Name</label>
+                  <FieldLabel htmlFor="reg-first-name" required={!isGoogleUser} style={labelStyle}>First Name</FieldLabel>
                   <input
+                    id="reg-first-name"
                     style={isGoogleUser ? inputReadOnly : inputStyle}
                     type="text" placeholder="Maya"
                     value={firstName} onChange={(e) => setFirstName(e.target.value)}
-                    readOnly={isGoogleUser} required
+                    readOnly={isGoogleUser} required aria-required="true"
                   />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={labelStyle}>Last Name</label>
+                  <FieldLabel htmlFor="reg-last-name" required={!isGoogleUser} style={labelStyle}>Last Name</FieldLabel>
                   <input
+                    id="reg-last-name"
                     style={isGoogleUser ? inputReadOnly : inputStyle}
                     type="text" placeholder="Rosenberg"
                     value={lastName} onChange={(e) => setLastName(e.target.value)}
-                    readOnly={isGoogleUser} required
+                    readOnly={isGoogleUser} required aria-required="true"
                   />
                 </div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
-                <label style={labelStyle}>Email Address</label>
+                <FieldLabel htmlFor="reg-email" required={!isGoogleUser} style={labelStyle}>Email Address</FieldLabel>
                 <input
+                  id="reg-email"
                   style={isGoogleUser ? inputReadOnly : inputStyle}
                   type="email" placeholder="maya@example.com"
                   value={email} onChange={(e) => setEmail(e.target.value)}
-                  readOnly={isGoogleUser} required
+                  readOnly={isGoogleUser} required aria-required="true"
                 />
               </div>
 
               {!isGoogleUser && (
                 <>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
-                    <label style={labelStyle}>Phone Number <span style={{ fontSize: 9, color: G.goldLight, textTransform: 'none', marginLeft: 4 }}>optional</span></label>
-                    <input style={inputStyle} type="tel" placeholder="+1 (415) 000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                    <FieldLabel htmlFor="reg-phone" style={labelStyle}>Phone Number</FieldLabel>
+                    <input id="reg-phone" style={inputStyle} type="tel" placeholder="+1 (415) 000-0000" value={phone} onChange={(e) => setPhone(e.target.value)} />
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
-                    <label style={labelStyle}>Location</label>
+                    <FieldLabel style={labelStyle}>Location</FieldLabel>
                     <LocationAutocomplete
                       value={location}
                       onChange={setLocation}
@@ -537,7 +547,7 @@ function RegisterContent() {
 
                   {/* Languages */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
-                    <label style={labelStyle}>Preferred Language(s) <span style={{ fontSize: 11, color: G.warmGray, fontWeight: 400, textTransform: 'none' }}>Select all that apply</span></label>
+                    <FieldLabel style={labelStyle}>Preferred Language(s) <span style={{ fontSize: 11, color: G.warmGray, fontWeight: 400, textTransform: 'none' }}>Select all that apply</span></FieldLabel>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 6 }}>
                       {LANGUAGES.map(({ flag, label, code }) => (
                         <div key={code} onClick={() => toggleLang(code)} style={{
@@ -553,7 +563,7 @@ function RegisterContent() {
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
-                    <label style={labelStyle} htmlFor="seeker-password">Password</label>
+                    <FieldLabel htmlFor="seeker-password" required style={labelStyle}>Password</FieldLabel>
                     <div style={{ position: 'relative' }}>
                       <input
                         id="seeker-password"
@@ -563,6 +573,7 @@ function RegisterContent() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        aria-required="true"
                         minLength={10}
                         maxLength={128}
                         autoComplete="new-password"

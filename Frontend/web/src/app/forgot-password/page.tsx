@@ -4,6 +4,7 @@ import { useState, FormEvent } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { api } from '@/lib/api';
+import { FieldLabel, FormLegend } from '@/components/forms';
 
 const G = {
   gold:     '#E8B84B',
@@ -88,6 +89,8 @@ export default function ForgotPasswordPage() {
               </div>
 
               <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                <FormLegend />
+
                 {error && (
                   <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '12px 16px', fontFamily: 'var(--font-inter), sans-serif', fontSize: 13, color: '#DC2626' }}>
                     {error}
@@ -95,15 +98,17 @@ export default function ForgotPasswordPage() {
                 )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  <label style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: G.warmGray, fontWeight: 500 }}>
+                  <FieldLabel htmlFor="email" required style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: G.warmGray, fontWeight: 500 }}>
                     Email Address
-                  </label>
+                  </FieldLabel>
                   <input
+                    id="email"
                     type="email"
                     placeholder="maya@example.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    aria-required="true"
                     autoComplete="email"
                     style={{
                       background: G.white, border: `1px solid rgba(232,184,75,0.3)`,

@@ -7,8 +7,8 @@ import { api } from '@/lib/api';
 import { AuthResponse } from '@/types/auth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { FieldLabel, FormLegend } from '@/components/forms';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -58,8 +58,10 @@ export default function LoginPage() {
           <CardContent className="p-8">
             <h2 className="mb-6 text-xl font-semibold text-gray-900">Sign in to your account</h2>
             <form onSubmit={handleLogin} className="space-y-5">
+              <FormLegend />
+
               <div className="space-y-1.5">
-                <Label htmlFor="email">Email address</Label>
+                <FieldLabel htmlFor="email" required className="text-sm font-medium leading-none">Email address</FieldLabel>
                 <Input
                   id="email"
                   type="email"
@@ -67,11 +69,12 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  aria-required="true"
                   autoComplete="email"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="password">Password</Label>
+                <FieldLabel htmlFor="password" required className="text-sm font-medium leading-none">Password</FieldLabel>
                 <Input
                   id="password"
                   type="password"
@@ -79,6 +82,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  aria-required="true"
                   autoComplete="current-password"
                 />
               </div>

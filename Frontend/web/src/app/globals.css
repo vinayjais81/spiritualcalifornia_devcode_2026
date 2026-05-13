@@ -14,6 +14,10 @@
   --color-brand-orange: #F07820;
   --color-green:        #5A8A6A;
 
+  /* Semantic — validation / errors. Distinct from --color-destructive
+     (delete actions) so the meaning of red is unambiguous in code. */
+  --color-error:        #C0392B;
+
   /* Font families */
   --font-cormorant: var(--font-cormorant-garamond);
   --font-inter:     var(--font-inter);

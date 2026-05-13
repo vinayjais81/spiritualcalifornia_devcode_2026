@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { api } from '@/lib/api';
 import { PasswordStrengthMeter, evaluatePassword } from '@/components/auth/PasswordStrengthMeter';
+import { FieldLabel, FormLegend } from '@/components/forms';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -189,9 +190,13 @@ function ResetPasswordContent() {
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <FormLegend />
+
           {/* New Password */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label
+            <FieldLabel
+              htmlFor="reset-password-input"
+              required
               style={{
                 fontFamily: 'var(--font-inter), sans-serif',
                 fontSize: '12px',
@@ -201,8 +206,8 @@ function ResetPasswordContent() {
                 color: '#8A8278',
               }}
             >
-              New Password <span style={{ color: '#E8B84B' }}>*</span>
-            </label>
+              New Password
+            </FieldLabel>
             <div style={{ position: 'relative' }}>
               <input
                 id="reset-password-input"
@@ -211,6 +216,7 @@ function ResetPasswordContent() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="At least 10 characters with mixed case, number, and symbol"
                 required
+                aria-required="true"
                 minLength={10}
                 maxLength={128}
                 autoComplete="new-password"
@@ -256,7 +262,9 @@ function ResetPasswordContent() {
 
           {/* Confirm Password */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label
+            <FieldLabel
+              htmlFor="reset-confirm-input"
+              required
               style={{
                 fontFamily: 'var(--font-inter), sans-serif',
                 fontSize: '12px',
@@ -266,14 +274,16 @@ function ResetPasswordContent() {
                 color: '#8A8278',
               }}
             >
-              Confirm Password <span style={{ color: '#E8B84B' }}>*</span>
-            </label>
+              Confirm Password
+            </FieldLabel>
             <input
+              id="reset-confirm-input"
               type={showPass ? 'text' : 'password'}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               placeholder="Repeat your password"
               required
+              aria-required="true"
               onFocus={() => setFocused('confirm')}
               onBlur={() => setFocused(null)}
               style={inputStyle('confirm')}

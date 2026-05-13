@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
+import { FieldLabel, FormLegend } from '@/components/forms';
 
 const G = {
   gold:      '#E8B84B',
@@ -180,6 +181,8 @@ function SignInContent() {
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <FormLegend />
+
             {error && (
               <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '12px 16px', fontFamily: 'var(--font-inter), sans-serif', fontSize: 13, color: '#DC2626' }}>
                 {error}
@@ -187,15 +190,17 @@ function SignInContent() {
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: G.warmGray, fontWeight: 500 }}>
+              <FieldLabel htmlFor="signin-email" required style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: G.warmGray, fontWeight: 500 }}>
                 Email Address
-              </label>
+              </FieldLabel>
               <input
+                id="signin-email"
                 type="email"
                 placeholder="maya@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                aria-required="true"
                 autoComplete="email"
                 style={inputStyle}
               />
@@ -203,20 +208,22 @@ function SignInContent() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: G.warmGray, fontWeight: 500 }}>
+                <FieldLabel htmlFor="signin-password" required style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: G.warmGray, fontWeight: 500 }}>
                   Password
-                </label>
+                </FieldLabel>
                 <Link href="/forgot-password" style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 12, color: G.gold, textDecoration: 'none' }}>
                   Forgot password?
                 </Link>
               </div>
               <div style={{ position: 'relative' }}>
                 <input
+                  id="signin-password"
                   type={showPass ? 'text' : 'password'}
                   placeholder="Your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  aria-required="true"
                   autoComplete="current-password"
                   style={{ ...inputStyle, paddingRight: 44 }}
                 />
