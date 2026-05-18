@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 // Note: PrismaService not needed in upload service — S3 only
-import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectsCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
 
@@ -106,5 +106,60 @@ export class UploadService {
     });
 
     return getSignedUrl(this.s3!, command, { expiresIn: expiresInSeconds });
+  }
+
+  /**
+   * Best-effort batch delete of S3 objects by key. Used by the archive
+   * cleanup cron to purge credential PDFs + avatars after the 90-day grace
+   * window. Silently no-ops in stub mode and absorbs per-key errors so a
+   * single missing object never blocks the rest of the cascade.
+   */
+  async deleteObjects(keys: string[]): Promise<{ deleted: number; errors: string[] }> {
+    if (this.isStub) {
+      this.logger.warn(`[STUB] deleteObjects no-op for ${keys.length} keys`);
+      return { deleted: keys.length, errors: [] };
+    }
+    if (keys.length === 0) return { deleted: 0, errors: [] };
+
+    // S3 DeleteObjects caps at 1000 keys/call; chunk to be safe.
+    const errors: string[] = [];
+    let deleted = 0;
+    for (let i = 0; i < keys.length; i += 1000) {
+      const chunk = keys.slice(i, i + 1000);
+      try {
+        const res = await this.s3!.send(
+          new DeleteObjectsCommand({
+            Bucket: this.bucket,
+            Delete: { Objects: chunk.map((Key) => ({ Key })), Quiet: true },
+          }),
+        );
+        deleted += chunk.length - (res.Errors?.length ?? 0);
+        if (res.Errors?.length) {
+          for (const e of res.Errors) {
+            errors.push(`${e.Key}: ${e.Message ?? 'unknown'}`);
+          }
+        }
+      } catch (err: any) {
+        errors.push(`chunk@${i}: ${err.message}`);
+      }
+    }
+    this.logger.log(`[S3] deleteObjects: ${deleted}/${keys.length} ok, ${errors.length} errors`);
+    return { deleted, errors };
+  }
+
+  /**
+   * Extract the S3 object key from a stored documentUrl (CloudFront or S3
+   * direct). Returns null for empty/malformed URLs. Pure helper — useful in
+   * services that need to map a public URL back to a bucket key.
+   */
+  extractS3Key(documentUrl: string | null | undefined): string | null {
+    if (!documentUrl) return null;
+    try {
+      const url = new URL(documentUrl);
+      const key = url.pathname.replace(/^\/+/, '');
+      return key.length > 0 ? key : null;
+    } catch {
+      return null;
+    }
   }
 }

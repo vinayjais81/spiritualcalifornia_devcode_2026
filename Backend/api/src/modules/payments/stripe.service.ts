@@ -149,6 +149,38 @@ export class StripeService {
     return accountLink.url;
   }
 
+  /**
+   * Best-effort deletion of a Connect account. Stripe only allows delete on
+   * Custom accounts (and Express accounts in some test scenarios) — Express
+   * accounts in live mode usually need to be rejected instead. We try delete
+   * first, fall back to reject, and swallow the final error so a Stripe-side
+   * cleanup failure doesn't block the rest of the hard-delete cascade.
+   */
+  async deleteOrRejectConnectAccount(accountId: string): Promise<{
+    method: 'deleted' | 'rejected' | 'failed';
+    error?: string;
+  }> {
+    try {
+      await this.stripe.accounts.del(accountId);
+      this.logger.log(`[Stripe] Deleted Connect account: ${accountId}`);
+      return { method: 'deleted' };
+    } catch (delErr: any) {
+      this.logger.warn(
+        `[Stripe] Could not delete ${accountId} (${delErr.message}); attempting reject`,
+      );
+      try {
+        await this.stripe.accounts.reject(accountId, { reason: 'other' });
+        this.logger.log(`[Stripe] Rejected Connect account: ${accountId}`);
+        return { method: 'rejected' };
+      } catch (rejErr: any) {
+        this.logger.error(
+          `[Stripe] Failed to delete or reject ${accountId}: ${rejErr.message}`,
+        );
+        return { method: 'failed', error: rejErr.message };
+      }
+    }
+  }
+
   async getConnectAccountStatus(accountId: string): Promise<{
     chargesEnabled: boolean;
     payoutsEnabled: boolean;

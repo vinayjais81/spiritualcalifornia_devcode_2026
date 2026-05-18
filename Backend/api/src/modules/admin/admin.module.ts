@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
+import { ArchiveCleanupQueue } from './archive-cleanup.queue';
 import { UsersModule } from '../users/users.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -10,7 +11,7 @@ import { UploadModule } from '../upload/upload.module';
 @Module({
   imports: [UsersModule, PaymentsModule, NotificationsModule, VerificationModule, UploadModule],
   controllers: [AdminController],
-  providers: [AdminService],
+  providers: [AdminService, ArchiveCleanupQueue],
   exports: [AdminService],
 })
 export class AdminModule {}

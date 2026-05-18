@@ -287,6 +287,34 @@ export class AdminController {
     return this.adminService.setFeatured(guideId, !!body.isFeatured);
   }
 
+  @Post('guides/:guideId/archive')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Archive a pending guide registration. Frees the email for re-registration, strips the GUIDE role, and queues external resources (Stripe / S3) for cleanup in 90 days. Pending-only — never call on approved guides.',
+  })
+  archivePendingGuide(
+    @Param('guideId') guideId: string,
+    @Body() body: ReasonDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.adminService.archivePendingGuide({
+      guideId,
+      actorUserId: user.id,
+      reason: body.reason,
+    });
+  }
+
+  @Post('guides/cleanup-archived')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Manually trigger the archived-guide hard-delete cron (purges Stripe accounts + S3 documents for rows older than 90 days). Daily cron does this automatically — this endpoint is for ops escalation.',
+  })
+  cleanupArchivedGuides() {
+    return this.adminService.hardDeleteExpiredArchivedGuides();
+  }
+
   // ─── Verification Queue ───────────────────────────────────────────────────
 
   @Get('verification')

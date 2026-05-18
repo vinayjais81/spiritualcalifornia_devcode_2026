@@ -197,6 +197,11 @@ model User {
   isActive            Boolean   @default(true)
   isBanned            Boolean   @default(false)
   bannedReason        String?
+  // Set when an admin archives a pending guide registration. The email is
+  // simultaneously renamed with an `.archived.<id>@scarchive.local` suffix
+  // so the original email is freed for re-registration. Not used for
+  // SEEKER-side archival yet.
+  archivedAt          DateTime?
   googleId            String?   @unique
   emailVerifyToken    String?
   emailVerifyExpiry   DateTime?
@@ -345,6 +350,13 @@ model GuideProfile {
   claimToken           String?            @unique
   claimTokenExpiry     DateTime?
   scrapedSourceUrl     String?
+  // Admin archive (soft delete) for pending guide registrations. Rows with
+  // archivedAt set are hidden from /admin/guides and /admin/verification.
+  // A daily cron hard-deletes rows older than 90 days (revoking the Stripe
+  // Connect account and erasing S3 documents along the way).
+  archivedAt           DateTime?
+  archivedBy           String?            // User.id of the admin who archived
+  archivedReason       String?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
@@ -366,7 +378,48 @@ model GuideProfile {
 
   @@index([slug])
   @@index([isPublished, isVerified])
+  @@index([archivedAt])
   @@map("guide_profiles")
+}
+
+// ─────────────────────────────────────────────
+// ARCHIVED GUIDE REGISTRATIONS (Audit trail for admin "Remove" action)
+// ─────────────────────────────────────────────
+//
+// Written when an admin archives a pending guide. Captures enough context
+// to (a) audit who removed whom and why, and (b) let the 90-day cleanup
+// cron erase external resources (Stripe Connect account, S3 documents)
+// without having to dig through the suffixed/soft-deleted User row.
+//
+// originalEmail is kept in plaintext for admin moderation lookups (e.g.
+// "did we already remove this person?"). If a repeat offender re-registers,
+// this row is the breadcrumb that flags them.
+model ArchivedGuideRegistration {
+  id                 String   @id @default(cuid())
+  // FK to the renamed/soft-deleted User row — null after the 90-day hard
+  // delete cron runs, so this audit row outlives the User.
+  userId             String?
+  guideProfileId     String?
+  originalEmail      String
+  displayName        String?
+  hadStripeAccount   Boolean  @default(false)
+  stripeAccountId    String?
+  credentialS3Keys   String[]  @default([])
+  avatarS3Key        String?
+  personaInquiryId   String?
+  reason             String
+  archivedBy         String   // User.id of the archiving admin
+  archivedAt         DateTime @default(now())
+  // Set when the daily cleanup cron has fully purged external resources
+  // and hard-deleted the User row. Null while the row is still in the
+  // 90-day soft-delete window.
+  hardDeletedAt      DateTime?
+  hardDeleteNotes    String?
+
+  @@index([originalEmail])
+  @@index([archivedAt])
+  @@index([hardDeletedAt])
+  @@map("archived_guide_registrations")
 }
 
 model GuideMedia {
