@@ -8,7 +8,19 @@ interface Props {
   countryFlag?: string;   // e.g. '🇳🇵'
   countryName?: string;   // e.g. 'Nepal'
   priceFrom?: number;     // Displayed in the gold chip
-  minHeight?: number;     // px — default 420
+  /**
+   * CSS aspect-ratio string for the carousel box. Defaults to '3 / 2'
+   * (matches the soul-travels landscape design). Use a string like
+   * '16 / 9' or '4 / 3' for other surfaces.
+   *
+   * Earlier versions of this component used `minHeight` instead, which
+   * is a *lower* bound — portrait-shaped uploads (e.g. phone shots)
+   * blew past it and stretched the card to absurd heights. Switching
+   * to aspect-ratio is what actually lets `object-fit: cover` do its
+   * job: the box has a fixed shape, the image fills it, anything that
+   * overhangs gets cropped.
+   */
+  ratio?: string;
 }
 
 /**
@@ -16,6 +28,9 @@ interface Props {
  * - Slide-based fade/slide transition with arrows + dots
  * - Top-left country badge (flag + name)
  * - Bottom-right gold "From $X" chip
+ *
+ * Image dimensions are controlled by `ratio` (see prop docs); the
+ * carousel never grows or shrinks based on individual upload sizes.
  */
 export function TourImageCarousel({
   images,
@@ -23,7 +38,7 @@ export function TourImageCarousel({
   countryFlag,
   countryName,
   priceFrom,
-  minHeight = 420,
+  ratio = '3 / 2',
 }: Props) {
   const [current, setCurrent] = useState(0);
   const slides = images.length > 0 ? images : ['/images/hero3.jpg'];
@@ -31,7 +46,7 @@ export function TourImageCarousel({
   const go = (idx: number) => setCurrent((idx + total) % total);
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden', minHeight }}>
+    <div style={{ position: 'relative', overflow: 'hidden', width: '100%', aspectRatio: ratio }}>
       {/* Track */}
       <div
         style={{
@@ -51,7 +66,6 @@ export function TourImageCarousel({
                 height: '100%',
                 objectFit: 'cover',
                 display: 'block',
-                minHeight,
               }}
             />
           </div>

@@ -419,7 +419,7 @@ function TourCard({ tour }: { tour: Tour }) {
           countryFlag={countryFlag(tour.country)}
           countryName={tour.country || undefined}
           priceFrom={Number(tour.basePrice)}
-          minHeight={420}
+          ratio="3 / 2"
         />
 
         <div style={{ padding: '36px 40px', display: 'flex', flexDirection: 'column' }}>

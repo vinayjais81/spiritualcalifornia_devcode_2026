@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { MiniCalendar } from '@/components/public/shared/MiniCalendar';
+import { CoverImage } from '@/components/public/shared/CoverImage';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -347,20 +348,13 @@ function EventCard({ event }: { event: EventItem }) {
       }}
     >
       <div style={{ position: 'relative', overflow: 'hidden' }}>
-        <img
-          className="event-img"
-          src={img}
-          alt={event.title}
-          style={{
-            width: '100%', height: '100%', objectFit: 'cover', display: 'block',
-            minHeight: 200,
-          }}
-        />
+        <CoverImage src={img} alt={event.title} ratio="4 / 3" />
         <div style={{
           position: 'absolute', top: 14, left: 14,
           fontSize: 10, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase',
           padding: '5px 12px', borderRadius: 12,
           background: badge.bg, color: badge.color,
+          zIndex: 1,
         }}>
           {badge.label}
         </div>
