@@ -52,4 +52,11 @@ export class CreateEventDto {
   @IsString()
   @IsOptional()
   timezone?: string;
+
+  /** S3/CloudFront URL produced by the pre-signed upload flow */
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  @MaxLength(2048)
+  coverImageUrl?: string;
 }

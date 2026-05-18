@@ -51,6 +51,7 @@ export class EventsService {
         timezone: dto.timezone ?? guide.timezone ?? 'America/Los_Angeles',
         location: dto.location,
         description: dto.description,
+        coverImageUrl: dto.coverImageUrl,
         isPublished: false,
       },
     });
