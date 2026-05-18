@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { parsePaymentsGateError } from '@/lib/payments-gate';
 import { toast } from 'sonner';
-import { C, font, formatPrice, PageHeader, Panel, Btn, EmptyState, EventDateBox, Modal, FormGroup, Input, Select } from '@/components/guide/dashboard-ui';
+import { C, font, formatPrice, PageHeader, Panel, Btn, EmptyState, EventDateBox, Modal, FormGroup, Input, Select, StatusBadge } from '@/components/guide/dashboard-ui';
 import { RichTextEditor } from '@/components/guide/RichTextEditor';
 import { FormLegend } from '@/components/forms';
 
@@ -152,6 +152,19 @@ export default function EventsPage() {
     } catch { toast.error('Failed to delete'); }
   };
 
+  const togglePublish = async (ev: GuideEvent) => {
+    try {
+      await api.put(`/events/${ev.id}`, { isPublished: !ev.isPublished });
+      setEvents((es) => es.map((x) => (x.id === ev.id ? { ...x, isPublished: !ev.isPublished } : x)));
+      toast.success(ev.isPublished ? 'Event unpublished' : 'Event published');
+    } catch (err: any) {
+      // Backend opens PaymentsGateModal via axios interceptor on the structured
+      // 403 — silence the toast so the user only sees the modal.
+      if (parsePaymentsGateError(err)) return;
+      toast.error(err?.response?.data?.message || 'Failed to update');
+    }
+  };
+
   return (
     <div>
       <PageHeader title="Events" subtitle="Create and manage public events that appear on your profile and the events directory.">
@@ -159,15 +172,30 @@ export default function EventsPage() {
       </PageHeader>
       <Panel title="Your Events" icon="📅">
         {events.length === 0 ? <EmptyState message="No events yet." /> : events.map(ev => (
-          <div key={ev.id} style={{ display: 'grid', gridTemplateColumns: '80px 1fr auto 36px', gap: '14px', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
+          <div key={ev.id} style={{ display: 'grid', gridTemplateColumns: '80px 1fr auto auto auto 36px', gap: '12px', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
             <EventDateBox startTime={ev.startTime} />
             <div>
-              <div style={{ fontFamily: font, fontSize: '14px', fontWeight: 500, color: C.charcoal }}>{ev.title}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ fontFamily: font, fontSize: '14px', fontWeight: 500, color: C.charcoal }}>{ev.title}</div>
+                {ev.isCancelled && (
+                  <span style={{ padding: '2px 8px', borderRadius: 20, fontFamily: font, fontSize: 11, background: '#FFEBEE', color: '#C62828', border: '1px solid #FFCDD2' }}>
+                    Cancelled
+                  </span>
+                )}
+              </div>
               <div style={{ fontFamily: font, fontSize: '12px', color: C.warmGray, marginTop: '2px' }}>
                 {ev.location || 'Location TBD'} · {ev.ticketTiers?.[0] ? `${formatPrice(ev.ticketTiers[0].price)}/person` : 'Free'}
-                {ev.isCancelled && <span style={{ color: C.red, marginLeft: '8px' }}>· Cancelled</span>}
               </div>
             </div>
+            <StatusBadge published={ev.isPublished && !ev.isCancelled} />
+            <Btn
+              variant={ev.isPublished ? 'secondary' : 'green'}
+              size="sm"
+              onClick={() => togglePublish(ev)}
+              disabled={ev.isCancelled}
+            >
+              {ev.isPublished ? '⏸ Unpublish' : '▶ Publish'}
+            </Btn>
             <Btn variant="secondary" size="sm" onClick={() => openEdit(ev)}>Edit</Btn>
             <button onClick={() => remove(ev.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.warmGray, fontSize: '18px' }}>×</button>
           </div>
