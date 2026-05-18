@@ -126,6 +126,33 @@ export class EmailService {
     `);
   }
 
+  // ─── Admin Password Reset Notification ─────────────────────────────────────
+  //
+  // Sent when an admin sets a new password directly for a user (not when the
+  // user resets via the email-link flow). The user should be told this
+  // happened so they can detect unauthorized resets and rotate the password.
+
+  async sendAdminPasswordChange(
+    to: string,
+    data: { firstName: string; adminEmail: string; reason: string },
+  ) {
+    return this.send(
+      to,
+      'Your password was changed by an administrator',
+      `
+      <div style="font-family: 'Inter', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
+        <div style="text-align: center; margin-bottom: 24px;"><div style="font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #E8B84B;">Spiritual California</div></div>
+        <h1 style="font-family: Georgia, serif; font-size: 24px; font-weight: 400; color: #3A3530; text-align: center; margin-bottom: 16px;">Hi ${data.firstName},</h1>
+        <p style="color: #3A3530; font-size: 14px; line-height: 22px;">An administrator (<strong>${data.adminEmail}</strong>) has set a new password on your Spiritual California account.</p>
+        <p style="color: #3A3530; font-size: 14px; line-height: 22px;"><strong>Reason given:</strong> ${data.reason}</p>
+        <p style="color: #3A3530; font-size: 14px; line-height: 22px;">All existing sessions have been signed out. You'll need the new password to sign back in.</p>
+        <p style="color: #3A3530; font-size: 14px; line-height: 22px;"><strong>Didn't request this?</strong> Reply to this email immediately — your account may be at risk.</p>
+        <div style="text-align: center; margin-top: 24px;"><a href="${this.config.get('FRONTEND_URL')}/login" style="display: inline-block; padding: 14px 32px; background: #E8B84B; color: #3A3530; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;">Sign In</a></div>
+      </div>
+    `,
+    );
+  }
+
   // ─── Verification Approved ─────────────────────────────────────────────────
 
   async sendVerificationApproved(to: string, guideName: string) {

@@ -27,6 +27,7 @@ import { BanUserDto } from './dto/ban-user.dto';
 import { UpdateRolesDto } from './dto/update-roles.dto';
 import { RejectGuideDto } from './dto/reject-guide.dto';
 import { AdminCreatePostDto, AdminUpdatePostDto } from './dto/admin-blog.dto';
+import { SetUserPasswordDto } from './dto/set-user-password.dto';
 import { VerificationStatus, TourBookingStatus, BookingStatus, PayoutStatus, EarningCategory } from '@prisma/client';
 import { PaymentsService } from '../payments/payments.service';
 import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.decorator';
@@ -262,6 +263,25 @@ export class AdminController {
   @ApiOperation({ summary: 'Set user roles (replaces all existing roles)' })
   setUserRoles(@Param('id') id: string, @Body() dto: UpdateRolesDto) {
     return this.adminService.setUserRoles(id, dto.roles);
+  }
+
+  @Post('users/:id/password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Set a user\'s password directly. Revokes all active sessions, writes an audit log, and emails the affected user. ADMIN cannot target another ADMIN/SUPER_ADMIN — SUPER_ADMIN is required for that. Nobody can set their own password via this endpoint.',
+  })
+  setUserPassword(
+    @Param('id') id: string,
+    @Body() dto: SetUserPasswordDto,
+    @CurrentUser() actor: CurrentUserData,
+  ) {
+    return this.adminService.setUserPassword({
+      targetUserId: id,
+      actor: { id: actor.id, roles: actor.roles, email: actor.email },
+      newPassword: dto.newPassword,
+      reason: dto.reason,
+    });
   }
 
   // ─── Guides ───────────────────────────────────────────────────────────────

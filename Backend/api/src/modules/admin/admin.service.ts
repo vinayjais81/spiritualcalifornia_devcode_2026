@@ -2,15 +2,19 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../database/prisma.service';
 import { Role, VerificationStatus, PaymentStatus, BookingStatus, TourBookingStatus, PayoutStatus } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from '../notifications/email.service';
 import { LedgerService } from '../payments/ledger.service';
 import { VerificationService } from '../verification/verification.service';
 import { UploadService } from '../upload/upload.service';
 import { StripeService } from '../payments/stripe.service';
+import { checkPasswordPolicy } from '../../common/validators/is-strong-password.validator';
 
 @Injectable()
 export class AdminService {
@@ -22,6 +26,7 @@ export class AdminService {
     private readonly verification: VerificationService,
     private readonly upload: UploadService,
     private readonly stripe: StripeService,
+    private readonly email: EmailService,
   ) {}
 
   /**
@@ -265,6 +270,124 @@ export class AdminService {
       where: { id: userId },
       select: { id: true, roles: true },
     });
+  }
+
+  // ─── Admin-set user password ──────────────────────────────────────────────
+  //
+  // Direct password set: admin types a new password, system hashes it and
+  // overwrites passwordHash. Use sparingly — this is an impersonation vector
+  // until the user logs in and rotates the password. Safety rails:
+  //   1. Role-gate: ADMIN can reset SEEKER + GUIDE only. ADMIN/SUPER_ADMIN
+  //      targets require SUPER_ADMIN actor. Nobody can reset themselves via
+  //      this path (use /auth/change-password instead).
+  //   2. Existing strength policy: handled by SetUserPasswordDto +
+  //      assertPasswordNotPersonal below (mirrors auth.service rules so a
+  //      target's name/email can't end up in their new password).
+  //   3. Revoke ALL refresh tokens — any open sessions die immediately.
+  //   4. Clear pending password-reset tokens (the new password should be
+  //      the only working credential).
+  //   5. AuditLog row with actor + reason; the target user is also emailed.
+
+  async setUserPassword(params: {
+    targetUserId: string;
+    actor: { id: string; roles: string[]; email: string };
+    newPassword: string;
+    reason: string;
+  }) {
+    const { targetUserId, actor, newPassword, reason } = params;
+
+    if (targetUserId === actor.id) {
+      throw new BadRequestException(
+        'Use /auth/change-password to update your own password.',
+      );
+    }
+
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+      include: { roles: true },
+    });
+    if (!target) throw new NotFoundException('User not found');
+
+    // Role-gate: only SUPER_ADMIN may reset another admin's password.
+    const targetIsAdminish = target.roles.some(
+      (r) => r.role === Role.ADMIN || r.role === Role.SUPER_ADMIN,
+    );
+    const actorIsSuperAdmin = actor.roles.includes(Role.SUPER_ADMIN);
+    if (targetIsAdminish && !actorIsSuperAdmin) {
+      throw new ForbiddenException(
+        'Only a SUPER_ADMIN can reset another administrator\'s password.',
+      );
+    }
+
+    // Re-run the strength check defensively (DTO already enforces this, but
+    // belt-and-suspenders matters for an impersonation vector).
+    const policy = checkPasswordPolicy(newPassword);
+    if (!policy.valid) {
+      throw new BadRequestException(policy.errors.join(' '));
+    }
+
+    // Cross-field: password must not contain the TARGET's name/email. The
+    // DTO can't enforce this because it doesn't know who the target is.
+    const lower = newPassword.toLowerCase();
+    const localPart = target.email.split('@')[0]?.toLowerCase() ?? '';
+    const personalCandidates = [
+      localPart,
+      target.firstName.toLowerCase(),
+      target.lastName.toLowerCase(),
+    ].filter((s) => s.length >= 4);
+    for (const candidate of personalCandidates) {
+      if (lower.includes(candidate)) {
+        throw new BadRequestException(
+          'Password cannot contain the user\'s name or email.',
+        );
+      }
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: targetUserId },
+        data: {
+          passwordHash,
+          // Clear any in-flight reset token so the new password is the only
+          // credential that works.
+          passwordResetToken: null,
+          passwordResetExpiry: null,
+        },
+      }),
+      this.prisma.refreshToken.updateMany({
+        where: { userId: targetUserId, isRevoked: false },
+        data: { isRevoked: true, revokedAt: new Date() },
+      }),
+      this.prisma.auditLog.create({
+        data: {
+          userId: actor.id,
+          action: 'admin.password.set',
+          entity: 'User',
+          entityId: targetUserId,
+          newValue: {
+            reason,
+            targetEmail: target.email,
+            actorEmail: actor.email,
+          },
+        },
+      }),
+    ]);
+
+    // Fire-and-forget the notification — failures must NOT roll back the
+    // password change. (EmailService.send already swallows errors.)
+    await this.email.sendAdminPasswordChange(target.email, {
+      firstName: target.firstName,
+      adminEmail: actor.email,
+      reason,
+    });
+
+    return {
+      userId: targetUserId,
+      passwordChangedAt: new Date(),
+      sessionsRevoked: true,
+    };
   }
 
   // ─── Guides ───────────────────────────────────────────────────────────────
