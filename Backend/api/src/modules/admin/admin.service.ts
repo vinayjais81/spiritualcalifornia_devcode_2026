@@ -1456,6 +1456,106 @@ export class AdminService {
     return { updated: rows.length };
   }
 
+  // ─── Products (cross-guide catalog admin) ─────────────────────────────────
+
+  async getProducts(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    status?: 'active' | 'inactive';
+    type?: 'DIGITAL' | 'PHYSICAL';
+    sortBy?: 'sortOrder' | 'name' | 'price' | 'createdAt';
+    sortDir?: 'asc' | 'desc';
+  }) {
+    const { page, limit, search, status, type, sortBy = 'sortOrder', sortDir = 'asc' } = params;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (status === 'active') where.isActive = true;
+    if (status === 'inactive') where.isActive = false;
+    if (type === 'DIGITAL' || type === 'PHYSICAL') where.type = type;
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { guide: { displayName: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const orderBy: any =
+      sortBy === 'name'
+        ? [{ name: sortDir }]
+        : sortBy === 'price'
+          ? [{ price: sortDir }]
+          : sortBy === 'createdAt'
+            ? [{ createdAt: sortDir }]
+            : [{ sortOrder: 'asc' }, { createdAt: 'desc' }];
+
+    const [products, total] = await Promise.all([
+      this.prisma.product.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          type: true,
+          category: true,
+          price: true,
+          imageUrls: true,
+          stockQuantity: true,
+          isActive: true,
+          sortOrder: true,
+          createdAt: true,
+          guide: {
+            select: {
+              id: true,
+              slug: true,
+              displayName: true,
+              user: { select: { avatarUrl: true, isActive: true } },
+            },
+          },
+        },
+      }),
+      this.prisma.product.count({ where }),
+    ]);
+
+    return { products, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async reorderProducts(rows: Array<{ id: string; sortOrder: number }>) {
+    if (!rows.length) return { updated: 0 };
+    await this.prisma.$transaction(
+      rows.map((r) =>
+        this.prisma.product.update({
+          where: { id: r.id },
+          data: { sortOrder: r.sortOrder },
+        }),
+      ),
+    );
+    // Public /shop is gated through home-page cache + the products endpoint,
+    // both of which already read from DB on every request. No additional
+    // cache to bust here (home:data is busted via products service mutations
+    // separately when a guide creates/updates a product).
+    return { updated: rows.length };
+  }
+
+  // Admin override for product visibility. The toggle on /admin/products is
+  // useful when an admin wants to unlist a product without contacting the
+  // guide (e.g., reported product, compliance). Skips the publish-gate that
+  // the guide-facing path enforces — admin is trusted to make this call.
+  async setProductActive(productId: string, isActive: boolean) {
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException('Product not found');
+    return this.prisma.product.update({
+      where: { id: productId },
+      data: { isActive },
+      select: { id: true, name: true, isActive: true },
+    });
+  }
+
   async getPost(postId: string) {
     const post = await this.prisma.blogPost.findUnique({
       where: { id: postId },

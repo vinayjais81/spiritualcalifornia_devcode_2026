@@ -920,6 +920,9 @@ model Product {
   algoliaObjectId String?
   averageRating   Float            @default(0)
   reviewCount     Int              @default(0)
+  // Admin-managed display order on /shop. Default 0 = unsorted; admin
+  // drag-to-reorder on /admin/products writes per-row sortOrder.
+  sortOrder       Int              @default(0)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -930,6 +933,7 @@ model Product {
   @@index([guideId])
   @@index([type, isActive])
   @@index([category, isActive])
+  @@index([sortOrder])
   @@map("products")
 }
 

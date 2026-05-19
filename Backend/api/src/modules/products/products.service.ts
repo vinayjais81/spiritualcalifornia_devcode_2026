@@ -117,7 +117,9 @@ export class ProductsService {
           },
           variants: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } },
         },
-        orderBy: { createdAt: 'desc' },
+        // Admin-managed sortOrder primary; createdAt DESC breaks ties so
+        // unsorted (sortOrder=0) products still appear newest-first.
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
         skip,
         take: limit,
       }),

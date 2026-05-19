@@ -1,7 +1,7 @@
 # Admin sort order — drag-to-reorder + click-to-sort
 
-**Status:** PR 1 shipped 2026-05-19 (guides + blog). PR 2 (products), PR 3 (events admin), PR 4 (tours admin) pending.
-**Migration:** `20260519140000_admin_sort_order`
+**Status:** PR 1 shipped 2026-05-19 (guides + blog). PR 2 shipped 2026-05-19 (products). PR 3 (events admin), PR 4 (tours admin) pending.
+**Migrations:** `20260519140000_admin_sort_order` (guide_profiles, blog_posts, events, soul_tours) + `20260519150000_products_sort_order` (products — supplemental; Product was missed in the first cut).
 
 ## Patterns delivered
 
@@ -16,14 +16,15 @@ The two patterns are mutually exclusive in a given moment: when the admin is sor
 
 ## Schema
 
-`20260519140000_admin_sort_order` adds an `Int` column (`default 0`, indexed) to four models:
+Two migrations add `Int sortOrder DEFAULT 0` (indexed) across five models:
 
-| Model | Used by public listing? |
-|---|---|
-| `guide_profiles.sortOrder` | ✓ — `/practitioners` orders by `sortOrder ASC, averageRating DESC, totalReviews DESC` |
-| `blog_posts.sortOrder` | ✓ — `/journal` orders by `sortOrder ASC, publishedAt DESC` |
-| `events.sortOrder` | ✗ — admin-only. `/events` stays chronological |
-| `soul_tours.sortOrder` | ✗ — admin-only. `/travels` stays chronological |
+| Model | Migration | Used by public listing? |
+|---|---|---|
+| `guide_profiles.sortOrder` | `20260519140000_admin_sort_order` | ✓ — `/practitioners` orders by `sortOrder ASC, averageRating DESC, totalReviews DESC` |
+| `blog_posts.sortOrder` | `20260519140000_admin_sort_order` | ✓ — `/journal` orders by `sortOrder ASC, publishedAt DESC` |
+| `products.sortOrder` | `20260519150000_products_sort_order` | ✓ — `/shop` orders by `sortOrder ASC, createdAt DESC` |
+| `events.sortOrder` | `20260519140000_admin_sort_order` | ✗ — admin-only. `/events` stays chronological |
+| `soul_tours.sortOrder` | `20260519140000_admin_sort_order` | ✗ — admin-only. `/travels` stays chronological |
 
 All existing rows ship with `sortOrder: 0` — they tie until an admin reorders, with the existing public sort acting as tiebreaker.
 
@@ -33,13 +34,19 @@ All existing rows ship with `sortOrder: 0` — they tie until an admin reorders,
 
 - `GET /admin/guides?sortBy=sortOrder|displayName|createdAt|rating&sortDir=asc|desc`
 - `GET /admin/blog?sortBy=sortOrder|title|publishedAt|createdAt&sortDir=asc|desc`
+- `GET /admin/products?sortBy=sortOrder|name|price|createdAt&sortDir=asc|desc&status=active|inactive&type=DIGITAL|PHYSICAL`
 
-Default is `sortBy=sortOrder, sortDir=asc`. The order chain in the service falls back to a natural tiebreaker (`createdAt DESC` for guides, `publishedAt DESC` for blog) so unsorted rows still have stable ordering.
+Default is `sortBy=sortOrder, sortDir=asc`. The order chain in the service falls back to a natural tiebreaker (`createdAt DESC` for guides + products, `publishedAt DESC` for blog) so unsorted rows still have stable ordering.
 
 **Bulk reorder endpoints** (one per resource):
 
 - `POST /admin/guides/reorder` body `{ rows: [{ id, sortOrder }] }`
 - `POST /admin/blog/reorder` body `{ rows: [{ id, sortOrder }] }`
+- `POST /admin/products/reorder` body `{ rows: [{ id, sortOrder }] }`
+
+**Admin overrides** beyond reordering:
+
+- `PATCH /admin/products/:id/active` body `{ isActive: boolean }` — admin override that skips the publish-gate. Use to unlist a product (e.g., reported / non-compliant) without contacting the guide.
 
 Writes are batched in a single Prisma transaction so the listing never reads a half-applied order. The frontend computes `sortOrder` values as `(page - 1) * pageSize + index`, which preserves cross-page ordering when admins reorder while paginated.
 
@@ -59,6 +66,5 @@ If a future requirement wants to surface a curated featured-events list on the h
 
 ## Follow-ups
 
-- **PR 2:** build `/admin/products` (the catalog view doesn't exist yet — products are managed at `/guide/dashboard/products`). Add sorting. `/shop` adopts `sortOrder`.
 - **PR 3:** build `/admin/events` catalog view + admin-only sort. Public `/events` stays chronological per above.
 - **PR 4:** build `/admin/tours` catalog view + admin-only sort. Public `/travels` stays chronological.

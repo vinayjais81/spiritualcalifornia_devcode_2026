@@ -77,6 +77,28 @@ class UsersQueryDto extends PaginationQueryDto {
   status?: 'active' | 'deactivated' | 'unverified';
 }
 
+class ProductsQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ enum: ['active', 'inactive'] })
+  @IsOptional()
+  @IsEnum(['active', 'inactive'] as const)
+  status?: 'active' | 'inactive';
+
+  @ApiPropertyOptional({ enum: ['DIGITAL', 'PHYSICAL'] })
+  @IsOptional()
+  @IsEnum(['DIGITAL', 'PHYSICAL'] as const)
+  type?: 'DIGITAL' | 'PHYSICAL';
+
+  @ApiPropertyOptional({ enum: ['sortOrder', 'name', 'price', 'createdAt'] })
+  @IsOptional()
+  @IsEnum(['sortOrder', 'name', 'price', 'createdAt'] as const)
+  sortBy?: 'sortOrder' | 'name' | 'price' | 'createdAt';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'] })
+  @IsOptional()
+  @IsEnum(['asc', 'desc'] as const)
+  sortDir?: 'asc' | 'desc';
+}
+
 class TourBookingsQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ enum: TourBookingStatus })
   @IsOptional()
@@ -358,6 +380,42 @@ export class AdminController {
   })
   reorderGuides(@Body() dto: ReorderDto) {
     return this.adminService.reorderGuides(dto.rows);
+  }
+
+  // ─── Products (cross-guide catalog admin) ─────────────────────────────────
+
+  @Get('products')
+  @ApiOperation({ summary: 'List all products across guides (with click-to-sort + admin-managed sortOrder)' })
+  getProducts(@Query() query: ProductsQueryDto) {
+    return this.adminService.getProducts({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+      status: query.status,
+      type: query.type,
+      sortBy: query.sortBy,
+      sortDir: query.sortDir,
+    });
+  }
+
+  @Post('products/reorder')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Bulk-update product sortOrder. Mirrors /admin/guides/reorder.' })
+  reorderProducts(@Body() dto: ReorderDto) {
+    return this.adminService.reorderProducts(dto.rows);
+  }
+
+  @Patch('products/:id/active')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Admin override for product visibility. Skips the payments publish-gate that the guide-facing path enforces.',
+  })
+  setProductActive(
+    @Param('id') id: string,
+    @Body() body: { isActive: boolean },
+  ) {
+    return this.adminService.setProductActive(id, !!body.isActive);
   }
 
   @Patch('guides/:guideId/featured')
