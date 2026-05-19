@@ -1,6 +1,6 @@
 # Admin sort order — drag-to-reorder + click-to-sort
 
-**Status:** PR 1 shipped 2026-05-19 (guides + blog). PR 2 shipped 2026-05-19 (products). PR 3 (events admin), PR 4 (tours admin) pending.
+**Status:** PR 1 + PR 2 + PR 3 shipped 2026-05-19 (guides + blog + products + events). PR 4 (tours admin) pending.
 **Migrations:** `20260519140000_admin_sort_order` (guide_profiles, blog_posts, events, soul_tours) + `20260519150000_products_sort_order` (products — supplemental; Product was missed in the first cut).
 
 ## Patterns delivered
@@ -35,6 +35,7 @@ All existing rows ship with `sortOrder: 0` — they tie until an admin reorders,
 - `GET /admin/guides?sortBy=sortOrder|displayName|createdAt|rating&sortDir=asc|desc`
 - `GET /admin/blog?sortBy=sortOrder|title|publishedAt|createdAt&sortDir=asc|desc`
 - `GET /admin/products?sortBy=sortOrder|name|price|createdAt&sortDir=asc|desc&status=active|inactive&type=DIGITAL|PHYSICAL`
+- `GET /admin/events?sortBy=sortOrder|title|startTime|createdAt&sortDir=asc|desc&status=published|draft|cancelled&type=VIRTUAL|IN_PERSON|RETREAT|SOUL_TRAVEL`
 
 Default is `sortBy=sortOrder, sortDir=asc`. The order chain in the service falls back to a natural tiebreaker (`createdAt DESC` for guides + products, `publishedAt DESC` for blog) so unsorted rows still have stable ordering.
 
@@ -43,10 +44,12 @@ Default is `sortBy=sortOrder, sortDir=asc`. The order chain in the service falls
 - `POST /admin/guides/reorder` body `{ rows: [{ id, sortOrder }] }`
 - `POST /admin/blog/reorder` body `{ rows: [{ id, sortOrder }] }`
 - `POST /admin/products/reorder` body `{ rows: [{ id, sortOrder }] }`
+- `POST /admin/events/reorder` body `{ rows: [{ id, sortOrder }] }` (admin-side only — does NOT change `/events` ordering, which stays chronological)
 
 **Admin overrides** beyond reordering:
 
 - `PATCH /admin/products/:id/active` body `{ isActive: boolean }` — admin override that skips the publish-gate. Use to unlist a product (e.g., reported / non-compliant) without contacting the guide.
+- `PATCH /admin/events/:id/published` body `{ isPublished: boolean }` — admin override to publish or unpublish an event, also bypassing the payments publish-gate.
 
 Writes are batched in a single Prisma transaction so the listing never reads a half-applied order. The frontend computes `sortOrder` values as `(page - 1) * pageSize + index`, which preserves cross-page ordering when admins reorder while paginated.
 
@@ -66,5 +69,4 @@ If a future requirement wants to surface a curated featured-events list on the h
 
 ## Follow-ups
 
-- **PR 3:** build `/admin/events` catalog view + admin-only sort. Public `/events` stays chronological per above.
 - **PR 4:** build `/admin/tours` catalog view + admin-only sort. Public `/travels` stays chronological.

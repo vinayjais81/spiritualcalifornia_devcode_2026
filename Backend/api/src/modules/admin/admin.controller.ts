@@ -99,6 +99,28 @@ class ProductsQueryDto extends PaginationQueryDto {
   sortDir?: 'asc' | 'desc';
 }
 
+class AdminEventsQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ enum: ['published', 'draft', 'cancelled'] })
+  @IsOptional()
+  @IsEnum(['published', 'draft', 'cancelled'] as const)
+  status?: 'published' | 'draft' | 'cancelled';
+
+  @ApiPropertyOptional({ enum: ['VIRTUAL', 'IN_PERSON', 'SOUL_TRAVEL', 'RETREAT'] })
+  @IsOptional()
+  @IsEnum(['VIRTUAL', 'IN_PERSON', 'SOUL_TRAVEL', 'RETREAT'] as const)
+  type?: 'VIRTUAL' | 'IN_PERSON' | 'SOUL_TRAVEL' | 'RETREAT';
+
+  @ApiPropertyOptional({ enum: ['sortOrder', 'title', 'startTime', 'createdAt'] })
+  @IsOptional()
+  @IsEnum(['sortOrder', 'title', 'startTime', 'createdAt'] as const)
+  sortBy?: 'sortOrder' | 'title' | 'startTime' | 'createdAt';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'] })
+  @IsOptional()
+  @IsEnum(['asc', 'desc'] as const)
+  sortDir?: 'asc' | 'desc';
+}
+
 class TourBookingsQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ enum: TourBookingStatus })
   @IsOptional()
@@ -416,6 +438,42 @@ export class AdminController {
     @Body() body: { isActive: boolean },
   ) {
     return this.adminService.setProductActive(id, !!body.isActive);
+  }
+
+  // ─── Events (cross-guide catalog admin) ───────────────────────────────────
+
+  @Get('events')
+  @ApiOperation({
+    summary:
+      'List all events across guides (with click-to-sort + admin-managed sortOrder). Public /events stays chronological — sortOrder here is admin-side only.',
+  })
+  getEvents(@Query() query: AdminEventsQueryDto) {
+    return this.adminService.getEvents({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+      status: query.status,
+      type: query.type,
+      sortBy: query.sortBy,
+      sortDir: query.sortDir,
+    });
+  }
+
+  @Post('events/reorder')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Bulk-update event sortOrder. Admin-side only — does not change /events public ordering.' })
+  reorderEvents(@Body() dto: ReorderDto) {
+    return this.adminService.reorderEvents(dto.rows);
+  }
+
+  @Patch('events/:id/published')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Admin override to publish or unpublish an event. Skips the payments publish-gate.' })
+  setEventPublished(
+    @Param('id') id: string,
+    @Body() body: { isPublished: boolean },
+  ) {
+    return this.adminService.setEventPublished(id, !!body.isPublished);
   }
 
   @Patch('guides/:guideId/featured')

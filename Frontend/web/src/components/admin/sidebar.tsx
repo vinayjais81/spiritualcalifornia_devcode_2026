@@ -20,6 +20,7 @@ import {
   FilePen,
   Percent,
   Package,
+  Calendar,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { useRouter } from 'next/navigation';
@@ -30,6 +31,7 @@ const navItems = [
   { href: '/guides', label: 'Guides', icon: BookOpen },
   { href: '/verification', label: 'Verification Queue', icon: ShieldCheck },
   { href: '/products', label: 'Products', icon: Package },
+  { href: '/events', label: 'Events', icon: Calendar },
   { href: '/blog', label: 'Blog', icon: FileText },
   { href: '/static-pages', label: 'Static Pages', icon: FilePen },
   { href: '/tour-bookings', label: 'Tour Bookings', icon: Plane },

@@ -1556,6 +1556,108 @@ export class AdminService {
     });
   }
 
+  // ─── Events (cross-guide catalog admin) ───────────────────────────────────
+  //
+  // Note: admin-managed sortOrder is admin-side only. Public /events stays
+  // chronological (startTime ASC) — events have natural date semantics and
+  // letting admin order override would push past events above upcoming ones,
+  // which is misleading to seekers.
+
+  async getEvents(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    status?: 'published' | 'draft' | 'cancelled';
+    type?: 'VIRTUAL' | 'IN_PERSON' | 'SOUL_TRAVEL' | 'RETREAT';
+    sortBy?: 'sortOrder' | 'title' | 'startTime' | 'createdAt';
+    sortDir?: 'asc' | 'desc';
+  }) {
+    const { page, limit, search, status, type, sortBy = 'sortOrder', sortDir = 'asc' } = params;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (status === 'published') { where.isPublished = true; where.isCancelled = false; }
+    if (status === 'draft') { where.isPublished = false; where.isCancelled = false; }
+    if (status === 'cancelled') where.isCancelled = true;
+    if (type) where.type = type;
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { guide: { displayName: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const orderBy: any =
+      sortBy === 'title'
+        ? [{ title: sortDir }]
+        : sortBy === 'startTime'
+          ? [{ startTime: sortDir }]
+          : sortBy === 'createdAt'
+            ? [{ createdAt: sortDir }]
+            : [{ sortOrder: 'asc' }, { startTime: 'asc' }];
+
+    const [events, total] = await Promise.all([
+      this.prisma.event.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          title: true,
+          type: true,
+          startTime: true,
+          endTime: true,
+          location: true,
+          coverImageUrl: true,
+          isPublished: true,
+          isCancelled: true,
+          sortOrder: true,
+          createdAt: true,
+          guide: {
+            select: {
+              id: true,
+              slug: true,
+              displayName: true,
+              user: { select: { avatarUrl: true, isActive: true } },
+            },
+          },
+          ticketTiers: { where: { isActive: true }, select: { price: true }, orderBy: { price: 'asc' }, take: 1 },
+        },
+      }),
+      this.prisma.event.count({ where }),
+    ]);
+
+    return { events, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async reorderEvents(rows: Array<{ id: string; sortOrder: number }>) {
+    if (!rows.length) return { updated: 0 };
+    await this.prisma.$transaction(
+      rows.map((r) =>
+        this.prisma.event.update({
+          where: { id: r.id },
+          data: { sortOrder: r.sortOrder },
+        }),
+      ),
+    );
+    return { updated: rows.length };
+  }
+
+  // Admin override: publish or unpublish without going through the guide-facing
+  // payments publish-gate. Use cases: surface a moderation-pending event,
+  // un-publish an event the guide refused to take down, etc.
+  async setEventPublished(eventId: string, isPublished: boolean) {
+    const event = await this.prisma.event.findUnique({ where: { id: eventId } });
+    if (!event) throw new NotFoundException('Event not found');
+    return this.prisma.event.update({
+      where: { id: eventId },
+      data: { isPublished },
+      select: { id: true, title: true, isPublished: true },
+    });
+  }
+
   async getPost(postId: string) {
     const post = await this.prisma.blogPost.findUnique({
       where: { id: postId },
