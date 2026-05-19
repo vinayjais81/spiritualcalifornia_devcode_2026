@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Users, KeyRound, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { Search, Users, KeyRound, AlertTriangle, Eye, EyeOff, UserX, UserCheck } from 'lucide-react';
 import { toast } from 'sonner';
 import { PasswordStrengthMeter, evaluatePassword } from '@/components/auth/PasswordStrengthMeter';
 
@@ -19,7 +19,7 @@ interface User {
   email: string;
   isEmailVerified: boolean;
   isActive: boolean;
-  isBanned: boolean;
+  deactivatedReason?: string | null;
   createdAt: string;
   roles: Array<{ role: string }>;
 }
@@ -38,6 +38,8 @@ export default function UsersPage() {
   const [newPassword, setNewPassword] = useState('');
   const [pwReason, setPwReason] = useState('');
   const [showPw, setShowPw] = useState(false);
+  const [deactivateTarget, setDeactivateTarget] = useState<User | null>(null);
+  const [deactivateReason, setDeactivateReason] = useState('');
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -64,6 +66,31 @@ export default function UsersPage() {
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.message ?? 'Failed to change password');
+    },
+  });
+
+  const deactivateMutation = useMutation({
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      api.patch(`/admin/users/${id}/deactivate`, { reason }),
+    onSuccess: () => {
+      toast.success('Account deactivated. Active sessions have been signed out.');
+      setDeactivateTarget(null);
+      setDeactivateReason('');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message ?? 'Failed to deactivate account');
+    },
+  });
+
+  const activateMutation = useMutation({
+    mutationFn: (id: string) => api.patch(`/admin/users/${id}/activate`),
+    onSuccess: () => {
+      toast.success('Account reactivated.');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message ?? 'Failed to reactivate account');
     },
   });
 
@@ -152,10 +179,17 @@ export default function UsersPage() {
                               </div>
                             </td>
                             <td className="px-4 py-3">
-                              {user.isBanned ? (
-                                <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Banned</Badge>
-                              ) : !user.isActive ? (
-                                <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100">Inactive</Badge>
+                              {!user.isActive ? (
+                                <div className="flex flex-col gap-1">
+                                  <Badge className="bg-red-100 text-red-700 hover:bg-red-100">Deactivated</Badge>
+                                  {user.deactivatedReason && (
+                                    <span className="text-[11px] text-gray-500" title={user.deactivatedReason}>
+                                      {user.deactivatedReason.length > 32
+                                        ? `${user.deactivatedReason.slice(0, 32)}…`
+                                        : user.deactivatedReason}
+                                    </span>
+                                  )}
+                                </div>
                               ) : !user.isEmailVerified ? (
                                 <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">Unverified</Badge>
                               ) : (
@@ -166,19 +200,44 @@ export default function UsersPage() {
                               {new Date(user.createdAt).toLocaleDateString()}
                             </td>
                             <td className="px-4 py-3">
-                              <button
-                                onClick={() => {
-                                  setPwTarget(user);
-                                  setNewPassword('');
-                                  setPwReason('');
-                                  setShowPw(false);
-                                }}
-                                title="Set a new password for this user"
-                                className="inline-flex items-center gap-1 rounded border border-purple-200 bg-white px-2.5 py-1 text-xs font-medium text-purple-700 hover:bg-purple-50"
-                              >
-                                <KeyRound className="h-3 w-3" />
-                                Reset password
-                              </button>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <button
+                                  onClick={() => {
+                                    setPwTarget(user);
+                                    setNewPassword('');
+                                    setPwReason('');
+                                    setShowPw(false);
+                                  }}
+                                  title="Set a new password for this user"
+                                  className="inline-flex items-center gap-1 rounded border border-purple-200 bg-white px-2.5 py-1 text-xs font-medium text-purple-700 hover:bg-purple-50"
+                                >
+                                  <KeyRound className="h-3 w-3" />
+                                  Reset password
+                                </button>
+                                {user.isActive ? (
+                                  <button
+                                    onClick={() => {
+                                      setDeactivateTarget(user);
+                                      setDeactivateReason('');
+                                    }}
+                                    title="Block this user from logging in and hide their public profile"
+                                    className="inline-flex items-center gap-1 rounded border border-red-200 bg-white px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
+                                  >
+                                    <UserX className="h-3 w-3" />
+                                    Deactivate
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => activateMutation.mutate(user.id)}
+                                    disabled={activateMutation.isPending}
+                                    title="Restore this user's login and public visibility"
+                                    className="inline-flex items-center gap-1 rounded border border-green-200 bg-white px-2.5 py-1 text-xs font-medium text-green-700 hover:bg-green-50 disabled:opacity-50"
+                                  >
+                                    <UserCheck className="h-3 w-3" />
+                                    Activate
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -302,6 +361,69 @@ export default function UsersPage() {
                 className="rounded bg-purple-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
               >
                 {passwordMutation.isPending ? 'Changing…' : 'Change password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deactivateTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => (deactivateMutation.isPending ? undefined : setDeactivateTarget(null))}
+        >
+          <div
+            className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-start gap-3">
+              <div className="rounded-full bg-red-100 p-2">
+                <UserX className="h-5 w-5 text-red-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900">
+                  Deactivate account?
+                </h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  <span className="font-medium">{deactivateTarget.firstName} {deactivateTarget.lastName}</span> ({deactivateTarget.email}) won't be able to sign in, and their public profile (if any) will be hidden from the marketplace. Existing bookings and payouts continue normally. You can reactivate them later.
+                </p>
+              </div>
+            </div>
+
+            <label className="block text-xs font-medium text-gray-700">
+              Reason <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              autoFocus
+              value={deactivateReason}
+              onChange={(e) => setDeactivateReason(e.target.value)}
+              placeholder="e.g. user requested account closure, suspected fraud (ticket #1234), TOS violation"
+              rows={3}
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+            />
+            <p className="mt-1 text-[11px] text-gray-500">
+              Recorded in the audit log (`admin.user.deactivate`). Visible to other admins.
+            </p>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setDeactivateTarget(null)}
+                disabled={deactivateMutation.isPending}
+                className="rounded border px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() =>
+                  deactivateMutation.mutate({
+                    id: deactivateTarget.id,
+                    reason: deactivateReason.trim(),
+                  })
+                }
+                disabled={deactivateMutation.isPending || deactivateReason.trim().length < 3}
+                className="rounded bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+              >
+                {deactivateMutation.isPending ? 'Deactivating…' : 'Deactivate account'}
               </button>
             </div>
           </div>

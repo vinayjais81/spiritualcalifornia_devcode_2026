@@ -169,6 +169,8 @@ export class SoulToursService {
         OR: [{ slug: slugOrId }, { id: slugOrId }],
         isPublished: true,
         isCancelled: false,
+        // Hide tours owned by deactivated guides.
+        guide: { user: { isActive: true } },
       },
       include: {
         roomTypes: { orderBy: { sortOrder: 'asc' } },
@@ -201,6 +203,8 @@ export class SoulToursService {
       isPublished: true,
       isCancelled: false,
       departures: { some: { status: 'SCHEDULED', startDate: { gte: new Date() } } },
+      // Hide tours from deactivated guides.
+      guide: { user: { isActive: true } },
     };
 
     if (filters.track && ['ADVENTURE', 'HEALING'].includes(filters.track)) {
@@ -244,6 +248,7 @@ export class SoulToursService {
       isPublished: true,
       isCancelled: false,
       departures: { some: { status: 'SCHEDULED', startDate: { gte: now } } },
+      guide: { user: { isActive: true } },
     };
 
     const [totalJourneys, countryRows, travelerRows] = await Promise.all([

@@ -558,6 +558,7 @@ export class GuidesService {
             lastName: true,
             avatarUrl: true,
             createdAt: true,
+            isActive: true,
           },
         },
         categories: {
@@ -579,9 +580,9 @@ export class GuidesService {
       },
     });
 
-    if (!guide || !guide.isVerified || !guide.isPublished) {
+    if (!guide || !guide.isVerified || !guide.isPublished || !guide.user.isActive) {
       // Single 404 message regardless of which gate failed — don't leak
-      // whether a slug exists but is pending verification.
+      // whether a slug exists but is pending verification or deactivated.
       throw new NotFoundException(`Guide not found: ${slug}`);
     }
 
@@ -715,6 +716,9 @@ export class GuidesService {
     const where: any = {
       isPublished: true,
       isVerified: true,
+      // Hide deactivated guides from public listings. user.isActive flips to
+      // false when an admin Deactivates the account.
+      user: { isActive: true },
     };
 
     if (filters.modality && filters.modality !== 'all') {
@@ -778,7 +782,7 @@ export class GuidesService {
       // Always fetch featured separately — the featured strip shows the top 3
       // admin-flagged guides (auto-filled with top-rated if fewer than 3).
       this.prisma.guideProfile.findMany({
-        where: { isPublished: true, isVerified: true, isFeatured: true },
+        where: { isPublished: true, isVerified: true, isFeatured: true, user: { isActive: true } },
         orderBy: [{ averageRating: 'desc' }, { totalReviews: 'desc' }],
         take: 3,
         select: {
@@ -816,6 +820,7 @@ export class GuidesService {
           isPublished: true,
           isVerified: true,
           isFeatured: false,
+          user: { isActive: true },
           id: { notIn: featuredList.map((g) => g.id) },
         },
         orderBy: [{ averageRating: 'desc' }, { totalReviews: 'desc' }],

@@ -13,7 +13,6 @@ import { EmailService } from '../notifications/email.service';
 import { LedgerService } from '../payments/ledger.service';
 import { VerificationService } from '../verification/verification.service';
 import { UploadService } from '../upload/upload.service';
-import { StripeService } from '../payments/stripe.service';
 import { checkPasswordPolicy } from '../../common/validators/is-strong-password.validator';
 
 @Injectable()
@@ -25,7 +24,6 @@ export class AdminService {
     private readonly ledger: LedgerService,
     private readonly verification: VerificationService,
     private readonly upload: UploadService,
-    private readonly stripe: StripeService,
     private readonly email: EmailService,
   ) {}
 
@@ -192,8 +190,9 @@ export class AdminService {
           avatarUrl: true,
           isEmailVerified: true,
           isActive: true,
-          isBanned: true,
-          bannedReason: true,
+          deactivatedAt: true,
+          deactivatedReason: true,
+          deactivatedBy: true,
           lastLoginAt: true,
           createdAt: true,
           roles: { select: { role: true } },
@@ -230,28 +229,143 @@ export class AdminService {
     return user;
   }
 
-  async banUser(userId: string, reason?: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
-    if (user.isBanned) throw new BadRequestException('User is already banned');
+  // ─── Activate / Deactivate (replaces Ban/Unban) ──────────────────────────
+  //
+  // Replaces the old ban flow (2026-05-19, client request). One toggle:
+  //   • Deactivate → User.isActive = false. Login is blocked, public surfaces
+  //     stop showing the guide. Reversible. Reason required + audit-logged.
+  //     All refresh tokens are revoked so live sessions die immediately.
+  //     Bookings, payouts, and other money flows are intentionally untouched.
+  //   • Activate   → flips isActive back to true, clears deactivation cols.
+  //
+  // Role-gate (mirrors password-set in admin.service.setUserPassword):
+  //   • ADMIN may toggle SEEKER / GUIDE.
+  //   • SUPER_ADMIN is required to toggle another ADMIN / SUPER_ADMIN.
+  //   • Nobody may toggle their own account.
 
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: { isBanned: true, bannedReason: reason ?? null, isActive: false },
-      select: { id: true, isBanned: true, bannedReason: true },
+  async deactivateUser(params: {
+    targetUserId: string;
+    actor: { id: string; roles: Role[]; email: string };
+    reason: string;
+  }) {
+    const { targetUserId, actor, reason } = params;
+    if (!reason || !reason.trim()) {
+      throw new BadRequestException('Deactivation reason is required');
+    }
+    if (targetUserId === actor.id) {
+      throw new BadRequestException('You cannot deactivate your own account.');
+    }
+
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+      include: { roles: true },
     });
+    if (!target) throw new NotFoundException('User not found');
+    if (!target.isActive) {
+      throw new BadRequestException('User is already deactivated');
+    }
+
+    const targetIsAdminish = target.roles.some(
+      (r) => r.role === Role.ADMIN || r.role === Role.SUPER_ADMIN,
+    );
+    const actorIsSuperAdmin = actor.roles.includes(Role.SUPER_ADMIN);
+    if (targetIsAdminish && !actorIsSuperAdmin) {
+      throw new ForbiddenException(
+        "Only a SUPER_ADMIN can deactivate another administrator's account.",
+      );
+    }
+
+    const now = new Date();
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: targetUserId },
+        data: {
+          isActive: false,
+          deactivatedAt: now,
+          deactivatedReason: reason,
+          deactivatedBy: actor.id,
+        },
+      }),
+      // Kill every active session immediately.
+      this.prisma.refreshToken.updateMany({
+        where: { userId: targetUserId, isRevoked: false },
+        data: { isRevoked: true, revokedAt: now },
+      }),
+      this.prisma.auditLog.create({
+        data: {
+          userId: actor.id,
+          action: 'admin.user.deactivate',
+          entity: 'User',
+          entityId: targetUserId,
+          newValue: {
+            reason,
+            targetEmail: target.email,
+            actorEmail: actor.email,
+          },
+        },
+      }),
+    ]);
+
+    return {
+      userId: targetUserId,
+      isActive: false,
+      deactivatedAt: now,
+    };
   }
 
-  async unbanUser(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundException('User not found');
-    if (!user.isBanned) throw new BadRequestException('User is not banned');
+  async activateUser(params: {
+    targetUserId: string;
+    actor: { id: string; roles: Role[]; email: string };
+  }) {
+    const { targetUserId, actor } = params;
+    if (targetUserId === actor.id) {
+      throw new BadRequestException('You cannot toggle your own account.');
+    }
 
-    return this.prisma.user.update({
-      where: { id: userId },
-      data: { isBanned: false, bannedReason: null, isActive: true },
-      select: { id: true, isBanned: true },
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+      include: { roles: true },
     });
+    if (!target) throw new NotFoundException('User not found');
+    if (target.isActive) {
+      throw new BadRequestException('User is already active');
+    }
+
+    const targetIsAdminish = target.roles.some(
+      (r) => r.role === Role.ADMIN || r.role === Role.SUPER_ADMIN,
+    );
+    const actorIsSuperAdmin = actor.roles.includes(Role.SUPER_ADMIN);
+    if (targetIsAdminish && !actorIsSuperAdmin) {
+      throw new ForbiddenException(
+        "Only a SUPER_ADMIN can reactivate another administrator's account.",
+      );
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: targetUserId },
+        data: {
+          isActive: true,
+          deactivatedAt: null,
+          deactivatedReason: null,
+          deactivatedBy: null,
+        },
+      }),
+      this.prisma.auditLog.create({
+        data: {
+          userId: actor.id,
+          action: 'admin.user.activate',
+          entity: 'User',
+          entityId: targetUserId,
+          newValue: {
+            targetEmail: target.email,
+            actorEmail: actor.email,
+          },
+        },
+      }),
+    ]);
+
+    return { userId: targetUserId, isActive: true };
   }
 
   async setUserRoles(userId: string, roles: Role[]) {
@@ -401,10 +515,7 @@ export class AdminService {
     const { page, limit, search, status } = params;
     const skip = (page - 1) * limit;
 
-    // archivedAt: null — hide soft-deleted (admin-removed) registrations
-    // from the default listing. Archived rows stay queryable via a separate
-    // /admin/guides/archived endpoint if/when we surface that view.
-    const where: any = { archivedAt: null };
+    const where: any = {};
     if (status) where.verificationStatus = status;
     if (search) {
       where.user = {
@@ -441,7 +552,6 @@ export class AdminService {
               email: true,
               avatarUrl: true,
               isActive: true,
-              isBanned: true,
             },
           },
           credentials: {
@@ -470,7 +580,6 @@ export class AdminService {
 
     const queueWhere = {
       verificationStatus: VerificationStatus.PENDING,
-      archivedAt: null,
     };
 
     const [guides, total] = await Promise.all([
@@ -568,218 +677,6 @@ export class AdminService {
       data: { verificationStatus: VerificationStatus.REJECTED },
       select: { id: true, verificationStatus: true },
     });
-  }
-
-  // ─── Archive (soft-delete) pending guide registrations ───────────────────
-  //
-  // The cleanup pathway for spam / abandoned / bad-faith pending signups.
-  // Hard-deleting on the spot would orphan Stripe Connect accounts and S3
-  // documents, so we instead:
-  //   1. Stamp `archivedAt` on GuideProfile + User (hides from listings).
-  //   2. Rename `User.email` so the original email frees up for legitimate
-  //      re-registration (works around the unique constraint).
-  //   3. Strip the GUIDE role so the role-mutex check in /auth/register
-  //      allows the same person to come back as a SEEKER if they want.
-  //   4. Write an ArchivedGuideRegistration audit row keyed by the original
-  //      email — moderation can search this when the same person reappears.
-  // External resources (Stripe account, S3 documents) are NOT touched here.
-  // The daily `archive-cleanup` cron purges them after 90 days, giving
-  // operators a window to reverse a misclick.
-
-  async archivePendingGuide(params: {
-    guideId: string;
-    actorUserId: string;
-    reason: string;
-  }) {
-    const { guideId, actorUserId, reason } = params;
-    if (!reason || !reason.trim()) {
-      throw new BadRequestException('Archive reason is required');
-    }
-
-    const guide = await this.prisma.guideProfile.findUnique({
-      where: { id: guideId },
-      include: {
-        user: true,
-        credentials: { select: { documentUrl: true } },
-      },
-    });
-    if (!guide) throw new NotFoundException('Guide profile not found');
-    if (guide.archivedAt) {
-      throw new BadRequestException('Guide is already archived');
-    }
-    // Pending-only — admins should reject (with paper trail) for IN_REVIEW
-    // and never touch APPROVED. FLAGGED/REJECTED stay in the queue too.
-    if (guide.verificationStatus !== VerificationStatus.PENDING) {
-      throw new BadRequestException(
-        `Only pending guides can be archived (current status: ${guide.verificationStatus})`,
-      );
-    }
-
-    const now = new Date();
-    const originalEmail = guide.user.email;
-    // Suffix is unique-by-userId so two archives of similar emails never
-    // collide on the @@unique constraint.
-    const renamedEmail = `${originalEmail}.archived.${guide.user.id}@scarchive.local`;
-
-    // S3 keys captured at archive time. The cleanup cron needs these later;
-    // by then the credentials rows themselves are gone (cascade-deleted on
-    // hard delete), so we snapshot the keys now while we still can.
-    const credentialS3Keys = guide.credentials
-      .map((c) => this.upload.extractS3Key(c.documentUrl))
-      .filter((k): k is string => !!k);
-    const avatarS3Key = this.upload.extractS3Key(guide.user.avatarUrl);
-
-    const persona = await this.prisma.personaVerification.findUnique({
-      where: { userId: guide.userId },
-      select: { inquiryId: true },
-    });
-
-    await this.prisma.$transaction([
-      // Soft-delete the guide profile.
-      this.prisma.guideProfile.update({
-        where: { id: guideId },
-        data: {
-          archivedAt: now,
-          archivedBy: actorUserId,
-          archivedReason: reason,
-          // Defence-in-depth: even though archivedAt: null is the listing
-          // filter, flipping these flags too means a stray query that
-          // checks "is the guide live" still gets the right answer.
-          isPublished: false,
-          isVerified: false,
-        },
-      }),
-      // Tombstone the user account: rename email (releases the unique
-      // constraint), deactivate, mark archived. Roles are stripped below.
-      this.prisma.user.update({
-        where: { id: guide.userId },
-        data: {
-          email: renamedEmail,
-          isActive: false,
-          archivedAt: now,
-        },
-      }),
-      // Strip GUIDE role so the role-mutex allows re-registration.
-      this.prisma.userRole.deleteMany({
-        where: { userId: guide.userId, role: Role.GUIDE },
-      }),
-      // Audit row.
-      this.prisma.archivedGuideRegistration.create({
-        data: {
-          userId: guide.userId,
-          guideProfileId: guideId,
-          originalEmail,
-          displayName: guide.displayName,
-          hadStripeAccount: !!guide.stripeAccountId,
-          stripeAccountId: guide.stripeAccountId,
-          credentialS3Keys,
-          avatarS3Key,
-          personaInquiryId: persona?.inquiryId ?? null,
-          reason,
-          archivedBy: actorUserId,
-          archivedAt: now,
-        },
-      }),
-    ]);
-
-    return {
-      guideId,
-      archivedAt: now,
-      originalEmail,
-      releasedFromEmailLock: true,
-    };
-  }
-
-  // ─── Hard delete archived guides past the grace window ───────────────────
-  //
-  // Runs daily from the archive-cleanup queue. For every guide archived
-  // more than `graceDays` ago and not yet hard-deleted:
-  //   1. Best-effort delete/reject the Stripe Connect account.
-  //   2. Best-effort batch-delete the S3 credential documents + avatar.
-  //   3. Hard-delete the User row — Prisma cascades wipe GuideProfile,
-  //      Credentials, CredentialVerifications, PersonaVerification (via
-  //      userId FK), UserRole, refresh tokens, etc.
-  //   4. Stamp hardDeletedAt on the audit row so it stops being picked up.
-  // Returns counts for the queue worker log; never throws on per-row
-  // failures (errors are recorded in hardDeleteNotes for triage).
-
-  async hardDeleteExpiredArchivedGuides(graceDays = 90): Promise<{
-    processed: number;
-    succeeded: number;
-    failed: number;
-  }> {
-    const cutoff = new Date(Date.now() - graceDays * 24 * 60 * 60 * 1000);
-
-    const candidates = await this.prisma.archivedGuideRegistration.findMany({
-      where: {
-        hardDeletedAt: null,
-        archivedAt: { lt: cutoff },
-      },
-      take: 200, // chunk to keep a single run bounded
-      orderBy: { archivedAt: 'asc' },
-    });
-
-    let succeeded = 0;
-    let failed = 0;
-
-    for (const row of candidates) {
-      const notes: string[] = [];
-
-      // 1. Stripe Connect cleanup
-      if (row.stripeAccountId) {
-        const result = await this.stripe.deleteOrRejectConnectAccount(
-          row.stripeAccountId,
-        );
-        notes.push(
-          `stripe:${result.method}${result.error ? `(${result.error})` : ''}`,
-        );
-      }
-
-      // 2. S3 cleanup
-      const allKeys = [
-        ...row.credentialS3Keys,
-        ...(row.avatarS3Key ? [row.avatarS3Key] : []),
-      ];
-      if (allKeys.length) {
-        const s3Result = await this.upload.deleteObjects(allKeys);
-        notes.push(`s3:${s3Result.deleted}/${allKeys.length}`);
-        if (s3Result.errors.length) {
-          notes.push(`s3-err:${s3Result.errors.length}`);
-        }
-      }
-
-      // 3. Hard-delete the User row (cascades everything user-owned).
-      //    Catch separately so one bad row doesn't poison the rest of the
-      //    batch — we still stamp hardDeletedAt with the failure note.
-      try {
-        if (row.userId) {
-          await this.prisma.user.delete({ where: { id: row.userId } });
-        }
-        await this.prisma.archivedGuideRegistration.update({
-          where: { id: row.id },
-          data: {
-            hardDeletedAt: new Date(),
-            hardDeleteNotes: notes.join(' | '),
-            userId: null, // FK target is gone
-            guideProfileId: null,
-          },
-        });
-        succeeded++;
-      } catch (err: any) {
-        notes.push(`db-err:${err.message}`);
-        failed++;
-        await this.prisma.archivedGuideRegistration.update({
-          where: { id: row.id },
-          data: { hardDeleteNotes: notes.join(' | ') },
-        });
-      }
-    }
-
-    return {
-      processed: candidates.length,
-      succeeded,
-      failed,
-    };
   }
 
   // ─── Tour Bookings ─────────────────────────────────────────────────────────

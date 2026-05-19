@@ -78,10 +78,8 @@ const envSchema = z.object({
   // succeed but public pages stay cached for up to 5 minutes.
   STATIC_PAGE_REVALIDATE_SECRET: z.string().optional().or(z.literal('')),
 
-  // Background-queue kill switches. Set to 'false' to disable the cron
-  // (manual /admin/* triggers still work). Default-enabled.
+  // Background-queue kill switches. Set to 'false' to disable the cron.
   TOUR_TASKS_ENABLED: z.string().optional(),
-  ARCHIVE_CLEANUP_ENABLED: z.string().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

@@ -81,7 +81,7 @@ Guidelines:
 
   async practitionerMatcher(query: string) {
     const guides = await this.prisma.guideProfile.findMany({
-      where: { isPublished: true, isVerified: true },
+      where: { isPublished: true, isVerified: true, user: { isActive: true } },
       select: { id: true, slug: true, displayName: true, tagline: true, modalities: true, averageRating: true, location: true },
       take: 15,
     });

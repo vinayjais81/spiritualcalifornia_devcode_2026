@@ -27,8 +27,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 
   async validate(payload: JwtPayload) {
     const user = await this.usersService.findById(payload.sub);
-    if (!user || !user.isActive || user.isBanned) {
-      throw new UnauthorizedException('User is inactive or banned');
+    if (!user || !user.isActive) {
+      throw new UnauthorizedException('Account is inactive');
     }
     return {
       id: payload.sub,

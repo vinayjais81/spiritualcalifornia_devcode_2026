@@ -42,7 +42,7 @@ export class HomeService {
 
   private async getFeaturedGuides() {
     const guides = await this.prisma.guideProfile.findMany({
-      where: { isPublished: true, isVerified: true },
+      where: { isPublished: true, isVerified: true, user: { isActive: true } },
       orderBy: [{ averageRating: 'desc' }, { totalReviews: 'desc' }],
       take: 10,
       include: {

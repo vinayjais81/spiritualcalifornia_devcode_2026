@@ -167,7 +167,11 @@ export class AuthService {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
     if (!user.passwordHash) throw new UnauthorizedException('Please use social login');
-    if (!user.isActive || user.isBanned) throw new UnauthorizedException('Account suspended');
+    if (!user.isActive) {
+      throw new UnauthorizedException(
+        'Your account has been deactivated. Please contact support to reactivate.',
+      );
+    }
 
     const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');

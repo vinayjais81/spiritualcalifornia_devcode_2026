@@ -100,9 +100,17 @@ export class EventsService {
 
   async findPublished(page = 1, limit = 20) {
     const skip = (page - 1) * limit;
+    // Hide events whose guide has been deactivated. user.isActive is the
+    // single source of truth — see docs/admin-activate-deactivate.md.
+    const where = {
+      isPublished: true,
+      isCancelled: false,
+      startTime: { gte: new Date() },
+      guide: { user: { isActive: true } },
+    } as const;
     const [events, total] = await Promise.all([
       this.prisma.event.findMany({
-        where: { isPublished: true, isCancelled: false, startTime: { gte: new Date() } },
+        where,
         include: {
           ticketTiers: { where: { isActive: true } },
           guide: { select: { displayName: true, slug: true, user: { select: { avatarUrl: true } } } },
@@ -111,9 +119,7 @@ export class EventsService {
         skip,
         take: limit,
       }),
-      this.prisma.event.count({
-        where: { isPublished: true, isCancelled: false, startTime: { gte: new Date() } },
-      }),
+      this.prisma.event.count({ where }),
     ]);
     return { events, total, page, totalPages: Math.ceil(total / limit) };
   }
@@ -121,8 +127,9 @@ export class EventsService {
   // ─── Get Single Event (Public) ─────────────────────────────────────────────
 
   async findOne(eventId: string) {
-    const event = await this.prisma.event.findUnique({
-      where: { id: eventId },
+    // Public surface — 404 if the guide has been deactivated.
+    const event = await this.prisma.event.findFirst({
+      where: { id: eventId, guide: { user: { isActive: true } } },
       include: {
         ticketTiers: true,
         guide: {

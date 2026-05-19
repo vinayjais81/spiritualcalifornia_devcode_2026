@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Star, CheckCircle, Clock, XCircle, BookOpen, AlertTriangle, Sparkles, Trash2 } from 'lucide-react';
+import { Search, Star, CheckCircle, Clock, XCircle, BookOpen, AlertTriangle, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 type VerificationStatus = 'PENDING' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED' | 'FLAGGED';
@@ -30,7 +30,6 @@ interface Guide {
     email: string;
     avatarUrl: string | null;
     isActive: boolean;
-    isBanned: boolean;
   };
   credentials: Array<{ id: string; verificationStatus: string; title: string }>;
 }
@@ -56,8 +55,6 @@ export default function GuidesPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
-  const [archiveTarget, setArchiveTarget] = useState<Guide | null>(null);
-  const [archiveReason, setArchiveReason] = useState('');
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -94,21 +91,6 @@ export default function GuidesPage() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'guides'] });
     },
     onError: () => toast.error('Failed to update featured status'),
-  });
-
-  const archiveMutation = useMutation({
-    mutationFn: ({ guideId, reason }: { guideId: string; reason: string }) =>
-      api.post(`/admin/guides/${guideId}/archive`, { reason }),
-    onSuccess: () => {
-      toast.success('Guide registration archived. Email is now free for re-registration.');
-      setArchiveTarget(null);
-      setArchiveReason('');
-      queryClient.invalidateQueries({ queryKey: ['admin', 'guides'] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'dashboard'] });
-    },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.message ?? 'Failed to archive guide');
-    },
   });
 
   const guides: Guide[] = data?.guides ?? [];
@@ -237,23 +219,13 @@ export default function GuidesPage() {
                               </td>
                               <td className="px-4 py-3">
                                 {guide.verificationStatus === 'PENDING' && (
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      onClick={() => approveMutation.mutate(guide.id)}
-                                      disabled={approveMutation.isPending}
-                                      className="rounded bg-green-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
-                                    >
-                                      Approve
-                                    </button>
-                                    <button
-                                      onClick={() => { setArchiveTarget(guide); setArchiveReason(''); }}
-                                      title="Archive this pending registration (frees the email, queues Stripe/S3 cleanup in 90 days)"
-                                      className="inline-flex items-center gap-1 rounded border border-red-200 bg-white px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-50"
-                                    >
-                                      <Trash2 className="h-3 w-3" />
-                                      Remove
-                                    </button>
-                                  </div>
+                                  <button
+                                    onClick={() => approveMutation.mutate(guide.id)}
+                                    disabled={approveMutation.isPending}
+                                    className="rounded bg-green-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                                  >
+                                    Approve
+                                  </button>
                                 )}
                               </td>
                             </tr>
@@ -291,69 +263,6 @@ export default function GuidesPage() {
           </Card>
         </div>
       </div>
-
-      {archiveTarget && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => archiveMutation.isPending ? undefined : setArchiveTarget(null)}
-        >
-          <div
-            className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-4 flex items-start gap-3">
-              <div className="rounded-full bg-red-100 p-2">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-              </div>
-              <div>
-                <h3 className="text-base font-semibold text-gray-900">
-                  Archive pending guide?
-                </h3>
-                <p className="mt-1 text-sm text-gray-600">
-                  <span className="font-medium">{archiveTarget.displayName}</span>{' '}
-                  ({archiveTarget.user.email}) will be hidden from the queue and the
-                  email will be released for re-registration. Stripe and uploaded
-                  documents are scheduled for permanent deletion in 90 days.
-                </p>
-              </div>
-            </div>
-
-            <label className="block text-xs font-medium text-gray-700">
-              Reason <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              autoFocus
-              value={archiveReason}
-              onChange={(e) => setArchiveReason(e.target.value)}
-              placeholder="e.g. duplicate registration, abandoned signup, spam"
-              rows={3}
-              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-purple-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-            />
-
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                onClick={() => setArchiveTarget(null)}
-                disabled={archiveMutation.isPending}
-                className="rounded border px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() =>
-                  archiveMutation.mutate({
-                    guideId: archiveTarget.id,
-                    reason: archiveReason.trim(),
-                  })
-                }
-                disabled={archiveMutation.isPending || archiveReason.trim().length < 3}
-                className="rounded bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                {archiveMutation.isPending ? 'Archiving…' : 'Archive registration'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

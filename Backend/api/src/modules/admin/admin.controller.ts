@@ -23,7 +23,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { PaginationQueryDto } from './dto/query.dto';
-import { BanUserDto } from './dto/ban-user.dto';
+import { DeactivateUserDto } from './dto/deactivate-user.dto';
 import { UpdateRolesDto } from './dto/update-roles.dto';
 import { RejectGuideDto } from './dto/reject-guide.dto';
 import { AdminCreatePostDto, AdminUpdatePostDto } from './dto/admin-blog.dto';
@@ -244,18 +244,32 @@ export class AdminController {
     return this.adminService.getUserDetail(id);
   }
 
-  @Patch('users/:id/ban')
+  @Patch('users/:id/deactivate')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Ban a user' })
-  banUser(@Param('id') id: string, @Body() dto: BanUserDto) {
-    return this.adminService.banUser(id, dto.reason);
+  @ApiOperation({
+    summary:
+      'Deactivate a user. Blocks login, hides from public surfaces, revokes all active sessions. Reversible via /activate. Reason required.',
+  })
+  deactivateUser(
+    @Param('id') id: string,
+    @Body() dto: DeactivateUserDto,
+    @CurrentUser() actor: CurrentUserData,
+  ) {
+    return this.adminService.deactivateUser({
+      targetUserId: id,
+      actor: { id: actor.id, roles: actor.roles, email: actor.email },
+      reason: dto.reason,
+    });
   }
 
-  @Patch('users/:id/unban')
+  @Patch('users/:id/activate')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Unban a user' })
-  unbanUser(@Param('id') id: string) {
-    return this.adminService.unbanUser(id);
+  @ApiOperation({ summary: 'Reactivate a previously deactivated user.' })
+  activateUser(@Param('id') id: string, @CurrentUser() actor: CurrentUserData) {
+    return this.adminService.activateUser({
+      targetUserId: id,
+      actor: { id: actor.id, roles: actor.roles, email: actor.email },
+    });
   }
 
   @Patch('users/:id/roles')
@@ -305,34 +319,6 @@ export class AdminController {
     @Body() body: { isFeatured: boolean },
   ) {
     return this.adminService.setFeatured(guideId, !!body.isFeatured);
-  }
-
-  @Post('guides/:guideId/archive')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary:
-      'Archive a pending guide registration. Frees the email for re-registration, strips the GUIDE role, and queues external resources (Stripe / S3) for cleanup in 90 days. Pending-only — never call on approved guides.',
-  })
-  archivePendingGuide(
-    @Param('guideId') guideId: string,
-    @Body() body: ReasonDto,
-    @CurrentUser() user: CurrentUserData,
-  ) {
-    return this.adminService.archivePendingGuide({
-      guideId,
-      actorUserId: user.id,
-      reason: body.reason,
-    });
-  }
-
-  @Post('guides/cleanup-archived')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary:
-      'Manually trigger the archived-guide hard-delete cron (purges Stripe accounts + S3 documents for rows older than 90 days). Daily cron does this automatically — this endpoint is for ops escalation.',
-  })
-  cleanupArchivedGuides() {
-    return this.adminService.hardDeleteExpiredArchivedGuides();
   }
 
   // ─── Verification Queue ───────────────────────────────────────────────────

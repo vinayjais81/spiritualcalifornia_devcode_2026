@@ -83,7 +83,9 @@ export class ProductsService {
 
   async findPublic(limit = 50, page = 1, type?: string, category?: string) {
     const skip = (page - 1) * limit;
-    const where: any = { isActive: true };
+    // isActive on Product = "guide has not unlisted it". user.isActive = "the
+    // guide's account itself is not deactivated by an admin". Both must hold.
+    const where: any = { isActive: true, guide: { user: { isActive: true } } };
     if (type === 'DIGITAL' || type === 'PHYSICAL') where.type = type;
 
     const VALID_CATEGORIES = [
@@ -116,8 +118,8 @@ export class ProductsService {
   // ─── Get Single Product (Public) ───────────────────────────────────────────
 
   async findOne(productId: string) {
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
+    const product = await this.prisma.product.findFirst({
+      where: { id: productId, guide: { user: { isActive: true } } },
       include: {
         guide: {
           select: {
