@@ -31,7 +31,8 @@ import { SetUserPasswordDto } from './dto/set-user-password.dto';
 import { VerificationStatus, TourBookingStatus, BookingStatus, PayoutStatus, EarningCategory } from '@prisma/client';
 import { PaymentsService } from '../payments/payments.service';
 import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.decorator';
-import { IsOptional, IsEnum, IsString, IsNumber, Min, Max, IsDateString } from 'class-validator';
+import { IsOptional, IsEnum, IsString, IsNumber, IsArray, Min, Max, IsDateString, ValidateNested, ArrayMinSize } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiPropertyOptional, ApiProperty } from '@nestjs/swagger';
 
 class GuidesQueryDto extends PaginationQueryDto {
@@ -62,7 +63,15 @@ class ReorderRowDto {
 }
 
 class ReorderDto {
+  // class-validator + global ValidationPipe with forbidNonWhitelisted: true
+  // requires every accepted property to carry at least one validation
+  // decorator. @ApiProperty alone is doc-only and doesn't count, so without
+  // these the entire body fails with "property rows should not exist".
   @ApiProperty({ type: [ReorderRowDto], description: 'Rows in their new display order. sortOrder typically matches array index.' })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => ReorderRowDto)
   rows!: ReorderRowDto[];
 }
 
