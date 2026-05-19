@@ -223,7 +223,7 @@ export default function DashboardPage() {
                   </div>
                 )}
                 <a
-                  href="/financials"
+                  href="/admin/financials"
                   className="mt-4 block text-center text-xs font-medium text-purple-600 hover:text-purple-700"
                 >
                   View full guide revenue breakdown →

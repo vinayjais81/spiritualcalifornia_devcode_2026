@@ -56,7 +56,7 @@ function SignInContent() {
       const isSeeker = roles.some((r) => r === 'SEEKER');
       const redirectTo = searchParams.get('redirect');
       if (isAdmin) {
-        router.push('/dashboard');
+        router.push('/admin/dashboard');
       } else if (redirectTo) {
         router.push(redirectTo);
       } else if (isGuide) {

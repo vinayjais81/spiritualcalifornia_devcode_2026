@@ -40,7 +40,7 @@ function GoogleSuccessContent() {
           return;
         }
 
-        if (isAdmin) { router.replace('/dashboard'); return; }
+        if (isAdmin) { router.replace('/admin/dashboard'); return; }
         if (isGuide) { router.replace('/onboarding/guide'); return; }
         if (isNewUser) {
           // New Google seeker — seeker profile created with onboardingStep=1 (default)

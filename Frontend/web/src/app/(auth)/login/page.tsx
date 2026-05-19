@@ -33,7 +33,7 @@ export default function LoginPage() {
 
       setAuth(data.user, data.accessToken);
       toast.success(`Welcome back, ${data.user.firstName}!`);
-      router.push('/dashboard');
+      router.push('/admin/dashboard');
     } catch (err: any) {
       const message = err?.response?.data?.message ?? 'Login failed. Please check your credentials.';
       toast.error(message);

@@ -26,27 +26,30 @@ import {
 import { useAuthStore } from '@/store/auth.store';
 import { useRouter } from 'next/navigation';
 
+// All admin pages live under an explicit /admin/ URL prefix. The (admin)
+// route group folder is purely organizational (shared layout / sidebar);
+// the literal `admin/` subfolder under it is what actually shapes the URL
+// path. This separation means admin and public routes can never collide
+// in the global URL namespace — e.g. /admin/events and /events are now
+// distinct routes, not parallel pages.
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/users', label: 'Users', icon: Users },
-  { href: '/guides', label: 'Guides', icon: BookOpen },
-  { href: '/verification', label: 'Verification Queue', icon: ShieldCheck },
-  { href: '/products', label: 'Products', icon: Package },
-  // /events is the PUBLIC events listing route — admin events live at
-  // /events-admin to avoid a Next.js route-group collision (both (admin)
-  // and (public) groups share the URL namespace).
-  { href: '/events-admin', label: 'Events', icon: Calendar },
-  { href: '/tours', label: 'Tours', icon: Mountain },
-  { href: '/blog', label: 'Blog', icon: FileText },
-  { href: '/static-pages', label: 'Static Pages', icon: FilePen },
-  { href: '/tour-bookings', label: 'Tour Bookings', icon: Plane },
-  { href: '/service-bookings', label: 'Service Bookings', icon: Briefcase },
-  { href: '/payouts', label: 'Payouts', icon: Wallet },
-  { href: '/commission-rates', label: 'Commission Rates', icon: Percent },
-  { href: '/reconciliation', label: 'Reconciliation', icon: ShieldCheck },
-  { href: '/financials', label: 'Financials', icon: BarChart3 },
-  { href: '/contacts', label: 'Contact Leads', icon: Mail },
-  { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/admin/users', label: 'Users', icon: Users },
+  { href: '/admin/guides', label: 'Guides', icon: BookOpen },
+  { href: '/admin/verification', label: 'Verification Queue', icon: ShieldCheck },
+  { href: '/admin/products', label: 'Products', icon: Package },
+  { href: '/admin/events', label: 'Events', icon: Calendar },
+  { href: '/admin/tours', label: 'Tours', icon: Mountain },
+  { href: '/admin/blog', label: 'Blog', icon: FileText },
+  { href: '/admin/static-pages', label: 'Static Pages', icon: FilePen },
+  { href: '/admin/tour-bookings', label: 'Tour Bookings', icon: Plane },
+  { href: '/admin/service-bookings', label: 'Service Bookings', icon: Briefcase },
+  { href: '/admin/payouts', label: 'Payouts', icon: Wallet },
+  { href: '/admin/commission-rates', label: 'Commission Rates', icon: Percent },
+  { href: '/admin/reconciliation', label: 'Reconciliation', icon: ShieldCheck },
+  { href: '/admin/financials', label: 'Financials', icon: BarChart3 },
+  { href: '/admin/contacts', label: 'Contact Leads', icon: Mail },
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
 export function AdminSidebar() {
