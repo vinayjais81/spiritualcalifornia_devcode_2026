@@ -121,6 +121,28 @@ class AdminEventsQueryDto extends PaginationQueryDto {
   sortDir?: 'asc' | 'desc';
 }
 
+class AdminToursQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ enum: ['published', 'draft', 'cancelled'] })
+  @IsOptional()
+  @IsEnum(['published', 'draft', 'cancelled'] as const)
+  status?: 'published' | 'draft' | 'cancelled';
+
+  @ApiPropertyOptional({ enum: ['ADVENTURE', 'HEALING'] })
+  @IsOptional()
+  @IsEnum(['ADVENTURE', 'HEALING'] as const)
+  track?: 'ADVENTURE' | 'HEALING';
+
+  @ApiPropertyOptional({ enum: ['sortOrder', 'title', 'startDate', 'createdAt'] })
+  @IsOptional()
+  @IsEnum(['sortOrder', 'title', 'startDate', 'createdAt'] as const)
+  sortBy?: 'sortOrder' | 'title' | 'startDate' | 'createdAt';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'] })
+  @IsOptional()
+  @IsEnum(['asc', 'desc'] as const)
+  sortDir?: 'asc' | 'desc';
+}
+
 class TourBookingsQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ enum: TourBookingStatus })
   @IsOptional()
@@ -474,6 +496,42 @@ export class AdminController {
     @Body() body: { isPublished: boolean },
   ) {
     return this.adminService.setEventPublished(id, !!body.isPublished);
+  }
+
+  // ─── Tours (cross-guide catalog admin) ────────────────────────────────────
+
+  @Get('tours')
+  @ApiOperation({
+    summary:
+      'List all soul tours across guides (with click-to-sort + admin-managed sortOrder). Public /travels stays chronological — sortOrder here is admin-side only.',
+  })
+  getTours(@Query() query: AdminToursQueryDto) {
+    return this.adminService.getTours({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+      status: query.status,
+      track: query.track,
+      sortBy: query.sortBy,
+      sortDir: query.sortDir,
+    });
+  }
+
+  @Post('tours/reorder')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Bulk-update tour sortOrder. Admin-side only — does not change /travels public ordering.' })
+  reorderTours(@Body() dto: ReorderDto) {
+    return this.adminService.reorderTours(dto.rows);
+  }
+
+  @Patch('tours/:id/published')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Admin override to publish or unpublish a tour. Skips the payments publish-gate.' })
+  setTourPublished(
+    @Param('id') id: string,
+    @Body() body: { isPublished: boolean },
+  ) {
+    return this.adminService.setTourPublished(id, !!body.isPublished);
   }
 
   @Patch('guides/:guideId/featured')

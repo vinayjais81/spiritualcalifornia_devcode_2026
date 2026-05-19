@@ -1658,6 +1658,114 @@ export class AdminService {
     });
   }
 
+  // ─── Tours (cross-guide catalog admin) ────────────────────────────────────
+  //
+  // Note: like /admin/events, sortOrder is admin-side only. Public /travels
+  // stays chronological (next-departure startDate ASC). Tours surface curated
+  // narratives but seekers still expect "next available departure first".
+
+  async getTours(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    status?: 'published' | 'draft' | 'cancelled';
+    track?: 'ADVENTURE' | 'HEALING';
+    sortBy?: 'sortOrder' | 'title' | 'startDate' | 'createdAt';
+    sortDir?: 'asc' | 'desc';
+  }) {
+    const { page, limit, search, status, track, sortBy = 'sortOrder', sortDir = 'asc' } = params;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (status === 'published') { where.isPublished = true; where.isCancelled = false; }
+    if (status === 'draft') { where.isPublished = false; where.isCancelled = false; }
+    if (status === 'cancelled') where.isCancelled = true;
+    if (track) where.trackType = track;
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { shortDesc: { contains: search, mode: 'insensitive' } },
+        { location: { contains: search, mode: 'insensitive' } },
+        { guide: { displayName: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const orderBy: any =
+      sortBy === 'title'
+        ? [{ title: sortDir }]
+        : sortBy === 'startDate'
+          ? [{ startDate: sortDir }]
+          : sortBy === 'createdAt'
+            ? [{ createdAt: sortDir }]
+            : [{ sortOrder: 'asc' }, { startDate: 'asc' }];
+
+    const [tours, total] = await Promise.all([
+      this.prisma.soulTour.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          shortDesc: true,
+          startDate: true,
+          endDate: true,
+          location: true,
+          country: true,
+          basePrice: true,
+          capacity: true,
+          spotsRemaining: true,
+          coverImageUrl: true,
+          trackType: true,
+          isPublished: true,
+          isCancelled: true,
+          sortOrder: true,
+          createdAt: true,
+          guide: {
+            select: {
+              id: true,
+              slug: true,
+              displayName: true,
+              user: { select: { avatarUrl: true, isActive: true } },
+            },
+          },
+          _count: { select: { bookings: true } },
+        },
+      }),
+      this.prisma.soulTour.count({ where }),
+    ]);
+
+    return { tours, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async reorderTours(rows: Array<{ id: string; sortOrder: number }>) {
+    if (!rows.length) return { updated: 0 };
+    await this.prisma.$transaction(
+      rows.map((r) =>
+        this.prisma.soulTour.update({
+          where: { id: r.id },
+          data: { sortOrder: r.sortOrder },
+        }),
+      ),
+    );
+    return { updated: rows.length };
+  }
+
+  // Admin override for tour visibility. Skips the publish-gate the guide-
+  // facing path enforces. Useful for moderation or to unlist a tour the
+  // guide refused to take down.
+  async setTourPublished(tourId: string, isPublished: boolean) {
+    const tour = await this.prisma.soulTour.findUnique({ where: { id: tourId } });
+    if (!tour) throw new NotFoundException('Tour not found');
+    return this.prisma.soulTour.update({
+      where: { id: tourId },
+      data: { isPublished },
+      select: { id: true, title: true, isPublished: true },
+    });
+  }
+
   async getPost(postId: string) {
     const post = await this.prisma.blogPost.findUnique({
       where: { id: postId },

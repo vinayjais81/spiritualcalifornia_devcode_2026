@@ -21,6 +21,7 @@ import {
   Percent,
   Package,
   Calendar,
+  Mountain,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { useRouter } from 'next/navigation';
@@ -32,6 +33,7 @@ const navItems = [
   { href: '/verification', label: 'Verification Queue', icon: ShieldCheck },
   { href: '/products', label: 'Products', icon: Package },
   { href: '/events', label: 'Events', icon: Calendar },
+  { href: '/tours', label: 'Tours', icon: Mountain },
   { href: '/blog', label: 'Blog', icon: FileText },
   { href: '/static-pages', label: 'Static Pages', icon: FilePen },
   { href: '/tour-bookings', label: 'Tour Bookings', icon: Plane },
