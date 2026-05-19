@@ -39,6 +39,31 @@ class GuidesQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsEnum(VerificationStatus)
   status?: VerificationStatus;
+
+  @ApiPropertyOptional({ enum: ['sortOrder', 'displayName', 'createdAt', 'rating'] })
+  @IsOptional()
+  @IsEnum(['sortOrder', 'displayName', 'createdAt', 'rating'] as const)
+  sortBy?: 'sortOrder' | 'displayName' | 'createdAt' | 'rating';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'] })
+  @IsOptional()
+  @IsEnum(['asc', 'desc'] as const)
+  sortDir?: 'asc' | 'desc';
+}
+
+class ReorderRowDto {
+  @ApiProperty()
+  @IsString()
+  id!: string;
+
+  @ApiProperty()
+  @IsNumber()
+  sortOrder!: number;
+}
+
+class ReorderDto {
+  @ApiProperty({ type: [ReorderRowDto], description: 'Rows in their new display order. sortOrder typically matches array index.' })
+  rows!: ReorderRowDto[];
 }
 
 class UsersQueryDto extends PaginationQueryDto {
@@ -313,14 +338,26 @@ export class AdminController {
   // ─── Guides ───────────────────────────────────────────────────────────────
 
   @Get('guides')
-  @ApiOperation({ summary: 'List all guide profiles' })
+  @ApiOperation({ summary: 'List all guide profiles (with click-to-sort + admin-managed sortOrder)' })
   getGuides(@Query() query: GuidesQueryDto) {
     return this.adminService.getGuides({
       page: query.page,
       limit: query.limit,
       search: query.search,
       status: query.status,
+      sortBy: query.sortBy,
+      sortDir: query.sortDir,
     });
+  }
+
+  @Post('guides/reorder')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Bulk-update guide sortOrder values. Send rows in the new display order; the array index is the natural sortOrder. Used after drag-to-reorder on /admin/guides.',
+  })
+  reorderGuides(@Body() dto: ReorderDto) {
+    return this.adminService.reorderGuides(dto.rows);
   }
 
   @Patch('guides/:guideId/featured')
@@ -596,13 +633,15 @@ export class AdminController {
   }
 
   @Get('blog')
-  @ApiOperation({ summary: 'List all blog posts across the platform' })
+  @ApiOperation({ summary: 'List all blog posts (with click-to-sort + admin-managed sortOrder)' })
   listAllPosts(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('search') search?: string,
     @Query('guideId') guideId?: string,
     @Query('status') status?: 'all' | 'published' | 'draft',
+    @Query('sortBy') sortBy?: 'sortOrder' | 'title' | 'publishedAt' | 'createdAt',
+    @Query('sortDir') sortDir?: 'asc' | 'desc',
   ) {
     return this.adminService.listAllPosts({
       page: page ? Number(page) : 1,
@@ -610,7 +649,16 @@ export class AdminController {
       search,
       guideId,
       status: status ?? 'all',
+      sortBy,
+      sortDir,
     });
+  }
+
+  @Post('blog/reorder')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Bulk-update blog post sortOrder. Mirrors /admin/guides/reorder.' })
+  reorderBlogPosts(@Body() dto: ReorderDto) {
+    return this.adminService.reorderBlogPosts(dto.rows);
   }
 
   @Get('blog/:id')

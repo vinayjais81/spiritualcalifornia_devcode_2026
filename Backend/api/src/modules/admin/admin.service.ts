@@ -568,8 +568,10 @@ export class AdminService {
     limit: number;
     search?: string;
     status?: VerificationStatus;
+    sortBy?: 'sortOrder' | 'displayName' | 'createdAt' | 'rating';
+    sortDir?: 'asc' | 'desc';
   }) {
-    const { page, limit, search, status } = params;
+    const { page, limit, search, status, sortBy = 'sortOrder', sortDir = 'asc' } = params;
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -583,6 +585,18 @@ export class AdminService {
         ],
       };
     }
+
+    // Default view (sortOrder + createdAt tiebreaker) is the only view in
+    // which drag-to-reorder makes sense. Any other column sort is purely
+    // for admin inspection.
+    const orderBy: any =
+      sortBy === 'rating'
+        ? [{ averageRating: sortDir }, { totalReviews: sortDir }]
+        : sortBy === 'displayName'
+          ? [{ displayName: sortDir }]
+          : sortBy === 'createdAt'
+            ? [{ createdAt: sortDir }]
+            : [{ sortOrder: 'asc' }, { createdAt: 'desc' }];
 
     const [guides, total] = await Promise.all([
       this.prisma.guideProfile.findMany({
@@ -600,6 +614,7 @@ export class AdminService {
           isFeatured: true,
           isVerified: true,
           isPublished: true,
+          sortOrder: true,
           createdAt: true,
           user: {
             select: {
@@ -615,7 +630,7 @@ export class AdminService {
             select: { id: true, verificationStatus: true, title: true },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
       }),
       this.prisma.guideProfile.count({ where }),
     ]);
@@ -627,6 +642,24 @@ export class AdminService {
       limit,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  // Bulk-update sortOrder for guides. Accepts an array of { id, sortOrder }
+  // and writes them in a single transaction so the listing never reads a
+  // half-applied order. Caller is responsible for assigning sortOrder
+  // values that match the desired display order (typically the array
+  // index after a drag-and-drop).
+  async reorderGuides(rows: Array<{ id: string; sortOrder: number }>) {
+    if (!rows.length) return { updated: 0 };
+    await this.prisma.$transaction(
+      rows.map((r) =>
+        this.prisma.guideProfile.update({
+          where: { id: r.id },
+          data: { sortOrder: r.sortOrder },
+        }),
+      ),
+    );
+    return { updated: rows.length };
   }
 
   // ─── Verification Queue ───────────────────────────────────────────────────
@@ -1358,10 +1391,14 @@ export class AdminService {
     search?: string;
     guideId?: string;
     status?: 'all' | 'published' | 'draft';
+    sortBy?: 'sortOrder' | 'title' | 'publishedAt' | 'createdAt';
+    sortDir?: 'asc' | 'desc';
   }) {
     const page = params.page ?? 1;
     const limit = Math.min(params.limit ?? 20, 100);
     const skip = (page - 1) * limit;
+    const sortBy = params.sortBy ?? 'sortOrder';
+    const sortDir = params.sortDir ?? 'asc';
 
     const where: any = {};
     if (params.guideId) where.guideId = params.guideId;
@@ -1374,10 +1411,19 @@ export class AdminService {
       ];
     }
 
+    const orderBy: any =
+      sortBy === 'title'
+        ? [{ title: sortDir }]
+        : sortBy === 'publishedAt'
+          ? [{ publishedAt: sortDir }]
+          : sortBy === 'createdAt'
+            ? [{ createdAt: sortDir }]
+            : [{ sortOrder: 'asc' }, { publishedAt: 'desc' }];
+
     const [posts, total] = await Promise.all([
       this.prisma.blogPost.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip,
         take: limit,
         include: {
@@ -1395,6 +1441,19 @@ export class AdminService {
     ]);
 
     return { posts, total, page, limit, totalPages: Math.ceil(total / limit) };
+  }
+
+  async reorderBlogPosts(rows: Array<{ id: string; sortOrder: number }>) {
+    if (!rows.length) return { updated: 0 };
+    await this.prisma.$transaction(
+      rows.map((r) =>
+        this.prisma.blogPost.update({
+          where: { id: r.id },
+          data: { sortOrder: r.sortOrder },
+        }),
+      ),
+    );
+    return { updated: rows.length };
   }
 
   async getPost(postId: string) {

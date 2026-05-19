@@ -728,12 +728,15 @@ export class GuidesService {
       where.averageRating = { gte: filters.minRating };
     }
 
+    // Public ordering follows the admin-managed sortOrder (lower = earlier),
+    // then the requested sort breaks ties. Explicit sortBy=reviews/newest
+    // overrides the admin order entirely so seekers can still re-sort.
     const orderBy: any =
       filters.sortBy === 'reviews'
         ? [{ totalReviews: 'desc' }, { averageRating: 'desc' }]
         : filters.sortBy === 'newest'
         ? [{ createdAt: 'desc' }]
-        : [{ averageRating: 'desc' }, { totalReviews: 'desc' }];
+        : [{ sortOrder: 'asc' }, { averageRating: 'desc' }, { totalReviews: 'desc' }];
 
     const [guides, total, featured] = await Promise.all([
       this.prisma.guideProfile.findMany({

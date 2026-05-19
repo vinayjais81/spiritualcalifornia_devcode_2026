@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { AdminHeader } from '@/components/admin/header';
@@ -8,8 +8,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Star, CheckCircle, Clock, XCircle, BookOpen, AlertTriangle, Sparkles } from 'lucide-react';
+import { Search, Star, CheckCircle, Clock, XCircle, BookOpen, AlertTriangle, Sparkles, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
+import { SortHeader } from '@/components/admin/SortHeader';
+
+type SortBy = 'sortOrder' | 'displayName' | 'createdAt' | 'rating';
+type SortDir = 'asc' | 'desc';
 
 type VerificationStatus = 'PENDING' | 'IN_REVIEW' | 'APPROVED' | 'REJECTED' | 'FLAGGED';
 
@@ -22,6 +26,7 @@ interface Guide {
   averageRating: number;
   totalReviews: number;
   isFeatured: boolean;
+  sortOrder: number;
   createdAt: string;
   user: {
     id: string;
@@ -55,10 +60,20 @@ export default function GuidesPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
+  const [sortBy, setSortBy] = useState<SortBy>('sortOrder');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
   const queryClient = useQueryClient();
 
+  // Drag-to-reorder state. Only meaningful in the default sortOrder view —
+  // dragging while sorted by another column would silently lose the user's
+  // change because the server orders by that column instead. We hide the
+  // grip handles when sortBy !== 'sortOrder' to make that constraint clear.
+  const canReorder = sortBy === 'sortOrder';
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [orderedIds, setOrderedIds] = useState<string[] | null>(null);
+
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'guides', page, search, statusFilter],
+    queryKey: ['admin', 'guides', page, search, statusFilter, sortBy, sortDir],
     queryFn: async () => {
       const { data } = await api.get('/admin/guides', {
         params: {
@@ -66,11 +81,27 @@ export default function GuidesPage() {
           limit: 20,
           search: search || undefined,
           status: statusFilter || undefined,
+          sortBy,
+          sortDir,
         },
       });
       return data;
     },
     placeholderData: { guides: [], total: 0, totalPages: 0 },
+  });
+
+  const reorderMutation = useMutation({
+    mutationFn: (rows: Array<{ id: string; sortOrder: number }>) =>
+      api.post('/admin/guides/reorder', { rows }),
+    onSuccess: () => {
+      toast.success('Order saved');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'guides'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message ?? 'Failed to save order');
+      // Roll local optimistic order back to whatever the server thinks is true.
+      setOrderedIds(null);
+    },
   });
 
   const approveMutation = useMutation({
@@ -93,7 +124,51 @@ export default function GuidesPage() {
     onError: () => toast.error('Failed to update featured status'),
   });
 
-  const guides: Guide[] = data?.guides ?? [];
+  const serverGuides: Guide[] = data?.guides ?? [];
+
+  // Reset any pending drag-state reordering when the server data refreshes
+  // (e.g., after the mutation resolves) so the rendered order matches truth.
+  useEffect(() => {
+    setOrderedIds(null);
+  }, [data]);
+
+  // Compose the display order. While the user is mid-drag we apply the
+  // optimistic orderedIds; otherwise we render whatever the server returned.
+  const guides: Guide[] = useMemo(() => {
+    if (!orderedIds) return serverGuides;
+    const idToGuide = new Map(serverGuides.map((g) => [g.id, g]));
+    return orderedIds.map((id) => idToGuide.get(id)).filter((g): g is Guide => !!g);
+  }, [serverGuides, orderedIds]);
+
+  const handleSort = (col: SortBy) => {
+    if (sortBy === col) {
+      // Toggle direction. For sortOrder, allow flipping to desc but the
+      // canonical view is ascending — clicking again returns to default.
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(col);
+      setSortDir(col === 'rating' ? 'desc' : 'asc');
+    }
+    setPage(1);
+  };
+
+  const handleDrop = (targetId: string) => {
+    if (!draggingId || draggingId === targetId) return;
+    const ids = guides.map((g) => g.id);
+    const fromIdx = ids.indexOf(draggingId);
+    const toIdx = ids.indexOf(targetId);
+    if (fromIdx < 0 || toIdx < 0) return;
+    const next = [...ids];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    setOrderedIds(next);
+    setDraggingId(null);
+    // Persist. sortOrder = page-aware index so paginated reorders work too.
+    const base = (page - 1) * 20;
+    reorderMutation.mutate(
+      next.map((id, i) => ({ id, sortOrder: base + i })),
+    );
+  };
 
   return (
     <div className="flex flex-col overflow-hidden">
@@ -132,16 +207,29 @@ export default function GuidesPage() {
           {/* Table */}
           <Card>
             <CardContent className="p-0">
+              {canReorder && (
+                <div className="border-b bg-purple-50 px-4 py-2 text-xs text-purple-800">
+                  Drag the <GripVertical className="inline h-3 w-3" /> handle to reorder. The order is saved automatically and shows on the public /practitioners page.
+                </div>
+              )}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      <th className="px-4 py-3">Guide</th>
+                      <th className="px-2 py-3 w-8"></th>
+                      <th className="px-4 py-3">
+                        <SortHeader label="Guide" col="displayName" active={sortBy} dir={sortDir} onClick={handleSort} />
+                      </th>
                       <th className="px-4 py-3">Location</th>
                       <th className="px-4 py-3">Credentials</th>
-                      <th className="px-4 py-3">Rating</th>
+                      <th className="px-4 py-3">
+                        <SortHeader label="Rating" col="rating" active={sortBy} dir={sortDir} onClick={handleSort} />
+                      </th>
                       <th className="px-4 py-3">Status</th>
                       <th className="px-4 py-3">Featured</th>
+                      <th className="px-4 py-3">
+                        <SortHeader label="Joined" col="createdAt" active={sortBy} dir={sortDir} onClick={handleSort} />
+                      </th>
                       <th className="px-4 py-3">Actions</th>
                     </tr>
                   </thead>
@@ -149,7 +237,7 @@ export default function GuidesPage() {
                     {isLoading
                       ? Array.from({ length: 6 }).map((_, i) => (
                           <tr key={i}>
-                            {Array.from({ length: 7 }).map((_, j) => (
+                            {Array.from({ length: 9 }).map((_, j) => (
                               <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
                             ))}
                           </tr>
@@ -157,7 +245,7 @@ export default function GuidesPage() {
                       : guides.length === 0
                       ? (
                           <tr>
-                            <td colSpan={7} className="px-4 py-12 text-center text-gray-400">
+                            <td colSpan={9} className="px-4 py-12 text-center text-gray-400">
                               <BookOpen className="mx-auto mb-2 h-8 w-8 opacity-40" />
                               No guides found
                             </td>
@@ -166,8 +254,28 @@ export default function GuidesPage() {
                       : guides.map((guide) => {
                           const cfg = statusConfig[guide.verificationStatus] ?? statusConfig.PENDING;
                           const StatusIcon = cfg.icon;
+                          const isDragging = draggingId === guide.id;
                           return (
-                            <tr key={guide.id} className="hover:bg-gray-50">
+                            <tr
+                              key={guide.id}
+                              className={`hover:bg-gray-50 ${isDragging ? 'opacity-40' : ''}`}
+                              draggable={canReorder}
+                              onDragStart={(e) => {
+                                setDraggingId(guide.id);
+                                e.dataTransfer.effectAllowed = 'move';
+                              }}
+                              onDragEnd={() => setDraggingId(null)}
+                              onDragOver={(e) => { if (canReorder && draggingId) e.preventDefault(); }}
+                              onDrop={(e) => { e.preventDefault(); handleDrop(guide.id); }}
+                            >
+                              <td className="px-2 py-3 align-middle">
+                                {canReorder && (
+                                  <GripVertical
+                                    className="h-4 w-4 cursor-grab text-gray-400 hover:text-gray-600 active:cursor-grabbing"
+                                    aria-label="Drag to reorder"
+                                  />
+                                )}
+                              </td>
                               <td className="px-4 py-3">
                                 <div>
                                   <p className="font-medium text-gray-900">{guide.displayName}</p>
@@ -216,6 +324,9 @@ export default function GuidesPage() {
                                   <Sparkles className={`h-3 w-3 ${guide.isFeatured ? 'fill-amber-500 text-amber-500' : ''}`} />
                                   {guide.isFeatured ? 'Featured' : 'Feature'}
                                 </button>
+                              </td>
+                              <td className="px-4 py-3 text-xs text-gray-500">
+                                {new Date(guide.createdAt).toLocaleDateString()}
                               </td>
                               <td className="px-4 py-3">
                                 {guide.verificationStatus === 'PENDING' && (
@@ -266,3 +377,4 @@ export default function GuidesPage() {
     </div>
   );
 }
+

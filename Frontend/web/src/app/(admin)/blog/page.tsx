@@ -8,9 +8,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Plus, Edit, Trash2, Eye, EyeOff, FileText, X } from 'lucide-react';
+import { Search, Plus, Edit, Trash2, Eye, EyeOff, FileText, X, GripVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import { RichTextEditor } from '@/components/guide/RichTextEditor';
+import { SortHeader } from '@/components/admin/SortHeader';
+
+type SortBy = 'sortOrder' | 'title' | 'publishedAt' | 'createdAt';
+type SortDir = 'asc' | 'desc';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -24,6 +28,7 @@ interface BlogPost {
   tags: string[];
   isPublished: boolean;
   publishedAt: string | null;
+  sortOrder: number;
   createdAt: string;
   guide: {
     id: string;
@@ -68,10 +73,17 @@ export default function AdminBlogPage() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [guideFilter, setGuideFilter] = useState<string>('');
   const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState<SortBy>('sortOrder');
+  const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  // Drag-to-reorder state: only meaningful when sortBy === 'sortOrder'.
+  const canReorder = sortBy === 'sortOrder';
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [orderedIds, setOrderedIds] = useState<string[] | null>(null);
 
   // ─── Fetch posts list ─────────────────────────────────────────────────────
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'blog', page, search, statusFilter, guideFilter],
+    queryKey: ['admin', 'blog', page, search, statusFilter, guideFilter, sortBy, sortDir],
     queryFn: async () => {
       const { data } = await api.get('/admin/blog', {
         params: {
@@ -80,6 +92,8 @@ export default function AdminBlogPage() {
           search: search || undefined,
           status: statusFilter,
           guideId: guideFilter || undefined,
+          sortBy,
+          sortDir,
         },
       });
       return data as { posts: BlogPost[]; total: number; totalPages: number };
@@ -124,6 +138,19 @@ export default function AdminBlogPage() {
     onError: () => toast.error('Failed to delete post'),
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: (rows: Array<{ id: string; sortOrder: number }>) =>
+      api.post('/admin/blog/reorder', { rows }),
+    onSuccess: () => {
+      toast.success('Order saved');
+      invalidate();
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message ?? 'Failed to save order');
+      setOrderedIds(null);
+    },
+  });
+
   // ─── Modal state ──────────────────────────────────────────────────────────
   const [modalOpen, setModalOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<BlogPost | null>(null);
@@ -132,7 +159,45 @@ export default function AdminBlogPage() {
   const openEdit = (post: BlogPost) => { setEditingPost(post); setModalOpen(true); };
   const closeModal = () => { setModalOpen(false); setEditingPost(null); };
 
-  const posts = data?.posts ?? [];
+  const serverPosts = data?.posts ?? [];
+
+  // Reset optimistic drag-state when server data refreshes.
+  useEffect(() => {
+    setOrderedIds(null);
+  }, [data]);
+
+  const posts: BlogPost[] = useMemo(() => {
+    if (!orderedIds) return serverPosts;
+    const idToPost = new Map(serverPosts.map((p) => [p.id, p]));
+    return orderedIds
+      .map((id) => idToPost.get(id))
+      .filter((p): p is BlogPost => !!p);
+  }, [serverPosts, orderedIds]);
+
+  const handleSort = (col: SortBy) => {
+    if (sortBy === col) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortBy(col);
+      setSortDir(col === 'publishedAt' || col === 'createdAt' ? 'desc' : 'asc');
+    }
+    setPage(1);
+  };
+
+  const handleDrop = (targetId: string) => {
+    if (!draggingId || draggingId === targetId) return;
+    const ids = posts.map((p) => p.id);
+    const fromIdx = ids.indexOf(draggingId);
+    const toIdx = ids.indexOf(targetId);
+    if (fromIdx < 0 || toIdx < 0) return;
+    const next = [...ids];
+    const [moved] = next.splice(fromIdx, 1);
+    next.splice(toIdx, 0, moved);
+    setOrderedIds(next);
+    setDraggingId(null);
+    const base = (page - 1) * 20;
+    reorderMutation.mutate(next.map((id, i) => ({ id, sortOrder: base + i })));
+  };
 
   return (
     <div className="flex flex-col overflow-hidden">
@@ -195,15 +260,27 @@ export default function AdminBlogPage() {
           {/* Table */}
           <Card>
             <CardContent className="p-0">
+              {canReorder && (
+                <div className="border-b bg-purple-50 px-4 py-2 text-xs text-purple-800">
+                  Drag the <GripVertical className="inline h-3 w-3" /> handle to reorder. The order is saved automatically and shows on the public /journal page.
+                </div>
+              )}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b bg-gray-50 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      <th className="px-4 py-3">Post</th>
+                      <th className="px-2 py-3 w-8"></th>
+                      <th className="px-4 py-3">
+                        <SortHeader label="Post" col="title" active={sortBy} dir={sortDir} onClick={handleSort} />
+                      </th>
                       <th className="px-4 py-3">Author (Guide)</th>
                       <th className="px-4 py-3">Status</th>
-                      <th className="px-4 py-3">Published</th>
-                      <th className="px-4 py-3">Created</th>
+                      <th className="px-4 py-3">
+                        <SortHeader label="Published" col="publishedAt" active={sortBy} dir={sortDir} onClick={handleSort} />
+                      </th>
+                      <th className="px-4 py-3">
+                        <SortHeader label="Created" col="createdAt" active={sortBy} dir={sortDir} onClick={handleSort} />
+                      </th>
                       <th className="px-4 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
@@ -211,21 +288,42 @@ export default function AdminBlogPage() {
                     {isLoading ? (
                       Array.from({ length: 6 }).map((_, i) => (
                         <tr key={i}>
-                          {Array.from({ length: 6 }).map((_, j) => (
+                          {Array.from({ length: 7 }).map((_, j) => (
                             <td key={j} className="px-4 py-3"><Skeleton className="h-4 w-24" /></td>
                           ))}
                         </tr>
                       ))
                     ) : posts.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-4 py-12 text-center text-gray-400">
+                        <td colSpan={7} className="px-4 py-12 text-center text-gray-400">
                           <FileText className="mx-auto mb-2 h-8 w-8 opacity-40" />
                           No blog posts match these filters.
                         </td>
                       </tr>
                     ) : (
-                      posts.map((post) => (
-                        <tr key={post.id} className="hover:bg-gray-50">
+                      posts.map((post) => {
+                        const isDragging = draggingId === post.id;
+                        return (
+                        <tr
+                          key={post.id}
+                          className={`hover:bg-gray-50 ${isDragging ? 'opacity-40' : ''}`}
+                          draggable={canReorder}
+                          onDragStart={(e) => {
+                            setDraggingId(post.id);
+                            e.dataTransfer.effectAllowed = 'move';
+                          }}
+                          onDragEnd={() => setDraggingId(null)}
+                          onDragOver={(e) => { if (canReorder && draggingId) e.preventDefault(); }}
+                          onDrop={(e) => { e.preventDefault(); handleDrop(post.id); }}
+                        >
+                          <td className="px-2 py-3 align-middle">
+                            {canReorder && (
+                              <GripVertical
+                                className="h-4 w-4 cursor-grab text-gray-400 hover:text-gray-600 active:cursor-grabbing"
+                                aria-label="Drag to reorder"
+                              />
+                            )}
+                          </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-3">
                               {post.coverImageUrl ? (
@@ -306,7 +404,8 @@ export default function AdminBlogPage() {
                             </div>
                           </td>
                         </tr>
-                      ))
+                        );
+                      })
                     )}
                   </tbody>
                 </table>

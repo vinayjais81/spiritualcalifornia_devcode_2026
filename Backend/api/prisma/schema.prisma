@@ -347,6 +347,10 @@ model GuideProfile {
   averageRating        Float              @default(0)
   totalReviews         Int                @default(0)
   isFeatured           Boolean            @default(false)
+  // Admin-managed display order. Lower sortOrder = appears earlier on the
+  // /practitioners listing. Default 0 → all unsorted rows tie, broken by
+  // createdAt DESC. Set by admin drag-to-reorder on /admin/guides.
+  sortOrder            Int                @default(0)
   claimToken           String?            @unique
   claimTokenExpiry     DateTime?
   scrapedSourceUrl     String?
@@ -826,6 +830,9 @@ model Event {
   algoliaObjectId String?
   averageRating   Float     @default(0)
   reviewCount     Int       @default(0)
+  // Admin-managed display order on /admin/events. Public /events still
+  // sorts chronologically by startTime — sortOrder here is admin-side only.
+  sortOrder       Int       @default(0)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -1001,6 +1008,9 @@ model BlogPost {
   isPublished     Boolean   @default(false)
   publishedAt     DateTime?
   algoliaObjectId String?
+  // Admin-managed display order on /journal. Lower sortOrder = appears
+  // earlier. Default 0 → unsorted rows tie, broken by publishedAt DESC.
+  sortOrder       Int       @default(0)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -1289,6 +1299,10 @@ model SoulTour {
   isCancelled          Boolean    @default(false)
   averageRating        Float      @default(0)
   reviewCount          Int        @default(0)
+  // Admin-managed display order on /admin/tours. Public /travels still
+  // sorts chronologically by next-departure startDate — sortOrder here is
+  // admin-side only.
+  sortOrder            Int        @default(0)
   createdAt            DateTime   @default(now())
   updatedAt            DateTime   @updatedAt
 

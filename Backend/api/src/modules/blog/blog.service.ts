@@ -95,7 +95,9 @@ export class BlogService {
     const [posts, total] = await Promise.all([
       this.prisma.blogPost.findMany({
         where,
-        orderBy: { publishedAt: 'desc' },
+        // Admin-managed sortOrder primary; publishedAt breaks ties so
+        // unsorted posts still feel "fresh first".
+        orderBy: [{ sortOrder: 'asc' }, { publishedAt: 'desc' }],
         skip,
         take: limit,
         include: {
