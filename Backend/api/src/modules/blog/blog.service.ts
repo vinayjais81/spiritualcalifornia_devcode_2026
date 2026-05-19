@@ -73,7 +73,10 @@ export class BlogService {
 
   async findPublishedByGuideId(guideId: string) {
     return this.prisma.blogPost.findMany({
-      where: { guideId, isPublished: true },
+      // Defensive: callers usually pass a guideId that's already passed the
+      // public profile's isActive gate, but enforcing here means stray
+      // callers can never leak posts from a deactivated guide.
+      where: { guideId, isPublished: true, guide: { user: { isActive: true } } },
       orderBy: { publishedAt: 'desc' },
     });
   }
@@ -83,7 +86,8 @@ export class BlogService {
   async findAllPublished(page = 1, limit = 12, tag?: string) {
     const skip = (page - 1) * limit;
 
-    const where: any = { isPublished: true };
+    // Hide posts whose guide has been deactivated by an admin.
+    const where: any = { isPublished: true, guide: { user: { isActive: true } } };
     if (tag) {
       where.tags = { has: tag };
     }
@@ -122,8 +126,10 @@ export class BlogService {
   // ─── Get Single Post by Slug (Public) ───────────────────────────────────────
 
   async findBySlug(guideSlug: string, postSlug: string) {
-    const guide = await this.prisma.guideProfile.findUnique({
-      where: { slug: guideSlug },
+    const guide = await this.prisma.guideProfile.findFirst({
+      // 404 if the guide's account has been deactivated — matches the
+      // public profile behaviour (getPublicProfile 404s for the same case).
+      where: { slug: guideSlug, user: { isActive: true } },
       select: { id: true },
     });
 

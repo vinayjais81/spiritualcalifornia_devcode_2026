@@ -39,8 +39,10 @@ export class SearchService {
   }
 
   async reindexGuides(): Promise<number> {
+    // Skip guides whose User account is deactivated — their public profile
+    // 404s, so indexing them would surface dead links in search results.
     const guides = await this.prisma.guideProfile.findMany({
-      where: { isPublished: true },
+      where: { isPublished: true, user: { isActive: true } },
       include: {
         user: { select: { avatarUrl: true } },
         categories: { include: { category: true, subcategory: true } },
@@ -79,7 +81,7 @@ export class SearchService {
 
   async reindexProducts(): Promise<number> {
     const products = await this.prisma.product.findMany({
-      where: { isActive: true },
+      where: { isActive: true, guide: { user: { isActive: true } } },
       include: { guide: { select: { displayName: true, slug: true } } },
     });
 
@@ -101,7 +103,7 @@ export class SearchService {
 
   async reindexEvents(): Promise<number> {
     const events = await this.prisma.event.findMany({
-      where: { isPublished: true, isCancelled: false },
+      where: { isPublished: true, isCancelled: false, guide: { user: { isActive: true } } },
       include: {
         guide: { select: { displayName: true, slug: true } },
         ticketTiers: { where: { isActive: true } },
@@ -135,12 +137,12 @@ export class SearchService {
     const guide = await this.prisma.guideProfile.findUnique({
       where: { id: guideId },
       include: {
-        user: { select: { avatarUrl: true } },
+        user: { select: { avatarUrl: true, isActive: true } },
         categories: { include: { category: true } },
         services: { where: { isActive: true }, select: { price: true, type: true, durationMin: true } },
       },
     });
-    if (!guide || !guide.isPublished) return;
+    if (!guide || !guide.isPublished || !guide.user.isActive) return;
 
     const session60 = guide.services.find((s) => s.durationMin === 60);
     await this.algolia.indexGuide({
@@ -169,9 +171,9 @@ export class SearchService {
   async indexProduct(productId: string) {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },
-      include: { guide: { select: { displayName: true, slug: true } } },
+      include: { guide: { select: { displayName: true, slug: true, user: { select: { isActive: true } } } } },
     });
-    if (!product || !product.isActive) return;
+    if (!product || !product.isActive || !product.guide.user.isActive) return;
 
     await this.algolia.indexProduct({
       objectID: product.id,
