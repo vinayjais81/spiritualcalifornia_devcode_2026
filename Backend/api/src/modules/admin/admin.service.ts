@@ -14,6 +14,7 @@ import { EmailService } from '../notifications/email.service';
 import { LedgerService } from '../payments/ledger.service';
 import { VerificationService } from '../verification/verification.service';
 import { UploadService } from '../upload/upload.service';
+import { SearchService } from '../search/search.service';
 import { checkPasswordPolicy } from '../../common/validators/is-strong-password.validator';
 
 @Injectable()
@@ -27,6 +28,7 @@ export class AdminService {
     private readonly upload: UploadService,
     private readonly email: EmailService,
     private readonly cache: CacheService,
+    private readonly search: SearchService,
   ) {}
 
   /**
@@ -273,7 +275,12 @@ export class AdminService {
 
     const target = await this.prisma.user.findUnique({
       where: { id: targetUserId },
-      include: { roles: true },
+      include: {
+        roles: true,
+        // GuideProfile presence drives the Algolia cascade: SEEKERs have no
+        // search-index footprint, so we skip the cleanup for them.
+        guideProfile: { select: { id: true } },
+      },
     });
     if (!target) throw new NotFoundException('User not found');
     if (!target.isActive) {
@@ -325,10 +332,24 @@ export class AdminService {
     // showing up immediately (otherwise they linger up to 5 minutes).
     await this.cache.del(CacheService.keys.homeData());
 
+    // Scrub Algolia so search results stop returning the guide + their
+    // products + events. Best-effort: errors are logged inside Algolia
+    // calls but never thrown — search drift is preferable to a failed
+    // deactivation.
+    let searchCascade: { productsRemoved: number; eventsRemoved: number } | null = null;
+    if (target.guideProfile) {
+      const result = await this.search.removeAllForGuide(target.guideProfile.id);
+      searchCascade = {
+        productsRemoved: result.productsRemoved,
+        eventsRemoved: result.eventsRemoved,
+      };
+    }
+
     return {
       userId: targetUserId,
       isActive: false,
       deactivatedAt: now,
+      searchCascade,
     };
   }
 
@@ -343,7 +364,10 @@ export class AdminService {
 
     const target = await this.prisma.user.findUnique({
       where: { id: targetUserId },
-      include: { roles: true },
+      include: {
+        roles: true,
+        guideProfile: { select: { id: true } },
+      },
     });
     if (!target) throw new NotFoundException('User not found');
     if (target.isActive) {
@@ -386,7 +410,19 @@ export class AdminService {
 
     await this.cache.del(CacheService.keys.homeData());
 
-    return { userId: targetUserId, isActive: true };
+    // Restore Algolia entries for the guide + their current public-eligible
+    // products and events. Best-effort: search drift can be repaired by a
+    // full reindex if anything goes wrong.
+    let searchCascade: { productsIndexed: number; eventsIndexed: number } | null = null;
+    if (target.guideProfile) {
+      const result = await this.search.reindexAllForGuide(target.guideProfile.id);
+      searchCascade = {
+        productsIndexed: result.productsIndexed,
+        eventsIndexed: result.eventsIndexed,
+      };
+    }
+
+    return { userId: targetUserId, isActive: true, searchCascade };
   }
 
   async setUserRoles(userId: string, roles: Role[]) {

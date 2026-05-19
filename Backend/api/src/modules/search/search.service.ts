@@ -168,6 +168,98 @@ export class SearchService {
     });
   }
 
+  // ─── Per-guide cascade helpers (called by admin deactivate/activate) ─────
+  //
+  // When an admin Deactivates a guide, the listing queries hide them
+  // instantly via the user.isActive: true gate — but the Algolia indices
+  // hold whatever was last indexed and will keep returning the guide +
+  // their products + their events until a reindex runs. These helpers let
+  // the admin path scrub the search index immediately so search results
+  // stay consistent with the listings.
+
+  async removeAllForGuide(guideId: string): Promise<{
+    guideRemoved: boolean;
+    productsRemoved: number;
+    eventsRemoved: number;
+  }> {
+    const [productIds, eventIds] = await Promise.all([
+      this.prisma.product.findMany({ where: { guideId }, select: { id: true } }),
+      this.prisma.event.findMany({ where: { guideId }, select: { id: true } }),
+    ]);
+
+    await Promise.all([
+      this.algolia.removeGuide(guideId),
+      ...productIds.map((p) => this.algolia.removeProduct(p.id)),
+      ...eventIds.map((e) => this.algolia.removeEvent(e.id)),
+    ]);
+
+    return {
+      guideRemoved: true,
+      productsRemoved: productIds.length,
+      eventsRemoved: eventIds.length,
+    };
+  }
+
+  async reindexAllForGuide(guideId: string): Promise<{
+    guideIndexed: boolean;
+    productsIndexed: number;
+    eventsIndexed: number;
+  }> {
+    // Re-index the guide if they still satisfy the publish gate.
+    await this.indexGuide(guideId);
+
+    // Re-index the guide's currently-active products.
+    const products = await this.prisma.product.findMany({
+      where: { guideId, isActive: true },
+      include: { guide: { select: { displayName: true, slug: true } } },
+    });
+    const productRecords: ProductSearchRecord[] = products.map((p) => ({
+      objectID: p.id,
+      name: p.name,
+      description: p.description ?? undefined,
+      type: p.type,
+      price: Number(p.price),
+      guideName: p.guide.displayName,
+      guideSlug: p.guide.slug,
+      imageUrl: p.imageUrls?.[0] ?? undefined,
+      tags: [],
+    }));
+    await this.algolia.bulkIndexProducts(productRecords);
+
+    // Re-index the guide's currently-published events.
+    const events = await this.prisma.event.findMany({
+      where: { guideId, isPublished: true, isCancelled: false },
+      include: {
+        guide: { select: { displayName: true, slug: true } },
+        ticketTiers: { where: { isActive: true } },
+      },
+    });
+    const eventRecords: EventSearchRecord[] = events.map((e) => {
+      const prices = e.ticketTiers.map((t) => Number(t.price));
+      const lowestPrice = prices.length > 0 ? Math.min(...prices) : 0;
+      const spotsLeft = e.ticketTiers.reduce((sum, t) => sum + t.capacity - t.sold, 0);
+      return {
+        objectID: e.id,
+        title: e.title,
+        type: e.type,
+        startTime: Math.floor(e.startTime.getTime() / 1000),
+        location: e.location ?? undefined,
+        guideName: e.guide.displayName,
+        guideSlug: e.guide.slug,
+        price: lowestPrice,
+        spotsLeft,
+        imageUrl: e.coverImageUrl ?? undefined,
+      };
+    });
+    await this.algolia.bulkIndexEvents(eventRecords);
+
+    return {
+      guideIndexed: true,
+      productsIndexed: productRecords.length,
+      eventsIndexed: eventRecords.length,
+    };
+  }
+
   async indexProduct(productId: string) {
     const product = await this.prisma.product.findUnique({
       where: { id: productId },

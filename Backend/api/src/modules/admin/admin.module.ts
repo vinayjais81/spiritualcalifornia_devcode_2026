@@ -6,9 +6,10 @@ import { PaymentsModule } from '../payments/payments.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { VerificationModule } from '../verification/verification.module';
 import { UploadModule } from '../upload/upload.module';
+import { SearchModule } from '../search/search.module';
 
 @Module({
-  imports: [UsersModule, PaymentsModule, NotificationsModule, VerificationModule, UploadModule],
+  imports: [UsersModule, PaymentsModule, NotificationsModule, VerificationModule, UploadModule, SearchModule],
   controllers: [AdminController],
   providers: [AdminService],
   exports: [AdminService],
