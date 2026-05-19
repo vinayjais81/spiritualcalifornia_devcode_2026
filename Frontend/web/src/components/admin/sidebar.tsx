@@ -32,7 +32,10 @@ const navItems = [
   { href: '/guides', label: 'Guides', icon: BookOpen },
   { href: '/verification', label: 'Verification Queue', icon: ShieldCheck },
   { href: '/products', label: 'Products', icon: Package },
-  { href: '/events', label: 'Events', icon: Calendar },
+  // /events is the PUBLIC events listing route — admin events live at
+  // /events-admin to avoid a Next.js route-group collision (both (admin)
+  // and (public) groups share the URL namespace).
+  { href: '/events-admin', label: 'Events', icon: Calendar },
   { href: '/tours', label: 'Tours', icon: Mountain },
   { href: '/blog', label: 'Blog', icon: FileText },
   { href: '/static-pages', label: 'Static Pages', icon: FilePen },
