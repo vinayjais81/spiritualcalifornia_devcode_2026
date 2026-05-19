@@ -7,6 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../database/prisma.service';
+import { CacheService } from '../../database/cache.service';
 import { Role, VerificationStatus, PaymentStatus, BookingStatus, TourBookingStatus, PayoutStatus } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EmailService } from '../notifications/email.service';
@@ -25,6 +26,7 @@ export class AdminService {
     private readonly verification: VerificationService,
     private readonly upload: UploadService,
     private readonly email: EmailService,
+    private readonly cache: CacheService,
   ) {}
 
   /**
@@ -319,6 +321,10 @@ export class AdminService {
       }),
     ]);
 
+    // Bust the home-page cache so the deactivated guide's offerings stop
+    // showing up immediately (otherwise they linger up to 5 minutes).
+    await this.cache.del(CacheService.keys.homeData());
+
     return {
       userId: targetUserId,
       isActive: false,
@@ -377,6 +383,8 @@ export class AdminService {
         },
       }),
     ]);
+
+    await this.cache.del(CacheService.keys.homeData());
 
     return { userId: targetUserId, isActive: true };
   }

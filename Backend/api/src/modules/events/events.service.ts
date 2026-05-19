@@ -1,5 +1,6 @@
 import { Injectable, ForbiddenException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { CacheService } from '../../database/cache.service';
 import { PaymentsService } from '../payments/payments.service';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
@@ -10,8 +11,18 @@ export class EventsService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
     private readonly payments: PaymentsService,
   ) {}
+
+  // Bust the home-page snapshot whenever an event mutates. Without this, a
+  // freshly-published event can be invisible on the home page for up to the
+  // TTL of CacheService.keys.homeData (5 min) — and on a low-traffic dev
+  // box, even longer because the cache key only refreshes on a cache miss
+  // after expiry.
+  private async invalidateHomeCache() {
+    await this.cache.del(CacheService.keys.homeData());
+  }
 
   /**
    * An event is "paid" if any of its currently-active ticket tiers has price > 0.
@@ -177,11 +188,15 @@ export class EventsService {
     if (dto.isPublished !== undefined) data.isPublished = dto.isPublished;
     if (dto.isCancelled !== undefined) data.isCancelled = dto.isCancelled;
 
-    return this.prisma.event.update({
+    const updated = await this.prisma.event.update({
       where: { id: eventId },
       data,
       include: { ticketTiers: true },
     });
+    // Any update may flip the publish/cancel/start-time state that the home
+    // widget filters on — bust the cache unconditionally.
+    await this.invalidateHomeCache();
+    return updated;
   }
 
   // ─── Delete ────────────────────────────────────────────────────────────────
@@ -192,6 +207,7 @@ export class EventsService {
     if (!event) throw new NotFoundException('Event not found');
     if (event.guideId !== guide.id) throw new ForbiddenException('Not your event');
     await this.prisma.event.delete({ where: { id: eventId } });
+    await this.invalidateHomeCache();
     return { deleted: true };
   }
 
@@ -236,5 +252,6 @@ export class EventsService {
         `publishAll: guide ${guideId} has paid events but no Stripe Connect — only ${freeIds.length} free event(s) published`,
       );
     }
+    await this.invalidateHomeCache();
   }
 }

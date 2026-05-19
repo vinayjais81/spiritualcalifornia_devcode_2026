@@ -4,6 +4,7 @@ import {
 import { Prisma } from '@prisma/client';
 import * as crypto from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
+import { CacheService } from '../../database/cache.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { BookTourDto, PayBalanceDto, CancelBookingDto } from './dto/book-tour.dto';
@@ -27,7 +28,15 @@ export class SoulToursService {
     private readonly stripeService: StripeService,
     private readonly payments: PaymentsService,
     private readonly notifications: NotificationsService,
+    private readonly cache: CacheService,
   ) {}
+
+  // Bust the home-page snapshot whenever a tour publish/cancel state may
+  // have changed. SoulTravelsUpdates reads from soul_tours, so a stale
+  // home:data cache otherwise hides newly-published tours up to 5 min.
+  private async invalidateHomeCache() {
+    await this.cache.del(CacheService.keys.homeData());
+  }
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -298,7 +307,7 @@ export class SoulToursService {
       this.payments.assertCanPublishPaidOffering(gate);
     }
 
-    return this.prisma.soulTour.update({
+    const updated = await this.prisma.soulTour.update({
       where: { id: tourId },
       data: {
         ...rest,
@@ -313,6 +322,8 @@ export class SoulToursService {
       },
       include: { roomTypes: true, departures: true, itinerary: true },
     });
+    await this.invalidateHomeCache();
+    return updated;
   }
 
   // ─── Delete Tour ───────────────────────────────────────────────────────────
@@ -323,6 +334,7 @@ export class SoulToursService {
     if (!tour) throw new NotFoundException('Tour not found');
     if (tour.guideId !== guide.id) throw new ForbiddenException('Not your tour');
     await this.prisma.soulTour.delete({ where: { id: tourId } });
+    await this.invalidateHomeCache();
     return { deleted: true };
   }
 

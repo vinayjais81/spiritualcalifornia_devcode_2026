@@ -1,5 +1,6 @@
 import { Injectable, ForbiddenException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { CacheService } from '../../database/cache.service';
 import { PaymentsService } from '../payments/payments.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -10,8 +11,18 @@ export class ProductsService {
 
   constructor(
     private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
     private readonly payments: PaymentsService,
   ) {}
+
+  // Bust the home-page snapshot whenever a product mutates. Without this,
+  // a freshly-created product can be invisible on the home page for up to
+  // 5 minutes (the TTL of CacheService.keys.homeData) — and on a low-
+  // traffic dev box, even longer because the cache key only refreshes on
+  // a cache miss after expiry.
+  private async invalidateHomeCache() {
+    await this.cache.del(CacheService.keys.homeData());
+  }
 
   private async requireGuide(userId: string) {
     const guide = await this.prisma.guideProfile.findUnique({ where: { userId } });
@@ -57,6 +68,7 @@ export class ProductsService {
     );
 
     if (blocked && gate) this.payments.assertCanPublishPaidOffering(gate);
+    if (!blocked && product.isActive) await this.invalidateHomeCache();
     return product;
   }
 
@@ -158,10 +170,12 @@ export class ProductsService {
       this.payments.assertCanPublishPaidOffering(gate);
     }
 
-    return this.prisma.product.update({
+    const updated = await this.prisma.product.update({
       where: { id: productId },
       data: dto,
     });
+    await this.invalidateHomeCache();
+    return updated;
   }
 
   // ─── Delete ────────────────────────────────────────────────────────────────
@@ -172,6 +186,7 @@ export class ProductsService {
     if (!product) throw new NotFoundException('Product not found');
     if (product.guideId !== guide.id) throw new ForbiddenException('Not your product');
     await this.prisma.product.delete({ where: { id: productId } });
+    await this.invalidateHomeCache();
     return { deleted: true };
   }
 
@@ -212,5 +227,6 @@ export class ProductsService {
         `publishAll: guide ${guideId} has paid products but no Stripe Connect — only ${freeIds.length} free product(s) activated`,
       );
     }
+    await this.invalidateHomeCache();
   }
 }

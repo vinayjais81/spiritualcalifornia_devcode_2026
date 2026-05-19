@@ -75,7 +75,7 @@ export class HomeService {
 
   private async getRecentBlogPosts() {
     const posts = await this.prisma.blogPost.findMany({
-      where: { isPublished: true },
+      where: { isPublished: true, guide: { user: { isActive: true } } },
       orderBy: { publishedAt: 'desc' },
       take: 8,
       include: {
@@ -109,7 +109,7 @@ export class HomeService {
 
   private async getActiveProducts() {
     const products = await this.prisma.product.findMany({
-      where: { isActive: true },
+      where: { isActive: true, guide: { user: { isActive: true } } },
       // Surface products by featured guides first so the home carousel's
       // opening slots carry the "Editor's Pick" badge, matching the design.
       orderBy: [{ guide: { isFeatured: 'desc' } }, { createdAt: 'desc' }],
@@ -151,7 +151,13 @@ export class HomeService {
         isPublished: true,
         isCancelled: false,
         startTime: { gte: new Date() },
+        // SOUL_TRAVEL-typed Events are excluded here because the design uses
+        // the SoulTour model + SoulTravelsUpdates section for multi-day
+        // journeys. If you want SOUL_TRAVEL Event rows to also surface here,
+        // drop this clause — but expect overlap with the SoulTravels strip.
         type: { not: 'SOUL_TRAVEL' },
+        // Hide events whose guide has been deactivated.
+        guide: { user: { isActive: true } },
       },
       orderBy: { startTime: 'asc' },
       take: 8,
@@ -198,6 +204,7 @@ export class HomeService {
         departures: {
           some: { status: 'SCHEDULED', startDate: { gte: new Date() } },
         },
+        guide: { user: { isActive: true } },
       },
       orderBy: { startDate: 'asc' },
       take: 6,
