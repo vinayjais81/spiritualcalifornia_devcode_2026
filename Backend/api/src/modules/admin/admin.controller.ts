@@ -41,6 +41,17 @@ class GuidesQueryDto extends PaginationQueryDto {
   status?: VerificationStatus;
 }
 
+class UsersQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({
+    enum: ['active', 'deactivated', 'unverified'],
+    description:
+      'Filter by lifecycle bucket. Omit for "all". active = isActive+verified, unverified = isActive+!verified, deactivated = !isActive.',
+  })
+  @IsOptional()
+  @IsEnum(['active', 'deactivated', 'unverified'] as const)
+  status?: 'active' | 'deactivated' | 'unverified';
+}
+
 class TourBookingsQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ enum: TourBookingStatus })
   @IsOptional()
@@ -229,12 +240,13 @@ export class AdminController {
   // ─── Users ────────────────────────────────────────────────────────────────
 
   @Get('users')
-  @ApiOperation({ summary: 'List all users with pagination and search' })
-  getUsers(@Query() query: PaginationQueryDto) {
+  @ApiOperation({ summary: 'List all users with pagination, search, and lifecycle filter' })
+  getUsers(@Query() query: UsersQueryDto) {
     return this.adminService.getUsers({
       page: query.page,
       limit: query.limit,
       search: query.search,
+      status: query.status,
     });
   }
 

@@ -31,9 +31,19 @@ const roleBadgeColor: Record<string, string> = {
   SUPER_ADMIN: 'bg-red-200 text-red-800',
 };
 
+type StatusFilter = '' | 'active' | 'deactivated' | 'unverified';
+
+const statusFilters: Array<{ value: StatusFilter; label: string }> = [
+  { value: '',            label: 'All' },
+  { value: 'active',      label: 'Active' },
+  { value: 'unverified',  label: 'Unverified' },
+  { value: 'deactivated', label: 'Deactivated' },
+];
+
 export default function UsersPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('');
   const [pwTarget, setPwTarget] = useState<User | null>(null);
   const [newPassword, setNewPassword] = useState('');
   const [pwReason, setPwReason] = useState('');
@@ -43,10 +53,15 @@ export default function UsersPage() {
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin', 'users', page, search],
+    queryKey: ['admin', 'users', page, search, statusFilter],
     queryFn: async () => {
       const { data } = await api.get('/admin/users', {
-        params: { page, limit: 20, search: search || undefined },
+        params: {
+          page,
+          limit: 20,
+          search: search || undefined,
+          status: statusFilter || undefined,
+        },
       });
       return data;
     },
@@ -111,15 +126,32 @@ export default function UsersPage() {
       <div className="flex-1 overflow-y-auto p-6">
         <div className="mx-auto max-w-7xl space-y-4">
 
-          {/* Search */}
-          <div className="relative max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <Input
-              placeholder="Search by name or email…"
-              className="pl-9"
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-            />
+          {/* Search + Lifecycle filter */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="relative max-w-sm flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <Input
+                placeholder="Search by name or email…"
+                className="pl-9"
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              />
+            </div>
+            <div className="flex gap-1">
+              {statusFilters.map((f) => (
+                <button
+                  key={f.value}
+                  onClick={() => { setStatusFilter(f.value); setPage(1); }}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                    statusFilter === f.value
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-white border text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Table */}

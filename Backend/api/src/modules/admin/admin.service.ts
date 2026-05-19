@@ -162,19 +162,32 @@ export class AdminService {
 
   // ─── Users ────────────────────────────────────────────────────────────────
 
-  async getUsers(params: { page: number; limit: number; search?: string }) {
-    const { page, limit, search } = params;
+  async getUsers(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    status?: 'active' | 'deactivated' | 'unverified';
+  }) {
+    const { page, limit, search, status } = params;
     const skip = (page - 1) * limit;
 
-    const where = search
-      ? {
-          OR: [
-            { email: { contains: search, mode: 'insensitive' as const } },
-            { firstName: { contains: search, mode: 'insensitive' as const } },
-            { lastName: { contains: search, mode: 'insensitive' as const } },
-          ],
-        }
-      : {};
+    const where: any = {};
+    if (search) {
+      where.OR = [
+        { email: { contains: search, mode: 'insensitive' as const } },
+        { firstName: { contains: search, mode: 'insensitive' as const } },
+        { lastName: { contains: search, mode: 'insensitive' as const } },
+      ];
+    }
+    if (status === 'active') {
+      where.isActive = true;
+      where.isEmailVerified = true;
+    } else if (status === 'deactivated') {
+      where.isActive = false;
+    } else if (status === 'unverified') {
+      where.isActive = true;
+      where.isEmailVerified = false;
+    }
 
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
