@@ -1,30 +1,51 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { AlgoliaService, GuideSearchRecord, ProductSearchRecord, EventSearchRecord } from './algolia.service';
+import { PostgresSearchService } from './postgres-search.service';
 
 @Injectable()
 export class SearchService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly algolia: AlgoliaService,
+    private readonly pg: PostgresSearchService,
   ) {}
 
   // ─── Search Endpoints ──────────────────────────────────────────────────────
+  //
+  // 2026-05-20: Search now runs on Postgres FTS. Algolia is dormant via
+  // ALGOLIA_ENABLED=false (its service no-ops). The reindex/index/remove
+  // helpers below still exist so flipping the flag back on doesn't
+  // require code surgery. Listing-page visibility gates are enforced
+  // inside PostgresSearchService — same gates as /practitioners, /shop,
+  // /events, /travels, /journal — so search can't surface a row the
+  // listing would hide.
 
   async searchAll(query: string) {
-    return this.algolia.searchAll(query);
+    return this.pg.searchAll(query);
   }
 
-  async searchGuides(query: string, filters?: string, page = 0) {
-    return this.algolia.searchGuides(query, filters, page);
+  async searchGuides(query: string, _filters?: string, page = 0) {
+    // _filters reserved — Algolia's filter DSL doesn't translate 1:1 to
+    // Postgres FTS. When/if facet filtering is needed, add structured
+    // filter params (modality, location, etc.) here.
+    return this.pg.searchGuides(query, page);
   }
 
-  async searchProducts(query: string, filters?: string, page = 0) {
-    return this.algolia.searchProducts(query, filters, page);
+  async searchProducts(query: string, _filters?: string, page = 0) {
+    return this.pg.searchProducts(query, page);
   }
 
-  async searchEvents(query: string, filters?: string, page = 0) {
-    return this.algolia.searchEvents(query, filters, page);
+  async searchEvents(query: string, _filters?: string, page = 0) {
+    return this.pg.searchEvents(query, page);
+  }
+
+  async searchTours(query: string, page = 0) {
+    return this.pg.searchTours(query, page);
+  }
+
+  async searchBlog(query: string, page = 0) {
+    return this.pg.searchBlog(query, page);
   }
 
   // ─── Bulk Index All Data (called from seed or admin) ───────────────────────

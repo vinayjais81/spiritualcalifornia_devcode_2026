@@ -351,6 +351,11 @@ model GuideProfile {
   // /practitioners listing. Default 0 → all unsorted rows tie, broken by
   // createdAt DESC. Set by admin drag-to-reorder on /admin/guides.
   sortOrder            Int                @default(0)
+  // Postgres FTS: generated tsvector column managed entirely by the DB
+  // (see 20260520120000_postgres_fts migration). Prisma can't manage
+  // generated columns so this is declared as Unsupported — the column
+  // exists in the schema for drift detection but the app never writes it.
+  searchVector         Unsupported("tsvector")?
   claimToken           String?            @unique
   claimTokenExpiry     DateTime?
   scrapedSourceUrl     String?
@@ -833,6 +838,8 @@ model Event {
   // Admin-managed display order on /admin/events. Public /events still
   // sorts chronologically by startTime — sortOrder here is admin-side only.
   sortOrder       Int       @default(0)
+  // Postgres FTS — see GuideProfile.searchVector for rationale.
+  searchVector    Unsupported("tsvector")?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -923,6 +930,8 @@ model Product {
   // Admin-managed display order on /shop. Default 0 = unsorted; admin
   // drag-to-reorder on /admin/products writes per-row sortOrder.
   sortOrder       Int              @default(0)
+  // Postgres FTS — see GuideProfile.searchVector for rationale.
+  searchVector    Unsupported("tsvector")?
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
@@ -1015,6 +1024,8 @@ model BlogPost {
   // Admin-managed display order on /journal. Lower sortOrder = appears
   // earlier. Default 0 → unsorted rows tie, broken by publishedAt DESC.
   sortOrder       Int       @default(0)
+  // Postgres FTS — see GuideProfile.searchVector for rationale.
+  searchVector    Unsupported("tsvector")?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -1307,6 +1318,8 @@ model SoulTour {
   // sorts chronologically by next-departure startDate — sortOrder here is
   // admin-side only.
   sortOrder            Int        @default(0)
+  // Postgres FTS — see GuideProfile.searchVector for rationale.
+  searchVector         Unsupported("tsvector")?
   createdAt            DateTime   @default(now())
   updatedAt            DateTime   @updatedAt
 

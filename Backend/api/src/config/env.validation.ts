@@ -80,6 +80,12 @@ const envSchema = z.object({
 
   // Background-queue kill switches. Set to 'false' to disable the cron.
   TOUR_TASKS_ENABLED: z.string().optional(),
+
+  // Algolia kill switch. When 'false' (the default since 2026-05-20), all
+  // Algolia SDK calls no-op and search is served by Postgres FTS via
+  // PostgresSearchService. Flip to 'true' + populate ALGOLIA_APP_ID /
+  // ALGOLIA_ADMIN_API_KEY to revert to Algolia.
+  ALGOLIA_ENABLED: z.string().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

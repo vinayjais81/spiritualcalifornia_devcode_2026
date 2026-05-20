@@ -52,22 +52,35 @@ export interface EventSearchRecord {
 
 @Injectable()
 export class AlgoliaService implements OnModuleInit {
-  private client: SearchClient;
+  private client: SearchClient | null = null;
   private readonly logger = new Logger(AlgoliaService.name);
+  private readonly enabled: boolean;
   readonly guidesIndex: string;
   readonly productsIndex: string;
   readonly eventsIndex: string;
 
   constructor(private readonly config: ConfigService) {
-    const appId = this.config.get<string>('ALGOLIA_APP_ID')!;
-    const adminKey = this.config.get<string>('ALGOLIA_ADMIN_API_KEY')!;
-    this.client = algoliasearch(appId, adminKey);
+    // ALGOLIA_ENABLED gate (2026-05-20): when false (now the default), the
+    // entire Algolia integration is dormant — no SDK init, every index/
+    // search call early-returns. Postgres FTS handles search via
+    // PostgresSearchService instead. Flip back to 'true' to re-enable
+    // without any code changes.
+    this.enabled = this.config.get<string>('ALGOLIA_ENABLED', 'false') === 'true';
     this.guidesIndex = this.config.get('ALGOLIA_GUIDES_INDEX', 'guides');
     this.productsIndex = this.config.get('ALGOLIA_PRODUCTS_INDEX', 'products');
     this.eventsIndex = this.config.get('ALGOLIA_EVENTS_INDEX', 'events');
+
+    if (this.enabled) {
+      const appId = this.config.get<string>('ALGOLIA_APP_ID')!;
+      const adminKey = this.config.get<string>('ALGOLIA_ADMIN_API_KEY')!;
+      this.client = algoliasearch(appId, adminKey);
+    } else {
+      this.logger.log('Algolia disabled (ALGOLIA_ENABLED=false) — search served by Postgres FTS');
+    }
   }
 
   async onModuleInit() {
+    if (!this.enabled || !this.client) return;
     try {
       // Configure searchable attributes and facets
       await this.client.setSettings({
@@ -101,8 +114,13 @@ export class AlgoliaService implements OnModuleInit {
   }
 
   // ─── Index Operations ──────────────────────────────────────────────────────
+  //
+  // Every method below early-returns when ALGOLIA_ENABLED=false. Callers
+  // can keep invoking them unconditionally — see SearchService.reindex*
+  // and admin.service.deactivate cascade — without branching on the flag.
 
   async indexGuide(record: GuideSearchRecord) {
+    if (!this.client) return;
     try {
       await this.client.saveObject({ indexName: this.guidesIndex, body: record });
       this.logger.debug(`Indexed guide: ${record.objectID}`);
@@ -112,6 +130,7 @@ export class AlgoliaService implements OnModuleInit {
   }
 
   async removeGuide(objectID: string) {
+    if (!this.client) return;
     try {
       await this.client.deleteObject({ indexName: this.guidesIndex, objectID });
     } catch (err: any) {
@@ -120,6 +139,7 @@ export class AlgoliaService implements OnModuleInit {
   }
 
   async indexProduct(record: ProductSearchRecord) {
+    if (!this.client) return;
     try {
       await this.client.saveObject({ indexName: this.productsIndex, body: record });
     } catch (err: any) {
@@ -128,6 +148,7 @@ export class AlgoliaService implements OnModuleInit {
   }
 
   async removeProduct(objectID: string) {
+    if (!this.client) return;
     try {
       await this.client.deleteObject({ indexName: this.productsIndex, objectID });
     } catch (err: any) {
@@ -136,6 +157,7 @@ export class AlgoliaService implements OnModuleInit {
   }
 
   async indexEvent(record: EventSearchRecord) {
+    if (!this.client) return;
     try {
       await this.client.saveObject({ indexName: this.eventsIndex, body: record });
     } catch (err: any) {
@@ -144,6 +166,7 @@ export class AlgoliaService implements OnModuleInit {
   }
 
   async removeEvent(objectID: string) {
+    if (!this.client) return;
     try {
       await this.client.deleteObject({ indexName: this.eventsIndex, objectID });
     } catch (err: any) {
@@ -154,7 +177,7 @@ export class AlgoliaService implements OnModuleInit {
   // ─── Bulk Indexing ─────────────────────────────────────────────────────────
 
   async bulkIndexGuides(records: GuideSearchRecord[]) {
-    if (!records.length) return;
+    if (!this.client || !records.length) return;
     try {
       await this.client.saveObjects({ indexName: this.guidesIndex, objects: records as unknown as Record<string, unknown>[] });
       this.logger.log(`Bulk indexed ${records.length} guides`);
@@ -164,7 +187,7 @@ export class AlgoliaService implements OnModuleInit {
   }
 
   async bulkIndexProducts(records: ProductSearchRecord[]) {
-    if (!records.length) return;
+    if (!this.client || !records.length) return;
     try {
       await this.client.saveObjects({ indexName: this.productsIndex, objects: records as unknown as Record<string, unknown>[] });
       this.logger.log(`Bulk indexed ${records.length} products`);
@@ -174,7 +197,7 @@ export class AlgoliaService implements OnModuleInit {
   }
 
   async bulkIndexEvents(records: EventSearchRecord[]) {
-    if (!records.length) return;
+    if (!this.client || !records.length) return;
     try {
       await this.client.saveObjects({ indexName: this.eventsIndex, objects: records as unknown as Record<string, unknown>[] });
       this.logger.log(`Bulk indexed ${records.length} events`);
@@ -184,8 +207,13 @@ export class AlgoliaService implements OnModuleInit {
   }
 
   // ─── Search (backend-side, for API endpoints) ──────────────────────────────
+  //
+  // These return empty result shells when Algolia is disabled — but the
+  // primary search path now lives in PostgresSearchService, so these are
+  // legacy. Kept callable for the day someone flips ALGOLIA_ENABLED=true.
 
   async searchGuides(query: string, filters?: string, page = 0, hitsPerPage = 20) {
+    if (!this.client) return { hits: [], nbHits: 0, page, hitsPerPage } as any;
     return this.client.searchSingleIndex({
       indexName: this.guidesIndex,
       searchParams: { query, filters, page, hitsPerPage },
@@ -193,6 +221,7 @@ export class AlgoliaService implements OnModuleInit {
   }
 
   async searchProducts(query: string, filters?: string, page = 0, hitsPerPage = 20) {
+    if (!this.client) return { hits: [], nbHits: 0, page, hitsPerPage } as any;
     return this.client.searchSingleIndex({
       indexName: this.productsIndex,
       searchParams: { query, filters, page, hitsPerPage },
@@ -200,6 +229,7 @@ export class AlgoliaService implements OnModuleInit {
   }
 
   async searchEvents(query: string, filters?: string, page = 0, hitsPerPage = 20) {
+    if (!this.client) return { hits: [], nbHits: 0, page, hitsPerPage } as any;
     return this.client.searchSingleIndex({
       indexName: this.eventsIndex,
       searchParams: { query, filters, page, hitsPerPage },
@@ -209,6 +239,7 @@ export class AlgoliaService implements OnModuleInit {
   // ─── Multi-index search ────────────────────────────────────────────────────
 
   async searchAll(query: string, hitsPerPage = 5) {
+    if (!this.client) return { guides: [], products: [], events: [] };
     const results = await this.client.search({
       requests: [
         { indexName: this.guidesIndex, query, hitsPerPage },

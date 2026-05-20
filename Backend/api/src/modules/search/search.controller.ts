@@ -46,9 +46,28 @@ export class SearchController {
     return this.searchService.searchEvents(q || '', filters, Number(page) || 0);
   }
 
+  @Public()
+  @Get('tours')
+  @ApiOperation({ summary: 'Search soul tours' })
+  @ApiQuery({ name: 'q', required: false }) @ApiQuery({ name: 'page', required: false })
+  searchTours(@Query('q') q?: string, @Query('page') page?: string) {
+    return this.searchService.searchTours(q || '', Number(page) || 0);
+  }
+
+  @Public()
+  @Get('blog')
+  @ApiOperation({ summary: 'Search blog / journal posts' })
+  @ApiQuery({ name: 'q', required: false }) @ApiQuery({ name: 'page', required: false })
+  searchBlog(@Query('q') q?: string, @Query('page') page?: string) {
+    return this.searchService.searchBlog(q || '', Number(page) || 0);
+  }
+
   @Post('reindex')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
-  @ApiOperation({ summary: 'Reindex all data to Algolia (admin only)' })
+  @ApiOperation({
+    summary:
+      'Reindex all data to Algolia (admin only). No-op when ALGOLIA_ENABLED=false; Postgres FTS uses generated columns and needs no reindex.',
+  })
   reindexAll() {
     return this.searchService.reindexAll();
   }
