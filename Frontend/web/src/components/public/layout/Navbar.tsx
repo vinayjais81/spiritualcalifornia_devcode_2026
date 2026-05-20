@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/auth.store';
 import { useCartStore } from '@/store/cart.store';
+import { GlobalSearchModal } from './GlobalSearchModal';
 
 const navLinks = [
   { label: 'Practitioners', href: '/practitioners' },
@@ -18,6 +19,7 @@ const navLinks = [
 export function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   // Cart count comes from a localStorage-persisted Zustand store, so it's 0 during
   // SSR and non-zero on the client. Gating the rendered count behind a `mounted`
   // flag keeps the server and first client render identical, avoiding hydration errors.
@@ -156,6 +158,34 @@ export function Navbar() {
           className="hidden md:flex"
           style={{ gridColumn: 3, justifySelf: 'end', alignItems: 'center', gap: '24px' }}
         >
+          {/* Global search trigger — opens the cross-entity search modal */}
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search the marketplace"
+            style={{
+              position: 'relative',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              background: 'transparent',
+              border: 'none',
+              color: '#3A3530',
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(232,184,75,0.12)')}
+            onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m20 20-3.5-3.5" />
+            </svg>
+          </button>
+
           {/* Cart icon with live item count */}
           <Link
             href="/cart"
@@ -528,6 +558,8 @@ export function Navbar() {
           )}
         </div>
       )}
+
+      <GlobalSearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
 }
