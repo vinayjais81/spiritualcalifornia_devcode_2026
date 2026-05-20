@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
@@ -97,7 +97,20 @@ function pickFallbackImage(seed: string): string {
 // PAGE
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Next.js requires useSearchParams() inside a Suspense boundary when the
+// page is statically prerendered — otherwise the build fails at
+// "Generating static pages" with a missing-suspense error. Wrapping the
+// body in <Suspense> isolates the search-params read so the surrounding
+// shell can still prerender.
 export default function PractitionersPage() {
+  return (
+    <Suspense fallback={null}>
+      <PractitionersPageInner />
+    </Suspense>
+  );
+}
+
+function PractitionersPageInner() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get('q') ?? '';
 
