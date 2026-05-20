@@ -27,25 +27,63 @@ function formatDate(dateStr: string) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+// Maps a /search/blog hit (flat guide fields) to the nested BlogPost shape
+// the page's components expect. Keeps PostCard / FeaturedHero unchanged.
+function adaptSearchHit(hit: any): BlogPost {
+  return {
+    id: hit.id,
+    title: hit.title,
+    slug: hit.slug,
+    excerpt: hit.excerpt,
+    coverImageUrl: hit.coverImageUrl,
+    tags: hit.tags ?? [],
+    publishedAt: hit.publishedAt,
+    guide: {
+      slug: hit.guideSlug,
+      displayName: hit.guideName,
+      user: { avatarUrl: hit.guideAvatarUrl },
+    },
+  };
+}
+
 export default function JournalPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // Debounce the search input so we don't fire a request on every keystroke.
+  // 250ms is the standard sweet-spot — perceptibly instant on fast typers,
+  // not so fast that it floods the API on backspace-rewrite-backspace cycles.
   useEffect(() => {
-    const fetchPosts = async () => {
+    let cancelled = false;
+    setLoading(true);
+
+    const q = searchQuery.trim();
+    const handle = setTimeout(async () => {
       try {
-        const res = await api.get('/blog', { params: { limit: 20 } });
-        setPosts(res.data?.posts ?? []);
+        if (q.length > 0) {
+          // Server-side FTS — typo-tolerant via pg_trgm.
+          const res = await api.get('/search/blog', { params: { q, page: 0 } });
+          const hits = (res.data?.hits ?? []) as any[];
+          if (!cancelled) setPosts(hits.map(adaptSearchHit));
+        } else {
+          // No query → default "latest posts" listing.
+          const res = await api.get('/blog', { params: { limit: 20 } });
+          if (!cancelled) setPosts(res.data?.posts ?? []);
+        }
       } catch {
-        setPosts([]);
+        if (!cancelled) setPosts([]);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
+    }, q.length > 0 ? 250 : 0);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
     };
-    fetchPosts();
-  }, []);
+  }, [searchQuery]);
 
   // Derive topic chips from the tags of posts we actually have. Avoids
   // hardcoding a curated list that can drift from what's published.

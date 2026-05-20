@@ -277,7 +277,8 @@ export class PostgresSearchService {
     const hits = await this.prisma.$queryRaw<Array<{
       id: string; slug: string; title: string; excerpt: string | null;
       coverImageUrl: string | null; tags: string[]; publishedAt: Date | null;
-      guideName: string; guideSlug: string; rank: number;
+      guideName: string; guideSlug: string; guideAvatarUrl: string | null;
+      rank: number;
     }>>`
       SELECT
         b.id,
@@ -289,6 +290,7 @@ export class PostgresSearchService {
         b."publishedAt",
         g."displayName" AS "guideName",
         g.slug AS "guideSlug",
+        u."avatarUrl" AS "guideAvatarUrl",
         GREATEST(
           ts_rank_cd(b."searchVector", websearch_to_tsquery('english', ${q})),
           similarity(b.title, ${q})
