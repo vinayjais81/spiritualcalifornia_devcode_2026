@@ -2,6 +2,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -97,14 +98,19 @@ function pickFallbackImage(seed: string): string {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export default function PractitionersPage() {
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get('q') ?? '';
+
   const [guides, setGuides] = useState<Guide[]>([]);
   const [featured, setFeatured] = useState<Guide[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeModality, setActiveModality] = useState<string>('all');
   const [activeStars, setActiveStars] = useState<number>(0);
 
-  // AI bar state
-  const [aiInput, setAiInput] = useState('');
+  // AI bar state — initialQuery seeds the input from the home hero's
+  // ?q= deeplink so a visitor who typed "feeling anxious" on the home
+  // hero lands on /practitioners with the same query already submitted.
+  const [aiInput, setAiInput] = useState(initialQuery);
   const [aiReply, setAiReply] = useState<string>('');
   const [aiMatched, setAiMatched] = useState<MatchedPractitioner[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
@@ -145,6 +151,16 @@ export default function PractitionersPage() {
       setAiLoading(false);
     }
   };
+
+  // Auto-fire the AI match once when arriving with ?q=… from the home
+  // hero. Empty deps + initialQuery check means it runs at most once
+  // per page load; manual edits afterward go through submit/Enter.
+  useEffect(() => {
+    if (initialQuery.trim().length > 0) {
+      askAI(initialQuery);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleAiSubmit = (e: FormEvent) => {
     e.preventDefault();

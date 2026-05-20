@@ -3,6 +3,7 @@
 import { useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const poppyItems = [
   { label: 'Practitioners', href: '/practitioners', image: '/images/hero1.jpg' },
@@ -21,10 +22,27 @@ const hintChips = [
 
 export function HeroSection() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   function fillChip(text: string) {
     if (inputRef.current) inputRef.current.value = text;
+    // Don't auto-submit on chip click — the user might still want to edit.
+    // Just fill and focus so they can refine or press Enter / Guide Me.
     inputRef.current?.focus();
+  }
+
+  // Hero queries are intent-driven ("feeling anxious", "low energy", etc.),
+  // so we route to /practitioners?q=… where the AI Guide picks up the
+  // query string and fires POST /ai/practitioner-match against Claude.
+  // Cross-entity keyword search lives in the navbar magnifier modal —
+  // different tool for a different need.
+  function submitQuery() {
+    const q = inputRef.current?.value?.trim();
+    if (!q) {
+      router.push('/practitioners');
+      return;
+    }
+    router.push(`/practitioners?q=${encodeURIComponent(q)}`);
   }
 
   return (
@@ -111,6 +129,7 @@ export function HeroSection() {
             ref={inputRef}
             type="text"
             placeholder="I feel burnt out and disconnected…"
+            onKeyDown={(e) => { if (e.key === 'Enter') submitQuery(); }}
             style={{
               flex: 1,
               border: 'none',
@@ -123,6 +142,7 @@ export function HeroSection() {
             }}
           />
           <button
+            onClick={submitQuery}
             style={{
               background: '#E8B84B',
               color: '#FFFFFF',

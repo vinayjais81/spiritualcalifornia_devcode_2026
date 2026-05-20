@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { api } from '@/lib/api';
 
 const suggestions = [
   'I feel anxious and need to calm down',
@@ -20,27 +22,45 @@ const suggestionLabels = [
   'Sacred home space',
 ];
 
+interface RecommendedProduct {
+  id: string;
+  name: string;
+  price: string;
+}
+
 export function AIFinderBar() {
   const [query, setQuery] = useState('');
-  const [response, setResponse] = useState<{ text: string; products: { name: string; price: string }[] } | null>(null);
+  const [response, setResponse] = useState<{ text: string; products: RecommendedProduct[] } | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Calls POST /ai/product-finder which uses Claude to pick 2-3 matches
+  // from the active product catalog based on the user's natural-language
+  // query. Response shape: { reply: string, products: [{ id, name, price, type }] }.
   const askAI = async (q?: string) => {
     const input = q || query;
     if (!input.trim()) return;
     setLoading(true);
-    // [STUB] In production, call /ai/product-finder
-    setTimeout(() => {
+    try {
+      const res = await api.post('/ai/product-finder', { query: input });
+      const data = res.data ?? {};
       setResponse({
-        text: `Based on your interest in "${input}", I'd recommend exploring these items from our collection. Each has been curated by our verified practitioners.`,
-        products: [
-          { name: '432 Hz Deep Sleep Meditation', price: '$24' },
-          { name: 'Amethyst Cluster — Large', price: '$89' },
-          { name: 'Lavender Sage Bundle', price: '$18' },
-        ],
+        text: data.reply ?? '',
+        products: (data.products ?? []).map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          price: typeof p.price === 'number' ? `$${p.price.toFixed(0)}` : `$${p.price}`,
+        })),
       });
+    } catch {
+      // Backend already returns a graceful fallback on Claude failures; this
+      // only fires on network/server errors.
+      setResponse({
+        text: 'Sorry, I had trouble fetching recommendations. Browse the shop directly below.',
+        products: [],
+      });
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   const fillAndAsk = (text: string) => {
@@ -138,17 +158,28 @@ export function AIFinderBar() {
               {response.text}
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' as const }}>
-              {response.products.map((p, i) => (
-                <div
-                  key={i}
+              {response.products.map((p) => (
+                <Link
+                  key={p.id}
+                  href={`/shop/${p.id}`}
                   style={{
                     background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(232,184,75,0.2)',
                     borderRadius: 8, padding: '10px 14px', fontSize: 12, cursor: 'pointer',
+                    textDecoration: 'none', display: 'block',
+                    transition: 'background 0.2s, border-color 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.14)';
+                    e.currentTarget.style.borderColor = 'rgba(232,184,75,0.45)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                    e.currentTarget.style.borderColor = 'rgba(232,184,75,0.2)';
                   }}
                 >
                   <div style={{ fontWeight: 500, color: '#fff', marginBottom: 2 }}>{p.name}</div>
                   <div style={{ color: '#E8B84B' }}>{p.price}</div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
