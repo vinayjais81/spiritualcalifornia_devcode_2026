@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { api } from '@/lib/api';
 import { MiniCalendar } from '@/components/public/shared/MiniCalendar';
 import { CoverImage } from '@/components/public/shared/CoverImage';
+import { SearchResultsList, SearchResultRow } from '@/components/public/shared/SearchResultsList';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -115,11 +116,37 @@ function eventTypeBadge(type: EventItem['type'], isFree: boolean) {
 // PAGE
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Maps a /search/events hit (flat guide fields) to a SearchResultRow.
+function adaptEventSearchHit(hit: any): SearchResultRow {
+  const start = new Date(hit.startTime);
+  return {
+    id: hit.id,
+    title: hit.title,
+    coverImageUrl: hit.coverImageUrl,
+    locationLabel: hit.location || null,
+    dateLabel: start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    badge: hit.type === 'VIRTUAL' ? 'Virtual'
+         : hit.type === 'IN_PERSON' ? 'In-Person'
+         : hit.type === 'RETREAT' ? 'Retreat'
+         : hit.type === 'SOUL_TRAVEL' ? 'Soul Travel'
+         : null,
+    guide: {
+      slug: hit.guideSlug,
+      displayName: hit.guideName,
+      avatarUrl: hit.guideAvatarUrl ?? null,
+    },
+    href: `/events/${hit.id}`,
+  };
+}
+
 export default function EventsPage() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResultRow[]>([]);
+  const [searching, setSearching] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -129,6 +156,35 @@ export default function EventsPage() {
       .catch(() => setEvents([]))
       .finally(() => setLoading(false));
   }, []);
+
+  // Debounced FTS lookup. When searchQuery is non-empty, swap the page
+  // into "search mode" — calendar + filter pills still visible but the
+  // results pane shows hits from /search/events instead of the grouped
+  // monthly listing.
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length === 0) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+    let cancelled = false;
+    setSearching(true);
+    const handle = setTimeout(async () => {
+      try {
+        const res = await api.get('/search/events', { params: { q, page: 0 } });
+        const hits = (res.data?.hits ?? []) as any[];
+        if (!cancelled) setSearchResults(hits.map(adaptEventSearchHit));
+      } catch {
+        if (!cancelled) setSearchResults([]);
+      } finally {
+        if (!cancelled) setSearching(false);
+      }
+    }, 250);
+    return () => { cancelled = true; clearTimeout(handle); };
+  }, [searchQuery]);
+
+  const isSearchMode = searchQuery.trim().length > 0;
 
   const eventDates = useMemo(
     () => Array.from(new Set(events.map((e) => toYmd(e.startTime)))),
@@ -196,6 +252,25 @@ export default function EventsPage() {
       >
         {/* Sidebar */}
         <aside style={{ position: 'sticky', top: 90 }} className="events-sidebar">
+          {/* Search input — when non-empty, swaps the main pane to /search/events results */}
+          <div style={{ marginBottom: 20, position: 'relative' }}>
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search events…"
+              aria-label="Search events"
+              style={{
+                width: '100%', padding: '10px 36px 10px 14px', borderRadius: 24,
+                background: '#fff', border: '1px solid rgba(232,184,75,0.25)',
+                fontSize: 13, color: '#3A3530', outline: 'none',
+                boxShadow: '0 2px 14px rgba(58,53,48,0.04)',
+              }}
+            />
+            <span style={{
+              position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
+              fontSize: 14, color: '#8A8278', pointerEvents: 'none',
+            }}>🔍</span>
+          </div>
           <div style={{ marginBottom: 24 }}>
             <MiniCalendar
               eventDates={eventDates}
@@ -239,6 +314,10 @@ export default function EventsPage() {
 
         {/* Events list */}
         <div>
+          {isSearchMode ? (
+            <SearchResultsList rows={searchResults} query={searchQuery.trim()} loading={searching} />
+          ) : (
+          <>
           {selectedDate && (
             <div style={{
               fontFamily: "'Cormorant Garamond', serif",
@@ -304,6 +383,8 @@ export default function EventsPage() {
               </div>
             </div>
           ))}
+          </>
+          )}
         </div>
       </div>
 

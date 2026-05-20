@@ -166,7 +166,8 @@ export class PostgresSearchService {
     const hits = await this.prisma.$queryRaw<Array<{
       id: string; title: string; type: string; startTime: Date;
       location: string | null; coverImageUrl: string | null;
-      guideName: string; guideSlug: string; rank: number;
+      guideName: string; guideSlug: string; guideAvatarUrl: string | null;
+      rank: number;
     }>>`
       SELECT
         e.id,
@@ -177,6 +178,7 @@ export class PostgresSearchService {
         e."coverImageUrl",
         g."displayName" AS "guideName",
         g.slug AS "guideSlug",
+        u."avatarUrl" AS "guideAvatarUrl",
         GREATEST(
           ts_rank_cd(e."searchVector", websearch_to_tsquery('english', ${q})),
           similarity(e.title, ${q})
@@ -219,7 +221,8 @@ export class PostgresSearchService {
       id: string; slug: string; title: string; shortDesc: string | null;
       location: string | null; country: string | null;
       coverImageUrl: string | null; startDate: Date;
-      basePrice: string; guideName: string; guideSlug: string; rank: number;
+      basePrice: string; guideName: string; guideSlug: string;
+      guideAvatarUrl: string | null; rank: number;
     }>>`
       SELECT
         t.id,
@@ -233,6 +236,7 @@ export class PostgresSearchService {
         t."basePrice"::text AS "basePrice",
         g."displayName" AS "guideName",
         g.slug AS "guideSlug",
+        u."avatarUrl" AS "guideAvatarUrl",
         GREATEST(
           ts_rank_cd(t."searchVector", websearch_to_tsquery('english', ${q})),
           similarity(t.title, ${q}),

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { TourImageCarousel } from '@/components/public/shared/TourImageCarousel';
+import { SearchResultsList, SearchResultRow } from '@/components/public/shared/SearchResultsList';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -95,12 +96,65 @@ function daysBetween(a: string, b: string): number {
 // PAGE
 // ═══════════════════════════════════════════════════════════════════════════
 
+function adaptTourSearchHit(hit: any): SearchResultRow {
+  const start = new Date(hit.startDate);
+  const priceNum = typeof hit.basePrice === 'string' ? parseFloat(hit.basePrice) : Number(hit.basePrice);
+  return {
+    id: hit.id,
+    slug: hit.slug,
+    title: hit.title,
+    excerpt: hit.shortDesc,
+    coverImageUrl: hit.coverImageUrl,
+    locationLabel: hit.location || hit.country || null,
+    dateLabel: start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+    priceLabel: Number.isFinite(priceNum) ? `From $${priceNum.toLocaleString()}` : null,
+    badge: null,
+    guide: {
+      slug: hit.guideSlug,
+      displayName: hit.guideName,
+      avatarUrl: hit.guideAvatarUrl ?? null,
+    },
+    href: `/tours/${hit.slug}`,
+  };
+}
+
 export default function TravelsPage() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTrack, setActiveTrack] = useState<'adventures' | 'healing'>('adventures');
   const [activeCountry, setActiveCountry] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResultRow[]>([]);
+  const [searching, setSearching] = useState(false);
+  const isSearchMode = searchQuery.trim().length > 0;
+
+  // Debounced FTS lookup against /search/tours. Swaps the main pane into
+  // a search-results view; the existing track/country tabs above remain
+  // visible but are ignored while search is active (intentional — typing
+  // a query is a stronger signal than a category filter).
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (q.length === 0) {
+      setSearchResults([]);
+      setSearching(false);
+      return;
+    }
+    let cancelled = false;
+    setSearching(true);
+    const handle = setTimeout(async () => {
+      try {
+        const res = await api.get('/search/tours', { params: { q, page: 0 } });
+        const hits = (res.data?.hits ?? []) as any[];
+        if (!cancelled) setSearchResults(hits.map(adaptTourSearchHit));
+      } catch {
+        if (!cancelled) setSearchResults([]);
+      } finally {
+        if (!cancelled) setSearching(false);
+      }
+    }, 250);
+    return () => { cancelled = true; clearTimeout(handle); };
+  }, [searchQuery]);
 
   useEffect(() => {
     setLoading(true);
@@ -222,9 +276,26 @@ export default function TravelsPage() {
         </div>
         <div style={{
           maxWidth: 1280, margin: '0 auto',
-          display: 'flex', alignItems: 'center', gap: 10, padding: '12px 48px',
+          display: 'flex', alignItems: 'center', gap: 12, padding: '12px 48px',
           flexWrap: 'wrap',
         }}>
+          <div style={{ position: 'relative', flex: '0 0 260px', minWidth: 220 }}>
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search journeys…"
+              aria-label="Search soul tours"
+              style={{
+                width: '100%', padding: '8px 32px 8px 14px', borderRadius: 24,
+                background: '#fff', border: '1px solid rgba(232,184,75,0.25)',
+                fontSize: 13, color: '#3A3530', outline: 'none',
+              }}
+            />
+            <span style={{
+              position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+              fontSize: 13, color: '#8A8278', pointerEvents: 'none',
+            }}>🔍</span>
+          </div>
           <span style={{
             fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase',
             color: '#8A8278', marginRight: 4,
@@ -243,6 +314,10 @@ export default function TravelsPage() {
 
       {/* ── MAIN ─────────────────────────────────────────────────────── */}
       <div style={{ maxWidth: 1280, margin: '0 auto', padding: '48px 48px 80px' }}>
+        {isSearchMode ? (
+          <SearchResultsList rows={searchResults} query={searchQuery.trim()} loading={searching} />
+        ) : (
+        <>
         {loading && (
           <div style={{ textAlign: 'center', padding: 80, color: '#8A8278', fontSize: 14 }}>
             Loading journeys…
@@ -286,6 +361,8 @@ export default function TravelsPage() {
             ))}
           </div>
         ))}
+        </>
+        )}
       </div>
 
       <style jsx global>{`
