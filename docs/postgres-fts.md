@@ -98,11 +98,34 @@ No schema migration needed to revert. The `searchVector` columns are
 harmless when Algolia is in use — they update on every write and cost
 some storage, no query overhead.
 
+## Typo tolerance via pg_trgm
+
+Added 2026-05-20 in migration `20260520150000_postgres_fts_trgm`. The
+five search methods now combine three matching signals:
+
+| Signal | Strength | Where used |
+|---|---|---|
+| `websearch_to_tsquery` vs `searchVector` | exact tokens, stemming-aware | all entities |
+| `similarity(short_field, q)` | full-string trigram match | guide `displayName`, product `name`, event `title`, tour `title`, blog `title` |
+| `word_similarity(q, long_field)` | best-substring trigram match | guide `tagline`, tour `shortDesc` |
+
+The three are OR'd in WHERE, GREATEST'd in ORDER BY. A row matching any
+signal surfaces; the strongest signal drives its rank.
+
+Thresholds (set once in `postgres-search.service.ts`):
+- `SIMILARITY_THRESHOLD = 0.25` — full-string trigram match (default 0.3)
+- `WORD_SIMILARITY_THRESHOLD = 0.5` — substring trigram match (default 0.6)
+
+Verified: "soun heling" (two typos) still finds Michael Tanaka's
+"Sound Healing Practitioner & Tibetan Bowl Specialist" tagline.
+
+Index-wise, the migration adds GIN trigram indices on the short fields
+(`gin_trgm_ops`), so `%` and `<%` operator queries stay fast. Long-body
+fields (`bio`, `description`, `content`) are FTS-only — trigrams on
+them would bloat the index and surface noisy matches.
+
 ## Known limitations vs Algolia
 
-- **No typo tolerance by default.** "soun heling" → no match. Add
-  `CREATE EXTENSION pg_trgm` + `similarity()` threshold for fuzzy matching
-  if users start complaining.
 - **No faceted-search filters yet.** Algolia's `filters` query param is
   ignored. When/if facet filtering is needed (e.g. by modality, location,
   price band), add structured filter params to the endpoint signatures.

@@ -2,23 +2,37 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 
 /**
- * Postgres-backed full-text search. Replaces the Algolia-served endpoints
- * while Algolia stays dormant (ALGOLIA_ENABLED=false).
+ * Postgres-backed full-text search with trigram typo tolerance. Replaces
+ * the Algolia-served endpoints while Algolia stays dormant
+ * (ALGOLIA_ENABLED=false).
  *
- * Each entity's `searchVector tsvector` is a generated column auto-rebuilt
- * by Postgres whenever the underlying text fields change — see migration
- * 20260520120000_postgres_fts. No reindex pipeline, no triggers.
+ * Each entity's `searchVector tsvector` is maintained by a BEFORE INSERT/
+ * UPDATE trigger that rebuilds it from the row's text fields — see
+ * migration 20260520120000_postgres_fts.
  *
- * Queries use `websearch_to_tsquery` so user input is parsed the way Google
- * parses search bars ("quoted phrases", `OR`, leading `-` to exclude).
- * Ranking via `ts_rank_cd` accounting for the per-field weight (A > B > C)
- * baked into the generated column.
+ * Hybrid matching (since 20260520150000_postgres_fts_trgm):
+ *   1. websearch_to_tsquery against searchVector — exact-token matching,
+ *      stemming-aware, fast via GIN tsvector index.
+ *   2. pg_trgm similarity() against short identifier fields (names,
+ *      titles) — best when the query covers the whole string.
+ *   3. pg_trgm word_similarity(query, field) against longer fields
+ *      (tagline, shortDesc) — finds the best matching substring, so a
+ *      typo'd query like "sound heling" matches a 60-char tagline.
+ *
+ * The three signals are OR'd in WHERE and GREATEST'd in ORDER BY so a
+ * row matching any way surfaces, ranked by the strongest signal.
+ *
+ * Thresholds (tuned for ~1-2 char typos in short queries):
+ *   - SIMILARITY:      0.25 — pg_trgm default 0.3, lowered slightly
+ *   - WORD_SIMILARITY: 0.5  — pg_trgm default 0.6, lowered slightly
  *
  * Public-visibility gates mirror the listing-page queries: each search
  * filters on the same isPublished/isActive/user.isActive conditions as
  * /practitioners, /shop, /events, /travels, /journal — so search can
  * never surface a row that the listing wouldn't.
  */
+const SIMILARITY_THRESHOLD = 0.25;
+const WORD_SIMILARITY_THRESHOLD = 0.5;
 @Injectable()
 export class PostgresSearchService {
   constructor(private readonly prisma: PrismaService) {}
@@ -58,13 +72,21 @@ export class PostgresSearchService {
         g."totalReviews",
         g."isVerified",
         u."avatarUrl",
-        ts_rank_cd(g."searchVector", websearch_to_tsquery('english', ${q})) AS rank
+        GREATEST(
+          ts_rank_cd(g."searchVector", websearch_to_tsquery('english', ${q})),
+          similarity(g."displayName", ${q}),
+          word_similarity(${q}, coalesce(g.tagline, '')) * 0.85
+        ) AS rank
       FROM guide_profiles g
       JOIN users u ON u.id = g."userId"
       WHERE g."isPublished" = true
         AND g."isVerified" = true
         AND u."isActive" = true
-        AND g."searchVector" @@ websearch_to_tsquery('english', ${q})
+        AND (
+          g."searchVector" @@ websearch_to_tsquery('english', ${q})
+          OR similarity(g."displayName", ${q}) > ${SIMILARITY_THRESHOLD}
+          OR word_similarity(${q}, coalesce(g.tagline, '')) > ${WORD_SIMILARITY_THRESHOLD}
+        )
       ORDER BY rank DESC, g."averageRating" DESC, g."totalReviews" DESC
       LIMIT ${hitsPerPage} OFFSET ${skip}
     `;
@@ -75,7 +97,11 @@ export class PostgresSearchService {
       WHERE g."isPublished" = true
         AND g."isVerified" = true
         AND u."isActive" = true
-        AND g."searchVector" @@ websearch_to_tsquery('english', ${q})
+        AND (
+          g."searchVector" @@ websearch_to_tsquery('english', ${q})
+          OR similarity(g."displayName", ${q}) > ${SIMILARITY_THRESHOLD}
+          OR word_similarity(${q}, coalesce(g.tagline, '')) > ${WORD_SIMILARITY_THRESHOLD}
+        )
     `;
     return { hits, nbHits: Number(count), page, hitsPerPage };
   }
@@ -101,13 +127,19 @@ export class PostgresSearchService {
         (p."imageUrls")[1] AS "imageUrl",
         g."displayName" AS "guideName",
         g.slug AS "guideSlug",
-        ts_rank_cd(p."searchVector", websearch_to_tsquery('english', ${q})) AS rank
+        GREATEST(
+          ts_rank_cd(p."searchVector", websearch_to_tsquery('english', ${q})),
+          similarity(p.name, ${q})
+        ) AS rank
       FROM products p
       JOIN guide_profiles g ON g.id = p."guideId"
       JOIN users u ON u.id = g."userId"
       WHERE p."isActive" = true
         AND u."isActive" = true
-        AND p."searchVector" @@ websearch_to_tsquery('english', ${q})
+        AND (
+          p."searchVector" @@ websearch_to_tsquery('english', ${q})
+          OR similarity(p.name, ${q}) > ${SIMILARITY_THRESHOLD}
+        )
       ORDER BY rank DESC, p."createdAt" DESC
       LIMIT ${hitsPerPage} OFFSET ${skip}
     `;
@@ -118,7 +150,10 @@ export class PostgresSearchService {
       JOIN users u ON u.id = g."userId"
       WHERE p."isActive" = true
         AND u."isActive" = true
-        AND p."searchVector" @@ websearch_to_tsquery('english', ${q})
+        AND (
+          p."searchVector" @@ websearch_to_tsquery('english', ${q})
+          OR similarity(p.name, ${q}) > ${SIMILARITY_THRESHOLD}
+        )
     `;
     return { hits, nbHits: Number(count), page, hitsPerPage };
   }
@@ -142,14 +177,20 @@ export class PostgresSearchService {
         e."coverImageUrl",
         g."displayName" AS "guideName",
         g.slug AS "guideSlug",
-        ts_rank_cd(e."searchVector", websearch_to_tsquery('english', ${q})) AS rank
+        GREATEST(
+          ts_rank_cd(e."searchVector", websearch_to_tsquery('english', ${q})),
+          similarity(e.title, ${q})
+        ) AS rank
       FROM events e
       JOIN guide_profiles g ON g.id = e."guideId"
       JOIN users u ON u.id = g."userId"
       WHERE e."isPublished" = true
         AND e."isCancelled" = false
         AND u."isActive" = true
-        AND e."searchVector" @@ websearch_to_tsquery('english', ${q})
+        AND (
+          e."searchVector" @@ websearch_to_tsquery('english', ${q})
+          OR similarity(e.title, ${q}) > ${SIMILARITY_THRESHOLD}
+        )
       ORDER BY rank DESC, e."startTime" ASC
       LIMIT ${hitsPerPage} OFFSET ${skip}
     `;
@@ -161,7 +202,10 @@ export class PostgresSearchService {
       WHERE e."isPublished" = true
         AND e."isCancelled" = false
         AND u."isActive" = true
-        AND e."searchVector" @@ websearch_to_tsquery('english', ${q})
+        AND (
+          e."searchVector" @@ websearch_to_tsquery('english', ${q})
+          OR similarity(e.title, ${q}) > ${SIMILARITY_THRESHOLD}
+        )
     `;
     return { hits, nbHits: Number(count), page, hitsPerPage };
   }
@@ -189,14 +233,22 @@ export class PostgresSearchService {
         t."basePrice"::text AS "basePrice",
         g."displayName" AS "guideName",
         g.slug AS "guideSlug",
-        ts_rank_cd(t."searchVector", websearch_to_tsquery('english', ${q})) AS rank
+        GREATEST(
+          ts_rank_cd(t."searchVector", websearch_to_tsquery('english', ${q})),
+          similarity(t.title, ${q}),
+          word_similarity(${q}, coalesce(t."shortDesc", '')) * 0.85
+        ) AS rank
       FROM soul_tours t
       JOIN guide_profiles g ON g.id = t."guideId"
       JOIN users u ON u.id = g."userId"
       WHERE t."isPublished" = true
         AND t."isCancelled" = false
         AND u."isActive" = true
-        AND t."searchVector" @@ websearch_to_tsquery('english', ${q})
+        AND (
+          t."searchVector" @@ websearch_to_tsquery('english', ${q})
+          OR similarity(t.title, ${q}) > ${SIMILARITY_THRESHOLD}
+          OR word_similarity(${q}, coalesce(t."shortDesc", '')) > ${WORD_SIMILARITY_THRESHOLD}
+        )
       ORDER BY rank DESC, t."startDate" ASC
       LIMIT ${hitsPerPage} OFFSET ${skip}
     `;
@@ -208,7 +260,11 @@ export class PostgresSearchService {
       WHERE t."isPublished" = true
         AND t."isCancelled" = false
         AND u."isActive" = true
-        AND t."searchVector" @@ websearch_to_tsquery('english', ${q})
+        AND (
+          t."searchVector" @@ websearch_to_tsquery('english', ${q})
+          OR similarity(t.title, ${q}) > ${SIMILARITY_THRESHOLD}
+          OR word_similarity(${q}, coalesce(t."shortDesc", '')) > ${WORD_SIMILARITY_THRESHOLD}
+        )
     `;
     return { hits, nbHits: Number(count), page, hitsPerPage };
   }
@@ -233,13 +289,19 @@ export class PostgresSearchService {
         b."publishedAt",
         g."displayName" AS "guideName",
         g.slug AS "guideSlug",
-        ts_rank_cd(b."searchVector", websearch_to_tsquery('english', ${q})) AS rank
+        GREATEST(
+          ts_rank_cd(b."searchVector", websearch_to_tsquery('english', ${q})),
+          similarity(b.title, ${q})
+        ) AS rank
       FROM blog_posts b
       JOIN guide_profiles g ON g.id = b."guideId"
       JOIN users u ON u.id = g."userId"
       WHERE b."isPublished" = true
         AND u."isActive" = true
-        AND b."searchVector" @@ websearch_to_tsquery('english', ${q})
+        AND (
+          b."searchVector" @@ websearch_to_tsquery('english', ${q})
+          OR similarity(b.title, ${q}) > ${SIMILARITY_THRESHOLD}
+        )
       ORDER BY rank DESC, b."publishedAt" DESC
       LIMIT ${hitsPerPage} OFFSET ${skip}
     `;
@@ -250,7 +312,10 @@ export class PostgresSearchService {
       JOIN users u ON u.id = g."userId"
       WHERE b."isPublished" = true
         AND u."isActive" = true
-        AND b."searchVector" @@ websearch_to_tsquery('english', ${q})
+        AND (
+          b."searchVector" @@ websearch_to_tsquery('english', ${q})
+          OR similarity(b.title, ${q}) > ${SIMILARITY_THRESHOLD}
+        )
     `;
     return { hits, nbHits: Number(count), page, hitsPerPage };
   }
