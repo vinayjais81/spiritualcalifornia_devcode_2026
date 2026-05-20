@@ -659,6 +659,10 @@ export class AdminService {
         }),
       ),
     );
+    // Home page widgets read featuredGuides via the home:data cache (5-min
+    // TTL). Bust it so the new order is visible on / immediately instead
+    // of after up to 5 minutes.
+    await this.cache.del(CacheService.keys.homeData());
     return { updated: rows.length };
   }
 
@@ -1453,6 +1457,7 @@ export class AdminService {
         }),
       ),
     );
+    await this.cache.del(CacheService.keys.homeData());
     return { updated: rows.length };
   }
 
@@ -1535,10 +1540,9 @@ export class AdminService {
         }),
       ),
     );
-    // Public /shop is gated through home-page cache + the products endpoint,
-    // both of which already read from DB on every request. No additional
-    // cache to bust here (home:data is busted via products service mutations
-    // separately when a guide creates/updates a product).
+    // Home page shop widget reads home:data cache. Bust it so reorder
+    // shows up on / immediately. /shop listing has no cache to invalidate.
+    await this.cache.del(CacheService.keys.homeData());
     return { updated: rows.length };
   }
 

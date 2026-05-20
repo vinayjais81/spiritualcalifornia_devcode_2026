@@ -43,7 +43,9 @@ export class HomeService {
   private async getFeaturedGuides() {
     const guides = await this.prisma.guideProfile.findMany({
       where: { isPublished: true, isVerified: true, user: { isActive: true } },
-      orderBy: [{ averageRating: 'desc' }, { totalReviews: 'desc' }],
+      // Admin-managed sortOrder primary; rating + reviews break ties so
+      // unsorted (sortOrder=0) rows still surface the best-rated guides.
+      orderBy: [{ sortOrder: 'asc' }, { averageRating: 'desc' }, { totalReviews: 'desc' }],
       take: 10,
       include: {
         user: { select: { firstName: true, lastName: true, avatarUrl: true } },
@@ -76,7 +78,9 @@ export class HomeService {
   private async getRecentBlogPosts() {
     const posts = await this.prisma.blogPost.findMany({
       where: { isPublished: true, guide: { user: { isActive: true } } },
-      orderBy: { publishedAt: 'desc' },
+      // Admin-managed sortOrder primary; publishedAt breaks ties so unsorted
+      // (sortOrder=0) posts still feel "fresh first".
+      orderBy: [{ sortOrder: 'asc' }, { publishedAt: 'desc' }],
       take: 8,
       include: {
         guide: {
@@ -110,9 +114,11 @@ export class HomeService {
   private async getActiveProducts() {
     const products = await this.prisma.product.findMany({
       where: { isActive: true, guide: { user: { isActive: true } } },
-      // Surface products by featured guides first so the home carousel's
-      // opening slots carry the "Editor's Pick" badge, matching the design.
-      orderBy: [{ guide: { isFeatured: 'desc' } }, { createdAt: 'desc' }],
+      // Admin-managed sortOrder primary; isFeatured-by-guide is the
+      // secondary fallback so the carousel's opening slots still carry the
+      // "Editor's Pick" badge for unsorted products. createdAt breaks the
+      // final tie so "newest first" still holds for everything unsorted.
+      orderBy: [{ sortOrder: 'asc' }, { guide: { isFeatured: 'desc' } }, { createdAt: 'desc' }],
       take: 8,
       include: {
         guide: {
