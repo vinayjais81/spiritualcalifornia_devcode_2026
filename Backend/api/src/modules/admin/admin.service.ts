@@ -2,10 +2,12 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
 import { CacheService } from '../../database/cache.service';
 import { Role, VerificationStatus, PaymentStatus, BookingStatus, TourBookingStatus, PayoutStatus } from '@prisma/client';
@@ -207,6 +209,7 @@ export class AdminService {
           avatarUrl: true,
           isEmailVerified: true,
           isActive: true,
+          isTestAccount: true,
           deactivatedAt: true,
           deactivatedReason: true,
           deactivatedBy: true,
@@ -561,6 +564,265 @@ export class AdminService {
     };
   }
 
+  // ─── Test-account conversion (pre-launch onboarding) ──────────────────────
+  //
+  // Pre-launch the admin self-registers guides via the public wizard using
+  // throwaway emails on the configured test domain (default
+  // `scprelaunch.test`). Those accounts get `User.isTestAccount = true`
+  // automatically (see AuthService.isTestDomainEmail). When the real email
+  // arrives, this endpoint:
+  //   1. Swaps `email` to the real address.
+  //   2. Clears the password — the old credential stops working immediately.
+  //   3. Marks `isEmailVerified = false` and mints a one-time claim token
+  //      (24h TTL) reusing the existing `emailVerifyToken` column.
+  //   4. Revokes every active refresh token for the row so the old session
+  //      can't survive the swap.
+  //   5. (Default) emails the real address with a `/guide/claim?token=` link.
+  //      The single combined claim flow verifies email + sets password.
+  //   6. Writes an AuditLog row with old + new email + actor.
+  //
+  // Safety rails:
+  //   • Target must currently be flagged `isTestAccount = true`. We never
+  //     allow this on a real user — the guard is what makes the workflow
+  //     safe to expose in the admin UI.
+  //   • `newEmail` must not collide with another User row.
+  //   • Admins can't convert themselves or another admin.
+  //   • `isTestAccount` is intentionally NOT cleared on success — it stays
+  //     as a historical marker that this account was created via the
+  //     pre-launch process. The active gate is the password being null.
+
+  async convertTestAccount(params: {
+    targetUserId: string;
+    actor: { id: string; roles: Role[]; email: string };
+    newEmail: string;
+    sendInvite: boolean;
+    reason?: string;
+  }) {
+    const { targetUserId, actor, newEmail, sendInvite, reason } = params;
+
+    if (targetUserId === actor.id) {
+      throw new BadRequestException('You cannot convert your own account.');
+    }
+
+    const normalizedEmail = newEmail.trim().toLowerCase();
+    if (!normalizedEmail || !normalizedEmail.includes('@')) {
+      throw new BadRequestException('A valid new email is required.');
+    }
+
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+      include: { roles: true },
+    });
+    if (!target) throw new NotFoundException('User not found');
+
+    if (!target.isTestAccount) {
+      throw new BadRequestException(
+        'This account is not flagged as a test account and cannot be converted.',
+      );
+    }
+
+    const targetIsAdminish = target.roles.some(
+      (r) => r.role === Role.ADMIN || r.role === Role.SUPER_ADMIN,
+    );
+    if (targetIsAdminish) {
+      throw new ForbiddenException(
+        'Administrator accounts cannot be converted via this workflow.',
+      );
+    }
+
+    if (normalizedEmail === target.email.toLowerCase()) {
+      throw new BadRequestException(
+        'New email is the same as the current email — nothing to convert.',
+      );
+    }
+
+    const collision = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true },
+    });
+    if (collision && collision.id !== targetUserId) {
+      throw new ConflictException(
+        'Another account already uses that email address.',
+      );
+    }
+
+    const claimToken = randomBytes(32).toString('hex');
+    const claimExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+    const oldEmail = target.email;
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: targetUserId },
+        data: {
+          email: normalizedEmail,
+          // Nullify the password so the old credentials stop working the
+          // moment the swap lands. The claim flow sets a fresh one.
+          passwordHash: null,
+          isEmailVerified: false,
+          emailVerifyToken: claimToken,
+          emailVerifyExpiry: claimExpiry,
+          // Clear any in-flight password-reset token so the claim token is
+          // the only path back into the account.
+          passwordResetToken: null,
+          passwordResetExpiry: null,
+        },
+      }),
+      this.prisma.refreshToken.updateMany({
+        where: { userId: targetUserId, isRevoked: false },
+        data: { isRevoked: true, revokedAt: new Date() },
+      }),
+      this.prisma.auditLog.create({
+        data: {
+          userId: actor.id,
+          action: 'admin.user.convertTestAccount',
+          entity: 'User',
+          entityId: targetUserId,
+          oldValue: { email: oldEmail },
+          newValue: {
+            email: normalizedEmail,
+            actorEmail: actor.email,
+            sendInvite,
+            reason: reason ?? null,
+          },
+        },
+      }),
+    ]);
+
+    let inviteEmailed = false;
+    if (sendInvite) {
+      await this.email.sendGuideClaimInvite(normalizedEmail, {
+        firstName: target.firstName,
+        token: claimToken,
+      });
+      inviteEmailed = true;
+    }
+
+    return {
+      userId: targetUserId,
+      newEmail: normalizedEmail,
+      claimExpiry,
+      inviteEmailed,
+    };
+  }
+
+  /**
+   * Re-issues the claim invite for a test-account user that has already had
+   * its email swapped but where the original mail bounced or the token
+   * expired before the guide clicked through. Rotates the token so any
+   * link sitting in the old email stops working.
+   */
+  async resendClaimInvite(params: {
+    targetUserId: string;
+    actor: { id: string; roles: Role[]; email: string };
+  }) {
+    const { targetUserId, actor } = params;
+
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+    });
+    if (!target) throw new NotFoundException('User not found');
+    if (!target.isTestAccount) {
+      throw new BadRequestException(
+        'This account is not a test account — use the standard password reset flow instead.',
+      );
+    }
+    if (target.isEmailVerified) {
+      throw new BadRequestException(
+        'This account has already been claimed by the guide.',
+      );
+    }
+
+    const claimToken = randomBytes(32).toString('hex');
+    const claimExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: targetUserId },
+        data: {
+          emailVerifyToken: claimToken,
+          emailVerifyExpiry: claimExpiry,
+        },
+      }),
+      this.prisma.auditLog.create({
+        data: {
+          userId: actor.id,
+          action: 'admin.user.resendClaimInvite',
+          entity: 'User',
+          entityId: targetUserId,
+          newValue: {
+            email: target.email,
+            actorEmail: actor.email,
+          },
+        },
+      }),
+    ]);
+
+    await this.email.sendGuideClaimInvite(target.email, {
+      firstName: target.firstName,
+      token: claimToken,
+    });
+
+    return { userId: targetUserId, claimExpiry, inviteEmailed: true };
+  }
+
+  /**
+   * Manual override to set `isTestAccount` after the fact — covers the
+   * historical accounts that were registered before the auto-flag landed,
+   * and the rare case where admin wants to demote a real account back to
+   * test (e.g. cleanup before deletion).
+   */
+  async setUserTestAccountFlag(params: {
+    targetUserId: string;
+    actor: { id: string; roles: Role[]; email: string };
+    isTestAccount: boolean;
+  }) {
+    const { targetUserId, actor, isTestAccount } = params;
+
+    if (targetUserId === actor.id) {
+      throw new BadRequestException(
+        'You cannot change the test-account flag on your own account.',
+      );
+    }
+
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+      include: { roles: true },
+    });
+    if (!target) throw new NotFoundException('User not found');
+
+    const targetIsAdminish = target.roles.some(
+      (r) => r.role === Role.ADMIN || r.role === Role.SUPER_ADMIN,
+    );
+    if (targetIsAdminish) {
+      throw new ForbiddenException(
+        'Administrator accounts cannot be marked as test accounts.',
+      );
+    }
+
+    if (target.isTestAccount === isTestAccount) {
+      return { userId: targetUserId, isTestAccount, changed: false };
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: targetUserId },
+        data: { isTestAccount },
+      }),
+      this.prisma.auditLog.create({
+        data: {
+          userId: actor.id,
+          action: 'admin.user.setTestAccountFlag',
+          entity: 'User',
+          entityId: targetUserId,
+          oldValue: { isTestAccount: target.isTestAccount },
+          newValue: { isTestAccount, actorEmail: actor.email },
+        },
+      }),
+    ]);
+
+    return { userId: targetUserId, isTestAccount, changed: true };
+  }
+
   // ─── Guides ───────────────────────────────────────────────────────────────
 
   async getGuides(params: {
@@ -624,6 +886,8 @@ export class AdminService {
               email: true,
               avatarUrl: true,
               isActive: true,
+              isTestAccount: true,
+              isEmailVerified: true,
             },
           },
           credentials: {

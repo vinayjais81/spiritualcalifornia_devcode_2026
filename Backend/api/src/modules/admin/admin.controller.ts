@@ -28,6 +28,7 @@ import { UpdateRolesDto } from './dto/update-roles.dto';
 import { RejectGuideDto } from './dto/reject-guide.dto';
 import { AdminCreatePostDto, AdminUpdatePostDto } from './dto/admin-blog.dto';
 import { SetUserPasswordDto } from './dto/set-user-password.dto';
+import { ConvertTestAccountDto, SetTestAccountFlagDto } from './dto/convert-test-account.dto';
 import { VerificationStatus, TourBookingStatus, BookingStatus, PayoutStatus, EarningCategory } from '@prisma/client';
 import { PaymentsService } from '../payments/payments.service';
 import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.decorator';
@@ -407,6 +408,62 @@ export class AdminController {
       actor: { id: actor.id, roles: actor.roles, email: actor.email },
       newPassword: dto.newPassword,
       reason: dto.reason,
+    });
+  }
+
+  // ─── Test-account conversion (pre-launch onboarding) ─────────────────────
+
+  @Patch('users/:id/convert-test-account')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Swap a test-account user\'s email for a real address and (by default) email a claim-invite link. Old email + password stop working immediately. Requires User.isTestAccount = true.',
+  })
+  convertTestAccount(
+    @Param('id') id: string,
+    @Body() dto: ConvertTestAccountDto,
+    @CurrentUser() actor: CurrentUserData,
+  ) {
+    return this.adminService.convertTestAccount({
+      targetUserId: id,
+      actor: { id: actor.id, roles: actor.roles, email: actor.email },
+      newEmail: dto.newEmail,
+      sendInvite: dto.sendInvite !== false,
+      reason: dto.reason,
+    });
+  }
+
+  @Post('users/:id/resend-claim-invite')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Re-issue the claim-invite for a test-account user whose email has already been swapped (token expired, original email bounced, etc.). Rotates the token so prior links stop working.',
+  })
+  resendClaimInvite(
+    @Param('id') id: string,
+    @CurrentUser() actor: CurrentUserData,
+  ) {
+    return this.adminService.resendClaimInvite({
+      targetUserId: id,
+      actor: { id: actor.id, roles: actor.roles, email: actor.email },
+    });
+  }
+
+  @Patch('users/:id/test-account-flag')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Manually set / clear User.isTestAccount. Used for backfilling historical accounts created before the auto-flag landed.',
+  })
+  setUserTestAccountFlag(
+    @Param('id') id: string,
+    @Body() body: SetTestAccountFlagDto,
+    @CurrentUser() actor: CurrentUserData,
+  ) {
+    return this.adminService.setUserTestAccountFlag({
+      targetUserId: id,
+      actor: { id: actor.id, roles: actor.roles, email: actor.email },
+      isTestAccount: body.isTestAccount,
     });
   }
 

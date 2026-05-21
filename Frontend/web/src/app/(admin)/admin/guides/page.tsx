@@ -35,6 +35,8 @@ interface Guide {
     email: string;
     avatarUrl: string | null;
     isActive: boolean;
+    isTestAccount: boolean;
+    isEmailVerified: boolean;
   };
   credentials: Array<{ id: string; verificationStatus: string; title: string }>;
 }
@@ -122,6 +124,37 @@ export default function GuidesPage() {
       queryClient.invalidateQueries({ queryKey: ['admin', 'guides'] });
     },
     onError: () => toast.error('Failed to update featured status'),
+  });
+
+  // Pre-launch test-account conversion. Admin pastes the real email; the
+  // backend swaps it, invalidates the placeholder password, and (by default)
+  // fires the claim-invite. The flag stays on the row as a historical marker
+  // until the user actually claims it.
+  const convertMutation = useMutation({
+    mutationFn: ({ userId, newEmail }: { userId: string; newEmail: string }) =>
+      api.patch(`/admin/users/${userId}/convert-test-account`, { newEmail, sendInvite: true }),
+    onSuccess: () => {
+      toast.success('Test account converted — claim invite sent');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'guides'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message ?? 'Failed to convert test account');
+    },
+  });
+
+  // Re-issues the claim invite when the original link expired or the email
+  // bounced. The previous token is rotated, so any in-flight link goes dead
+  // the moment this fires.
+  const resendInviteMutation = useMutation({
+    mutationFn: (userId: string) =>
+      api.post(`/admin/users/${userId}/resend-claim-invite`),
+    onSuccess: () => {
+      toast.success('Claim invite re-sent');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'guides'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message ?? 'Failed to resend invite');
+    },
   });
 
   const serverGuides: Guide[] = data?.guides ?? [];
@@ -279,7 +312,17 @@ export default function GuidesPage() {
                               <td className="px-4 py-3">
                                 <div>
                                   <p className="font-medium text-gray-900">{guide.displayName}</p>
-                                  <p className="text-xs text-gray-500">{guide.user.email}</p>
+                                  <p className="text-xs text-gray-500 flex items-center gap-1.5">
+                                    <span>{guide.user.email}</span>
+                                    {guide.user.isTestAccount && (
+                                      <span
+                                        className="inline-flex items-center rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800"
+                                        title="Pre-launch test account. Use Convert to swap in the real email."
+                                      >
+                                        Test
+                                      </span>
+                                    )}
+                                  </p>
                                   {guide.tagline && (
                                     <p className="mt-0.5 text-xs text-gray-400 line-clamp-1">{guide.tagline}</p>
                                   )}
@@ -329,15 +372,54 @@ export default function GuidesPage() {
                                 {new Date(guide.createdAt).toLocaleDateString()}
                               </td>
                               <td className="px-4 py-3">
-                                {guide.verificationStatus === 'PENDING' && (
-                                  <button
-                                    onClick={() => approveMutation.mutate(guide.id)}
-                                    disabled={approveMutation.isPending}
-                                    className="rounded bg-green-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
-                                  >
-                                    Approve
-                                  </button>
-                                )}
+                                <div className="flex flex-wrap items-center gap-2">
+                                  {guide.verificationStatus === 'PENDING' && (
+                                    <button
+                                      onClick={() => approveMutation.mutate(guide.id)}
+                                      disabled={approveMutation.isPending}
+                                      className="rounded bg-green-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+                                    >
+                                      Approve
+                                    </button>
+                                  )}
+                                  {/* Test-account actions. "Convert" until the guide claims it,
+                                      then we offer Resend in case the original mail bounced. */}
+                                  {guide.user.isTestAccount && !guide.user.isEmailVerified && (
+                                    <>
+                                      <button
+                                        onClick={() => {
+                                          const newEmail = window.prompt(
+                                            `Convert "${guide.user.email}" to which real email?`,
+                                            '',
+                                          );
+                                          if (!newEmail) return;
+                                          const trimmed = newEmail.trim();
+                                          if (!trimmed) return;
+                                          if (!window.confirm(
+                                            `Swap ${guide.user.email} → ${trimmed}? The current placeholder password stops working immediately and a claim-invite is sent.`,
+                                          )) return;
+                                          convertMutation.mutate({ userId: guide.user.id, newEmail: trimmed });
+                                        }}
+                                        disabled={convertMutation.isPending}
+                                        className="rounded bg-amber-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+                                      >
+                                        Convert
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          if (!window.confirm(
+                                            `Re-send the claim invite to ${guide.user.email}? Any prior link will stop working.`,
+                                          )) return;
+                                          resendInviteMutation.mutate(guide.user.id);
+                                        }}
+                                        disabled={resendInviteMutation.isPending}
+                                        className="rounded border border-amber-600 px-2.5 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50"
+                                      >
+                                        Resend invite
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
                               </td>
                             </tr>
                           );

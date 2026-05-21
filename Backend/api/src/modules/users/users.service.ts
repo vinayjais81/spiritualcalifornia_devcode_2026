@@ -32,6 +32,7 @@ export class UsersService {
     firstName: string;
     lastName: string;
     googleId?: string;
+    isTestAccount?: boolean;
   }) {
     return this.prisma.user.create({
       data,
@@ -61,6 +62,8 @@ export class UsersService {
         | 'lastLoginAt'
         | 'marketingEmails'
         | 'pendingIntent'
+        | 'isTestAccount'
+        | 'email'
       >
     >,
   ) {

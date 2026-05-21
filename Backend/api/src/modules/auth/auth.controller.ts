@@ -23,6 +23,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ClaimAccountDto } from './dto/claim-account.dto';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from './decorators/public.decorator';
@@ -139,6 +140,25 @@ export class AuthController {
   @ApiOperation({ summary: 'Reset password with token from email' })
   async resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto.token, dto.password);
+  }
+
+  // ─── Claim Account (pre-launch test-account conversion) ────────────────────
+
+  @Public()
+  @Post('claim-account')
+  @StrictThrottle()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Combined verify-email + set-password for guides whose accounts were created by admin during pre-launch. Token comes from the claim-invite email.',
+  })
+  async claimAccount(
+    @Body() dto: ClaimAccountDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.claimAccount(dto.token, dto.password);
+    this.setRefreshTokenCookie(res, result.refreshToken);
+    return { user: result.user, accessToken: result.accessToken };
   }
 
   // ─── Me ─────────────────────────────────────────────────────────────────────

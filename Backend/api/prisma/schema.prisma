@@ -202,6 +202,12 @@ model User {
   deactivatedAt       DateTime?
   deactivatedReason   String?
   deactivatedBy       String?   // User.id of the admin who deactivated
+  // Pre-launch onboarding: admin creates guide accounts with throwaway
+  // emails on a known test domain (see TEST_ACCOUNT_EMAIL_DOMAIN env).
+  // The admin "Convert test account" workflow can swap the email + fire
+  // a claim-invite to the real address only when this flag is true.
+  // Once converted, the flag stays as a historical marker.
+  isTestAccount       Boolean   @default(false)
   googleId            String?   @unique
   emailVerifyToken    String?
   emailVerifyExpiry   DateTime?

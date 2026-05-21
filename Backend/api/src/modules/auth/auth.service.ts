@@ -73,6 +73,28 @@ export class AuthService {
     }
   }
 
+  /**
+   * True when the email's domain matches the configured pre-launch test
+   * domain. Defaults to scprelaunch.test (RFC-reserved .test TLD, can't
+   * accidentally route real mail). Used to auto-flag User.isTestAccount at
+   * registration so the admin convert-test-account workflow can later swap
+   * the throwaway email for a real one.
+   */
+  isTestDomainEmail(email: string): boolean {
+    const domain = (
+      this.configService.get<string>('TEST_ACCOUNT_EMAIL_DOMAIN', '') ||
+      'scprelaunch.test'
+    )
+      .trim()
+      .toLowerCase()
+      .replace(/^@/, '');
+    if (!domain) return false;
+    const lower = email.trim().toLowerCase();
+    const at = lower.lastIndexOf('@');
+    if (at < 0) return false;
+    return lower.slice(at + 1) === domain;
+  }
+
   // ─── Register ───────────────────────────────────────────────────────────────
 
   /**
@@ -104,11 +126,18 @@ export class AuthService {
     const emailVerifyToken = randomBytes(32).toString('hex');
     const emailVerifyExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
+    // Pre-launch onboarding: when admin self-registers a guide using an email
+    // on the configured test domain (default scprelaunch.test), mark the row
+    // so the admin "Convert test account" workflow can later swap the email
+    // for a real one. Real users on real domains are never flagged.
+    const isTestAccount = this.isTestDomainEmail(dto.email);
+
     const user = await this.usersService.create({
       email: dto.email,
       passwordHash,
       firstName: dto.firstName,
       lastName: dto.lastName,
+      isTestAccount,
     });
 
     const intent: 'seeker' | 'guide' = dto.intent === 'guide' ? 'guide' : 'seeker';
@@ -458,6 +487,81 @@ export class AuthService {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
       intent: intent ?? 'seeker',
+    };
+  }
+
+  // ─── Claim Account (pre-launch test-account conversion) ────────────────────
+  //
+  // Used after admin swaps a test account's email for the real one (see
+  // AdminService.convertTestAccount). The guide receives an email at the new
+  // address with a `/guide/claim?token=...` link. This endpoint validates
+  // that token, sets the chosen password, marks the email verified, and
+  // mints a session — same end-state as /verify-email + /reset-password
+  // combined into a single round-trip.
+  //
+  // Token reuses the existing `emailVerifyToken` column: it's already a
+  // single-use 32-byte random with an expiry, and the schema doesn't need
+  // another column to hold it. Personal-password check uses the FRESH
+  // password against the target user's name + (new) email.
+
+  async claimAccount(token: string, password: string) {
+    const user = await this.prisma.user.findFirst({
+      where: { emailVerifyToken: token },
+    });
+
+    if (!user) throw new BadRequestException('Invalid claim token');
+    if (user.emailVerifyExpiry && user.emailVerifyExpiry < new Date()) {
+      throw new BadRequestException('Claim token expired');
+    }
+    if (!user.isTestAccount) {
+      // Defense-in-depth: the claim endpoint is only for accounts that went
+      // through the admin convert workflow. A real user with a stray
+      // emailVerifyToken should be sent down /verify-email or
+      // /reset-password instead — never both at once.
+      throw new BadRequestException(
+        'This token is not valid for the claim flow.',
+      );
+    }
+
+    this.assertPasswordNotPersonal(password, {
+      email: user.email,
+      firstName: user.firstName ?? undefined,
+      lastName: user.lastName ?? undefined,
+    });
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          passwordHash,
+          isEmailVerified: true,
+          emailVerifyToken: null,
+          emailVerifyExpiry: null,
+          // Also clear any pending password-reset state — the claim password
+          // is now the source of truth.
+          passwordResetToken: null,
+          passwordResetExpiry: null,
+        },
+      }),
+      // Belt-and-suspenders: convertTestAccount already revoked refresh
+      // tokens at the swap. If a stale one slipped through, kill it now.
+      this.prisma.refreshToken.updateMany({
+        where: { userId: user.id, isRevoked: false },
+        data: { isRevoked: true, revokedAt: new Date() },
+      }),
+    ]);
+
+    const fullUser = await this.usersService.findByIdOrThrow(user.id);
+    const roles = fullUser.roles.map((r) => r.role);
+    const tokens = await this.generateTokens(user.id, user.email, roles);
+    await this.saveRefreshToken(user.id, tokens.refreshToken);
+
+    return {
+      user: this.sanitizeUser(fullUser),
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
     };
   }
 

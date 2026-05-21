@@ -86,6 +86,13 @@ const envSchema = z.object({
   // PostgresSearchService. Flip to 'true' + populate ALGOLIA_APP_ID /
   // ALGOLIA_ADMIN_API_KEY to revert to Algolia.
   ALGOLIA_ENABLED: z.string().optional(),
+
+  // Pre-launch test-account domain. Emails ending in @<this> at register
+  // time are auto-flagged isTestAccount = true so the admin "Convert
+  // test account" workflow can later swap them to real emails. Defaults
+  // to scprelaunch.test (RFC-reserved .test TLD, can't accidentally
+  // route real mail).
+  TEST_ACCOUNT_EMAIL_DOMAIN: z.string().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;

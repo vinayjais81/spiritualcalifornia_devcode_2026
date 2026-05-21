@@ -153,6 +153,42 @@ export class EmailService {
     );
   }
 
+  // ─── Guide Claim Invite (pre-launch test-account conversion) ──────────────
+  //
+  // Sent after admin swaps a test-account guide's throwaway email for the
+  // real one. The link lands on `/guide/claim?token=...` which verifies the
+  // email AND collects a fresh password in one flow. Token TTL is 24h —
+  // admin can re-issue from /admin/guides if it expires.
+
+  async sendGuideClaimInvite(
+    to: string,
+    data: { firstName: string; token: string },
+  ) {
+    const claimUrl = `${this.config.get('FRONTEND_URL')}/guide/claim?token=${data.token}`;
+    return this.send(
+      to,
+      'Claim your Spiritual California guide account',
+      `
+      <div style="font-family: 'Inter', Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 32px 24px;">
+        <div style="text-align: center; margin-bottom: 24px;"><div style="font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #E8B84B;">Spiritual California</div></div>
+        <h1 style="font-family: Georgia, serif; font-size: 28px; font-weight: 400; color: #3A3530; text-align: center; margin-bottom: 8px;">Welcome, ${data.firstName} ✦</h1>
+        <p style="text-align: center; color: #8A8278; font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
+          Our team has set up your guide profile on Spiritual California. To take ownership, verify your email and choose a password below — this is the only step left before you can sign in.
+        </p>
+        <div style="text-align: center; margin-bottom: 24px;">
+          <a href="${claimUrl}" style="display: inline-block; padding: 14px 32px; background: #E8B84B; color: #3A3530; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;">Claim My Account</a>
+        </div>
+        <p style="text-align: center; color: #B5AFA8; font-size: 12px; margin: 0 0 4px;">Or paste this link into your browser:</p>
+        <p style="text-align: center; color: #E8B84B; font-size: 12px; word-break: break-all; margin: 0 0 24px;">${claimUrl}</p>
+        <p style="text-align: center; color: #8A8278; font-size: 11px; line-height: 1.6; margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(232,184,75,0.1);">
+          This link expires in 24 hours. If it has already expired, ask your Spiritual California contact to re-issue it.<br/>
+          Didn't expect this email? You can safely ignore it.
+        </p>
+      </div>
+    `,
+    );
+  }
+
   // ─── Verification Approved ─────────────────────────────────────────────────
 
   async sendVerificationApproved(to: string, guideName: string) {
