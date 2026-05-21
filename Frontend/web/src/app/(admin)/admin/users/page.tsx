@@ -8,7 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Users, KeyRound, AlertTriangle, Eye, EyeOff, UserX, UserCheck } from 'lucide-react';
+import { Search, Users, KeyRound, AlertTriangle, Eye, EyeOff, UserX, UserCheck, Mail, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { PasswordStrengthMeter, evaluatePassword } from '@/components/auth/PasswordStrengthMeter';
 
@@ -19,9 +19,19 @@ interface User {
   email: string;
   isEmailVerified: boolean;
   isActive: boolean;
+  isTestAccount: boolean;
   deactivatedReason?: string | null;
   createdAt: string;
   roles: Array<{ role: string }>;
+}
+
+// `.test` is RFC-2606 reserved — never routes real mail. Used to gray out
+// the Resend-invite button when the row's email is still a placeholder
+// (a Resend on a `.test` address goes to a black hole).
+function emailLooksLikeTestDomain(email: string): boolean {
+  const at = email.lastIndexOf('@');
+  if (at < 0) return false;
+  return email.slice(at + 1).toLowerCase().endsWith('.test');
 }
 
 const roleBadgeColor: Record<string, string> = {
@@ -50,6 +60,10 @@ export default function UsersPage() {
   const [showPw, setShowPw] = useState(false);
   const [deactivateTarget, setDeactivateTarget] = useState<User | null>(null);
   const [deactivateReason, setDeactivateReason] = useState('');
+  const [convertTarget, setConvertTarget] = useState<User | null>(null);
+  const [convertEmail, setConvertEmail] = useState('');
+  const [convertSendInvite, setConvertSendInvite] = useState(true);
+  const [convertReason, setConvertReason] = useState('');
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -106,6 +120,58 @@ export default function UsersPage() {
     },
     onError: (err: any) => {
       toast.error(err?.response?.data?.message ?? 'Failed to reactivate account');
+    },
+  });
+
+  // Pre-launch test-account conversion. Swap the throwaway test-domain
+  // email for the real one; backend nulls passwordHash + mints a one-time
+  // claim token + emails the new address. Only enabled for rows where
+  // User.isTestAccount = true (server enforces this too).
+  const convertMutation = useMutation({
+    mutationFn: ({
+      id,
+      newEmail,
+      sendInvite,
+      reason,
+    }: {
+      id: string;
+      newEmail: string;
+      sendInvite: boolean;
+      reason: string;
+    }) =>
+      api.patch(`/admin/users/${id}/convert-test-account`, {
+        newEmail,
+        sendInvite,
+        reason: reason || undefined,
+      }),
+    onSuccess: (_, vars) => {
+      toast.success(
+        vars.sendInvite
+          ? `Email swapped → claim invite sent to ${vars.newEmail}`
+          : `Email swapped to ${vars.newEmail}. Invite NOT sent (you can send it later from /admin/guides).`,
+      );
+      setConvertTarget(null);
+      setConvertEmail('');
+      setConvertReason('');
+      setConvertSendInvite(true);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message ?? 'Failed to convert account');
+    },
+  });
+
+  // Re-fires the claim invite for a row that's already been converted
+  // (real email assigned, isTestAccount still true, isEmailVerified still
+  // false). Rotates the token so any prior link goes dead.
+  const resendInviteMutation = useMutation({
+    mutationFn: (id: string) => api.post(`/admin/users/${id}/resend-claim-invite`),
+    onSuccess: () => {
+      toast.success('Claim invite re-sent.');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message ?? 'Failed to resend invite');
     },
   });
 
@@ -195,7 +261,17 @@ export default function UsersPage() {
                                 <p className="font-medium text-gray-900">
                                   {user.firstName} {user.lastName}
                                 </p>
-                                <p className="text-xs text-gray-500">{user.email}</p>
+                                <p className="flex items-center gap-1.5 text-xs text-gray-500">
+                                  <span>{user.email}</span>
+                                  {user.isTestAccount && (
+                                    <span
+                                      className="inline-flex items-center rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-800"
+                                      title="Pre-launch test account. Use Convert to swap in the real email."
+                                    >
+                                      Test
+                                    </span>
+                                  )}
+                                </p>
                               </div>
                             </td>
                             <td className="px-4 py-3">
@@ -233,6 +309,49 @@ export default function UsersPage() {
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex flex-wrap items-center gap-2">
+                                {/* Convert / Resend live inline with the other row
+                                    actions so admin doesn't have to switch pages.
+                                    Convert is shown whenever the row is flagged
+                                    isTestAccount (admin may legitimately want to
+                                    re-swap a typo'd address). Resend is only
+                                    useful once the throwaway email has already
+                                    been swapped for a real one — gated by both
+                                    `!isEmailVerified` (claim still pending) AND
+                                    `!emailLooksLikeTestDomain` (Resend on a
+                                    `.test` address would mail a dead inbox). */}
+                                {user.isTestAccount && (
+                                  <>
+                                    <button
+                                      onClick={() => {
+                                        setConvertTarget(user);
+                                        setConvertEmail('');
+                                        setConvertReason('');
+                                        setConvertSendInvite(true);
+                                      }}
+                                      title="Swap the throwaway email for the real one. The old password stops working immediately."
+                                      className="inline-flex items-center gap-1 rounded border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 hover:bg-amber-100"
+                                    >
+                                      <Mail className="h-3 w-3" />
+                                      Convert
+                                    </button>
+                                    {!user.isEmailVerified && !emailLooksLikeTestDomain(user.email) && (
+                                      <button
+                                        onClick={() => {
+                                          if (!window.confirm(
+                                            `Re-send the claim invite to ${user.email}? Any prior link will stop working.`,
+                                          )) return;
+                                          resendInviteMutation.mutate(user.id);
+                                        }}
+                                        disabled={resendInviteMutation.isPending}
+                                        title="Re-issue the claim invite (rotates the token)"
+                                        className="inline-flex items-center gap-1 rounded border border-amber-300 bg-white px-2.5 py-1 text-xs font-medium text-amber-700 hover:bg-amber-50 disabled:opacity-50"
+                                      >
+                                        <Send className="h-3 w-3" />
+                                        Resend invite
+                                      </button>
+                                    )}
+                                  </>
+                                )}
                                 <button
                                   onClick={() => {
                                     setPwTarget(user);
@@ -393,6 +512,110 @@ export default function UsersPage() {
                 className="rounded bg-purple-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-purple-700 disabled:opacity-50"
               >
                 {passwordMutation.isPending ? 'Changing…' : 'Change password'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {convertTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => (convertMutation.isPending ? undefined : setConvertTarget(null))}
+        >
+          <div
+            className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-start gap-3">
+              <div className="rounded-full bg-amber-100 p-2">
+                <Mail className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900">
+                  Convert test account
+                </h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  Swap{' '}
+                  <span className="font-medium">{convertTarget.email}</span>{' '}
+                  for the real email below. The current password stops working
+                  immediately. By default, a one-time claim link is emailed to
+                  the new address so the guide can verify it and set a password.
+                </p>
+              </div>
+            </div>
+
+            <label className="block text-xs font-medium text-gray-700">
+              New email <span className="text-red-500">*</span>
+            </label>
+            <input
+              autoFocus
+              type="email"
+              value={convertEmail}
+              onChange={(e) => setConvertEmail(e.target.value)}
+              placeholder="real.guide@gmail.com"
+              autoComplete="off"
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            />
+
+            <label className="mt-3 flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={convertSendInvite}
+                onChange={(e) => setConvertSendInvite(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+              />
+              Email the claim link to the new address now
+            </label>
+            <p className="ml-6 text-[11px] text-gray-500">
+              Uncheck to swap silently and send the invite later from
+              {' '}<code className="rounded bg-gray-100 px-1">/admin/guides</code>.
+            </p>
+
+            <label className="mt-4 block text-xs font-medium text-gray-700">
+              Reason <span className="text-gray-400">(optional)</span>
+            </label>
+            <textarea
+              value={convertReason}
+              onChange={(e) => setConvertReason(e.target.value)}
+              placeholder="e.g. real email received from guide via Slack #onboarding"
+              rows={2}
+              className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+            />
+            <p className="mt-1 text-[11px] text-gray-500">
+              Recorded in the audit log (<code>admin.user.convertTestAccount</code>).
+            </p>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                onClick={() => setConvertTarget(null)}
+                disabled={convertMutation.isPending}
+                className="rounded border px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() =>
+                  convertMutation.mutate({
+                    id: convertTarget.id,
+                    newEmail: convertEmail.trim(),
+                    sendInvite: convertSendInvite,
+                    reason: convertReason.trim(),
+                  })
+                }
+                disabled={
+                  convertMutation.isPending ||
+                  !convertEmail.trim() ||
+                  !convertEmail.includes('@') ||
+                  convertEmail.trim().toLowerCase() === convertTarget.email.toLowerCase()
+                }
+                className="rounded bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+              >
+                {convertMutation.isPending
+                  ? 'Swapping…'
+                  : convertSendInvite
+                    ? 'Swap & send invite'
+                    : 'Swap silently'}
               </button>
             </div>
           </div>
