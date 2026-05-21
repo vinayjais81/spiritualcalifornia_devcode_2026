@@ -151,6 +151,70 @@ export class AuthService {
         ? this.buildPendingGuideProfile(dto)
         : null;
 
+    // ── Test-account fast path ────────────────────────────────────────────
+    //
+    // Test-domain emails (e.g. `@scprelaunch.test`) live in an RFC-reserved
+    // TLD that never routes real mail, so the normal "click the link in your
+    // inbox" gate is a dead-end for admin pre-launch onboarding. When the
+    // auto-flag fires, we collapse register + verify-email into a single
+    // call: mark verified, run the same role/profile side-effects that
+    // `verifyEmail` would have run, and mint tokens. End state identical
+    // to a real user that clicked the link.
+    //
+    // Real users on real domains keep the verification gate — the security
+    // story (no session until you prove you own the address) is untouched.
+    if (isTestAccount) {
+      await this.usersService.update(user.id, {
+        isEmailVerified: true,
+        pendingIntent: intent,
+        ...(dto.phone ? { phone: dto.phone } : {}),
+        ...(dto.newsletterOptIn !== undefined
+          ? { marketingEmails: dto.newsletterOptIn }
+          : {}),
+      });
+
+      if (intent === 'seeker') {
+        await Promise.all([
+          this.prisma.seekerProfile.create({ data: { userId: user.id } }),
+          this.prisma.userRole.create({ data: { userId: user.id, role: Role.SEEKER } }),
+        ]);
+      } else {
+        const baseSlug = `${user.firstName} ${user.lastName}`
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/(^-|-$)/g, '');
+        const slug = await this.ensureUniqueGuideSlug(baseSlug);
+        await Promise.all([
+          this.prisma.guideProfile.create({
+            data: {
+              userId: user.id,
+              slug,
+              displayName: `${user.firstName} ${user.lastName}`,
+              verificationStatus: VerificationStatus.PENDING,
+              ...(pendingProfile ?? {}),
+            },
+          }),
+          this.prisma.userRole.create({ data: { userId: user.id, role: Role.GUIDE } }),
+        ]);
+      }
+
+      const fullUser = await this.usersService.findByIdOrThrow(user.id);
+      const roles = fullUser.roles.map((r) => r.role);
+      const tokens = await this.generateTokens(user.id, user.email, roles);
+      await this.saveRefreshToken(user.id, tokens.refreshToken);
+
+      return {
+        user: this.sanitizeUser(fullUser),
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        requiresEmailVerification: false,
+        autoVerified: true,
+        intent,
+      };
+    }
+
+    // ── Normal path: real domain — issue verification token, no session. ──
+
     await this.usersService.update(user.id, {
       emailVerifyToken,
       emailVerifyExpiry,

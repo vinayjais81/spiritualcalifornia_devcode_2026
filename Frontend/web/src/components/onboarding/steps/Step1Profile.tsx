@@ -42,7 +42,7 @@ const lbl: React.CSSProperties = {
 
 export function Step1Profile() {
   const { step1, setStep1, setLoading, isLoading, setError, error, nextStep } = useOnboardingStore();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, setAuth } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingFile = useRef<File | null>(null);
   const [focused, setFocused] = useState<string | null>(null);
@@ -124,7 +124,7 @@ export function Step1Profile() {
         // on the user row and applies to GuideProfile in /auth/verify-email.
         // Without this, the user types data into the wizard, sees the
         // "check your inbox" screen, and the data dies in browser state.
-        await api.post('/auth/register', {
+        const { data: regData } = await api.post('/auth/register', {
           firstName: step1.firstName,
           lastName: step1.lastName,
           email,
@@ -138,6 +138,35 @@ export function Step1Profile() {
           websiteUrl: step1.websiteUrl || undefined,
           languages: step1.languages && step1.languages.length > 0 ? step1.languages : undefined,
         });
+
+        // Test-domain emails (e.g. `@scprelaunch.test`) skip the inbox
+        // gate — the backend short-circuits register into the same role +
+        // profile + token side-effects that `verifyEmail` would have run,
+        // and returns the access token here. We hand it to the auth store
+        // and advance straight into the wizard, same as if the guide had
+        // clicked the verification link.
+        if (regData?.autoVerified && regData?.accessToken && regData?.user) {
+          setAuth(regData.user, regData.accessToken);
+          // Avatar upload was deferred while unauthenticated — finish it
+          // now that we have a session.
+          if (pendingFile.current) {
+            try {
+              const f = pendingFile.current;
+              const { data: upData } = await api.get('/upload/presigned-url', {
+                params: { folder: 'avatars', fileName: f.name, contentType: f.type },
+              });
+              await fetch(upData.uploadUrl, { method: 'PUT', body: f, headers: { 'Content-Type': f.type } });
+              setStep1({ avatarS3Key: upData.key });
+              pendingFile.current = null;
+            } catch {
+              // Non-fatal: guide can re-upload from the dashboard later.
+            }
+          }
+          nextStep();
+          setLoading(false);
+          return;
+        }
+
         setAwaitingVerification(email);
         setLoading(false);
         return;
