@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { ReviewsBlock } from '@/components/public/shared/ReviewsBlock';
+import { GalleryLightbox } from '@/components/public/shared/GalleryLightbox';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -124,7 +125,11 @@ export default function TourDetailPage() {
   const [tour, setTour] = useState<Tour | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const [activeImage, setActiveImage] = useState<string | null>(null);
+  // Lightbox cursor. null = closed; number = open at that gallery index.
+  // Replaces the old activeImage state — hero is now static (always the
+  // first image) and thumbnails open the full-screen lightbox instead of
+  // swapping the hero behind the user.
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [selectedDeparture, setSelectedDeparture] = useState<string | null>(null);
 
   useEffect(() => {
@@ -132,7 +137,6 @@ export default function TourDetailPage() {
     api.get(`/soul-tours/${slug}`)
       .then((res) => {
         setTour(res.data);
-        setActiveImage(res.data.coverImageUrl || res.data.imageUrls?.[0] || null);
         // Pre-select first upcoming departure
         const firstUpcoming = (res.data.departures || []).find(
           (d: Departure) => d.status === 'SCHEDULED' && new Date(d.startDate) >= new Date(),
@@ -142,6 +146,18 @@ export default function TourDetailPage() {
       .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, [slug]);
+
+  // Full gallery: coverImageUrl first (when present), then the rest of
+  // imageUrls. Dedupes so a coverImageUrl that's also in imageUrls
+  // doesn't appear twice in the lightbox strip.
+  const galleryImages = useMemo(() => {
+    if (!tour) return [];
+    const list = tour.coverImageUrl
+      ? [tour.coverImageUrl, ...tour.imageUrls]
+      : tour.imageUrls;
+    return Array.from(new Set(list.filter(Boolean)));
+  }, [tour]);
+  const heroImage = galleryImages[0] ?? null;
 
   if (loading) {
     return (
@@ -194,9 +210,10 @@ export default function TourDetailPage() {
     <div style={{ background: C.offWhite, minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
       {/* ─── HERO ───────────────────────────────────────────────────────── */}
       <section style={{ position: 'relative', height: 540, overflow: 'hidden', background: 'linear-gradient(135deg, #2C2420, #3A3530)' }}>
-        {activeImage && (
+        {heroImage && (
+          // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={activeImage}
+            src={heroImage}
             alt={tour.title}
             style={{
               width: '100%', height: '100%', objectFit: 'cover', position: 'absolute', inset: 0, opacity: 0.55,
@@ -270,20 +287,34 @@ export default function TourDetailPage() {
       }}>
         {/* ─── LEFT: content ───────────────────────────────────────────── */}
         <div>
-          {/* Gallery */}
-          {tour.imageUrls.length > 0 && (
+          {/* Gallery — thumbnails open a full-screen lightbox. The hero
+              image is fixed (first image only) and no longer swaps on
+              thumbnail click; seekers preview by tapping into the gallery. */}
+          {galleryImages.length > 0 && (
             <div style={{ marginBottom: 56 }}>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                {(tour.coverImageUrl ? [tour.coverImageUrl, ...tour.imageUrls] : tour.imageUrls).map((url, i) => (
+                {galleryImages.map((url, i) => (
                   <button
                     key={i}
-                    onClick={() => setActiveImage(url)}
+                    type="button"
+                    onClick={() => setLightboxIndex(i)}
+                    aria-label={`Open image ${i + 1} of ${galleryImages.length}`}
                     style={{
                       width: 90, height: 70, borderRadius: 6, overflow: 'hidden',
-                      border: activeImage === url ? `2px solid ${C.gold}` : '2px solid transparent',
+                      border: '2px solid transparent',
                       cursor: 'pointer', padding: 0, background: 'none',
+                      transition: 'border-color 0.15s, transform 0.15s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = C.gold;
+                      e.currentTarget.style.transform = 'scale(1.04)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = 'transparent';
+                      e.currentTarget.style.transform = 'scale(1)';
                     }}
                   >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </button>
                 ))}
@@ -687,6 +718,13 @@ export default function TourDetailPage() {
       </section>
 
       <ReviewsBlock targetType="TOUR" targetEntityId={tour.id} />
+
+      <GalleryLightbox
+        images={galleryImages}
+        initialIndex={lightboxIndex}
+        alt={tour.title}
+        onClose={() => setLightboxIndex(null)}
+      />
     </div>
   );
 }
