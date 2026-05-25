@@ -24,6 +24,15 @@ const companyLinks = [
   { label: 'Contact', href: '/contact' },
 ];
 
+// Legal-row links shown in the footer's bottom bar. Each route is a thin
+// wrapper over the StaticPage CMS row of the matching slug — copy is edited
+// from /admin/static-pages, not here.
+const legalLinks = [
+  { label: 'Terms', href: '/terms' },
+  { label: 'Privacy', href: '/privacy' },
+  { label: 'Refund Policy', href: '/refund-policy' },
+];
+
 const linkStyle: React.CSSProperties = {
   fontFamily: 'var(--font-inter), sans-serif',
   fontSize: '13px',
@@ -149,6 +158,8 @@ export function Footer() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '16px',
         }}
         className="footer-bottom"
       >
@@ -162,6 +173,30 @@ export function Footer() {
         >
           © {new Date().getFullYear()} Spiritual California. All rights reserved.
         </span>
+        <nav
+          aria-label="Legal"
+          style={{ display: 'flex', alignItems: 'center', gap: '18px' }}
+          className="footer-legal"
+        >
+          {legalLinks.map(({ label, href }) => (
+            <Link
+              key={href}
+              href={href}
+              style={{
+                fontFamily: 'var(--font-inter), sans-serif',
+                fontSize: '11px',
+                fontWeight: 300,
+                color: 'rgba(255,255,255,0.4)',
+                textDecoration: 'none',
+                transition: 'color 0.3s',
+              }}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = '#F5D98A')}
+              onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = 'rgba(255,255,255,0.4)')}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
         <span
           style={{
             fontFamily: 'var(--font-inter), sans-serif',
