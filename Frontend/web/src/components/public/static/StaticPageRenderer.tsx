@@ -247,6 +247,36 @@ export function StaticPageRenderer({
             font-style: italic;
             color: ${G.warmGray};
           }
+          .static-page-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0 24px;
+            font-size: 14px;
+          }
+          .static-page-body th,
+          .static-page-body td {
+            padding: 12px 14px;
+            text-align: left;
+            vertical-align: top;
+            border-bottom: 1px solid rgba(232,184,75,0.15);
+          }
+          .static-page-body th {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: ${G.warmGray};
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            background: rgba(232,184,75,0.05);
+          }
+          .static-page-body tr:last-child td {
+            border-bottom: none;
+          }
+          .static-page-body hr {
+            border: none;
+            border-top: 1px solid rgba(232,184,75,0.2);
+            margin: 32px 0;
+          }
         `}</style>
 
         {/* Footer links (legal layout only) — marketing layout gets the
