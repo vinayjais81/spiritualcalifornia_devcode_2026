@@ -277,6 +277,92 @@ export function StaticPageRenderer({
             border-top: 1px solid rgba(232,184,75,0.2);
             margin: 32px 0;
           }
+          /* ── Rich layout blocks ────────────────────────────────────────
+             These classes are NOT inserted by the Tiptap rich-text editor
+             — they're written into the body HTML by seed migrations
+             (e.g. 20260526140000_richer_mission_layout). Tiptap's
+             StarterKit strips unknown <div>s on save, so admin edits to
+             pages that use these blocks must be done via SQL migration,
+             not the CMS editor. See docs/legal-pages-cms.md.            */
+          .static-page-body .steps-box {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 32px;
+            margin: 24px 0;
+          }
+          .static-page-body .steps-box h3 {
+            margin-top: 0;
+          }
+          .static-page-body .step {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+          }
+          .static-page-body .step:last-child {
+            margin-bottom: 0;
+          }
+          .static-page-body .step-num {
+            width: 32px;
+            height: 32px;
+            background: ${G.gold};
+            color: #FFFFFF;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            flex-shrink: 0;
+          }
+          .static-page-body .step-body strong {
+            display: block;
+            font-size: 15px;
+            font-weight: 600;
+            color: ${G.charcoal};
+            margin-bottom: 4px;
+          }
+          .static-page-body .step-body span {
+            font-size: 14px;
+            color: ${G.warmGray};
+            line-height: 1.6;
+            display: block;
+          }
+          .static-page-body .pillar {
+            display: grid;
+            grid-template-columns: 52px 1fr;
+            gap: 0 20px;
+            align-items: start;
+            margin-bottom: 16px;
+            padding: 24px;
+            background: #FFFFFF;
+            border-radius: 12px;
+            border-left: 3px solid ${G.gold};
+          }
+          .static-page-body .pillar-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(232,184,75,0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+          }
+          .static-page-body .pillar-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 19px;
+            font-weight: 500;
+            color: ${G.charcoal};
+            margin-bottom: 6px;
+            line-height: 1.3;
+          }
+          .static-page-body .pillar-text {
+            font-size: 14px;
+            line-height: 1.75;
+            color: ${G.warmGray};
+            margin: 0;
+          }
         `}</style>
 
         {/* Footer links (legal layout only) — marketing layout gets the
