@@ -13,15 +13,23 @@ const QUEUE_NAME = 'tour-tasks';
 const JOB_HOLD_REAPER = 'tour-hold-reaper';
 const JOB_BALANCE_REMINDER = 'tour-balance-reminder';
 const JOB_DEPARTURE_REMINDER = 'tour-departure-reminder';
+const JOB_HEALTH_INFO_PURGE = 'tour-health-info-purge';
 
 // Cron schedules
-const CRON_HOLD_REAPER = '*/5 * * * *';        // every 5 minutes
+const CRON_HOLD_REAPER = '*/5 * * * *';         // every 5 minutes
 const CRON_BALANCE_REMINDER = '0 9 * * *';      // daily at 09:00
 const CRON_DEPARTURE_REMINDER = '0 9 * * *';    // daily at 09:00
+const CRON_HEALTH_INFO_PURGE = '30 3 * * *';    // daily at 03:30 (off-peak)
 
 // Reminder windows (days before due date / departure)
 const BALANCE_REMINDER_DAYS = [14, 7, 1];
 const DEPARTURE_REMINDER_DAYS = [7, 1];
+
+// Compliance retention window (days after journey end) — the consent
+// block on tour-booking Step 3 (and §2 of the Privacy Policy) promises
+// health information is deleted within 90 days after the journey ends.
+// This must stay 90 unless the promise text in both surfaces is updated.
+const HEALTH_INFO_RETENTION_DAYS = 90;
 
 interface JobData {
   // intentionally empty — handlers re-query the DB on each run
@@ -81,6 +89,9 @@ export class TourTasksQueue implements OnModuleInit, OnModuleDestroy {
           if (job.name === JOB_DEPARTURE_REMINDER) {
             return this.runDepartureReminders();
           }
+          if (job.name === JOB_HEALTH_INFO_PURGE) {
+            return this.runHealthInfoPurge();
+          }
           this.logger.warn(`[Queue] unknown job name: ${job.name}`);
         },
         { connection, concurrency: 2 },
@@ -121,9 +132,18 @@ export class TourTasksQueue implements OnModuleInit, OnModuleDestroy {
           removeOnFail: { count: 50 },
         },
       );
+      await this.queue.add(
+        JOB_HEALTH_INFO_PURGE,
+        {},
+        {
+          repeat: { pattern: CRON_HEALTH_INFO_PURGE },
+          removeOnComplete: { count: 50 },
+          removeOnFail: { count: 50 },
+        },
+      );
 
       this.logger.log(
-        `[Queue] tour-tasks worker started — hold-reaper(${CRON_HOLD_REAPER}), balance-reminder(${CRON_BALANCE_REMINDER}), departure-reminder(${CRON_DEPARTURE_REMINDER})`,
+        `[Queue] tour-tasks worker started — hold-reaper(${CRON_HOLD_REAPER}), balance-reminder(${CRON_BALANCE_REMINDER}), departure-reminder(${CRON_DEPARTURE_REMINDER}), health-info-purge(${CRON_HEALTH_INFO_PURGE})`,
       );
     } catch (err: any) {
       this.logger.error(`[Queue] failed to start tour-tasks queue: ${err.message}. Tour notifications and hold reaping will not run until Redis is available.`);
@@ -272,5 +292,65 @@ export class TourTasksQueue implements OnModuleInit, OnModuleDestroy {
       this.logger.log(`[Queue] sent ${sent} departure reminder(s)`);
     }
     return { sent };
+  }
+
+  // ─── Job: health-info purge (90-day retention) ──────────────────────────
+  //
+  // Compliance implementation spec (2026-05-22) backed by the consent
+  // copy shown on tour-booking Step 3 ("we delete it within 90 days
+  // after the journey ends") and §2 of the Privacy Policy.
+  //
+  // Targets two free-text fields on past tour bookings:
+  //   - `healthConditions` (explicit health field)
+  //   - `dietaryNotes`     (free text that routinely contains health
+  //                         info: "nut allergy", "diabetic", etc.)
+  //
+  // Intentionally NOT purged:
+  //   - `dietaryRequirements` — enum value, not free text
+  //   - `intentions`          — goals / motivations, not health info
+  //   - `specialRequests`     — legacy catch-all; left alone to avoid
+  //                             over-deleting non-health content the
+  //                             consent text didn't promise to remove
+  //
+  // Idempotent: WHERE clause filters out already-nulled rows, so the
+  // job is a no-op after the first run that covers each booking.
+
+  private async runHealthInfoPurge() {
+    const cutoff = new Date(
+      Date.now() - HEALTH_INFO_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+    );
+
+    // Find candidates: tour bookings whose departure ended before the
+    // cutoff AND still hold any of the targeted free-text fields.
+    // We update one-by-one (rather than a bulk updateMany) so we have a
+    // per-row count for logging — the volume should always be small
+    // (each row processed at most once over the lifetime of the booking).
+    const candidates = await this.prisma.tourBooking.findMany({
+      where: {
+        departure: { endDate: { lt: cutoff } },
+        OR: [
+          { healthConditions: { not: null } },
+          { dietaryNotes: { not: null } },
+        ],
+      },
+      select: { id: true },
+    });
+
+    if (candidates.length === 0) {
+      return { purged: 0 };
+    }
+
+    await this.prisma.tourBooking.updateMany({
+      where: { id: { in: candidates.map((c) => c.id) } },
+      data: {
+        healthConditions: null,
+        dietaryNotes: null,
+      },
+    });
+
+    this.logger.log(
+      `[Queue] health-info-purge: nulled healthConditions + dietaryNotes on ${candidates.length} booking(s) (>${HEALTH_INFO_RETENTION_DAYS}d post-departure)`,
+    );
+    return { purged: candidates.length };
   }
 }
