@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { AINonAdviceFooter } from '@/components/public/ai/AINonAdviceFooter';
 
 const poppyItems = [
   { label: 'Practitioners', href: '/practitioners', image: '/images/hero1.jpg' },
@@ -197,6 +198,12 @@ export function HeroSection() {
             </button>
           ))}
         </div>
+
+        {/* Compliance: persistent AI non-advice disclaimer. Required on
+            every AI Guide surface per Task 6 of the compliance spec.
+            Crisis detection itself runs server-side on the receiving
+            /practitioners page where the AI call actually happens. */}
+        <AINonAdviceFooter />
       </div>
 
       {/* Headline */}

@@ -4,6 +4,8 @@ import { useState, useEffect, FormEvent, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
+import { AINonAdviceFooter } from '@/components/public/ai/AINonAdviceFooter';
+import { CrisisResourcesCard } from '@/components/public/ai/CrisisResourcesCard';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -126,6 +128,7 @@ function PractitionersPageInner() {
   const [aiInput, setAiInput] = useState(initialQuery);
   const [aiReply, setAiReply] = useState<string>('');
   const [aiMatched, setAiMatched] = useState<MatchedPractitioner[]>([]);
+  const [aiCrisis, setAiCrisis] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
 
   // Fetch listing whenever filters change
@@ -154,10 +157,15 @@ function PractitionersPageInner() {
     setAiLoading(true);
     setAiReply('');
     setAiMatched([]);
+    setAiCrisis(false);
     try {
       const res = await api.post('/ai/practitioner-match', { query: q });
       setAiReply(res.data?.reply || '');
       setAiMatched(res.data?.practitioners || []);
+      // Backend signals crisis when the user message matches the keyword
+      // set; the practitioner cards are intentionally empty in that case
+      // and the UI swaps to a safety-resources card below.
+      setAiCrisis(res.data?.crisis === true);
     } catch {
       setAiReply('Our AI guide is resting. Try browsing practitioners below.');
     } finally {
@@ -260,7 +268,13 @@ function PractitionersPageInner() {
               </button>
             ))}
           </div>
-          {(aiReply || aiMatched.length > 0) && (
+          {aiCrisis && aiReply && (
+            <div style={{ maxWidth: 680, margin: '14px auto 0' }}>
+              <CrisisResourcesCard reply={aiReply} variant="dark" />
+            </div>
+          )}
+
+          {!aiCrisis && (aiReply || aiMatched.length > 0) && (
             <div style={{
               maxWidth: 680, margin: '14px auto 0',
               padding: '14px 18px',
@@ -290,6 +304,9 @@ function PractitionersPageInner() {
               )}
             </div>
           )}
+
+          {/* Compliance: persistent AI non-advice disclaimer. */}
+          <AINonAdviceFooter variant="dark" />
         </div>
       </div>
 

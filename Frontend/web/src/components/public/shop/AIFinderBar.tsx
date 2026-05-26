@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
+import { AINonAdviceFooter } from '@/components/public/ai/AINonAdviceFooter';
+import { CrisisResourcesCard } from '@/components/public/ai/CrisisResourcesCard';
 
 const suggestions = [
   'I feel anxious and need to calm down',
@@ -30,12 +32,19 @@ interface RecommendedProduct {
 
 export function AIFinderBar() {
   const [query, setQuery] = useState('');
-  const [response, setResponse] = useState<{ text: string; products: RecommendedProduct[] } | null>(null);
+  const [response, setResponse] = useState<{
+    text: string;
+    products: RecommendedProduct[];
+    crisis: boolean;
+  } | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Calls POST /ai/product-finder which uses Claude to pick 2-3 matches
   // from the active product catalog based on the user's natural-language
-  // query. Response shape: { reply: string, products: [{ id, name, price, type }] }.
+  // query. Response shape: { reply: string, products: [...], crisis?: true }.
+  // When `crisis: true` the backend has already suppressed product
+  // recommendations and returned a safety-referral reply — the UI swaps
+  // the usual response panel for <CrisisResourcesCard>.
   const askAI = async (q?: string) => {
     const input = q || query;
     if (!input.trim()) return;
@@ -45,6 +54,7 @@ export function AIFinderBar() {
       const data = res.data ?? {};
       setResponse({
         text: data.reply ?? '',
+        crisis: data.crisis === true,
         products: (data.products ?? []).map((p: any) => ({
           id: p.id,
           name: p.name,
@@ -56,6 +66,7 @@ export function AIFinderBar() {
       // only fires on network/server errors.
       setResponse({
         text: 'Sorry, I had trouble fetching recommendations. Browse the shop directly below.',
+        crisis: false,
         products: [],
       });
     } finally {
@@ -141,8 +152,16 @@ export function AIFinderBar() {
           ))}
         </div>
 
-        {/* AI Response */}
-        {response && (
+        {/* AI Response — crisis branch replaces the usual recommendations
+            with a safety-resources card. Backend sets `crisis: true`
+            when the user message matches the crisis keyword set. */}
+        {response && response.crisis && (
+          <div style={{ maxWidth: 680, margin: '16px auto 0' }}>
+            <CrisisResourcesCard reply={response.text} variant="dark" />
+          </div>
+        )}
+
+        {response && !response.crisis && (
           <div style={{
             maxWidth: 680, margin: '16px auto 0',
             background: 'rgba(232,184,75,0.1)', border: '1px solid rgba(232,184,75,0.3)',
@@ -184,6 +203,9 @@ export function AIFinderBar() {
             </div>
           </div>
         )}
+
+        {/* Compliance: persistent AI non-advice disclaimer. */}
+        <AINonAdviceFooter variant="dark" />
       </div>
     </div>
   );

@@ -27,10 +27,72 @@ Guidelines:
 - When recommending products, mention what makes them special
 - Always be respectful of all spiritual traditions
 - If you don't know something specific about the platform, say so honestly
-- Never give medical advice — recommend consulting a healthcare professional when appropriate
-- Format responses in plain text, no markdown`;
+- Format responses in plain text, no markdown
+
+STRICT BOUNDARIES — these are non-negotiable:
+- You are NOT a counselor, therapist, physician, or licensed professional. Do not present yourself as one.
+- Do not give medical, mental-health, legal, or financial advice.
+- Do not diagnose or treat any condition — physical or psychological. If someone describes symptoms, do not assess them; suggest they consult a qualified professional.
+- You are not a crisis or emergency service. If someone mentions self-harm, suicidal thoughts, abuse, or any immediate danger, your only response is to refer them to professional help (988 Suicide & Crisis Lifeline in the US, or local emergency services).`;
+
+  // ─── Crisis detection ──────────────────────────────────────────────────
+  //
+  // Compliance implementation spec (2026-05-22, Task 6): if a user message
+  // contains crisis terms, suspend the normal AI response and surface a
+  // crisis-resources card instead. The detection runs server-side so every
+  // AI surface (current chat input, product finder, practitioner matcher,
+  // any future surface) gets the same protection — defense-in-depth.
+  //
+  // Patterns are tight on purpose: matching unambiguous crisis phrases is
+  // safer than matching ambiguous single words (e.g. "abuse" alone has
+  // benign meanings like "substance abuse education" or "don't abuse the
+  // equipment"). Tune by adding patterns here, not by relaxing existing
+  // ones.
+
+  private readonly CRISIS_PATTERNS: RegExp[] = [
+    /\bsuicid(e|al|es|ing)\b/i,
+    /\bself[\s-]?harm/i,
+    /\bkill\s+(my[\s-]?self|me)\b/i,
+    /\bend(ing)?\s+(my|it\s+all)\s*(life)?\b/i,
+    /\b(over|drug)\s?dos(e|ed|ing)\b/i,
+    /\bwant\s+to\s+die\b/i,
+    /\bbeing\s+(abused|assaulted|hit|hurt)\b/i,
+    /\b(abusive\s+(partner|relationship)|domestic\s+violence)\b/i,
+    /\bno\s+(reason|point|will)\s+to\s+live\b/i,
+    /\bharm(ing)?\s+my[\s-]?self\b/i,
+  ];
+
+  private detectsCrisis(message: string): boolean {
+    if (!message) return false;
+    return this.CRISIS_PATTERNS.some((p) => p.test(message));
+  }
+
+  /**
+   * Verbatim safety response surfaced to the client whenever the crisis
+   * detector trips. The shape is uniform across all three AI methods
+   * (chat / productFinder / practitionerMatcher) so the frontend can
+   * branch on `crisis: true` regardless of which endpoint it called.
+   */
+  private crisisResponse() {
+    return {
+      crisis: true as const,
+      reply:
+        "It sounds like you may be carrying something deeply painful right now. The AI Guide is not a counselor or emergency service and isn't equipped to support you through this — but trained, caring people are. " +
+        "If you're in immediate danger, please call 911 (or your local emergency number). " +
+        "For crisis support, call or text 988 (US Suicide & Crisis Lifeline) — available 24/7, free and confidential. " +
+        "You can also text HOME to 741741 (Crisis Text Line). Please reach out — you deserve real human support.",
+    };
+  }
 
   async chat(message: string, conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = []) {
+    // Crisis short-circuit — must run before the Claude call so we don't
+    // accidentally generate an AI response that competes with the safety
+    // referral. See compliance spec Task 6.
+    if (this.detectsCrisis(message)) {
+      this.logger.warn('[crisis-detect] chat() suppressed AI response and returned safety referral');
+      return { ...this.crisisResponse(), usage: null };
+    }
+
     const [guideCount, categories] = await Promise.all([
       this.prisma.guideProfile.count({ where: { isPublished: true } }),
       this.prisma.category.findMany({ where: { isActive: true }, select: { name: true }, take: 20 }),
@@ -57,6 +119,10 @@ Guidelines:
   }
 
   async productFinder(query: string) {
+    if (this.detectsCrisis(query)) {
+      this.logger.warn('[crisis-detect] productFinder() suppressed AI response and returned safety referral');
+      return { ...this.crisisResponse(), products: [] };
+    }
     const products = await this.prisma.product.findMany({
       where: { isActive: true },
       select: { id: true, name: true, type: true, price: true, description: true, guide: { select: { displayName: true } } },
@@ -80,6 +146,10 @@ Guidelines:
   }
 
   async practitionerMatcher(query: string) {
+    if (this.detectsCrisis(query)) {
+      this.logger.warn('[crisis-detect] practitionerMatcher() suppressed AI response and returned safety referral');
+      return { ...this.crisisResponse(), practitioners: [] };
+    }
     const guides = await this.prisma.guideProfile.findMany({
       where: { isPublished: true, isVerified: true, user: { isActive: true } },
       select: { id: true, slug: true, displayName: true, tagline: true, modalities: true, averageRating: true, location: true },
