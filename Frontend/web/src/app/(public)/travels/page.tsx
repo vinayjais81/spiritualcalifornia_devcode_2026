@@ -48,8 +48,11 @@ interface Tour {
 interface Stats {
   totalJourneys: number;
   countries: number;
+  // Lowercased country slugs returned by /soul-tours/stats. Drives the
+  // destination filter pill set — pills for countries with no live tour
+  // are hidden (spec Task 7).
+  countrySlugs: string[];
   travelers: number;
-  avgRating: number;
 }
 
 // ─── Country configuration ──────────────────────────────────────────────────
@@ -241,7 +244,10 @@ export default function TravelsPage() {
               <Stat value={stats.totalJourneys.toString()} label="Active Journeys" />
               <Stat value={stats.countries.toString()} label="Countries" />
               <Stat value={`${stats.travelers}+`} label="Travelers" />
-              <Stat value={stats.avgRating.toFixed(1)} label="Avg Rating" />
+              {/* "Avg Rating" tile removed per compliance spec Task 7 —
+                  tour reviews aren't wired yet, so any rating would be
+                  synthetic. Re-add when tour reviews land, including
+                  the sample size ("4.9 · based on N reviews"). */}
             </div>
           )}
         </div>
@@ -300,7 +306,13 @@ export default function TravelsPage() {
             fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase',
             color: '#8A8278', marginRight: 4,
           }}>Destination</span>
-          {COUNTRY_FILTERS.map((c) => (
+          {/* Filter pills to the countries that actually have a published
+              tour right now (spec Task 7 — don't advertise destinations
+              we don't sell). "All Countries" is always shown so the
+              full-list reset is always available. */}
+          {COUNTRY_FILTERS.filter(
+            (c) => c.slug === 'all' || (stats?.countrySlugs ?? []).includes(c.slug),
+          ).map((c) => (
             <CountryTag
               key={c.slug}
               active={activeCountry === c.slug}

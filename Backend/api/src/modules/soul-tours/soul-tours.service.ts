@@ -276,11 +276,24 @@ export class SoulToursService {
       }),
     ]);
 
+    // Lowercased country slugs the frontend uses to filter the destination
+    // pill list — only countries with at least one published, future-
+    // departure tour appear. Spec Task 7: don't advertise destinations
+    // we don't actually sell.
+    const countrySlugs = countryRows
+      .map((r) => r.country?.toLowerCase().trim())
+      .filter((s): s is string => !!s);
+
+    // NOTE: `avgRating` is intentionally NOT returned. Tour reviews aren't
+    // wired yet (post-launch phase), so any number we put here would be
+    // synthetic — a textbook false-advertising risk per FTC dark-pattern
+    // guidance. When tour reviews come online, re-add { avgRating,
+    // reviewCount } so the UI can show "4.9 based on N reviews" inline.
     return {
       totalJourneys,
       countries: countryRows.length,
+      countrySlugs,
       travelers: travelerRows,
-      avgRating: 4.9, // Reviews for tours will come online in a later phase
     };
   }
 
