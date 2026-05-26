@@ -7,6 +7,7 @@ import Youtube from '@tiptap/extension-youtube';
 import TiptapImage from '@tiptap/extension-image';
 import { useEffect } from 'react';
 import { C } from './dashboard-ui';
+import { staticPageBlockExtensions } from './richtext/staticPageBlocks';
 
 const font = "var(--font-inter), 'Inter', sans-serif";
 
@@ -17,6 +18,14 @@ interface RichTextEditorProps {
   minHeight?: string;
   /** Show extended toolbar: H2, YouTube embed, Image insert */
   extended?: boolean;
+  /**
+   * Enable the static-page rich-layout block extensions (pillar +
+   * steps-box cards) plus their insertion toolbar buttons. Used by
+   * /admin/static-pages so editing the /mission and similar branded
+   * pages doesn't strip the card markup on save. Intentionally OFF
+   * for blog / event / tour editors that don't need these blocks.
+   */
+  staticPageBlocks?: boolean;
 }
 
 function ToolbarButton({
@@ -62,12 +71,24 @@ export function RichTextEditor({
   placeholder = 'Start writing...',
   minHeight = '140px',
   extended = false,
+  staticPageBlocks = false,
 }: RichTextEditorProps) {
+  // Static-page blocks need H3 for the .steps-box heading slot, so they
+  // unlock heading level 3 even when the regular `extended` mode hasn't
+  // unlocked H2. Both can coexist.
+  const headingLevels = staticPageBlocks
+    ? extended
+      ? [2, 3]
+      : [3]
+    : extended
+      ? [2]
+      : false;
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
       StarterKit.configure({
-        heading: extended ? { levels: [2] } : false,
+        heading: headingLevels ? { levels: headingLevels as any } : false,
         bulletList: { keepMarks: true },
         orderedList: { keepMarks: true },
       }),
@@ -85,6 +106,7 @@ export function RichTextEditor({
             }),
           ]
         : []),
+      ...(staticPageBlocks ? staticPageBlockExtensions : []),
     ],
     content: value,
     onUpdate: ({ editor: ed }) => {
@@ -121,6 +143,50 @@ export function RichTextEditor({
     const url = prompt('Paste a YouTube video URL:');
     if (!url) return;
     editor.chain().focus().setYoutubeVideo({ src: url }).run();
+  };
+
+  // ── Static-page block inserters ────────────────────────────────────────
+  // Each inserts a fully-shaped block (matches the node schema's strict
+  // content) so admin can edit the prose without worrying about which
+  // child slots are required.
+  const insertPillar = () => {
+    editor.chain().focus().insertContent({
+      type: 'pillar',
+      content: [
+        { type: 'pillarIcon', content: [{ type: 'text', text: '✦' }] },
+        { type: 'pillarTitle', content: [{ type: 'text', text: 'Commitment title' }] },
+        { type: 'pillarText', content: [{ type: 'text', text: 'A short description of this commitment.' }] },
+      ],
+    }).run();
+  };
+
+  const insertStepsBox = () => {
+    const makeStep = (num: string, title: string) => ({
+      type: 'step',
+      content: [
+        { type: 'stepNum', content: [{ type: 'text', text: num }] },
+        {
+          type: 'stepBody',
+          content: [
+            { type: 'stepTitle', content: [{ type: 'text', text: title }] },
+            { type: 'stepText', content: [{ type: 'text', text: 'Describe this step.' }] },
+          ],
+        },
+      ],
+    });
+    editor.chain().focus().insertContent({
+      type: 'stepsBox',
+      content: [
+        {
+          type: 'heading',
+          attrs: { level: 3 },
+          content: [{ type: 'text', text: 'How it works' }],
+        },
+        makeStep('1', 'First step'),
+        makeStep('2', 'Second step'),
+        makeStep('3', 'Third step'),
+      ],
+    }).run();
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -216,6 +282,25 @@ export function RichTextEditor({
             </ToolbarButton>
           </>
         )}
+
+        {/* Static-page block inserters — only when the editor is in
+            static-page mode (admin /admin/static-pages). */}
+        {staticPageBlocks && (
+          <>
+            <ToolbarButton
+              onClick={insertPillar}
+              title="Insert a pillar/commitment card"
+            >
+              ✦ Pillar
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={insertStepsBox}
+              title="Insert a numbered steps box"
+            >
+              ❶ Steps
+            </ToolbarButton>
+          </>
+        )}
       </div>
 
       {/* Editor */}
@@ -305,6 +390,88 @@ export function RichTextEditor({
           pointer-events: none;
           float: left;
           height: 0;
+        }
+
+        /* ── Static-page card visuals inside the editor ────────────────
+           Mirrors the public StaticPageRenderer's pillar + steps-box
+           styling so admin sees a faithful preview of what publishes.
+           Only emitted when staticPageBlocks={true} on the editor.    */
+        .tiptap .pillar {
+          display: grid;
+          grid-template-columns: 52px 1fr;
+          grid-template-areas: "icon title" "icon text";
+          column-gap: 20px;
+          align-items: start;
+          margin: 12px 0;
+          padding: 20px;
+          background: #FFFFFF;
+          border-radius: 12px;
+          border-left: 3px solid ${C.gold};
+        }
+        .tiptap .pillar-icon {
+          grid-area: icon;
+          width: 48px; height: 48px;
+          background: rgba(232,184,75,0.1);
+          border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 22px;
+        }
+        .tiptap .pillar-title {
+          grid-area: title;
+          font-family: var(--font-cormorant-garamond), 'Cormorant Garamond', serif;
+          font-size: 18px; font-weight: 500;
+          color: ${C.charcoal};
+          margin: 0 0 4px;
+        }
+        .tiptap .pillar-text {
+          grid-area: text;
+          font-size: 13px;
+          color: ${C.warmGray};
+          line-height: 1.6;
+          margin: 0;
+        }
+        .tiptap .steps-box {
+          background: #FFFFFF;
+          border-radius: 12px;
+          padding: 24px;
+          margin: 12px 0;
+        }
+        .tiptap .steps-box h3 {
+          font-family: var(--font-cormorant-garamond), 'Cormorant Garamond', serif;
+          font-size: 20px; font-weight: 500;
+          color: ${C.charcoal};
+          margin: 0 0 16px;
+        }
+        .tiptap .step {
+          display: flex; gap: 14px;
+          align-items: flex-start;
+          margin-bottom: 14px;
+        }
+        .tiptap .step:last-child { margin-bottom: 0; }
+        .tiptap .step-num {
+          width: 28px; height: 28px;
+          background: ${C.gold};
+          color: #FFFFFF;
+          border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 12px; font-weight: 600;
+          flex-shrink: 0;
+        }
+        .tiptap .step-body { flex: 1; }
+        .tiptap .step-body .step-title,
+        .tiptap .step-body strong {
+          display: block;
+          font-size: 14px; font-weight: 600;
+          color: ${C.charcoal};
+          margin: 0 0 3px;
+        }
+        .tiptap .step-body .step-text,
+        .tiptap .step-body span {
+          display: block;
+          font-size: 13px;
+          color: ${C.warmGray};
+          line-height: 1.55;
+          margin: 0;
         }
       `}</style>
     </div>

@@ -450,6 +450,7 @@ function StaticPageEditor({ mode, pageId, onClose, onSaved }: EditorProps) {
                   placeholder="Write the full page content…"
                   minHeight="320px"
                   extended
+                  staticPageBlocks
                 />
               </div>
             </div>

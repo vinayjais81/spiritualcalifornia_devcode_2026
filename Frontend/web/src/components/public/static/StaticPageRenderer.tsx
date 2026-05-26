@@ -315,6 +315,22 @@ export function StaticPageRenderer({
             font-weight: 600;
             flex-shrink: 0;
           }
+          /* Title + description inside a step. New markup (.step-title /
+             .step-text on <p>) is what the Tiptap editor normalizes to;
+             the legacy strong/span selectors below cover the original
+             seed markup before any editor save reshapes it. */
+          .static-page-body .step-body .step-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: ${G.charcoal};
+            margin: 0 0 4px;
+          }
+          .static-page-body .step-body .step-text {
+            font-size: 14px;
+            color: ${G.warmGray};
+            line-height: 1.6;
+            margin: 0;
+          }
           .static-page-body .step-body strong {
             display: block;
             font-size: 15px;
@@ -331,7 +347,10 @@ export function StaticPageRenderer({
           .static-page-body .pillar {
             display: grid;
             grid-template-columns: 52px 1fr;
-            gap: 0 20px;
+            grid-template-areas:
+              "icon title"
+              "icon text";
+            column-gap: 20px;
             align-items: start;
             margin-bottom: 16px;
             padding: 24px;
@@ -340,6 +359,7 @@ export function StaticPageRenderer({
             border-left: 3px solid ${G.gold};
           }
           .static-page-body .pillar-icon {
+            grid-area: icon;
             width: 48px;
             height: 48px;
             background: rgba(232,184,75,0.1);
@@ -348,8 +368,10 @@ export function StaticPageRenderer({
             align-items: center;
             justify-content: center;
             font-size: 22px;
+            align-self: start;
           }
           .static-page-body .pillar-title {
+            grid-area: title;
             font-family: 'Cormorant Garamond', serif;
             font-size: 19px;
             font-weight: 500;
@@ -358,6 +380,7 @@ export function StaticPageRenderer({
             line-height: 1.3;
           }
           .static-page-body .pillar-text {
+            grid-area: text;
             font-size: 14px;
             line-height: 1.75;
             color: ${G.warmGray};
