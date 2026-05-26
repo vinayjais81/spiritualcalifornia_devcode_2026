@@ -1,14 +1,16 @@
 import {
-  Controller, Post, Get, Put, Delete, Param, Body, Query, UseGuards,
+  Controller, Post, Get, Put, Delete, Param, Body, Query, UseGuards, Req,
   Logger, HttpException, InternalServerErrorException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { SoulToursService } from './soul-tours.service';
 import {
   CreateTourDto, CreateDepartureDto, CreateItineraryDayDto,
 } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { BookTourDto, CancelBookingDto } from './dto/book-tour.dto';
+import { RecordConsentDto } from './dto/record-consent.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -213,6 +215,44 @@ export class SoulToursController {
     @Body() dto: CancelBookingDto,
   ) {
     return this.soulToursService.cancelBooking(user.id, bookingId, dto);
+  }
+
+  // ─── Compliance: clickwrap consent capture ─────────────────────────────────
+  //
+  // Records the customer's acceptance of Terms / Cancellation / Privacy /
+  // Disclosures (the clickwrap shown on booking Step 4). Called by the
+  // frontend after `POST /soul-tours/book` and BEFORE
+  // `POST /payments/create-intent` — payment-intent creation is gated
+  // server-side on this row existing for the booking. See
+  // PaymentsService.createPaymentIntent for the gate.
+  //
+  // Idempotent: a second POST for the same booking updates the existing
+  // row (re-captures timestamp, IP, current doc versions) rather than
+  // erroring on the unique constraint. Owner of the booking is the only
+  // caller permitted; admin/super_admin not required since this is a
+  // self-service action.
+
+  @Post('bookings/:bookingId/consent')
+  @Roles(Role.SEEKER)
+  @ApiOperation({
+    summary:
+      'Record the seeker\'s clickwrap acceptance for this booking. Required before payment intent creation will succeed.',
+  })
+  recordConsent(
+    @CurrentUser() user: CurrentUserData,
+    @Param('bookingId') bookingId: string,
+    @Body() dto: RecordConsentDto,
+    @Req() req: Request,
+  ) {
+    // Client IP — prefer X-Forwarded-For (when behind reverse proxy),
+    // fall back to req.ip (Express's resolved IP after `trust proxy`).
+    const fwd = req.headers['x-forwarded-for'];
+    const ip = (Array.isArray(fwd) ? fwd[0] : fwd?.split(',')[0]?.trim()) || req.ip || 'unknown';
+    return this.soulToursService.recordBookingConsent(user.id, bookingId, {
+      consentText: dto.consentText,
+      docVersions: dto.docVersions,
+      ip,
+    });
   }
 
   // ─── Public detail (CATCH-ALL — must remain LAST) ──────────────────────────

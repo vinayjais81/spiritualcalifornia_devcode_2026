@@ -76,6 +76,25 @@ export class PaymentsService {
     paymentType?: 'FULL' | 'DEPOSIT' | 'BALANCE';
     metadata?: Record<string, any>;
   }) {
+    // ── Compliance gate ──────────────────────────────────────────────────
+    // Tour-booking payments require a recorded clickwrap consent (Task 4e
+    // of the compliance implementation spec, 2026-05-22). This is the
+    // line that makes the cancellation policy + liability terms +
+    // arbitration enforceable against the customer. Balance payments
+    // are exempt — by paying the balance the customer is acting on an
+    // already-consented booking; we don't re-prompt for clickwrap.
+    if (data.tourBookingId && data.paymentType !== 'BALANCE') {
+      const consent = await this.prisma.bookingConsent.findUnique({
+        where: { tourBookingId: data.tourBookingId },
+        select: { id: true },
+      });
+      if (!consent) {
+        throw new BadRequestException(
+          'Booking has no recorded consent. Call POST /soul-tours/bookings/:id/consent before creating a payment intent.',
+        );
+      }
+    }
+
     const platformFeeRate = this.commissionPercent / 100;
     const guideAmount = data.amount * (1 - platformFeeRate);
     const connectedAccountId = await this.resolveGuideStripeAccount(data);

@@ -618,6 +618,59 @@ export class SoulToursService {
     return { refundAmount: 0, refundPercent: 0, tier: 'NONE' as const };
   }
 
+  // ─── Compliance: record the clickwrap consent for a booking ──────────────
+  //
+  // Idempotent upsert keyed on tourBookingId (unique constraint). Re-runs
+  // refresh the timestamp + IP + doc versions, so a customer who reloads
+  // and re-accepts ends up with a fresh record. Owner-only — the seeker
+  // tied to the booking must be the caller; anything else is forbidden.
+
+  async recordBookingConsent(
+    userId: string,
+    bookingId: string,
+    payload: { consentText: string; docVersions: Record<string, string>; ip: string },
+  ) {
+    const seeker = await this.prisma.seekerProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+    if (!seeker) throw new ForbiddenException('Seeker profile not found');
+
+    const booking = await this.prisma.tourBooking.findUnique({
+      where: { id: bookingId },
+      select: { id: true, seekerId: true, status: true },
+    });
+    if (!booking) throw new NotFoundException('Booking not found');
+    if (booking.seekerId !== seeker.id) throw new ForbiddenException('Not your booking');
+    if (booking.status === 'CANCELLED') {
+      throw new BadRequestException('Booking is cancelled — consent cannot be recorded');
+    }
+
+    const now = new Date();
+    const consent = await this.prisma.bookingConsent.upsert({
+      where: { tourBookingId: bookingId },
+      create: {
+        tourBookingId: bookingId,
+        acceptedAt: now,
+        ip: payload.ip,
+        consentText: payload.consentText,
+        docVersions: payload.docVersions as any,
+      },
+      update: {
+        acceptedAt: now,
+        ip: payload.ip,
+        consentText: payload.consentText,
+        docVersions: payload.docVersions as any,
+      },
+    });
+
+    return {
+      id: consent.id,
+      tourBookingId: consent.tourBookingId,
+      acceptedAt: consent.acceptedAt,
+    };
+  }
+
   async cancelBooking(userId: string, bookingId: string, dto: CancelBookingDto) {
     const seeker = await this.prisma.seekerProfile.findUnique({
       where: { userId },

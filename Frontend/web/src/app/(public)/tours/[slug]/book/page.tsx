@@ -8,6 +8,8 @@ import { api } from '@/lib/api';
 import { StepNav } from '@/components/public/booking/StepNav';
 import { BookingSuccess } from '@/components/public/booking/BookingSuccess';
 import { LegalReceiptBlock } from '@/components/public/booking/LegalReceiptBlock';
+import { DisclosuresAccordion } from '@/components/public/booking/DisclosuresAccordion';
+import { CLICKWRAP_CONSENT_TEXT, LEGAL_DOC_VERSIONS } from '@/lib/legalDocVersions';
 import { StripeProvider } from '@/components/public/checkout/StripeProvider';
 import { StripePaymentForm } from '@/components/public/checkout/StripePaymentForm';
 import { useAuthStore } from '@/store/auth.store';
@@ -186,6 +188,8 @@ export default function BookTourPage() {
   const [createdBooking, setCreatedBooking] = useState<CreatedBooking | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [creatingBooking, setCreatingBooking] = useState(false);
+  // Compliance clickwrap (Task 4d) — payment cannot proceed until ticked.
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   // Final
   const [showSuccess, setShowSuccess] = useState(false);
 
@@ -406,7 +410,17 @@ export default function BookTourPage() {
       const booking: CreatedBooking = bookingRes.data;
       setCreatedBooking(booking);
 
-      // 2. Create the Stripe PaymentIntent for the deposit
+      // 2. Record the clickwrap consent (Task 4e). The payment intent
+      //    endpoint below is gated server-side on this row existing —
+      //    `acceptedTerms` was already required to enable the button,
+      //    so we always have consent to capture at this point. Server
+      //    fills in `acceptedAt` and `ip` from the request.
+      await api.post(`/soul-tours/bookings/${booking.id}/consent`, {
+        consentText: CLICKWRAP_CONSENT_TEXT,
+        docVersions: LEGAL_DOC_VERSIONS,
+      });
+
+      // 3. Create the Stripe PaymentIntent for the deposit
       const isPayingInFull = chosenDeposit >= totalAmount;
       const intentRes = await api.post('/payments/create-intent', {
         amount: chosenDeposit,
@@ -1018,21 +1032,91 @@ export default function BookTourPage() {
                     </div>
                   )}
 
+                  {/* Compliance: disclosures accordion (Task 4c). Collapsed
+                      by default; expanding it surfaces the cancellation
+                      summary, refund commitment, trust account, TCRF,
+                      travel insurance, and (when populated) the operator
+                      attribution. */}
+                  <DisclosuresAccordion />
+
+                  {/* Combined acceptance clickwrap (Task 4d). The pay
+                      button below is disabled until this is ticked. The
+                      verbatim consent copy is persisted in the consent
+                      record via CLICKWRAP_CONSENT_TEXT so we have an
+                      exact record of what the customer agreed to. */}
+                  <label
+                    htmlFor="accept-clickwrap"
+                    style={{
+                      display: 'flex',
+                      gap: 10,
+                      alignItems: 'flex-start',
+                      padding: '14px 16px',
+                      border: '1px solid rgba(232,184,75,0.3)',
+                      borderRadius: 8,
+                      background: '#FFFEFB',
+                      marginBottom: 20,
+                      fontSize: 13,
+                      lineHeight: 1.55,
+                      color: C.charcoal,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <input
+                      id="accept-clickwrap"
+                      type="checkbox"
+                      checked={acceptedTerms}
+                      onChange={(e) => setAcceptedTerms(e.target.checked)}
+                      style={{ marginTop: 3, flexShrink: 0 }}
+                    />
+                    <span>
+                      I have read and agree to the{' '}
+                      <Link href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: C.gold, textDecoration: 'underline' }}>
+                        Terms of Service
+                      </Link>
+                      , the{' '}
+                      <Link href="/refund-policy" target="_blank" rel="noopener noreferrer" style={{ color: C.gold, textDecoration: 'underline' }}>
+                        Cancellation Policy
+                      </Link>
+                      , the{' '}
+                      <Link href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: C.gold, textDecoration: 'underline' }}>
+                        Privacy Policy
+                      </Link>
+                      , and the{' '}
+                      <Link href="/disclosures" target="_blank" rel="noopener noreferrer" style={{ color: C.gold, textDecoration: 'underline' }}>
+                        Travel Disclosures
+                      </Link>
+                      .
+                    </span>
+                  </label>
+
                   <div style={{ display: 'flex', gap: 12 }}>
                     <button onClick={() => setStep(2)} style={btnSecondary}>← Back</button>
                     <button
                       onClick={handleCreateBooking}
-                      disabled={creatingBooking || chosenDeposit === null}
+                      disabled={creatingBooking || chosenDeposit === null || !acceptedTerms}
                       style={{
                         flex: 1, padding: '15px', borderRadius: 8,
-                        background: creatingBooking ? 'rgba(232,184,75,0.5)' : C.charcoal,
+                        background:
+                          creatingBooking || !acceptedTerms || chosenDeposit === null
+                            ? 'rgba(232,184,75,0.5)'
+                            : C.charcoal,
                         color: C.gold, border: 'none',
                         fontFamily: 'Inter, sans-serif',
                         fontSize: 13, fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase',
-                        cursor: creatingBooking ? 'not-allowed' : 'pointer',
+                        cursor:
+                          creatingBooking || !acceptedTerms || chosenDeposit === null
+                            ? 'not-allowed'
+                            : 'pointer',
                       }}
+                      title={
+                        !acceptedTerms
+                          ? 'Please accept the terms and disclosures to continue.'
+                          : undefined
+                      }
                     >
-                      {creatingBooking ? 'Reserving your spot…' : `Continue to Payment — $${(chosenDeposit || 0).toLocaleString()}`}
+                      {creatingBooking
+                        ? 'Reserving your spot…'
+                        : `Pay deposit — $${(chosenDeposit || 0).toLocaleString()}`}
                     </button>
                   </div>
                 </>
@@ -1121,12 +1205,13 @@ export default function BookTourPage() {
 
             <div style={{ borderTop: '1px solid rgba(232,184,75,0.1)', marginTop: 16, paddingTop: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12, color: C.warmGray }}>
-                <span>{travelersCount} × {room?.name || 'Standard'}</span>
+                <span>Tour package — {travelersCount} × {room?.name || 'Standard'}</span>
                 <span>${totalAmount.toLocaleString()}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10, fontSize: 12, color: C.warmGray }}>
-                <span>Taxes &amp; fees</span>
-                <span>$0</span>
+              {/* Compliance spec Task 4a: removed the misleading "Taxes & fees $0" line.
+                  Replaced with a single inclusive note under the line-item label. */}
+              <div style={{ fontSize: 11, color: C.warmGray, marginBottom: 10, lineHeight: 1.5 }}>
+                Includes all applicable taxes and fees
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 10, borderTop: '1px solid rgba(232,184,75,0.15)' }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: C.charcoal }}>Total</span>
@@ -1152,6 +1237,23 @@ export default function BookTourPage() {
                   <span style={{ fontWeight: 600 }}>${chosenDeposit.toLocaleString()}</span>
                 </div>
               )}
+            </div>
+
+            {/* Compliance spec Task 4b: persistent seller identifier line.
+                Lives in the sidebar so it shows across all four steps.
+                Muted styling — present but not visually loud. */}
+            <div
+              style={{
+                marginTop: 16,
+                paddingTop: 12,
+                borderTop: '1px solid rgba(232,184,75,0.1)',
+                fontSize: 10.5,
+                color: C.warmGray,
+                lineHeight: 1.5,
+                letterSpacing: '0.02em',
+              }}
+            >
+              Spiritual California Inc. · CST #2171340-40
             </div>
           </div>
         </aside>

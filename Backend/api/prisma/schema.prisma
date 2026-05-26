@@ -1452,6 +1452,10 @@ model TourBooking {
   payments      Payment[]             @relation("TourBookingPayments")
   travelers_rel TourBookingTraveler[]
   review        Review?
+  // Compliance: the clickwrap acceptance record captured before payment.
+  // Payments are gated server-side on this row existing — see
+  // PaymentsService.createPaymentIntent and BookingConsent below.
+  consent       BookingConsent?
 
   @@index([tourId])
   @@index([departureId])
@@ -1459,6 +1463,36 @@ model TourBooking {
   @@index([status, holdExpiresAt])
   @@index([status, balanceDueAt])
   @@map("tour_bookings")
+}
+
+// ─────────────────────────────────────────────
+// BOOKING CONSENT — compliance clickwrap record
+// Captured before the Stripe payment intent is minted; what makes the
+// liability / cancellation / arbitration terms enforceable against the
+// customer. Required by the compliance implementation spec (2026-05-22,
+// Task 4e). One row per tour booking (1:1).
+// ─────────────────────────────────────────────
+
+model BookingConsent {
+  id             String      @id @default(cuid())
+  tourBookingId  String      @unique
+  tourBooking    TourBooking @relation(fields: [tourBookingId], references: [id], onDelete: Cascade)
+  // ISO 8601 UTC moment the customer ticked the box.
+  acceptedAt     DateTime    @default(now())
+  // Client IP at time of acceptance, captured server-side from the
+  // request. String (not Inet) to keep things database-portable.
+  ip             String
+  // Verbatim copy of the checkbox label shown to the customer.
+  // Persisted so we can reproduce exactly what they agreed to even if
+  // the on-screen copy changes later.
+  consentText    String      @db.Text
+  // Per-document version tags from Frontend/web/src/lib/legalDocVersions.
+  // Shape: { terms: "2026-05-22", privacy: "...", refund: "...", disclosures: "..." }
+  docVersions    Json
+  createdAt      DateTime    @default(now())
+
+  @@index([acceptedAt])
+  @@map("booking_consents")
 }
 
 // ─────────────────────────────────────────────
