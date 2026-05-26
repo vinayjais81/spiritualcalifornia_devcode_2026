@@ -24,14 +24,17 @@ const companyLinks = [
   { label: 'Contact', href: '/contact' },
 ];
 
-// Legal-row links shown in the footer's bottom bar. Each route is a thin
-// wrapper over the StaticPage CMS row of the matching slug — copy is edited
-// from /admin/static-pages, not here.
+// Legal-row links shown in the footer's compliance block. Labels are
+// verbatim from the compliance implementation spec (2026-05-22). The
+// DNSMPI deep link relies on `id="dnsmpi"` being present on the
+// Privacy Policy §7 heading (added in the legal-quick-wins migration).
 const legalLinks = [
-  { label: 'Terms', href: '/terms' },
-  { label: 'Privacy', href: '/privacy' },
-  { label: 'Refund Policy', href: '/refund-policy' },
-  { label: 'Travel Disclosures', href: '/travel-disclosures' },
+  { label: 'Terms of Service', href: '/terms' },
+  { label: 'Privacy Policy', href: '/privacy' },
+  { label: 'Cancellation & Refund', href: '/refund-policy' },
+  { label: 'Travel Disclosures', href: '/disclosures' },
+  { label: 'Do Not Sell or Share My Personal Information', href: '/privacy#dnsmpi' },
+  { label: 'Contact', href: '/contact' },
 ];
 
 const linkStyle: React.CSSProperties = {
@@ -151,32 +154,42 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Bottom bar */}
+      {/* Compliance block — CST identity line + legal links.
+          Required on every page per the compliance implementation spec
+          (2026-05-22, Task 2). Per the spec we intentionally do NOT
+          surface a street address, phone, or email here — those live on
+          /disclosures, /privacy, and the booking receipt only. */}
       <div
         style={{
           borderTop: '1px solid rgba(255,255,255,0.1)',
           paddingTop: '22px',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '16px',
+          flexDirection: 'column',
+          gap: '12px',
         }}
-        className="footer-bottom"
       >
-        <span
+        <p
           style={{
             fontFamily: 'var(--font-inter), sans-serif',
             fontSize: '11px',
             fontWeight: 300,
-            color: 'rgba(255,255,255,0.3)',
+            lineHeight: 1.6,
+            color: 'rgba(255,255,255,0.55)',
+            margin: 0,
           }}
         >
-          © {new Date().getFullYear()} Spiritual California. All rights reserved.
-        </span>
+          <strong style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>
+            Spiritual California Inc.
+          </strong>{' '}
+          · California Seller of Travel{' '}
+          <strong style={{ fontWeight: 500, color: 'rgba(255,255,255,0.75)' }}>
+            CST #2171340-40
+          </strong>
+          . Registration as a seller of travel does not constitute approval by the State of California.
+        </p>
         <nav
           aria-label="Legal"
-          style={{ display: 'flex', alignItems: 'center', gap: '18px' }}
+          style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 18px' }}
           className="footer-legal"
         >
           {legalLinks.map(({ label, href }) => (
@@ -198,6 +211,32 @@ export function Footer() {
             </Link>
           ))}
         </nav>
+      </div>
+
+      {/* Bottom bar — copyright + brand tagline */}
+      <div
+        style={{
+          marginTop: '20px',
+          paddingTop: '16px',
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px',
+        }}
+        className="footer-bottom"
+      >
+        <span
+          style={{
+            fontFamily: 'var(--font-inter), sans-serif',
+            fontSize: '11px',
+            fontWeight: 300,
+            color: 'rgba(255,255,255,0.3)',
+          }}
+        >
+          © {new Date().getFullYear()} Spiritual California Inc.
+        </span>
         <span
           style={{
             fontFamily: 'var(--font-inter), sans-serif',

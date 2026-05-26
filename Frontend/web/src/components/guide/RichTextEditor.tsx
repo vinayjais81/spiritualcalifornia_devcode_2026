@@ -73,22 +73,24 @@ export function RichTextEditor({
   extended = false,
   staticPageBlocks = false,
 }: RichTextEditorProps) {
-  // Static-page blocks need H3 for the .steps-box heading slot, so they
-  // unlock heading level 3 even when the regular `extended` mode hasn't
-  // unlocked H2. Both can coexist.
-  const headingLevels = staticPageBlocks
-    ? extended
-      ? [2, 3]
-      : [3]
-    : extended
-      ? [2]
-      : false;
+  // Static-page blocks need H3 for the .steps-box heading slot AND need
+  // an `id` attribute to survive admin edits (for /privacy#dnsmpi). When
+  // staticPageBlocks is on we disable StarterKit's built-in Heading and
+  // let the HeadingWithId extension (bundled in staticPageBlockExtensions)
+  // own all heading rendering — that's the one that preserves `id`s.
+  // When it's off, StarterKit's plain Heading handles things as before.
+  const headingLevels: number[] | false = extended ? [2, 3] : false;
 
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
       StarterKit.configure({
-        heading: headingLevels ? { levels: headingLevels as any } : false,
+        // Disable StarterKit's heading when staticPageBlocks owns it.
+        heading: staticPageBlocks
+          ? false
+          : headingLevels
+            ? { levels: headingLevels as any }
+            : false,
         bulletList: { keepMarks: true },
         orderedList: { keepMarks: true },
       }),
@@ -106,7 +108,12 @@ export function RichTextEditor({
             }),
           ]
         : []),
-      ...(staticPageBlocks ? staticPageBlockExtensions : []),
+      ...(staticPageBlocks
+        ? // HeadingWithId (inside staticPageBlockExtensions) is configured
+          // for levels [2, 3] by default — matches what extended would
+          // unlock plus H3 for the .steps-box heading slot.
+          staticPageBlockExtensions
+        : []),
     ],
     content: value,
     onUpdate: ({ editor: ed }) => {

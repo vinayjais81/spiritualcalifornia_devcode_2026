@@ -3,6 +3,10 @@ import type { Metadata } from 'next';
 import { fetchStaticPage } from '@/lib/staticPages';
 import { StaticPageRenderer } from '@/components/public/static/StaticPageRenderer';
 
+// Slug stays "travel-disclosures" (matches the existing DB row + seed
+// migration). Only the URL changes — `/disclosures` per the compliance
+// implementation spec — with `/travel-disclosures` 301 → `/disclosures`
+// handled in next.config.ts so any stale inbound links still resolve.
 const SLUG = 'travel-disclosures';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -15,14 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-/**
- * `/travel-disclosures` renders the CMS-authored static page with
- * slug="travel-disclosures". Seeded by migration
- * 20260525130000_seed_travel_disclosures; admin edits in /admin/static-pages
- * propagate here within the ISR window (see fetchStaticPage — currently 5
- * minutes).
- */
-export default async function TravelDisclosuresPage() {
+export default async function DisclosuresPage() {
   const page = await fetchStaticPage(SLUG);
   if (!page) notFound();
 

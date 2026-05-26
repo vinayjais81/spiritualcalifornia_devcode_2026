@@ -28,7 +28,7 @@ export default async function RefundPolicyPage() {
   return (
     <StaticPageRenderer
       page={page}
-      crossLink={{ href: '/travel-disclosures', label: 'Travel Disclosures' }}
+      crossLink={{ href: '/disclosures', label: 'Travel Disclosures' }}
     />
   );
 }

@@ -1,4 +1,5 @@
 import { Node } from '@tiptap/core';
+import Heading from '@tiptap/extension-heading';
 
 /**
  * Tiptap node extensions that round-trip the rich-layout card markup
@@ -199,6 +200,30 @@ export const StepText = Node.create({
   },
 });
 
+// ─── Heading anchor preservation ───────────────────────────────────────
+//
+// StarterKit's default Heading node strips arbitrary attributes (incl.
+// `id`) on parse + save. We need `id="dnsmpi"` on the Privacy §7 heading
+// to survive admin edits (the footer "Do Not Sell or Share My Personal
+// Information" link deep-scrolls to that anchor). This extension adds an
+// `id` attribute that round-trips losslessly.
+//
+// Pair with StarterKit's `heading: false` config when this is used, so
+// the two heading extensions don't conflict.
+
+export const HeadingWithId = Heading.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      id: {
+        default: null,
+        parseHTML: (el) => (el as HTMLElement).id || null,
+        renderHTML: (attrs) => (attrs.id ? { id: attrs.id } : {}),
+      },
+    };
+  },
+});
+
 /**
  * Convenience array — drop this into Tiptap's `extensions` list.
  *
@@ -207,6 +232,10 @@ export const StepText = Node.create({
  *   });
  */
 export const staticPageBlockExtensions = [
+  // Same heading levels as the extended-mode StarterKit config (H2 for
+  // section heads, H3 for the .steps-box sub-heading). H1 stays reserved
+  // for the page title rendered by StaticPageRenderer itself.
+  HeadingWithId.configure({ levels: [2, 3] }),
   Pillar,
   PillarIcon,
   PillarTitle,
