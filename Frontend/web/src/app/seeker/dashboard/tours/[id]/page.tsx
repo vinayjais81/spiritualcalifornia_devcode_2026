@@ -9,6 +9,7 @@ import {
   C, font, serif, Btn, Panel, Modal, FormGroup, TextArea, formatDate,
 } from '@/components/guide/dashboard-ui';
 import { useSiteConfigOrFallback } from '@/lib/siteConfig';
+import { LegalReceiptBlock } from '@/components/public/booking/LegalReceiptBlock';
 
 interface Traveler {
   id: string;
@@ -471,6 +472,12 @@ export default function SeekerTourBookingDetailPage() {
           </div>
         </aside>
       </div>
+
+      {/* Legal receipt — every tour-booking receipt surface must carry
+          the statutory CST disclosures (§17550.13). Renders below the
+          two-column booking summary so it's always reachable when the
+          seeker revisits this page. */}
+      <LegalReceiptBlock />
 
       {/* ── Cancel modal ────────────────────────────────────────────────── */}
       <Modal open={cancelOpen} onClose={() => setCancelOpen(false)} title="Cancel This Booking?">

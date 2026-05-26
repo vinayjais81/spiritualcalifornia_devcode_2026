@@ -226,6 +226,56 @@ export class EmailService {
 
   // ─── Soul Tour: shared layout helper ───────────────────────────────────────
 
+  /**
+   * Verbatim statutory legal-receipt block — every tour-booking receipt
+   * email must include this per the compliance implementation spec
+   * (2026-05-22, Task 5) and California Business & Professions Code
+   * §17550.13. Mirror of `<LegalReceiptBlock>` rendered on the matching
+   * on-screen surfaces (success view + dashboard tour-detail). Statutory
+   * text (refund commitment / trust account / TCRF) is verbatim — do not
+   * paraphrase. Inlined inside `tourEmailShell` when `legalReceipt: true`.
+   */
+  private legalReceiptHtml() {
+    const sectionH = (text: string) =>
+      `<h3 style="font-family: Georgia, serif; font-size: 15px; font-weight: 500; color: #3A3530; margin: 16px 0 6px; line-height: 1.3;">${text}</h3>`;
+    const p = (text: string) =>
+      `<p style="margin: 0 0 10px; font-size: 12.5px; line-height: 1.6; color: #3A3530;">${text}</p>`;
+    const linkColor = '#E8B84B';
+    const FRONTEND = this.config.get('FRONTEND_URL');
+    return `
+      <div style="margin-top: 32px; padding: 24px; background: #FAFAF7; border: 1px solid rgba(232,184,75,0.18); border-radius: 12px; text-align: left;">
+        <div style="font-size: 10px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: #E8B84B; margin-bottom: 14px;">Legal Receipt</div>
+
+        ${sectionH('Cancellation terms')}
+        ${p(`60+ days before departure: refund of sums paid, less the non-refundable deposit and any non-recoverable third-party costs. 30–59 days: 50% non-refundable. 29 days or fewer: 100% non-refundable. Full terms: <a href="${FRONTEND}/refund-policy" style="color: ${linkColor};">Cancellation &amp; Refund Policy</a>.`)}
+
+        ${sectionH('Refund commitment')}
+        ${p('Upon cancellation of the travel or travel services, when the passenger is not at fault and has not cancelled in violation of any terms and conditions previously clearly and conspicuously disclosed and agreed to by the passenger, all sums paid to Spiritual California Inc. for services not provided to the passenger will be promptly paid to the passenger, unless the passenger advises Spiritual California Inc. otherwise in writing.')}
+
+        ${sectionH('Trust account')}
+        ${p('California law requires certain sellers of travel to have a trust account or bond. This business has a trust account.')}
+
+        ${sectionH('Travel Consumer Restitution Fund — California residents')}
+        ${p(`This transaction is covered by the California Travel Consumer Restitution Fund (TCRF) if the passenger is located in California at the time of payment. Eligible passengers may file a claim with the TCRF if they are owed a refund of more than $50 for transportation or travel services that the seller of travel failed to forward to the proper provider, or that were not refunded to the passenger when required. The maximum amount that may be paid by the TCRF to any one passenger is the total amount paid to the seller of travel on behalf of the passenger, to a maximum of $15,000. A claim must be filed with the TCRF within 12 months after the scheduled completion date of the travel. A claim must include sufficient documentation to prove the claim and a $35 processing fee. Claimants must agree to waive their right to other civil remedies against a registered participating seller of travel for matters arising out of the transaction. Claims may be filed with the Travel Consumer Restitution Corporation at P.O. Box 6001, Larkspur, CA 94977-6001, or online at <a href="https://www.tcrcinfo.org" style="color: ${linkColor};">www.tcrcinfo.org</a>.`)}
+
+        ${sectionH('Travel Consumer Restitution Fund — passengers residing outside California')}
+        ${p('The California Travel Consumer Restitution Fund does not cover passengers who reside outside the State of California. If you are not a California resident, this transaction is not covered by the California Travel Consumer Restitution Fund.')}
+
+        <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(232,184,75,0.18); font-size: 12px; line-height: 1.65; color: #3A3530;">
+          <p style="margin: 0; font-weight: 600;">Spiritual California Inc.</p>
+          <p style="margin: 2px 0 0;">631 E El Camino Real, Sunnyvale, CA 94087</p>
+          <p style="margin: 2px 0 0;">(408) 780-4722 · California Seller of Travel <strong>CST #2171340-40</strong></p>
+          <p style="margin: 8px 0 0; font-size: 11px; color: #8A8278;">Registration as a seller of travel does not constitute approval by the State of California.</p>
+        </div>
+
+        <div style="margin-top: 16px; font-size: 12px;">
+          <a href="${FRONTEND}/disclosures" style="color: ${linkColor}; margin-right: 18px;">Travel Disclosures →</a>
+          <a href="${FRONTEND}/privacy" style="color: ${linkColor};">Privacy Policy →</a>
+        </div>
+      </div>
+    `;
+  }
+
   private tourEmailShell(opts: {
     headline: string;
     headlineEmoji?: string;
@@ -235,6 +285,13 @@ export class EmailService {
     ctaUrl: string;
     bannerColor?: string;
     footerNote?: string;
+    /**
+     * When true, append the verbatim statutory legal-receipt block (CST
+     * §17550.13) below the booking detail / CTA. Set on the two tour-
+     * payment receipt sends (deposit + balance); off for reminders /
+     * cancellation / departure emails that aren't post-payment receipts.
+     */
+    legalReceipt?: boolean;
   }) {
     const banner = opts.bannerColor || '#E8B84B';
     const detailRows = opts.rows
@@ -271,6 +328,7 @@ export class EmailService {
             ? `<p style="font-size: 11px; color: #8A8278; line-height: 1.6; text-align: center; margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(232,184,75,0.1);">${opts.footerNote}</p>`
             : ''
         }
+        ${opts.legalReceipt ? this.legalReceiptHtml() : ''}
         <div style="text-align: center; margin-top: 32px; font-size: 10px; color: #8A8278; letter-spacing: 0.05em;">
           Spiritual California · Find Your Guide. Begin Your Journey.
         </div>
@@ -335,6 +393,10 @@ export class EmailService {
         footerNote: isFull
           ? 'Travel insurance is strongly recommended. We\'ll send a packing list and pre-departure briefing soon.'
           : `Your remaining balance of ${data.balanceDue} is due by ${data.balanceDueDate}. We\'ll send reminders as that date approaches.`,
+        // CST §17550.13 requires the legal receipt block on every post-
+        // payment confirmation (deposit + balance). Reminders / cancellation
+        // emails are not payment receipts and skip the block.
+        legalReceipt: true,
       }),
     );
   }
@@ -368,6 +430,8 @@ export class EmailService {
         ctaLabel: 'View My Tour',
         ctaUrl: `${this.config.get('FRONTEND_URL')}/seeker/dashboard/tours/${data.bookingId}`,
         bannerColor: '#5A8A6A',
+        // Balance-paid is also a payment receipt → carry the legal block.
+        legalReceipt: true,
       }),
     );
   }

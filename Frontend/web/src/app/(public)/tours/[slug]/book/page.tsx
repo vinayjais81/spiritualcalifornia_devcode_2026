@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { StepNav } from '@/components/public/booking/StepNav';
 import { BookingSuccess } from '@/components/public/booking/BookingSuccess';
+import { LegalReceiptBlock } from '@/components/public/booking/LegalReceiptBlock';
 import { StripeProvider } from '@/components/public/checkout/StripeProvider';
 import { StripePaymentForm } from '@/components/public/checkout/StripePaymentForm';
 import { useAuthStore } from '@/store/auth.store';
@@ -460,27 +461,35 @@ export default function BookTourPage() {
   }
   if (showSuccess && createdBooking) {
     return (
-      <BookingSuccess
-        title="Your Spot is Reserved!"
-        subtitle={`We've sent a confirmation to ${travelers[0].email} with full trip details, packing list, and preparation guide. Your guide ${tour.guide.displayName} will be in touch soon.`}
-        details={[
-          { label: 'Tour', value: tour.title },
-          { label: 'Reference', value: createdBooking.bookingReference || createdBooking.id.slice(-8).toUpperCase() },
-          { label: 'Departure', value: departure ? `${fmtDate(departure.startDate)} – ${fmtDate(departure.endDate)}` : '—' },
-          { label: 'Travelers', value: `${travelersCount}` },
-          { label: 'Room', value: room?.name || '—' },
-          { label: 'Total', value: `$${totalAmount.toLocaleString()}` },
-          { label: 'Deposit Paid', value: `$${(chosenDeposit || 0).toLocaleString()}` },
-          ...(createdBooking.balanceAmount && Number(createdBooking.balanceAmount) > 0
-            ? [{
-                label: 'Balance Due',
-                value: `$${Number(createdBooking.balanceAmount).toLocaleString()}${createdBooking.balanceDueAt ? ` by ${fmtDate(createdBooking.balanceDueAt)}` : ''}`,
-              }]
-            : []),
-        ]}
-        primaryAction={{ label: 'View My Bookings', href: '/seeker/dashboard/bookings' }}
-        secondaryAction={{ label: 'Browse More Tours', href: '/travels' }}
-      />
+      <>
+        <BookingSuccess
+          title="Your Spot is Reserved!"
+          subtitle={`We've sent a confirmation to ${travelers[0].email} with full trip details, packing list, and preparation guide. Your guide ${tour.guide.displayName} will be in touch soon.`}
+          details={[
+            { label: 'Tour', value: tour.title },
+            { label: 'Reference', value: createdBooking.bookingReference || createdBooking.id.slice(-8).toUpperCase() },
+            { label: 'Departure', value: departure ? `${fmtDate(departure.startDate)} – ${fmtDate(departure.endDate)}` : '—' },
+            { label: 'Travelers', value: `${travelersCount}` },
+            { label: 'Room', value: room?.name || '—' },
+            { label: 'Total', value: `$${totalAmount.toLocaleString()}` },
+            { label: 'Deposit Paid', value: `$${(chosenDeposit || 0).toLocaleString()}` },
+            ...(createdBooking.balanceAmount && Number(createdBooking.balanceAmount) > 0
+              ? [{
+                  label: 'Balance Due',
+                  value: `$${Number(createdBooking.balanceAmount).toLocaleString()}${createdBooking.balanceDueAt ? ` by ${fmtDate(createdBooking.balanceDueAt)}` : ''}`,
+                }]
+              : []),
+          ]}
+          primaryAction={{ label: 'View My Bookings', href: '/seeker/dashboard/bookings' }}
+          secondaryAction={{ label: 'Browse More Tours', href: '/travels' }}
+        />
+        {/* Legal receipt — CST §17550.13 requires the receipt the
+            customer sees on screen (not just emailed) to carry the
+            full statutory disclosures. */}
+        <div style={{ maxWidth: 560, margin: '0 auto', padding: '0 32px 80px' }}>
+          <LegalReceiptBlock />
+        </div>
+      </>
     );
   }
 
