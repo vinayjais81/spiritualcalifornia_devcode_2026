@@ -45,14 +45,15 @@ export function PractitionerCard({
           className="object-cover object-top"
         />
         {verified && (
-          // Spec Task 7: tooltip explaining what Verified actually means,
-          // linked to the /about page's "What Verified means" section.
-          // Using a real <a> so keyboard users can also navigate to the
-          // explanation (the parent card is wrapped in its own Link).
-          <a
-            href="/about#verified-meaning"
-            onClick={(e) => e.stopPropagation()}
-            title="Verified: identity confirmed, credentials checked, and ethics-interviewed. Click to learn more."
+          // Spec Task 7: hover tooltip explaining what Verified actually
+          // means. Kept as a plain <div> with a `title` attribute so this
+          // component can stay a Server Component (no React event
+          // handlers). Nested anchors aren't valid HTML anyway — the card
+          // itself is already wrapped in <Link>, and the full explanation
+          // lives at /about#verified-meaning for anyone curious enough to
+          // read it.
+          <div
+            title="Verified: identity confirmed, credentials checked, ethics-interviewed, and reviewed on an ongoing basis. See /about#verified-meaning for details."
             style={{
               position: 'absolute',
               bottom: '6px',
@@ -69,11 +70,10 @@ export function PractitionerCard({
               color: '#E8B84B',
               letterSpacing: '0.06em',
               boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-              textDecoration: 'none',
             }}
           >
             ✦ Verified
-          </a>
+          </div>
         )}
       </div>
 
