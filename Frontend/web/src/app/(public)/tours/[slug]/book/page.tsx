@@ -740,6 +740,46 @@ export default function BookTourPage() {
                 </div>
               )}
 
+              {/* Notice at Collection — required above any personal-info
+                  field per the compliance implementation spec (2026-05-22,
+                  Task 3a). Always visible, not dismissible. Without this
+                  panel, collecting the health field below is a CCPA
+                  violation. Copy is verbatim from the spec. */}
+              <div
+                style={{
+                  padding: '14px 18px',
+                  background: '#F4F2EE',
+                  border: '1px solid rgba(138,130,120,0.18)',
+                  borderRadius: 8,
+                  marginBottom: 20,
+                  fontSize: 13,
+                  lineHeight: 1.65,
+                  color: C.charcoal,
+                }}
+                aria-label="Notice at Collection"
+              >
+                <p style={{ margin: 0 }}>
+                  <strong>Why we ask for this.</strong> We collect the details below to confirm and deliver your
+                  booking — your name, contact details, date of birth, nationality, and any health or accessibility
+                  information you choose to share so your experience can be delivered safely. We share what is
+                  necessary with the independent provider delivering your experience and use your details to contact
+                  you about it. Health information is used only to keep you safe.
+                </p>
+                <p style={{ margin: '10px 0 0' }}>
+                  See our{' '}
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: C.gold, textDecoration: 'underline' }}
+                  >
+                    Privacy Policy
+                  </Link>{' '}
+                  for the full list of what we collect, why, how long we keep it, who we share it with, and your
+                  rights.
+                </p>
+              </div>
+
               {/* Per-traveler forms */}
               {travelers.map((t, i) => (
                 <div key={i} style={{
@@ -825,6 +865,40 @@ export default function BookTourPage() {
                     placeholder="e.g. nut allergy, kosher, etc."
                   />
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, gridColumn: '1 / -1' }}>
+                    {/* Sensitive personal information consent — required
+                        directly above the health-conditions field per the
+                        compliance implementation spec (2026-05-22, Task 3b).
+                        California treats health info as "sensitive personal
+                        information" under the CCPA; this notice obtains the
+                        narrow-use consent. Always visible, distinct from
+                        the field label, copy verbatim. */}
+                    <div
+                      style={{
+                        padding: '12px 16px',
+                        background: C.white,
+                        border: '1px solid rgba(232,184,75,0.35)',
+                        borderLeft: `3px solid ${C.gold}`,
+                        borderRadius: 8,
+                        marginBottom: 10,
+                        fontSize: 12.5,
+                        lineHeight: 1.6,
+                        color: C.charcoal,
+                      }}
+                      aria-label="Sensitive personal information notice"
+                    >
+                      <strong>Sensitive personal information.</strong> Health information is classified as sensitive
+                      personal information under California law. By providing it here, you consent to its use only to
+                      keep you safe on this journey, including sharing relevant context with the trip leader and any
+                      on-site contact. We do not use it for marketing or profiling, and we delete it within 90 days
+                      after the journey ends. You can ask us to delete it at any time at{' '}
+                      <a
+                        href="mailto:privacy@spiritualcalifornia.com"
+                        style={{ color: C.gold, textDecoration: 'underline' }}
+                      >
+                        privacy@spiritualcalifornia.com
+                      </a>
+                      .
+                    </div>
                     <FieldLabel>Health conditions we should know about (optional)</FieldLabel>
                     <textarea
                       value={healthConditions}
