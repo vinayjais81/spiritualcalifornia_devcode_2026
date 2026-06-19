@@ -81,7 +81,7 @@ export function AIFinderBar() {
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, #2C2420 0%, #3A3530 100%)',
+      background: 'linear-gradient(135deg, #F5F2EB 0%, #FDE8D0 100%)',
       padding: '36px 48px',
     }}>
       <div style={{ maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
@@ -94,17 +94,17 @@ export function AIFinderBar() {
         </div>
         <h2 style={{
           fontFamily: "'Playfair Display', serif",
-          fontSize: 28, fontWeight: 400, color: '#fff', marginBottom: 6,
+          fontSize: 28, fontWeight: 400, color: '#3A3530', marginBottom: 6,
         }}>
           What are you looking for today?
         </h2>
-        <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 20 }}>
+        <p style={{ fontSize: 13, color: '#666666', marginBottom: 20 }}>
           Describe your intention, a feeling, or what you need — our guide will find the right tools for your path.
         </p>
 
         {/* Input */}
         <div style={{
-          display: 'flex', background: 'rgba(255,255,255,0.07)',
+          display: 'flex', background: '#fff',
           border: '1.5px solid rgba(240,120,20,0.35)', borderRadius: 12,
           overflow: 'hidden', maxWidth: 680, margin: '0 auto 16px',
         }}>
@@ -118,7 +118,7 @@ export function AIFinderBar() {
             placeholder='e.g. "something to help me sleep" or "a gift for someone starting meditation"'
             style={{
               flex: 1, padding: '16px 8px', background: 'none', border: 'none', outline: 'none',
-              fontFamily: "'Inter', sans-serif", fontSize: 15, color: '#fff',
+              fontFamily: "'Inter', sans-serif", fontSize: 15, color: '#3A3530',
             }}
           />
           <button
@@ -143,8 +143,8 @@ export function AIFinderBar() {
               onClick={() => fillAndAsk(suggestions[i])}
               style={{
                 padding: '7px 16px', borderRadius: 20,
-                background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(240,120,20,0.25)',
-                fontSize: 12, color: 'rgba(255,255,255,0.65)', cursor: 'pointer',
+                background: '#fff', border: '1px solid rgba(240,120,20,0.25)',
+                fontSize: 12, color: '#3A3530', cursor: 'pointer',
               }}
             >
               {label}
@@ -157,7 +157,7 @@ export function AIFinderBar() {
             when the user message matches the crisis keyword set. */}
         {response && response.crisis && (
           <div style={{ maxWidth: 680, margin: '16px auto 0' }}>
-            <CrisisResourcesCard reply={response.text} variant="dark" />
+            <CrisisResourcesCard reply={response.text} variant="light" />
           </div>
         )}
 
@@ -173,7 +173,7 @@ export function AIFinderBar() {
                 Guide&apos;s Recommendation
               </span>
             </div>
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', lineHeight: 1.65 }}>
+            <div style={{ fontSize: 14, color: '#3A3530', lineHeight: 1.65 }}>
               {response.text}
             </div>
             <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' as const }}>
@@ -182,21 +182,21 @@ export function AIFinderBar() {
                   key={p.id}
                   href={`/shop/${p.id}`}
                   style={{
-                    background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(240,120,20,0.2)',
+                    background: '#fff', border: '1px solid rgba(240,120,20,0.2)',
                     borderRadius: 8, padding: '10px 14px', fontSize: 12, cursor: 'pointer',
                     textDecoration: 'none', display: 'block',
                     transition: 'background 0.2s, border-color 0.2s',
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.14)';
+                    e.currentTarget.style.background = 'rgba(240,120,20,0.08)';
                     e.currentTarget.style.borderColor = 'rgba(240,120,20,0.45)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                    e.currentTarget.style.background = '#fff';
                     e.currentTarget.style.borderColor = 'rgba(240,120,20,0.2)';
                   }}
                 >
-                  <div style={{ fontWeight: 500, color: '#fff', marginBottom: 2 }}>{p.name}</div>
+                  <div style={{ fontWeight: 500, color: '#3A3530', marginBottom: 2 }}>{p.name}</div>
                   <div style={{ color: '#F07814' }}>{p.price}</div>
                 </Link>
               ))}
@@ -205,7 +205,7 @@ export function AIFinderBar() {
         )}
 
         {/* Compliance: persistent AI non-advice disclaimer. */}
-        <AINonAdviceFooter variant="dark" />
+        <AINonAdviceFooter variant="light" />
       </div>
     </div>
   );

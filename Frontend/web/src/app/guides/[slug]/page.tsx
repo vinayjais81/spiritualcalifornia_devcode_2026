@@ -275,9 +275,10 @@ export default function GuideProfilePage() {
       <Navbar />
 
       {/* ── HERO BANNER ──────────────────────────────────────────────── */}
+      {/* Design v6: light peach banner (was dark). Image stays at 0.35 opacity. */}
       <div style={{
         marginTop: '69px', height: '320px',
-        background: 'linear-gradient(135deg, #2C2420 0%, #4A3C30 40%, #6B5240 100%)',
+        background: 'linear-gradient(135deg, #F5F2EB 0%, #FDE8D0 100%)',
         position: 'relative', overflow: 'hidden',
       }}>
         <Image src="/images/yoga_outdoor.jpg" alt="" fill sizes="100vw" className="object-cover" style={{ opacity: 0.35 }} />
