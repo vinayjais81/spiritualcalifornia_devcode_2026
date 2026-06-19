@@ -52,7 +52,7 @@ function ToolbarButton({
         fontSize: '12px',
         fontWeight: 600,
         background: active ? C.goldPale : C.white,
-        border: `1px solid ${active ? C.gold : 'rgba(232,184,75,0.3)'}`,
+        border: `1px solid ${active ? C.gold : 'rgba(240,120,20,0.3)'}`,
         borderRadius: '4px',
         cursor: 'pointer',
         color: C.charcoal,
@@ -224,7 +224,7 @@ export function RichTextEditor({
           flexWrap: 'wrap',
           padding: '8px 10px',
           background: C.offWhite,
-          border: '1.5px solid rgba(232,184,75,0.3)',
+          border: '1.5px solid rgba(240,120,20,0.3)',
           borderBottom: 'none',
           borderRadius: '8px 8px 0 0',
         }}
@@ -314,7 +314,7 @@ export function RichTextEditor({
       <div
         style={{
           background: C.offWhite,
-          border: '1.5px solid rgba(232,184,75,0.3)',
+          border: '1.5px solid rgba(240,120,20,0.3)',
           borderTop: 'none',
           borderRadius: '0 0 8px 8px',
           minHeight,
@@ -418,7 +418,7 @@ export function RichTextEditor({
         .tiptap .pillar-icon {
           grid-area: icon;
           width: 48px; height: 48px;
-          background: rgba(232,184,75,0.1);
+          background: rgba(240,120,20,0.1);
           border-radius: 50%;
           display: flex; align-items: center; justify-content: center;
           font-size: 22px;

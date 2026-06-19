@@ -32,7 +32,7 @@ function SignInContent() {
 
   const inputStyle: React.CSSProperties = {
     background: G.white,
-    border: `1px solid rgba(232,184,75,0.3)`,
+    border: `1px solid rgba(240,120,20,0.3)`,
     borderRadius: 4,
     padding: '12px 16px',
     fontFamily: 'var(--font-inter), sans-serif',
@@ -113,7 +113,7 @@ function SignInContent() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '14px 48px',
         background: 'rgba(250,250,247,0.94)', backdropFilter: 'blur(14px)',
-        borderBottom: '1px solid rgba(232,184,75,0.15)',
+        borderBottom: '1px solid rgba(240,120,20,0.15)',
         position: 'relative', zIndex: 10,
       }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
@@ -175,9 +175,9 @@ function SignInContent() {
 
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, margin: '20px 0 28px' }}>
-            <div style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.2)' }} />
+            <div style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.2)' }} />
             <span style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 11, color: G.warmGray, letterSpacing: '0.1em' }}>or sign in with email</span>
-            <div style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.2)' }} />
+            <div style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.2)' }} />
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -248,7 +248,7 @@ function SignInContent() {
             </div>
 
             {/* Submit */}
-            <div style={{ marginTop: 8, paddingTop: 28, borderTop: '1px solid rgba(232,184,75,0.15)' }}>
+            <div style={{ marginTop: 8, paddingTop: 28, borderTop: '1px solid rgba(240,120,20,0.15)' }}>
               <button
                 type="submit"
                 disabled={loading}

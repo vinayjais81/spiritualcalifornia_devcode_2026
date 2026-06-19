@@ -33,7 +33,7 @@ export function RelatedProducts({ title, subtitle, products }: RelatedProductsPr
         {products.slice(0, 4).map((p) => (
           <Link key={p.id} href={`/shop/${p.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
             <div style={{
-              background: '#fff', border: '1px solid rgba(232,184,75,0.1)',
+              background: '#fff', border: '1px solid rgba(240,120,20,0.1)',
               borderRadius: 12, overflow: 'hidden', transition: 'box-shadow 0.3s, transform 0.3s',
             }}>
               <div style={{ aspectRatio: '1/1', background: '#FEF7F0', overflow: 'hidden' }}>

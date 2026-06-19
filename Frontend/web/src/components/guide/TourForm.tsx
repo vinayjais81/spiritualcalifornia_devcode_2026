@@ -193,7 +193,7 @@ function SectionTitle({ icon, children }: { icon: string; children: React.ReactN
     <div style={{
       fontFamily: serif, fontSize: 22, fontWeight: 500, color: C.charcoal,
       marginBottom: 16, paddingBottom: 12,
-      borderBottom: '1px solid rgba(232,184,75,0.15)',
+      borderBottom: '1px solid rgba(240,120,20,0.15)',
       display: 'flex', alignItems: 'center', gap: 10,
     }}>
       <span style={{ fontSize: 20 }}>{icon}</span> {children}
@@ -465,7 +465,7 @@ export function TourForm({ initial, tourId }: Props) {
                   <img
                     src={form.coverImageUrl}
                     alt="cover"
-                    style={{ width: 160, height: 100, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(232,184,75,0.3)' }}
+                    style={{ width: 160, height: 100, objectFit: 'cover', borderRadius: 8, border: '1px solid rgba(240,120,20,0.3)' }}
                   />
                   <button
                     onClick={() => set('coverImageUrl', '')}
@@ -480,14 +480,14 @@ export function TourForm({ initial, tourId }: Props) {
               ) : (
                 <div style={{
                   width: 160, height: 100, borderRadius: 8,
-                  background: C.goldPale, border: '1px dashed rgba(232,184,75,0.5)',
+                  background: C.goldPale, border: '1px dashed rgba(240,120,20,0.5)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 32,
                 }}>🏔️</div>
               )}
               <label style={{
                 padding: '10px 18px', fontFamily: font, fontSize: 12, fontWeight: 500,
-                background: C.goldPale, border: '1.5px solid rgba(232,184,75,0.5)',
+                background: C.goldPale, border: '1.5px solid rgba(240,120,20,0.5)',
                 borderRadius: 6, cursor: 'pointer', color: C.charcoal,
               }}>
                 📁 Upload Cover
@@ -503,7 +503,7 @@ export function TourForm({ initial, tourId }: Props) {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
               {form.imageUrls.map((url, i) => (
                 <div key={i} style={{ position: 'relative' }}>
-                  <img src={url} alt="" style={{ width: 100, height: 70, objectFit: 'cover', borderRadius: 6, border: '1px solid rgba(232,184,75,0.2)' }} />
+                  <img src={url} alt="" style={{ width: 100, height: 70, objectFit: 'cover', borderRadius: 6, border: '1px solid rgba(240,120,20,0.2)' }} />
                   <button
                     onClick={() => removeGalleryImage(i)}
                     style={{
@@ -516,7 +516,7 @@ export function TourForm({ initial, tourId }: Props) {
               ))}
               <label style={{
                 width: 100, height: 70, borderRadius: 6,
-                background: C.offWhite, border: '1.5px dashed rgba(232,184,75,0.4)',
+                background: C.offWhite, border: '1.5px dashed rgba(240,120,20,0.4)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 cursor: 'pointer', fontSize: 24, color: C.warmGray,
               }}>
@@ -568,7 +568,7 @@ export function TourForm({ initial, tourId }: Props) {
         </p>
         {form.departures.map((d, i) => (
           <div key={i} style={{
-            background: C.offWhite, border: '1px solid rgba(232,184,75,0.15)', borderRadius: 8,
+            background: C.offWhite, border: '1px solid rgba(240,120,20,0.15)', borderRadius: 8,
             padding: 16, marginBottom: 12,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -620,7 +620,7 @@ export function TourForm({ initial, tourId }: Props) {
 
         {form.roomTypes.map((rt, i) => (
           <div key={i} style={{
-            background: C.offWhite, border: '1px solid rgba(232,184,75,0.15)', borderRadius: 8,
+            background: C.offWhite, border: '1px solid rgba(240,120,20,0.15)', borderRadius: 8,
             padding: 16, marginBottom: 12,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -664,7 +664,7 @@ export function TourForm({ initial, tourId }: Props) {
       <Panel title="Day-by-Day Itinerary" icon="🗺️">
         {form.itinerary.map((day, i) => (
           <div key={i} style={{
-            background: C.offWhite, border: '1px solid rgba(232,184,75,0.15)', borderRadius: 8,
+            background: C.offWhite, border: '1px solid rgba(240,120,20,0.15)', borderRadius: 8,
             padding: 16, marginBottom: 12,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -821,7 +821,7 @@ export function TourForm({ initial, tourId }: Props) {
       {/* ─── ACTIONS ──────────────────────────────────────────────────────── */}
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '24px 0', borderTop: '1px solid rgba(232,184,75,0.12)',
+        padding: '24px 0', borderTop: '1px solid rgba(240,120,20,0.12)',
       }}>
         <Btn variant="secondary" onClick={() => router.push('/guide/dashboard/tours')}>← Cancel</Btn>
         <Btn

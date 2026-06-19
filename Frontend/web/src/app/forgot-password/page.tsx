@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
       <nav style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: '20px 48px',
-        borderBottom: '1px solid rgba(232,184,75,0.15)',
+        borderBottom: '1px solid rgba(240,120,20,0.15)',
       }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
           <Image src="/images/logo.jpg" alt="Spiritual California" width={36} height={36}
@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
         <div style={{ width: '100%', maxWidth: 440 }}>
           {sent ? (
             <div style={{ textAlign: 'center' }}>
-              <div style={{ width: 64, height: 64, background: 'rgba(232,184,75,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', fontSize: 28 }}>
+              <div style={{ width: 64, height: 64, background: 'rgba(240,120,20,0.1)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', fontSize: 28 }}>
                 ✉️
               </div>
               <p style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: G.gold, marginBottom: 10 }}>Check Your Inbox</p>
@@ -111,7 +111,7 @@ export default function ForgotPasswordPage() {
                     aria-required="true"
                     autoComplete="email"
                     style={{
-                      background: G.white, border: `1px solid rgba(232,184,75,0.3)`,
+                      background: G.white, border: `1px solid rgba(240,120,20,0.3)`,
                       borderRadius: 4, padding: '12px 16px',
                       fontFamily: 'var(--font-inter), sans-serif', fontSize: 14, color: G.charcoal,
                       outline: 'none', width: '100%', boxSizing: 'border-box',
@@ -119,7 +119,7 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
 
-                <div style={{ marginTop: 8, paddingTop: 28, borderTop: '1px solid rgba(232,184,75,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ marginTop: 8, paddingTop: 28, borderTop: '1px solid rgba(240,120,20,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Link href="/signin" style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 12, letterSpacing: '0.1em', textTransform: 'uppercase', color: G.warmGray, textDecoration: 'none' }}>
                     ← Back
                   </Link>

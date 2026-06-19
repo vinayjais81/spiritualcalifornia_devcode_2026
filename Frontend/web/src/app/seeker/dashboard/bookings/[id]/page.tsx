@@ -130,7 +130,7 @@ export default function BookingDetailPage() {
                 <div key={i} style={{
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                   padding: '12px 0',
-                  borderBottom: i < arr.length - 1 ? '1px solid rgba(232,184,75,0.08)' : 'none',
+                  borderBottom: i < arr.length - 1 ? '1px solid rgba(240,120,20,0.08)' : 'none',
                 }}>
                   <span style={{ fontFamily: font, fontSize: '13px', color: C.warmGray }}>{row.label}</span>
                   <span style={{
@@ -168,7 +168,7 @@ export default function BookingDetailPage() {
                   <div key={i} style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     padding: '10px 0',
-                    borderBottom: i < arr.length - 1 ? '1px solid rgba(232,184,75,0.08)' : 'none',
+                    borderBottom: i < arr.length - 1 ? '1px solid rgba(240,120,20,0.08)' : 'none',
                   }}>
                     <span style={{ fontFamily: font, fontSize: '12px', color: C.warmGray }}>{row.label}</span>
                     <span style={{
@@ -197,7 +197,7 @@ export default function BookingDetailPage() {
                 ].map((row, i, arr) => (
                   <div key={i} style={{
                     display: 'flex', justifyContent: 'space-between', padding: '10px 0',
-                    borderBottom: i < arr.length - 1 ? '1px solid rgba(232,184,75,0.08)' : 'none',
+                    borderBottom: i < arr.length - 1 ? '1px solid rgba(240,120,20,0.08)' : 'none',
                   }}>
                     <span style={{ fontFamily: font, fontSize: '12px', color: C.warmGray }}>{row.label}</span>
                     <span style={{ fontFamily: font, fontSize: '12px', color: C.charcoal }}>{row.value}</span>
@@ -214,7 +214,7 @@ export default function BookingDetailPage() {
               <a href={`/book/${guide?.slug}`} style={{
                 display: 'inline-flex', alignItems: 'center', padding: '10px 22px', borderRadius: '6px',
                 fontFamily: font, fontSize: '12px', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase' as const,
-                background: 'transparent', color: C.charcoal, border: '1.5px solid rgba(232,184,75,0.5)',
+                background: 'transparent', color: C.charcoal, border: '1.5px solid rgba(240,120,20,0.5)',
                 textDecoration: 'none',
               }}>
                 Reschedule
@@ -228,9 +228,9 @@ export default function BookingDetailPage() {
           <Panel title="Your Practitioner" icon="🧘">
             <div style={{ display: 'flex', gap: '14px', alignItems: 'center', marginBottom: '16px' }}>
               {guide?.user?.avatarUrl ? (
-                <img src={guide.user.avatarUrl} alt={guide.displayName} style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(232,184,75,0.3)' }} />
+                <img src={guide.user.avatarUrl} alt={guide.displayName} style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(240,120,20,0.3)' }} />
               ) : (
-                <div style={{ width: 56, height: 56, borderRadius: '50%', background: C.goldPale, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: C.gold, border: '2px solid rgba(232,184,75,0.3)' }}>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: C.goldPale, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: C.gold, border: '2px solid rgba(240,120,20,0.3)' }}>
                   {guide?.displayName?.[0] || '?'}
                 </div>
               )}
@@ -256,7 +256,7 @@ export default function BookingDetailPage() {
                   <a href={`/guides/${guide.slug}`} style={{
                     flex: 1, textAlign: 'center', padding: '10px', borderRadius: '6px',
                     fontFamily: font, fontSize: '11px', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase' as const,
-                    background: 'transparent', color: C.charcoal, border: '1.5px solid rgba(232,184,75,0.3)',
+                    background: 'transparent', color: C.charcoal, border: '1.5px solid rgba(240,120,20,0.3)',
                     textDecoration: 'none',
                   }}>
                     Profile
@@ -268,7 +268,7 @@ export default function BookingDetailPage() {
 
           {/* Cancellation Policy */}
           <div style={{
-            background: C.goldPale, border: '1px solid rgba(232,184,75,0.2)',
+            background: C.goldPale, border: '1px solid rgba(240,120,20,0.2)',
             borderRadius: '8px', padding: '18px', fontFamily: font, fontSize: '12px',
             color: C.charcoal, lineHeight: 1.6,
           }}>
@@ -316,7 +316,7 @@ export default function BookingDetailPage() {
                 placeholder="Let your practitioner know why you're cancelling..."
                 style={{
                   width: '100%', fontFamily: font, fontSize: '13px', color: C.charcoal,
-                  background: C.offWhite, border: '1.5px solid rgba(232,184,75,0.3)',
+                  background: C.offWhite, border: '1.5px solid rgba(240,120,20,0.3)',
                   borderRadius: '8px', padding: '10px 14px', outline: 'none', resize: 'vertical', minHeight: '80px',
                 }}
               />

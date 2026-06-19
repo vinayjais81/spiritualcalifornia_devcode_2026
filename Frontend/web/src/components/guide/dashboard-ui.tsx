@@ -35,8 +35,8 @@ export function PageHeader({ title, subtitle, children }: { title: string; subti
 // ─── Panel ───────────────────────────────────────────────────────────────────
 export function Panel({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
   return (
-    <div style={{ background: C.white, border: '1px solid rgba(232,184,75,0.12)', borderRadius: '12px', padding: '32px', marginBottom: '28px' }}>
-      <div style={{ fontFamily: serif, fontSize: '22px', fontWeight: 500, color: C.charcoal, marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid rgba(232,184,75,0.15)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+    <div style={{ background: C.white, border: '1px solid rgba(240,120,20,0.12)', borderRadius: '12px', padding: '32px', marginBottom: '28px' }}>
+      <div style={{ fontFamily: serif, fontSize: '22px', fontWeight: 500, color: C.charcoal, marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid rgba(240,120,20,0.15)', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <span style={{ fontSize: '20px' }}>{icon}</span> {title}
       </div>
       {children}
@@ -47,7 +47,7 @@ export function Panel({ title, icon, children }: { title: string; icon: string; 
 // ─── Stat Card ───────────────────────────────────────────────────────────────
 export function StatCard({ value, label, accent }: { value: string | number; label: string; accent?: boolean }) {
   return (
-    <div style={{ background: accent ? C.goldPale : C.white, border: `1px solid ${accent ? C.gold : 'rgba(232,184,75,0.15)'}`, borderRadius: '12px', padding: '24px', textAlign: 'center' }}>
+    <div style={{ background: accent ? C.goldPale : C.white, border: `1px solid ${accent ? C.gold : 'rgba(240,120,20,0.15)'}`, borderRadius: '12px', padding: '24px', textAlign: 'center' }}>
       <div style={{ fontFamily: serif, fontSize: '36px', fontWeight: 500, color: accent ? C.gold : C.charcoal, marginBottom: '4px' }}>{value}</div>
       <div style={{ fontFamily: font, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray }}>{label}</div>
     </div>
@@ -59,7 +59,7 @@ export function Btn({ children, variant = 'primary', size = 'md', onClick, style
   const base: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: '8px', fontFamily: font, fontSize: size === 'sm' ? '11px' : '12px', fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase', borderRadius: '6px', border: 'none', cursor: disabled ? 'not-allowed' : 'pointer', transition: 'all 0.3s', textDecoration: 'none', padding: size === 'sm' ? '7px 14px' : '10px 22px', opacity: disabled ? 0.55 : 1 };
   const styles: Record<string, React.CSSProperties> = {
     primary: { ...base, background: C.gold, color: C.white },
-    secondary: { ...base, background: 'transparent', color: C.charcoal, border: '1.5px solid rgba(232,184,75,0.5)' },
+    secondary: { ...base, background: 'transparent', color: C.charcoal, border: '1.5px solid rgba(240,120,20,0.5)' },
     danger: { ...base, background: 'transparent', color: C.red, border: `1.5px solid rgba(192,57,43,0.3)` },
     green: { ...base, background: C.green, color: C.white },
   };
@@ -79,15 +79,15 @@ export function FormGroup({ label, children, full, required, htmlFor }: { label:
 }
 
 export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.offWhite, border: '1.5px solid rgba(232,184,75,0.3)', borderRadius: '8px', padding: '10px 14px', outline: 'none', width: '100%', ...props.style }} />;
+  return <input {...props} style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.offWhite, border: '1.5px solid rgba(240,120,20,0.3)', borderRadius: '8px', padding: '10px 14px', outline: 'none', width: '100%', ...props.style }} />;
 }
 
 export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea {...props} style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.offWhite, border: '1.5px solid rgba(232,184,75,0.3)', borderRadius: '8px', padding: '10px 14px', outline: 'none', width: '100%', resize: 'vertical', minHeight: '100px', ...props.style }} />;
+  return <textarea {...props} style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.offWhite, border: '1.5px solid rgba(240,120,20,0.3)', borderRadius: '8px', padding: '10px 14px', outline: 'none', width: '100%', resize: 'vertical', minHeight: '100px', ...props.style }} />;
 }
 
 export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement> & { children: React.ReactNode }) {
-  return <select {...props} style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.offWhite, border: '1.5px solid rgba(232,184,75,0.3)', borderRadius: '8px', padding: '10px 14px', outline: 'none', width: '100%', ...props.style }}>{props.children}</select>;
+  return <select {...props} style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.offWhite, border: '1.5px solid rgba(240,120,20,0.3)', borderRadius: '8px', padding: '10px 14px', outline: 'none', width: '100%', ...props.style }}>{props.children}</select>;
 }
 
 // ─── Modal ───────────────────────────────────────────────────────────────────
@@ -109,7 +109,7 @@ export function Modal({ open, onClose, title, children, maxWidth }: { open: bool
 // ─── Event Date Box ──────────────────────────────────────────────────────────
 export function EventDateBox({ startTime }: { startTime: string }) {
   return (
-    <div style={{ background: C.goldPale, border: '1px solid rgba(232,184,75,0.4)', borderRadius: '8px', textAlign: 'center', padding: '8px' }}>
+    <div style={{ background: C.goldPale, border: '1px solid rgba(240,120,20,0.4)', borderRadius: '8px', textAlign: 'center', padding: '8px' }}>
       <div style={{ fontFamily: font, fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: C.warmGray }}>{formatMonth(startTime)}</div>
       <div style={{ fontFamily: serif, fontSize: '28px', fontWeight: 500, color: C.charcoal, lineHeight: 1 }}>{formatDay(startTime)}</div>
     </div>
@@ -130,7 +130,7 @@ export function ServiceTypeBadge({ type }: { type: string }) {
   const styles: Record<string, { bg: string; color: string; border: string; label: string }> = {
     VIRTUAL: { bg: '#E8F5E9', color: '#2E7D32', border: '1px solid #A5D6A7', label: 'Online' },
     IN_PERSON: { bg: '#FFF3E0', color: '#E65100', border: '1px solid #FFCC80', label: 'In-Person' },
-    HYBRID: { bg: C.goldPale, color: C.charcoal, border: '1px solid rgba(232,184,75,0.4)', label: 'Both' },
+    HYBRID: { bg: C.goldPale, color: C.charcoal, border: '1px solid rgba(240,120,20,0.4)', label: 'Both' },
   };
   const s = styles[type] || styles.HYBRID;
   return <span style={{ padding: '3px 10px', borderRadius: '20px', fontFamily: font, fontSize: '11px', background: s.bg, color: s.color, border: s.border }}>{s.label}</span>;
@@ -142,7 +142,7 @@ export function FormActions({ children }: { children: React.ReactNode }) {
     <div style={{
       display: 'flex', justifyContent: 'center', gap: '12px',
       padding: '32px 0 8px', marginTop: '12px',
-      borderTop: '1px solid rgba(232,184,75,0.12)',
+      borderTop: '1px solid rgba(240,120,20,0.12)',
     }}>
       {children}
     </div>

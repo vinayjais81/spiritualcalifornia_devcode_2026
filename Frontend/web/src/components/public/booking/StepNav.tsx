@@ -9,7 +9,7 @@ interface StepNavProps {
 export function StepNav({ steps, current, onChange }: StepNavProps) {
   return (
     <div style={{
-      background: '#fff', borderBottom: '1px solid rgba(232,184,75,0.1)',
+      background: '#fff', borderBottom: '1px solid rgba(240,120,20,0.1)',
       padding: '0 48px',
     }}>
       <div style={{
@@ -35,7 +35,7 @@ export function StepNav({ steps, current, onChange }: StepNavProps) {
                 width: 24, height: 24, borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 11, fontWeight: 600,
-                background: isActive ? '#F07814' : isDone ? '#5A8A6A' : 'rgba(232,184,75,0.1)',
+                background: isActive ? '#F07814' : isDone ? '#5A8A6A' : 'rgba(240,120,20,0.1)',
                 color: isActive || isDone ? '#fff' : '#8A8278',
               }}>
                 {isDone ? '✓' : i + 1}

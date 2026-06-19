@@ -193,7 +193,7 @@ function PractitionersPageInner() {
       {/* ── AI GUIDE BAR ─────────────────────────────────────────────── */}
       <div style={{
         marginTop: 69,
-        background: 'linear-gradient(135deg, #2C2420 0%, #3A3530 100%)',
+        background: 'linear-gradient(135deg, #F5F2EB 0%, #FDE8D0 100%)',
         padding: '32px 48px',
       }}>
         <div style={{ maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
@@ -206,18 +206,18 @@ function PractitionersPageInner() {
           </div>
           <h2 style={{
             fontFamily: "'Playfair Display', serif",
-            fontSize: 26, fontWeight: 400, color: '#fff', marginBottom: 4,
+            fontSize: 26, fontWeight: 400, color: '#3A3530', marginBottom: 4,
           }}>
             Who are you looking for?
           </h2>
-          <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 18 }}>
+          <p style={{ fontSize: 13, color: '#666666', marginBottom: 18 }}>
             Describe what you need — our guide will match you with the right practitioner.
           </p>
           <form
             onSubmit={handleAiSubmit}
             style={{
-              display: 'flex', background: 'rgba(255,255,255,0.07)',
-              border: '1.5px solid rgba(232,184,75,0.35)', borderRadius: 12,
+              display: 'flex', background: '#fff',
+              border: '1.5px solid rgba(240,120,20,0.35)', borderRadius: 12,
               overflow: 'hidden', maxWidth: 680, margin: '0 auto 14px',
               transition: 'border-color 0.3s',
             }}
@@ -232,7 +232,7 @@ function PractitionersPageInner() {
               placeholder='e.g. "someone to help with grief" or "Qigong teacher in the Bay Area"'
               style={{
                 flex: 1, padding: '14px 8px', background: 'none',
-                border: 'none', outline: 'none', color: '#fff', fontSize: 14,
+                border: 'none', outline: 'none', color: '#3A3530', fontSize: 14,
                 fontFamily: "'Inter', sans-serif",
               }}
             />
@@ -258,9 +258,9 @@ function PractitionersPageInner() {
                 onClick={() => askAI(chip)}
                 style={{
                   padding: '6px 14px',
-                  border: '1px solid rgba(232,184,75,0.3)',
+                  border: '1px solid rgba(240,120,20,0.3)',
                   borderRadius: 20, fontSize: 11,
-                  color: 'rgba(255,255,255,0.6)', cursor: 'pointer',
+                  color: '#3A3530', cursor: 'pointer',
                   transition: 'all 0.2s', background: 'none',
                 }}
               >
@@ -270,7 +270,7 @@ function PractitionersPageInner() {
           </div>
           {aiCrisis && aiReply && (
             <div style={{ maxWidth: 680, margin: '14px auto 0' }}>
-              <CrisisResourcesCard reply={aiReply} variant="dark" />
+              <CrisisResourcesCard reply={aiReply} variant="light" />
             </div>
           )}
 
@@ -278,10 +278,10 @@ function PractitionersPageInner() {
             <div style={{
               maxWidth: 680, margin: '14px auto 0',
               padding: '14px 18px',
-              background: 'rgba(232,184,75,0.1)',
-              border: '1px solid rgba(232,184,75,0.25)',
+              background: 'rgba(240,120,20,0.1)',
+              border: '1px solid rgba(240,120,20,0.25)',
               borderRadius: 10,
-              fontSize: 13, color: 'rgba(255,255,255,0.85)',
+              fontSize: 13, color: '#3A3530',
               textAlign: 'left', lineHeight: 1.6,
             }}>
               {aiReply && <div style={{ marginBottom: aiMatched.length > 0 ? 10 : 0 }}>✨ {aiReply}</div>}
@@ -306,7 +306,7 @@ function PractitionersPageInner() {
           )}
 
           {/* Compliance: persistent AI non-advice disclaimer. */}
-          <AINonAdviceFooter variant="dark" />
+          <AINonAdviceFooter variant="light" />
         </div>
       </div>
 
@@ -329,7 +329,7 @@ function PractitionersPageInner() {
         background: 'rgba(250,250,247,0.97)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(232,184,75,0.12)',
+        borderBottom: '1px solid rgba(240,120,20,0.12)',
         padding: '16px 48px',
         marginTop: 24,
       }}>
@@ -463,7 +463,7 @@ function FilterPill({ active, onClick, label }: { active: boolean; onClick: () =
 function SectionHead({ title, badge }: { title: string; badge?: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-      <div style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.25)' }} />
+      <div style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.25)' }} />
       <h2 style={{
         fontFamily: "'Playfair Display', serif",
         fontSize: 22, fontWeight: 400, color: '#3A3530', whiteSpace: 'nowrap',
@@ -473,13 +473,13 @@ function SectionHead({ title, badge }: { title: string; badge?: string }) {
       {badge && (
         <span style={{
           fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase',
-          color: '#F07814', background: 'rgba(232,184,75,0.1)',
+          color: '#F07814', background: 'rgba(240,120,20,0.1)',
           padding: '4px 10px', borderRadius: 12, whiteSpace: 'nowrap',
         }}>
           {badge}
         </span>
       )}
-      <div style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.25)' }} />
+      <div style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.25)' }} />
     </div>
   );
 }
@@ -527,7 +527,7 @@ function FeaturedCard({ guide }: { guide: Guide }) {
           </div>
           <div style={{
             display: 'flex', alignItems: 'center', gap: 10, marginTop: 'auto',
-            paddingTop: 14, borderTop: '1px solid rgba(232,184,75,0.15)',
+            paddingTop: 14, borderTop: '1px solid rgba(240,120,20,0.15)',
           }}>
             <div style={{
               width: 36, height: 36, borderRadius: '50%', overflow: 'hidden',
@@ -649,7 +649,7 @@ function PractitionerCard({ guide }: { guide: Guide }) {
             {guide.modalities.slice(0, 3).map((m) => (
               <span key={m} style={{
                 fontSize: 10, padding: '3px 8px', borderRadius: 10,
-                background: 'rgba(232,184,75,0.1)', color: '#8A8278',
+                background: 'rgba(240,120,20,0.1)', color: '#8A8278',
               }}>
                 {m}
               </span>
@@ -665,7 +665,7 @@ function PractitionerCard({ guide }: { guide: Guide }) {
         </div>
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          paddingTop: 12, borderTop: '1px solid rgba(232,184,75,0.15)',
+          paddingTop: 12, borderTop: '1px solid rgba(240,120,20,0.15)',
         }}>
           <div style={{ fontSize: 12, color: '#3A3530' }}>
             <span style={{ color: '#F07814' }}>★</span> {guide.averageRating ? guide.averageRating.toFixed(1) : '—'}

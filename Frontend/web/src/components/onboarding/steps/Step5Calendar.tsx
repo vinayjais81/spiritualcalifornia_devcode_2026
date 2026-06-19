@@ -16,9 +16,9 @@ const lbl: React.CSSProperties = {
 function SectionDivider({ label }: { label: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', margin: '32px 0 24px' }}>
-      <div style={{ flex: 1, height: '1px', background: 'rgba(232,184,75,0.2)' }} />
+      <div style={{ flex: 1, height: '1px', background: 'rgba(240,120,20,0.2)' }} />
       <div style={{ fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#8A8278', whiteSpace: 'nowrap', fontFamily: 'var(--font-inter), sans-serif' }}>{label}</div>
-      <div style={{ flex: 1, height: '1px', background: 'rgba(232,184,75,0.2)' }} />
+      <div style={{ flex: 1, height: '1px', background: 'rgba(240,120,20,0.2)' }} />
     </div>
   );
 }
@@ -117,7 +117,7 @@ export function Step5Calendar() {
       <SectionDivider label="Calendar Integration" />
 
       {/* Calendly connect card */}
-      <div style={{ border: calendlyConnected ? '1.5px solid #86EFAC' : '1.5px solid rgba(232,184,75,0.3)', borderRadius: '14px', padding: '28px', background: calendlyConnected ? '#F0FDF4' : '#FFFFFF', marginBottom: '24px', display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
+      <div style={{ border: calendlyConnected ? '1.5px solid #86EFAC' : '1.5px solid rgba(240,120,20,0.3)', borderRadius: '14px', padding: '28px', background: calendlyConnected ? '#F0FDF4' : '#FFFFFF', marginBottom: '24px', display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
         <div style={{ fontSize: '40px', flexShrink: 0 }}>📅</div>
         <div style={{ flex: 1 }}>
           <div className="font-playfair" style={{ fontSize: '22px', fontWeight: 400, color: '#3A3530', marginBottom: '6px' }}>Calendly</div>
@@ -163,7 +163,7 @@ export function Step5Calendar() {
         Spiritual California retains a platform fee of 12–20% per transaction. You can update your pricing anytime from your dashboard.
       </p>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '40px', paddingTop: '28px', borderTop: '1px solid rgba(232,184,75,0.15)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '40px', paddingTop: '28px', borderTop: '1px solid rgba(240,120,20,0.15)' }}>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           <button type="button" onClick={prevStep} style={{ fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8A8278', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-inter), sans-serif' }}>← Back</button>
           <button type="button" onClick={() => nextStep()} style={{ fontSize: '12px', color: '#8A8278', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'var(--font-inter), sans-serif' }}>Skip for now</button>

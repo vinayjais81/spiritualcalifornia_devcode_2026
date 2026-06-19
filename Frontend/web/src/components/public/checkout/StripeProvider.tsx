@@ -68,7 +68,7 @@ export function StripeProvider({ clientSecret, children }: StripeProviderProps) 
           },
           rules: {
             '.Input': {
-              border: '1.5px solid rgba(232,184,75,0.2)',
+              border: '1.5px solid rgba(240,120,20,0.2)',
               padding: '12px 14px',
             },
             '.Input:focus': {

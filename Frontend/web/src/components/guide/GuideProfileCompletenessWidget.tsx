@@ -68,7 +68,7 @@ export function GuideProfileCompletenessWidget({
     <div
       style={{
         background: '#fff',
-        border: '1px solid rgba(232,184,75,0.25)',
+        border: '1px solid rgba(240,120,20,0.25)',
         borderRadius: 12,
         padding: '20px 24px',
         marginBottom: 24,
@@ -149,7 +149,7 @@ export function GuideProfileCompletenessWidget({
         style={{
           width: '100%',
           height: 6,
-          background: 'rgba(232,184,75,0.15)',
+          background: 'rgba(240,120,20,0.15)',
           borderRadius: 3,
           overflow: 'hidden',
           marginBottom: 14,
@@ -178,7 +178,7 @@ export function GuideProfileCompletenessWidget({
                 padding: '4px 12px',
                 borderRadius: 100,
                 fontSize: 11,
-                border: `1px solid ${s.filled ? 'transparent' : 'rgba(232,184,75,0.3)'}`,
+                border: `1px solid ${s.filled ? 'transparent' : 'rgba(240,120,20,0.3)'}`,
                 background: s.filled ? '#F0F7F1' : '#fff',
                 color: s.filled ? '#5A8A6A' : C.warmGray,
                 fontWeight: s.filled ? 500 : 400,

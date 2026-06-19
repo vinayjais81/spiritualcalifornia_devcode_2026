@@ -44,7 +44,7 @@ export default function PaymentHistoryPage() {
           <EmptyState message="No payments yet. Your transactions will appear here after your first booking." />
         ) : (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px 100px 100px', gap: '10px', padding: '0 0 10px', borderBottom: '1px solid rgba(232,184,75,0.15)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px 100px 100px', gap: '10px', padding: '0 0 10px', borderBottom: '1px solid rgba(240,120,20,0.15)' }}>
               {['Description', 'Type', 'Date', 'Amount', 'Status'].map(h => (
                 <div key={h} style={{ fontFamily: font, fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: C.warmGray, fontWeight: 500 }}>{h}</div>
               ))}
@@ -55,7 +55,7 @@ export default function PaymentHistoryPage() {
               const s = statusColors[p.status] || statusColors.PENDING;
               const amount = Number(p.amount).toFixed(2);
               return (
-                <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px 100px 100px', gap: '10px', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(232,184,75,0.06)' }}>
+                <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px 100px 100px', gap: '10px', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(240,120,20,0.06)' }}>
                   <div>
                     <div style={{ fontFamily: font, fontSize: '13px', fontWeight: 500, color: C.charcoal }}>{name}</div>
                     {p.booking?.service?.guide?.displayName && <div style={{ fontFamily: font, fontSize: '11px', color: C.warmGray }}>with {p.booking.service.guide.displayName}</div>}

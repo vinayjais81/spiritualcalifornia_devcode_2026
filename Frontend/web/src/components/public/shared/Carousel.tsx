@@ -43,7 +43,7 @@ export function Carousel({ id, children, scrollAmount = 2 }: CarouselProps) {
     height: '42px',
     borderRadius: '50%',
     background: '#FFFFFF',
-    border: '1.5px solid rgba(232,184,75,0.5)',
+    border: '1.5px solid rgba(240,120,20,0.5)',
     color: '#3A3530',
     fontSize: '16px',
     cursor: 'pointer',
@@ -70,7 +70,7 @@ export function Carousel({ id, children, scrollAmount = 2 }: CarouselProps) {
         onMouseLeave={e => {
           const el = e.currentTarget;
           el.style.background = '#FFFFFF';
-          el.style.borderColor = 'rgba(232,184,75,0.5)';
+          el.style.borderColor = 'rgba(240,120,20,0.5)';
           el.style.color = '#3A3530';
         }}
       >
@@ -101,7 +101,7 @@ export function Carousel({ id, children, scrollAmount = 2 }: CarouselProps) {
         onMouseLeave={e => {
           const el = e.currentTarget;
           el.style.background = '#FFFFFF';
-          el.style.borderColor = 'rgba(232,184,75,0.5)';
+          el.style.borderColor = 'rgba(240,120,20,0.5)';
           el.style.color = '#3A3530';
         }}
       >

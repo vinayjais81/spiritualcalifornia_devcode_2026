@@ -68,7 +68,7 @@ export function ReviewsBlock({
       <div style={{ maxWidth: 1300, margin: '0 auto', padding: '40px 60px 60px' }}>
         <div style={{ fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: '#F07814', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
           Reviews
-          <span style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.25)' }} />
+          <span style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.25)' }} />
         </div>
         <div style={{ textAlign: 'center', padding: '32px 0', fontSize: 13, color: '#8A8278', fontStyle: 'italic' }}>
           No reviews yet — be the first once you experience it.
@@ -86,7 +86,7 @@ export function ReviewsBlock({
         <div>
           <div style={{ fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: '#F07814', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
             Reviews
-            <span style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.25)' }} />
+            <span style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.25)' }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 16 }}>
             <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 48, fontWeight: 300, color: '#3A3530' }}>
@@ -110,7 +110,7 @@ export function ReviewsBlock({
               <div key={star} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
                 <span style={{ width: 12, fontSize: 11, color: '#8A8278' }}>{star}</span>
                 <span style={{ color: '#F07814', fontSize: 10 }}>★</span>
-                <div style={{ flex: 1, height: 6, background: 'rgba(232,184,75,0.12)', borderRadius: 3, overflow: 'hidden' }}>
+                <div style={{ flex: 1, height: 6, background: 'rgba(240,120,20,0.12)', borderRadius: 3, overflow: 'hidden' }}>
                   <div style={{ width: `${pct}%`, height: '100%', background: '#F07814' }} />
                 </div>
                 <span style={{ width: 24, textAlign: 'right', fontSize: 11, color: '#8A8278' }}>{count}</span>
@@ -122,7 +122,7 @@ export function ReviewsBlock({
 
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: columns === 2 ? 28 : 24 }}>
         {reviews.map((r) => (
-          <div key={r.id} style={{ background: '#fff', border: '1px solid rgba(232,184,75,0.1)', borderRadius: 12, padding: 24 }}>
+          <div key={r.id} style={{ background: '#fff', border: '1px solid rgba(240,120,20,0.1)', borderRadius: 12, padding: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#FEF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 600, color: '#F07814', overflow: 'hidden' }}>
                 {r.author.avatarUrl ? (
@@ -153,7 +153,7 @@ export function ReviewsBlock({
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
-            style={{ padding: '8px 16px', borderRadius: 6, border: '1.5px solid rgba(232,184,75,0.3)', background: 'transparent', fontSize: 12, color: '#3A3530', cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.5 : 1 }}
+            style={{ padding: '8px 16px', borderRadius: 6, border: '1.5px solid rgba(240,120,20,0.3)', background: 'transparent', fontSize: 12, color: '#3A3530', cursor: page === 1 ? 'not-allowed' : 'pointer', opacity: page === 1 ? 0.5 : 1 }}
           >
             ← Previous
           </button>
@@ -163,7 +163,7 @@ export function ReviewsBlock({
           <button
             onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
             disabled={page === pagination.totalPages}
-            style={{ padding: '8px 16px', borderRadius: 6, border: '1.5px solid rgba(232,184,75,0.3)', background: 'transparent', fontSize: 12, color: '#3A3530', cursor: page === pagination.totalPages ? 'not-allowed' : 'pointer', opacity: page === pagination.totalPages ? 0.5 : 1 }}
+            style={{ padding: '8px 16px', borderRadius: 6, border: '1.5px solid rgba(240,120,20,0.3)', background: 'transparent', fontSize: 12, color: '#3A3530', cursor: page === pagination.totalPages ? 'not-allowed' : 'pointer', opacity: page === pagination.totalPages ? 0.5 : 1 }}
           >
             Next →
           </button>

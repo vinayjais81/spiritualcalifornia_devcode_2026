@@ -31,7 +31,7 @@ export function SizeSelector({ variants, selectedId, onChange }: SizeSelectorPro
                 fontSize: 12, fontWeight: isActive ? 500 : 400,
                 background: isActive ? '#F07814' : '#fff',
                 color: isActive ? '#3A3530' : isOutOfStock ? '#ccc' : '#3A3530',
-                border: isActive ? '1.5px solid #F07814' : '1.5px solid rgba(232,184,75,0.2)',
+                border: isActive ? '1.5px solid #F07814' : '1.5px solid rgba(240,120,20,0.2)',
                 cursor: isOutOfStock ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s',
                 textDecoration: isOutOfStock ? 'line-through' : 'none',

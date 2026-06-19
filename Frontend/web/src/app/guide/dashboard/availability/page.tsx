@@ -92,7 +92,7 @@ export default function AvailabilityPage() {
                   <div key={et.slug || i} style={{
                     display: 'grid', gridTemplateColumns: '1fr 100px 100px 120px',
                     gap: '12px', alignItems: 'center', padding: '14px 0',
-                    borderBottom: i < eventTypes.length - 1 ? '1px solid rgba(232,184,75,0.08)' : 'none',
+                    borderBottom: i < eventTypes.length - 1 ? '1px solid rgba(240,120,20,0.08)' : 'none',
                   }}>
                     <div>
                       <div style={{ fontFamily: font, fontSize: '14px', fontWeight: 500, color: C.charcoal }}>{et.name}</div>
@@ -131,7 +131,7 @@ export default function AvailabilityPage() {
                     <div key={i} style={{
                       display: 'grid', gridTemplateColumns: '140px 1fr 80px',
                       gap: '16px', alignItems: 'center', padding: '12px 0',
-                      borderBottom: i < upcomingEvents.length - 1 ? '1px solid rgba(232,184,75,0.08)' : 'none',
+                      borderBottom: i < upcomingEvents.length - 1 ? '1px solid rgba(240,120,20,0.08)' : 'none',
                     }}>
                       <div>
                         <div style={{ fontFamily: font, fontSize: '12px', fontWeight: 500, color: C.charcoal }}>
@@ -159,7 +159,7 @@ export default function AvailabilityPage() {
 
           {/* Manage in Calendly */}
           <div style={{
-            padding: '20px', background: C.goldPale, border: '1px solid rgba(232,184,75,0.2)',
+            padding: '20px', background: C.goldPale, border: '1px solid rgba(240,120,20,0.2)',
             borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           }}>
             <div>

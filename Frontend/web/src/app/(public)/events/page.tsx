@@ -105,7 +105,7 @@ function eventTypeBadge(type: EventItem['type'], isFree: boolean) {
   }
   switch (type) {
     case 'VIRTUAL':    return { label: 'Virtual',        bg: 'rgba(76,175,80,0.9)',    color: '#fff' };
-    case 'IN_PERSON':  return { label: 'In-Person',      bg: 'rgba(232,184,75,0.95)',  color: '#3A3530' };
+    case 'IN_PERSON':  return { label: 'In-Person',      bg: 'rgba(240,120,20,0.95)',  color: '#3A3530' };
     case 'RETREAT':    return { label: 'Retreat',        bg: 'rgba(44,36,32,0.9)',     color: '#fff' };
     case 'SOUL_TRAVEL':return { label: 'Soul Travel',    bg: 'rgba(184,150,15,0.9)',   color: '#fff' };
     default:           return { label: 'Event',          bg: 'rgba(138,130,120,0.5)',  color: '#fff' };
@@ -221,7 +221,7 @@ export default function EventsPage() {
       {/* ── HERO ─────────────────────────────────────────────────────── */}
       <div style={{
         marginTop: 69,
-        background: 'linear-gradient(135deg, #2C2420 0%, #3A3530 100%)',
+        background: 'linear-gradient(135deg, #F5F2EB 0%, #FDE8D0 100%)',
         padding: '48px 48px 40px', textAlign: 'center',
       }}>
         <div style={{
@@ -232,11 +232,11 @@ export default function EventsPage() {
         </div>
         <h1 style={{
           fontFamily: "'Playfair Display', serif",
-          fontSize: 44, fontWeight: 300, color: '#fff', marginBottom: 8,
+          fontSize: 44, fontWeight: 300, color: '#3A3530', marginBottom: 8,
         }}>
           Events &amp; Experiences
         </h1>
-        <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.5)' }}>
+        <p style={{ fontSize: 14, color: 'rgba(58,53,48,0.6)' }}>
           Live sessions, workshops, retreats, and sound baths — in person and online.
         </p>
       </div>
@@ -261,7 +261,7 @@ export default function EventsPage() {
               aria-label="Search events"
               style={{
                 width: '100%', padding: '10px 36px 10px 14px', borderRadius: 24,
-                background: '#fff', border: '1px solid rgba(232,184,75,0.25)',
+                background: '#fff', border: '1px solid rgba(240,120,20,0.25)',
                 fontSize: 13, color: '#3A3530', outline: 'none',
                 boxShadow: '0 2px 14px rgba(58,53,48,0.04)',
               }}
@@ -371,7 +371,7 @@ export default function EventsPage() {
                 }}>
                   {month}
                 </div>
-                <div style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.2)' }} />
+                <div style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.2)' }} />
                 <div style={{ fontSize: 11, color: '#8A8278', whiteSpace: 'nowrap' }}>
                   {monthEvents.length} event{monthEvents.length !== 1 ? 's' : ''}
                 </div>

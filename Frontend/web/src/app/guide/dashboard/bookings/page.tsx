@@ -97,7 +97,7 @@ export default function GuideBookingsPage() {
               fontWeight: filter === f ? 500 : 400, cursor: 'pointer',
               background: filter === f ? C.charcoal : 'transparent',
               color: filter === f ? C.gold : C.warmGray,
-              border: filter === f ? 'none' : '1px solid rgba(232,184,75,0.3)',
+              border: filter === f ? 'none' : '1px solid rgba(240,120,20,0.3)',
               textTransform: 'capitalize',
             }}>
               {f}
@@ -107,7 +107,7 @@ export default function GuideBookingsPage() {
         {services.length > 1 && (
           <select value={serviceFilter} onChange={e => setServiceFilter(e.target.value)} style={{
             fontFamily: font, fontSize: '12px', color: C.charcoal, background: C.offWhite,
-            border: '1px solid rgba(232,184,75,0.3)', borderRadius: '6px', padding: '7px 12px', outline: 'none',
+            border: '1px solid rgba(240,120,20,0.3)', borderRadius: '6px', padding: '7px 12px', outline: 'none',
           }}>
             <option value="all">All Services</option>
             {services.map(s => (
@@ -125,7 +125,7 @@ export default function GuideBookingsPage() {
             {/* Header */}
             <div style={{
               display: 'grid', gridTemplateColumns: '1fr 140px 120px 90px 130px',
-              gap: '10px', padding: '0 0 10px', borderBottom: '1px solid rgba(232,184,75,0.15)',
+              gap: '10px', padding: '0 0 10px', borderBottom: '1px solid rgba(240,120,20,0.15)',
             }}>
               {['Client', 'Service', 'Date & Time', 'Status', 'Actions'].map(h => (
                 <div key={h} style={{ fontFamily: font, fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: C.warmGray, fontWeight: 500 }}>{h}</div>
@@ -144,15 +144,15 @@ export default function GuideBookingsPage() {
                 <a key={b.id} href={`/guide/dashboard/bookings/${b.id}`} style={{
                   display: 'grid', gridTemplateColumns: '1fr 140px 120px 90px 130px',
                   gap: '10px', alignItems: 'center', padding: '14px 0',
-                  borderBottom: '1px solid rgba(232,184,75,0.06)',
+                  borderBottom: '1px solid rgba(240,120,20,0.06)',
                   textDecoration: 'none', cursor: 'pointer',
                 }}>
                   {/* Client */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     {seeker?.avatarUrl ? (
-                      <img src={seeker.avatarUrl} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid rgba(232,184,75,0.3)' }} />
+                      <img src={seeker.avatarUrl} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid rgba(240,120,20,0.3)' }} />
                     ) : (
-                      <div style={{ width: 36, height: 36, borderRadius: '50%', background: C.goldPale, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: C.gold, border: '1.5px solid rgba(232,184,75,0.3)' }}>
+                      <div style={{ width: 36, height: 36, borderRadius: '50%', background: C.goldPale, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: C.gold, border: '1.5px solid rgba(240,120,20,0.3)' }}>
                         {seeker?.firstName?.[0] || '?'}
                       </div>
                     )}
@@ -229,7 +229,7 @@ export default function GuideBookingsPage() {
               const svcRevenue = svcBookings.filter(b => b.payment?.status === 'SUCCEEDED').reduce((s: number, b: any) => s + Number(b.payment.amount), 0);
               return (
                 <div key={svc.id} style={{
-                  background: C.offWhite, border: '1px solid rgba(232,184,75,0.12)',
+                  background: C.offWhite, border: '1px solid rgba(240,120,20,0.12)',
                   borderRadius: '8px', padding: '16px',
                 }}>
                   <div style={{ fontFamily: font, fontSize: '13px', fontWeight: 500, color: C.charcoal, marginBottom: '8px' }}>{svc.name}</div>

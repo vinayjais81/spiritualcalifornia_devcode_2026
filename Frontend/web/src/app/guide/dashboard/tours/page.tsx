@@ -114,7 +114,7 @@ export default function GuideToursPage() {
       {/* ─── List ─────────────────────────────────────────────────────────── */}
       {tours.length === 0 ? (
         <div style={{
-          background: C.white, border: '1px dashed rgba(232,184,75,0.35)',
+          background: C.white, border: '1px dashed rgba(240,120,20,0.35)',
           borderRadius: 12, padding: 60, textAlign: 'center',
         }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🌍</div>
@@ -140,7 +140,7 @@ export default function GuideToursPage() {
               <div
                 key={t.id}
                 style={{
-                  background: C.white, border: '1px solid rgba(232,184,75,0.15)',
+                  background: C.white, border: '1px solid rgba(240,120,20,0.15)',
                   borderRadius: 12, overflow: 'hidden',
                   display: 'grid', gridTemplateColumns: '180px 1fr auto',
                 }}
@@ -185,7 +185,7 @@ export default function GuideToursPage() {
                   {nextDeparture && (
                     <div style={{
                       marginTop: 12, padding: '6px 12px',
-                      background: C.goldPale, border: '1px solid rgba(232,184,75,0.3)',
+                      background: C.goldPale, border: '1px solid rgba(240,120,20,0.3)',
                       borderRadius: 6, display: 'inline-flex', alignItems: 'center', gap: 8,
                       fontSize: 11, fontFamily: font, color: C.charcoal,
                     }}>
@@ -208,7 +208,7 @@ export default function GuideToursPage() {
                 {/* Actions */}
                 <div style={{
                   padding: 20, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end',
-                  borderLeft: '1px solid rgba(232,184,75,0.1)',
+                  borderLeft: '1px solid rgba(240,120,20,0.1)',
                 }}>
                   <Link href={`/guide/dashboard/tours/${t.id}`} style={{ textDecoration: 'none' }}>
                     <Btn variant="secondary" size="sm">✎ Edit</Btn>

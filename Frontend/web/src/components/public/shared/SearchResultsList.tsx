@@ -80,7 +80,7 @@ export function SearchResultsList({
               gridTemplateColumns: '160px 1fr auto',
               gap: 20,
               background: '#fff',
-              border: '1px solid rgba(232,184,75,0.1)',
+              border: '1px solid rgba(240,120,20,0.1)',
               borderRadius: 12,
               overflow: 'hidden',
               transition: 'box-shadow 0.2s, transform 0.2s',

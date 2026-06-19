@@ -87,7 +87,7 @@ function ClaimAccountContent() {
             style={{
               width: '64px',
               height: '64px',
-              background: 'rgba(232,184,75,0.1)',
+              background: 'rgba(240,120,20,0.1)',
               borderRadius: '50%',
               display: 'flex',
               alignItems: 'center',
@@ -147,7 +147,7 @@ function ClaimAccountContent() {
     background: '#FFFFFF',
     border: `1px solid ${focused === field ? '#F07814' : 'rgba(138,130,120,0.25)'}`,
     borderRadius: '8px',
-    boxShadow: focused === field ? '0 0 0 3px rgba(232,184,75,0.1)' : 'none',
+    boxShadow: focused === field ? '0 0 0 3px rgba(240,120,20,0.1)' : 'none',
     outline: 'none',
     transition: 'border-color 0.2s',
     boxSizing: 'border-box',
@@ -329,7 +329,7 @@ function ClaimAccountContent() {
               justifyContent: 'space-between',
               marginTop: '20px',
               paddingTop: '28px',
-              borderTop: '1px solid rgba(232,184,75,0.15)',
+              borderTop: '1px solid rgba(240,120,20,0.15)',
             }}
           >
             <Link
@@ -410,7 +410,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
           alignItems: 'center',
           justifyContent: 'center',
           padding: '20px 48px',
-          borderBottom: '1px solid rgba(232,184,75,0.15)',
+          borderBottom: '1px solid rgba(240,120,20,0.15)',
         }}
       >
         <Link

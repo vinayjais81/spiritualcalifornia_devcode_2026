@@ -41,11 +41,11 @@ export default function FavoritesPage() {
               const guide = fav.guide;
               if (!guide) return null;
               return (
-                <div key={fav.id} style={{ background: C.offWhite, border: '1px solid rgba(232,184,75,0.15)', borderRadius: '10px', padding: '20px', display: 'flex', gap: '14px', alignItems: 'center' }}>
+                <div key={fav.id} style={{ background: C.offWhite, border: '1px solid rgba(240,120,20,0.15)', borderRadius: '10px', padding: '20px', display: 'flex', gap: '14px', alignItems: 'center' }}>
                   {guide.user?.avatarUrl ? (
-                    <img src={guide.user.avatarUrl} alt={guide.displayName} style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(232,184,75,0.3)' }} />
+                    <img src={guide.user.avatarUrl} alt={guide.displayName} style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(240,120,20,0.3)' }} />
                   ) : (
-                    <div style={{ width: 52, height: 52, borderRadius: '50%', background: C.goldPale, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: C.gold, border: '2px solid rgba(232,184,75,0.3)', flexShrink: 0 }}>
+                    <div style={{ width: 52, height: 52, borderRadius: '50%', background: C.goldPale, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: C.gold, border: '2px solid rgba(240,120,20,0.3)', flexShrink: 0 }}>
                       {guide.displayName?.[0] || '?'}
                     </div>
                   )}

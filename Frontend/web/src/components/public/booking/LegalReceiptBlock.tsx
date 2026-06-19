@@ -25,7 +25,7 @@ export function LegalReceiptBlock() {
         marginTop: 32,
         padding: 24,
         background: '#F5F2EB',
-        border: '1px solid rgba(232,184,75,0.18)',
+        border: '1px solid rgba(240,120,20,0.18)',
         borderRadius: 12,
         fontFamily: "'Inter', sans-serif",
         fontSize: 12.5,
@@ -103,7 +103,7 @@ export function LegalReceiptBlock() {
         style={{
           marginTop: 20,
           paddingTop: 16,
-          borderTop: '1px solid rgba(232,184,75,0.18)',
+          borderTop: '1px solid rgba(240,120,20,0.18)',
           fontSize: 12,
           lineHeight: 1.65,
           color: '#3A3530',

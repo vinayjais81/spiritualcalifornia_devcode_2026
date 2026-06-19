@@ -181,7 +181,7 @@ export default function MyOrdersPage() {
             onClick={() => setFilter(f.key)}
             style={{
               padding: '8px 20px', borderRadius: 20, fontFamily: font, fontSize: 12, fontWeight: 500,
-              border: filter === f.key ? `1.5px solid ${C.gold}` : '1.5px solid rgba(232,184,75,0.2)',
+              border: filter === f.key ? `1.5px solid ${C.gold}` : '1.5px solid rgba(240,120,20,0.2)',
               background: filter === f.key ? C.goldPale : C.white,
               color: filter === f.key ? C.charcoal : C.warmGray,
               cursor: 'pointer', transition: 'all 0.2s',
@@ -227,7 +227,7 @@ export default function MyOrdersPage() {
 
             return (
               <div key={order.id} style={{
-                background: C.white, border: '1px solid rgba(232,184,75,0.12)',
+                background: C.white, border: '1px solid rgba(240,120,20,0.12)',
                 borderRadius: 12, overflow: 'hidden',
               }}>
                 {/* Summary row */}
@@ -264,7 +264,7 @@ export default function MyOrdersPage() {
                       {digitalCount > 0 && (
                         <span style={{
                           fontFamily: font, fontSize: 10, color: C.gold,
-                          padding: '2px 8px', background: 'rgba(232,184,75,0.1)', borderRadius: 4,
+                          padding: '2px 8px', background: 'rgba(240,120,20,0.1)', borderRadius: 4,
                           fontWeight: 500,
                         }}>
                           {digitalCount} digital
@@ -314,7 +314,7 @@ export default function MyOrdersPage() {
                 {/* Expanded detail */}
                 {isOpen && (
                   <div style={{
-                    borderTop: '1px solid rgba(232,184,75,0.12)',
+                    borderTop: '1px solid rgba(240,120,20,0.12)',
                     padding: '20px 24px', background: C.offWhite,
                   }}>
                     {/* Items */}
@@ -337,7 +337,7 @@ export default function MyOrdersPage() {
                               display: 'flex', alignItems: 'center', gap: 14,
                               padding: '12px 16px',
                               background: C.white, borderRadius: 8,
-                              border: '1px solid rgba(232,184,75,0.1)',
+                              border: '1px solid rgba(240,120,20,0.1)',
                             }}
                           >
                             <div style={{
@@ -406,7 +406,7 @@ export default function MyOrdersPage() {
                         </div>
                         <div style={{
                           background: C.white, borderRadius: 8, padding: '12px 16px',
-                          border: '1px solid rgba(232,184,75,0.1)',
+                          border: '1px solid rgba(240,120,20,0.1)',
                           fontFamily: font, fontSize: 13, color: C.charcoal, lineHeight: 1.6,
                           marginBottom: 20,
                         }}>
@@ -435,7 +435,7 @@ export default function MyOrdersPage() {
                     </div>
                     <div style={{
                       background: C.white, borderRadius: 8,
-                      border: '1px solid rgba(232,184,75,0.1)',
+                      border: '1px solid rgba(240,120,20,0.1)',
                       padding: '14px 18px',
                       fontFamily: font, fontSize: 13, lineHeight: 1.9,
                     }}>
@@ -451,7 +451,7 @@ export default function MyOrdersPage() {
                       )}
                       <div style={{
                         marginTop: 8, paddingTop: 10,
-                        borderTop: '1.5px solid rgba(232,184,75,0.25)',
+                        borderTop: '1.5px solid rgba(240,120,20,0.25)',
                         display: 'flex', justifyContent: 'space-between',
                         fontFamily: serif, fontSize: 16, fontWeight: 500,
                       }}>

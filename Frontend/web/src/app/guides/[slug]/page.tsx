@@ -188,7 +188,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
     <h2 style={{
       fontFamily: serif, fontSize: '26px', fontWeight: 400, color: C.charcoal,
       marginBottom: '20px', paddingBottom: '12px',
-      borderBottom: '1px solid rgba(232,184,75,0.15)',
+      borderBottom: '1px solid rgba(240,120,20,0.15)',
     }}>
       {children}
     </h2>
@@ -200,13 +200,13 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 function Widget({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{
-      background: C.white, border: '1px solid rgba(232,184,75,0.12)',
+      background: C.white, border: '1px solid rgba(240,120,20,0.12)',
       borderRadius: '12px', padding: '24px', marginBottom: '24px',
     }}>
       <div style={{
         fontFamily: serif, fontSize: '20px', fontWeight: 500, color: C.charcoal,
         marginBottom: '16px', paddingBottom: '10px',
-        borderBottom: '1px solid rgba(232,184,75,0.15)',
+        borderBottom: '1px solid rgba(240,120,20,0.15)',
       }}>
         {title}
       </div>
@@ -287,7 +287,7 @@ export default function GuideProfilePage() {
       </div>
 
       {/* ── PROFILE HEADER ───────────────────────────────────────────── */}
-      <div style={{ background: C.white, borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
+      <div style={{ background: C.white, borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 48px', position: 'relative' }}>
           {/* Avatar */}
           <div style={{ position: 'absolute', top: '-80px', left: '48px' }}>
@@ -343,7 +343,7 @@ export default function GuideProfilePage() {
                   {guide.tags.map((t, i) => (
                     <span key={i} style={{
                       padding: '5px 14px', borderRadius: '20px',
-                      background: C.goldPale, border: '1px solid rgba(232,184,75,0.4)',
+                      background: C.goldPale, border: '1px solid rgba(240,120,20,0.4)',
                       fontFamily: font, fontSize: '12px', color: C.charcoal,
                     }}>
                       {t.subcategory ?? t.category}
@@ -380,7 +380,7 @@ export default function GuideProfilePage() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                 padding: '12px 28px', background: 'transparent', color: C.charcoal,
                 fontFamily: font, fontSize: '12px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase',
-                border: '1.5px solid rgba(232,184,75,0.5)', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.3s',
+                border: '1.5px solid rgba(240,120,20,0.5)', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.3s',
               }}>
                 ✉️ Send Message
               </button>
@@ -429,7 +429,7 @@ export default function GuideProfilePage() {
                   const badge = serviceBadge(s.type);
                   return (
                     <div key={s.id} style={{
-                      background: C.white, border: '1px solid rgba(232,184,75,0.15)',
+                      background: C.white, border: '1px solid rgba(240,120,20,0.15)',
                       borderRadius: '10px', padding: '18px 20px',
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px',
                       transition: 'box-shadow 0.3s',
@@ -476,7 +476,7 @@ export default function GuideProfilePage() {
                   const spotsLeft = tier ? tier.capacity - tier.sold : null;
                   return (
                     <div key={ev.id} style={{
-                      background: C.white, border: '1px solid rgba(232,184,75,0.15)',
+                      background: C.white, border: '1px solid rgba(240,120,20,0.15)',
                       borderRadius: '10px', overflow: 'hidden', display: 'flex', gap: 0,
                       transition: 'box-shadow 0.3s',
                     }}>
@@ -540,7 +540,7 @@ export default function GuideProfilePage() {
                     key={t.id}
                     href={`/tours/${t.slug}`}
                     style={{
-                      background: C.white, border: '1px solid rgba(232,184,75,0.15)',
+                      background: C.white, border: '1px solid rgba(240,120,20,0.15)',
                       borderRadius: '10px', overflow: 'hidden', display: 'flex', gap: 0,
                       textDecoration: 'none', color: 'inherit', transition: 'box-shadow 0.3s',
                     }}
@@ -557,7 +557,7 @@ export default function GuideProfilePage() {
                       {!t.coverImageUrl && '🏔️'}
                       <div style={{
                         position: 'absolute', top: '12px', left: '12px',
-                        background: 'rgba(232,184,75,0.95)', color: C.charcoal, borderRadius: '6px',
+                        background: 'rgba(240,120,20,0.95)', color: C.charcoal, borderRadius: '6px',
                         padding: '5px 10px', fontFamily: font, fontSize: '10px', fontWeight: 600,
                         letterSpacing: '0.08em', textTransform: 'uppercase',
                       }}>
@@ -610,7 +610,7 @@ export default function GuideProfilePage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 {guide.blogPosts.slice(0, 4).map((post) => (
                   <Link key={post.id} href={`/journal/${guide.slug}/${post.slug}`} style={{
-                    background: C.white, border: '1px solid rgba(232,184,75,0.12)',
+                    background: C.white, border: '1px solid rgba(240,120,20,0.12)',
                     borderRadius: '10px', overflow: 'hidden', textDecoration: 'none', color: 'inherit',
                     transition: 'box-shadow 0.3s, transform 0.3s', display: 'block',
                   }}>
@@ -685,7 +685,7 @@ export default function GuideProfilePage() {
 
               {/* Individual reviews */}
               {guide.reviews.map((r) => (
-                <div key={r.id} style={{ padding: '16px 0', borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
+                <div key={r.id} style={{ padding: '16px 0', borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                     <div style={{
                       width: '36px', height: '36px', borderRadius: '50%', background: C.goldPale,
@@ -719,7 +719,7 @@ export default function GuideProfilePage() {
               {/* Verified notice */}
               <div style={{
                 marginTop: '14px', padding: '10px 14px',
-                background: C.goldPale, border: '1px solid rgba(232,184,75,0.25)', borderRadius: '8px',
+                background: C.goldPale, border: '1px solid rgba(240,120,20,0.25)', borderRadius: '8px',
                 fontFamily: font, fontSize: '11px', color: C.warmGray,
                 display: 'flex', alignItems: 'center', gap: '8px',
               }}>
@@ -736,7 +736,7 @@ export default function GuideProfilePage() {
                 fontFamily: font, fontSize: '10px', letterSpacing: '0.25em', textTransform: 'uppercase',
                 color: C.gold, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '12px',
               }}>
-                ✦ Peer Recognition <span style={{ flex: 1, height: '1px', background: 'rgba(232,184,75,0.25)' }} />
+                ✦ Peer Recognition <span style={{ flex: 1, height: '1px', background: 'rgba(240,120,20,0.25)' }} />
               </div>
               <h2 style={{ fontFamily: serif, fontSize: '32px', fontWeight: 400, color: C.charcoal, marginBottom: '24px' }}>
                 What Colleagues Say
@@ -744,7 +744,7 @@ export default function GuideProfilePage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 {guide.testimonials.map((t) => (
                   <div key={t.id} style={{
-                    background: C.white, border: '1px solid rgba(232,184,75,0.12)',
+                    background: C.white, border: '1px solid rgba(240,120,20,0.12)',
                     borderRadius: '12px', padding: '24px',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
@@ -783,7 +783,7 @@ export default function GuideProfilePage() {
           {/* ── BOOKING WIDGET ──────────────────────────────────── */}
           <Widget title="📅 Book a Session">
             <div id="booking" style={{
-              background: C.offWhite, border: '1.5px solid rgba(232,184,75,0.3)',
+              background: C.offWhite, border: '1.5px solid rgba(240,120,20,0.3)',
               borderRadius: '8px', padding: '24px', textAlign: 'center',
             }}>
               <div style={{ fontSize: '36px', marginBottom: '10px' }}>🗓️</div>
@@ -807,7 +807,7 @@ export default function GuideProfilePage() {
               {guide.products.map((p) => (
                 <div key={p.id} style={{
                   display: 'flex', alignItems: 'center', gap: '12px',
-                  padding: '10px 0', borderBottom: '1px solid rgba(232,184,75,0.1)',
+                  padding: '10px 0', borderBottom: '1px solid rgba(240,120,20,0.1)',
                 }}>
                   <div style={{
                     width: '52px', height: '52px', borderRadius: '6px',
@@ -828,7 +828,7 @@ export default function GuideProfilePage() {
                   </div>
                   <button style={{
                     marginLeft: 'auto', padding: '6px 14px',
-                    background: C.goldPale, border: '1px solid rgba(232,184,75,0.5)',
+                    background: C.goldPale, border: '1px solid rgba(240,120,20,0.5)',
                     borderRadius: '6px', fontFamily: font, fontSize: '11px', fontWeight: 500, color: C.charcoal,
                     cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap',
                   }}>
@@ -845,7 +845,7 @@ export default function GuideProfilePage() {
               {guide.credentials.map((c) => (
                 <div key={c.id} style={{
                   display: 'flex', alignItems: 'flex-start', gap: '12px',
-                  padding: '12px 0', borderBottom: '1px solid rgba(232,184,75,0.1)',
+                  padding: '12px 0', borderBottom: '1px solid rgba(240,120,20,0.1)',
                 }}>
                   <div style={{
                     width: '40px', height: '40px', borderRadius: '8px',
@@ -908,7 +908,7 @@ export default function GuideProfilePage() {
       <style>{`
         .badge-online { background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
         .badge-offline { background: #FFF3E0; color: #E65100; border: 1px solid #FFCC80; }
-        .badge-both { background: #FEF7F0; color: #3A3530; border: 1px solid rgba(232,184,75,0.4); }
+        .badge-both { background: #FEF7F0; color: #3A3530; border: 1px solid rgba(240,120,20,0.4); }
         @media (max-width: 900px) {
           .profile-body-grid { grid-template-columns: 1fr !important; padding: 24px 20px !important; }
           .profile-meta { flex-direction: column !important; padding-left: 24px !important; padding-top: 90px !important; }

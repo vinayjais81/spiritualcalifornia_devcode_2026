@@ -188,8 +188,8 @@ export default function EventDetailPage() {
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
             gap: 16, marginBottom: 32,
             padding: '20px 0',
-            borderTop: '1px solid rgba(232,184,75,0.15)',
-            borderBottom: '1px solid rgba(232,184,75,0.15)',
+            borderTop: '1px solid rgba(240,120,20,0.15)',
+            borderBottom: '1px solid rgba(240,120,20,0.15)',
           }}>
             <InfoBlock icon="📅" label="Date">{fmtDate(event.startTime)}</InfoBlock>
             <InfoBlock icon="🕖" label="Time">
@@ -237,7 +237,7 @@ export default function EventDetailPage() {
                       style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         padding: '14px 18px', gap: 16,
-                        border: '1px solid rgba(232,184,75,0.15)', borderRadius: 10,
+                        border: '1px solid rgba(240,120,20,0.15)', borderRadius: 10,
                         background: '#F5F2EB',
                       }}
                     >

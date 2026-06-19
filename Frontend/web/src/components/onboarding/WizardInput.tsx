@@ -41,7 +41,7 @@ export function WizardInput({
     background: '#FFFFFF',
     border: `1px solid ${focused ? '#F07814' : 'rgba(138,130,120,0.25)'}`,
     borderRadius: '8px',
-    boxShadow: focused ? '0 0 0 3px rgba(232,184,75,0.1)' : 'none',
+    boxShadow: focused ? '0 0 0 3px rgba(240,120,20,0.1)' : 'none',
     outline: 'none',
     transition: 'border-color 0.2s',
     boxSizing: 'border-box',

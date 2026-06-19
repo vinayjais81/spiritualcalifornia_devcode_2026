@@ -41,7 +41,7 @@ export default function EventCheckoutPage() {
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px 48px', background: '#fff', borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px 48px', background: '#fff', borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
         <Link href="/cart" style={{ position: 'absolute', left: 48, fontSize: 12, color: '#8A8278', textDecoration: 'none' }}>← Back to cart</Link>
         <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 500, color: '#3A3530' }}>Event Checkout</span>
       </div>
@@ -55,7 +55,7 @@ export default function EventCheckoutPage() {
               background: '#3A3530', borderRadius: 12, padding: '20px 24px', marginBottom: 28,
               display: 'flex', alignItems: 'center', gap: 16,
             }}>
-              <div style={{ width: 80, height: 80, borderRadius: 8, background: 'rgba(232,184,75,0.1)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>🎭</div>
+              <div style={{ width: 80, height: 80, borderRadius: 8, background: 'rgba(240,120,20,0.1)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>🎭</div>
               <div>
                 <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, color: '#FDE8D0', marginBottom: 4 }}>{eventItems[0].name}</h3>
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
@@ -72,7 +72,7 @@ export default function EventCheckoutPage() {
             Attendee Information
           </div>
           {attendees.map((att, i) => (
-            <div key={i} style={{ background: '#fff', border: '1px solid rgba(232,184,75,0.15)', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+            <div key={i} style={{ background: '#fff', border: '1px solid rgba(240,120,20,0.15)', borderRadius: 12, padding: 20, marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                 <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#F07814', color: '#3A3530', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#3A3530' }}>Attendee {i + 1}</span>
@@ -85,10 +85,10 @@ export default function EventCheckoutPage() {
                     </label>
                     {field === 'requirements' ? (
                       <textarea value={att[field]} onChange={e => updateAttendee(i, field, e.target.value)} rows={2}
-                        style={{ padding: '10px 14px', borderRadius: 6, border: '1.5px solid rgba(232,184,75,0.2)', background: '#F5F2EB', fontSize: 13, fontFamily: "'Inter', sans-serif", resize: 'vertical', outline: 'none' }} />
+                        style={{ padding: '10px 14px', borderRadius: 6, border: '1.5px solid rgba(240,120,20,0.2)', background: '#F5F2EB', fontSize: 13, fontFamily: "'Inter', sans-serif", resize: 'vertical', outline: 'none' }} />
                     ) : (
                       <input value={att[field]} onChange={e => updateAttendee(i, field, e.target.value)} type={field === 'email' ? 'email' : 'text'}
-                        style={{ padding: '12px 14px', borderRadius: 6, border: '1.5px solid rgba(232,184,75,0.2)', background: '#F5F2EB', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" }} />
+                        style={{ padding: '12px 14px', borderRadius: 6, border: '1.5px solid rgba(240,120,20,0.2)', background: '#F5F2EB', fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif" }} />
                     )}
                   </div>
                 ))}

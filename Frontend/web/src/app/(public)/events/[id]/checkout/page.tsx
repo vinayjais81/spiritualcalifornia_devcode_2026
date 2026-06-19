@@ -247,19 +247,19 @@ export default function EventCheckoutPage() {
   return (
     <div style={{ background: C.offWhite, minHeight: '100vh' }}>
       {/* Nav bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 48px', background: C.white, borderBottom: '1px solid rgba(232,184,75,0.15)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 48px', background: C.white, borderBottom: '1px solid rgba(240,120,20,0.15)' }}>
         <Link href={`/events`} style={{ fontSize: 12, color: C.warmGray, textDecoration: 'none', letterSpacing: '0.08em' }}>← Back to Events</Link>
         <Link href="/" style={{ fontFamily: serif, fontSize: 18, fontWeight: 500, color: C.charcoal, textDecoration: 'none' }}>Spiritual California</Link>
         <div style={{ width: 100 }} />
       </div>
 
       {/* Progress bar */}
-      <div style={{ background: C.white, borderBottom: '1px solid rgba(232,184,75,0.1)', padding: '14px 48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: C.white, borderBottom: '1px solid rgba(240,120,20,0.1)', padding: '14px 48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {STEPS.map((label, i) => (
           <div key={label} style={{ display: 'flex', alignItems: 'center' }}>
-            {i > 0 && <div style={{ width: 60, height: 1, background: 'rgba(232,184,75,0.2)', margin: '0 12px' }} />}
+            {i > 0 && <div style={{ width: 60, height: 1, background: 'rgba(240,120,20,0.2)', margin: '0 12px' }} />}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: i < step ? C.gold : i === step ? C.charcoal : C.warmGray, fontWeight: i === step ? 500 : 400 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: i <= step ? C.gold : 'rgba(232,184,75,0.3)' }} />
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: i <= step ? C.gold : 'rgba(240,120,20,0.3)' }} />
               {label}
             </div>
           </div>
@@ -306,7 +306,7 @@ export default function EventCheckoutPage() {
                       onClick={() => { setSelectedTierId(tier.id); setError(null); }}
                       style={{
                         display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px',
-                        border: `1px solid ${sel ? C.gold : 'rgba(232,184,75,0.2)'}`,
+                        border: `1px solid ${sel ? C.gold : 'rgba(240,120,20,0.2)'}`,
                         borderRadius: 6, cursor: 'pointer', background: sel ? C.goldPale : C.white,
                         transition: 'all 0.2s',
                       }}
@@ -351,13 +351,13 @@ export default function EventCheckoutPage() {
             <>
               <SectionTitle>Attendee Information</SectionTitle>
               {attendees.map((a, i) => (
-                <div key={i} style={{ border: '1px solid rgba(232,184,75,0.2)', borderRadius: 8, padding: 20, marginBottom: 16 }}>
+                <div key={i} style={{ border: '1px solid rgba(240,120,20,0.2)', borderRadius: 8, padding: 20, marginBottom: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: C.charcoal }}>
                       <div style={{ width: 24, height: 24, background: C.gold, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: C.charcoal }}>{i + 1}</div>
                       Ticket Holder {i + 1} {i === 0 && '(Primary)'}
                     </div>
-                    <div style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 3, background: 'rgba(232,184,75,0.12)', color: C.gold }}>
+                    <div style={{ fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '3px 8px', borderRadius: 3, background: 'rgba(240,120,20,0.12)', color: C.gold }}>
                       {selectedTier?.name}
                     </div>
                   </div>
@@ -412,7 +412,7 @@ export default function EventCheckoutPage() {
 
               {confirmedTickets.map((ticket, i) => (
                 <div key={ticket.id} style={{
-                  border: '1px solid rgba(232,184,75,0.2)', borderRadius: 10, padding: 24,
+                  border: '1px solid rgba(240,120,20,0.2)', borderRadius: 10, padding: 24,
                   marginBottom: 16, background: C.white, textAlign: 'left',
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
@@ -445,11 +445,11 @@ export default function EventCheckoutPage() {
 
         {/* ── Sidebar: Ticket Summary ─────────────────────────────── */}
         {step < 3 && (
-          <div style={{ background: C.white, border: '1px solid rgba(232,184,75,0.2)', borderRadius: 8, padding: 28, position: 'sticky', top: 24 }}>
+          <div style={{ background: C.white, border: '1px solid rgba(240,120,20,0.2)', borderRadius: 8, padding: 28, position: 'sticky', top: 24 }}>
             <div style={{ fontFamily: serif, fontSize: 20, fontWeight: 500, marginBottom: 20 }}>Ticket Summary</div>
 
             {selectedTier && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(232,184,75,0.08)', fontSize: 13 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(240,120,20,0.08)', fontSize: 13 }}>
                 <div>
                   <div style={{ color: C.charcoal }}>{selectedTier.name} × {quantity}</div>
                   <div style={{ fontSize: 11, color: C.warmGray }}>{event.title}</div>
@@ -470,7 +470,7 @@ export default function EventCheckoutPage() {
             </div>
 
             {/* QR preview */}
-            <div style={{ marginTop: 20, padding: 16, background: C.goldPale, borderRadius: 6, textAlign: 'center', border: '1px solid rgba(232,184,75,0.2)' }}>
+            <div style={{ marginTop: 20, padding: 16, background: C.goldPale, borderRadius: 6, textAlign: 'center', border: '1px solid rgba(240,120,20,0.2)' }}>
               <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray, marginBottom: 10 }}>Your tickets after payment</div>
               <div style={{ width: 80, height: 80, margin: '0 auto 8px', background: C.charcoal, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={C.gold} strokeWidth="1.5">
@@ -497,7 +497,7 @@ export default function EventCheckoutPage() {
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontFamily: serif, fontSize: 20, fontWeight: 500, color: C.charcoal, marginBottom: 16, paddingBottom: 10, borderBottom: '1px solid rgba(232,184,75,0.15)' }}>
+    <div style={{ fontFamily: serif, fontSize: 20, fontWeight: 500, color: C.charcoal, marginBottom: 16, paddingBottom: 10, borderBottom: '1px solid rgba(240,120,20,0.15)' }}>
       {children}
     </div>
   );
@@ -523,7 +523,7 @@ function MetaItem({ icon, children }: { icon: string; children: React.ReactNode 
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: 13, borderBottom: '1px solid rgba(232,184,75,0.08)' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: 13, borderBottom: '1px solid rgba(240,120,20,0.08)' }}>
       <span style={{ color: C.warmGray }}>{label}</span>
       <span>{value}</span>
     </div>
@@ -531,7 +531,7 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 }
 
 const inputStyle: React.CSSProperties = {
-  borderWidth: '1px', borderStyle: 'solid', borderColor: 'rgba(232,184,75,0.25)',
+  borderWidth: '1px', borderStyle: 'solid', borderColor: 'rgba(240,120,20,0.25)',
   borderRadius: 4, padding: '11px 14px', fontSize: 13, fontFamily: sans,
   background: C.white, color: C.charcoal, outline: 'none', width: '100%',
   boxSizing: 'border-box', transition: 'border-color 0.2s',
@@ -548,7 +548,7 @@ function btnStyle(disabled: boolean): React.CSSProperties {
 
 const btnSecondaryStyle: React.CSSProperties = {
   padding: '14px 24px', background: C.white, color: C.charcoal,
-  border: `1px solid rgba(232,184,75,0.3)`, borderRadius: 4,
+  border: `1px solid rgba(240,120,20,0.3)`, borderRadius: 4,
   fontFamily: sans, fontSize: 13, fontWeight: 500, letterSpacing: '0.08em',
   textTransform: 'uppercase', cursor: 'pointer',
 };

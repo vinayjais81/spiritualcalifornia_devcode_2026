@@ -17,9 +17,9 @@ export function ProductTabs({ tabs }: ProductTabsProps) {
   if (!tabs || tabs.length === 0) return null;
 
   return (
-    <div style={{ borderTop: '1px solid rgba(232,184,75,0.15)', marginTop: 32 }}>
+    <div style={{ borderTop: '1px solid rgba(240,120,20,0.15)', marginTop: 32 }}>
       {/* Tab headers */}
-      <div style={{ display: 'flex', borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
         {tabs.map((tab, i) => (
           <button
             key={i}

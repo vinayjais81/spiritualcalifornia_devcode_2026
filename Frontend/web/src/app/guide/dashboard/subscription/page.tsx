@@ -25,7 +25,7 @@ export default function SubscriptionPage() {
             ))}
             <Btn style={{ marginTop: '20px', width: '100%', justifyContent: 'center' }}>Subscribe — $50/month</Btn>
           </div>
-          <div style={{ padding: '24px', border: '1px solid rgba(232,184,75,0.2)', borderRadius: '12px' }}>
+          <div style={{ padding: '24px', border: '1px solid rgba(240,120,20,0.2)', borderRadius: '12px' }}>
             <div style={{ fontFamily: serif, fontSize: '22px', fontWeight: 500, color: C.charcoal, marginBottom: '6px' }}>Annual Plan</div>
             <div style={{ fontFamily: serif, fontSize: '36px', fontWeight: 400, color: C.charcoal, marginBottom: '12px' }}>$480<span style={{ fontSize: '16px', color: C.warmGray }}>/year</span></div>
             <div style={{ fontFamily: font, fontSize: '12px', color: C.green, fontWeight: 500, marginBottom: '12px' }}>Save $120 vs. monthly</div>

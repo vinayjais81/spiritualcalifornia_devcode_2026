@@ -172,7 +172,7 @@ export default function EventsPage() {
       </PageHeader>
       <Panel title="Your Events" icon="📅">
         {events.length === 0 ? <EmptyState message="No events yet." /> : events.map(ev => (
-          <div key={ev.id} style={{ display: 'grid', gridTemplateColumns: '80px 1fr auto auto auto 36px', gap: '12px', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
+          <div key={ev.id} style={{ display: 'grid', gridTemplateColumns: '80px 1fr auto auto auto 36px', gap: '12px', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
             <EventDateBox startTime={ev.startTime} />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -253,7 +253,7 @@ export default function EventsPage() {
             <label style={{
               display: 'inline-flex', alignItems: 'center', gap: '6px',
               padding: '8px 16px', fontFamily: font, fontSize: '12px', fontWeight: 500,
-              background: C.goldPale, border: '1.5px solid rgba(232,184,75,0.5)',
+              background: C.goldPale, border: '1.5px solid rgba(240,120,20,0.5)',
               borderRadius: '6px', cursor: 'pointer', color: C.charcoal,
               transition: 'all 0.2s', opacity: uploadingCover ? 0.6 : 1,
             }}>

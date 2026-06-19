@@ -29,7 +29,7 @@ export function PractitionerCard({
           height: '130px',
           borderRadius: '50%',
           overflow: 'hidden',
-          border: '2px solid rgba(232,184,75,0.5)',
+          border: '2px solid rgba(240,120,20,0.5)',
           marginBottom: '14px',
           position: 'relative',
           transition: 'border-color 0.3s, transform 0.3s',

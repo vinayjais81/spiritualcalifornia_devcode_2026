@@ -120,7 +120,7 @@ export default function JournalPage() {
 
       {/* Filter Bar */}
       <div style={{
-        background: '#fff', borderBottom: '1px solid rgba(232,184,75,0.1)',
+        background: '#fff', borderBottom: '1px solid rgba(240,120,20,0.1)',
         position: 'sticky', top: 69, zIndex: 90,
         padding: '0 48px',
       }}>
@@ -153,7 +153,7 @@ export default function JournalPage() {
               placeholder="Search articles..."
               style={{
                 padding: '9px 16px 9px 36px', borderRadius: 24,
-                background: '#F5F2EB', border: '1px solid rgba(232,184,75,0.15)',
+                background: '#F5F2EB', border: '1px solid rgba(240,120,20,0.15)',
                 fontSize: 12, color: '#3A3530', outline: 'none', width: 200,
               }}
             />
@@ -174,7 +174,7 @@ export default function JournalPage() {
           {topics.map((topic) => (
             <button key={topic} style={{
               padding: '6px 14px', borderRadius: 20,
-              background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.2)',
+              background: '#FEF7F0', border: '1px solid rgba(240,120,20,0.2)',
               fontSize: 12, color: '#3A3530', cursor: 'pointer',
               transition: 'all 0.2s',
             }}>
@@ -194,7 +194,7 @@ export default function JournalPage() {
           display: 'flex', alignItems: 'center', gap: 12,
         }}>
           Featured
-          <span style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.25)' }} />
+          <span style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.25)' }} />
         </div>
 
         {/* Featured Hero */}
@@ -220,13 +220,13 @@ export default function JournalPage() {
           display: 'flex', alignItems: 'center', gap: 12,
         }}>
           Latest Posts
-          <span style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.25)' }} />
+          <span style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.25)' }} />
         </div>
 
         {loading ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28 }}>
             {[...Array(6)].map((_, i) => (
-              <div key={i} style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(232,184,75,0.1)' }}>
+              <div key={i} style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(240,120,20,0.1)' }}>
                 <div style={{ height: 190, background: '#FEF7F0' }} />
                 <div style={{ padding: '18px 20px' }}>
                   <div style={{ height: 12, background: '#f0eeeb', borderRadius: 4, width: '40%', marginBottom: 10 }} />
@@ -239,7 +239,7 @@ export default function JournalPage() {
         ) : posts.length === 0 ? (
           <div style={{
             textAlign: 'center', padding: '60px 24px',
-            background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.2)', borderRadius: 16,
+            background: '#FEF7F0', border: '1px solid rgba(240,120,20,0.2)', borderRadius: 16,
             color: '#8A8278', fontSize: 14,
           }}>
             No articles yet. Check back soon — new stories land here from our verified practitioners.
@@ -268,7 +268,7 @@ export default function JournalPage() {
         <div style={{ textAlign: 'center', marginTop: 40 }}>
           <button style={{
             padding: '14px 32px', borderRadius: 8,
-            background: 'transparent', border: '1.5px solid rgba(232,184,75,0.3)',
+            background: 'transparent', border: '1.5px solid rgba(240,120,20,0.3)',
             fontFamily: "'Inter', sans-serif",
             fontSize: 12, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase',
             color: '#3A3530', cursor: 'pointer',

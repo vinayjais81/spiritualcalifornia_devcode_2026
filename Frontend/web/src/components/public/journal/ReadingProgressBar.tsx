@@ -22,7 +22,7 @@ export function ReadingProgressBar() {
   return (
     <div style={{
       position: 'fixed', top: 69, left: 0, right: 0, zIndex: 95,
-      height: 3, background: 'rgba(232,184,75,0.1)',
+      height: 3, background: 'rgba(240,120,20,0.1)',
     }}>
       <div style={{
         height: '100%', background: '#F07814',

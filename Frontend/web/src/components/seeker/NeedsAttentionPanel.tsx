@@ -110,7 +110,7 @@ export function NeedsAttentionPanel() {
       <AttentionRow
         key="cart"
         icon="🛍️"
-        iconBg="rgba(232,184,75,0.18)"
+        iconBg="rgba(240,120,20,0.18)"
         title="Your cart is waiting"
         subtitle={`${data.cart.itemCount} item${data.cart.itemCount !== 1 ? 's' : ''} · ${fmtMoney(data.cart.subtotal)} — complete checkout anytime.`}
         warningLabel={data.cart.hasWarnings ? 'Some items changed' : undefined}
@@ -130,7 +130,7 @@ export function NeedsAttentionPanel() {
       <AttentionRow
         key={`tour-${tour.id}`}
         icon="🌍"
-        iconBg="rgba(232,184,75,0.12)"
+        iconBg="rgba(240,120,20,0.12)"
         title={tour.title}
         subtitle={
           `${tour.travelers} traveller${tour.travelers > 1 ? 's' : ''} · Deposit due ${fmtMoney(tour.depositDue)} of ${fmtMoney(tour.totalAmount)}`
@@ -194,7 +194,7 @@ export function NeedsAttentionPanel() {
         <span>✦ Needs your attention</span>
         <span style={{
           padding: '2px 8px', borderRadius: 10,
-          background: 'rgba(232,184,75,0.15)', color: '#B8960F',
+          background: 'rgba(240,120,20,0.15)', color: '#B8960F',
           fontSize: 10, fontWeight: 600,
         }}>
           {rows.length}
@@ -258,7 +258,7 @@ function AttentionRow({
           {badge && (
             <span style={{
               fontFamily: font, fontSize: 9, letterSpacing: '0.2em', textTransform: 'uppercase',
-              color: 'rgba(232,184,75,0.75)',
+              color: 'rgba(240,120,20,0.75)',
             }}>
               {badge}
             </span>
@@ -268,8 +268,8 @@ function AttentionRow({
               fontFamily: font, fontSize: 10, fontWeight: 600,
               letterSpacing: '0.08em', textTransform: 'uppercase',
               padding: '2px 8px', borderRadius: 10,
-              background: deadline.urgent ? 'rgba(231,76,60,0.18)' : 'rgba(232,184,75,0.15)',
-              color: deadline.urgent ? '#FF7A6E' : 'rgba(232,184,75,0.9)',
+              background: deadline.urgent ? 'rgba(231,76,60,0.18)' : 'rgba(240,120,20,0.15)',
+              color: deadline.urgent ? '#FF7A6E' : 'rgba(240,120,20,0.9)',
             }}>
               ⏱ {deadline.label}
             </span>
@@ -302,8 +302,8 @@ function AttentionRow({
           {thumbnails.slice(0, 3).map((src, i) => (
             <div key={i} style={{
               width: 44, height: 44, borderRadius: 8, overflow: 'hidden',
-              background: 'rgba(232,184,75,0.08)',
-              border: '1px solid rgba(232,184,75,0.2)',
+              background: 'rgba(240,120,20,0.08)',
+              border: '1px solid rgba(240,120,20,0.2)',
             }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -331,7 +331,7 @@ function AttentionRow({
             style={{
               padding: '10px 20px', borderRadius: 8,
               background: 'transparent', color: '#FDE8D0',
-              border: '1.5px solid rgba(232,184,75,0.35)',
+              border: '1.5px solid rgba(240,120,20,0.35)',
               fontFamily: font, fontSize: 11, fontWeight: 500,
               letterSpacing: '0.08em', textTransform: 'uppercase',
               textDecoration: 'none', whiteSpace: 'nowrap',

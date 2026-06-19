@@ -22,7 +22,7 @@ export function CategoryStrip({ active, onChange }: CategoryStripProps) {
   return (
     <div style={{
       background: '#fff',
-      borderBottom: '1px solid rgba(232,184,75,0.1)',
+      borderBottom: '1px solid rgba(240,120,20,0.1)',
       position: 'sticky', top: 69, zIndex: 90,
     }}>
       <div style={{

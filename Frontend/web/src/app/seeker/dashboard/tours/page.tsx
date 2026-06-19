@@ -115,7 +115,7 @@ export default function MyToursPage() {
       {/* Stats row */}
       {bookings.length > 0 && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 36 }}>
-          <div style={{ background: C.white, border: `1px solid rgba(232,184,75,0.15)`, borderRadius: 12, padding: 24, textAlign: 'center' }}>
+          <div style={{ background: C.white, border: `1px solid rgba(240,120,20,0.15)`, borderRadius: 12, padding: 24, textAlign: 'center' }}>
             <div style={{ fontFamily: serif, fontSize: 36, fontWeight: 500, color: C.charcoal }}>{bookings.length}</div>
             <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray }}>Total Bookings</div>
           </div>
@@ -125,7 +125,7 @@ export default function MyToursPage() {
           </div>
           <div style={{
             background: stats.balanceOwed > 0 ? '#FFF3E0' : C.white,
-            border: stats.balanceOwed > 0 ? '1px solid #FFCC80' : `1px solid rgba(232,184,75,0.15)`,
+            border: stats.balanceOwed > 0 ? '1px solid #FFCC80' : `1px solid rgba(240,120,20,0.15)`,
             borderRadius: 12, padding: 24, textAlign: 'center',
           }}>
             <div style={{ fontFamily: serif, fontSize: 36, fontWeight: 500, color: stats.balanceOwed > 0 ? '#E65100' : C.charcoal }}>
@@ -148,7 +148,7 @@ export default function MyToursPage() {
                 fontWeight: filter === f ? 500 : 400, cursor: 'pointer',
                 background: filter === f ? C.charcoal : 'transparent',
                 color: filter === f ? C.gold : C.warmGray,
-                border: filter === f ? 'none' : '1px solid rgba(232,184,75,0.3)',
+                border: filter === f ? 'none' : '1px solid rgba(240,120,20,0.3)',
                 textTransform: 'capitalize',
               }}
             >
@@ -161,7 +161,7 @@ export default function MyToursPage() {
       {/* List */}
       {bookings.length === 0 ? (
         <div style={{
-          background: C.white, border: '1px dashed rgba(232,184,75,0.35)',
+          background: C.white, border: '1px dashed rgba(240,120,20,0.35)',
           borderRadius: 12, padding: 60, textAlign: 'center',
         }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🌍</div>
@@ -196,7 +196,7 @@ export default function MyToursPage() {
                 style={{ textDecoration: 'none', color: 'inherit' }}
               >
                 <div style={{
-                  background: C.white, border: '1px solid rgba(232,184,75,0.15)',
+                  background: C.white, border: '1px solid rgba(240,120,20,0.15)',
                   borderRadius: 12, overflow: 'hidden',
                   display: 'grid', gridTemplateColumns: '180px 1fr auto',
                   cursor: 'pointer', transition: 'box-shadow 0.2s',
@@ -228,7 +228,7 @@ export default function MyToursPage() {
                         <span style={{
                           fontFamily: 'monospace', fontSize: 11, color: C.warmGray,
                           padding: '2px 8px', background: C.offWhite, borderRadius: 4,
-                          border: '1px solid rgba(232,184,75,0.15)',
+                          border: '1px solid rgba(240,120,20,0.15)',
                         }}>
                           {b.bookingReference}
                         </span>
@@ -257,7 +257,7 @@ export default function MyToursPage() {
                   <div style={{
                     padding: 24, display: 'flex', flexDirection: 'column', gap: 8,
                     alignItems: 'flex-end', justifyContent: 'center',
-                    borderLeft: '1px solid rgba(232,184,75,0.1)',
+                    borderLeft: '1px solid rgba(240,120,20,0.1)',
                     minWidth: 180,
                   }}>
                     <div style={{ fontSize: 10, color: C.warmGray, letterSpacing: '0.06em', textTransform: 'uppercase' }}>Total</div>

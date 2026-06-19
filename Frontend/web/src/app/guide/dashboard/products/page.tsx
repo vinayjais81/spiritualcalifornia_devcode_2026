@@ -286,7 +286,7 @@ export default function ProductsPage() {
       </PageHeader>
       <Panel title="Your Products" icon="🛍️">
         {products.length === 0 ? <EmptyState message="No products yet." /> : products.map(p => (
-          <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '60px 1fr 100px auto 36px', gap: '12px', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
+          <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '60px 1fr 100px auto 36px', gap: '12px', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
             <ProductThumb imageUrls={p.imageUrls} type={p.type} />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -294,7 +294,7 @@ export default function ProductsPage() {
                 {p.isActive === false && (
                   <span style={{
                     padding: '2px 8px', borderRadius: 10,
-                    background: 'rgba(232,184,75,0.15)',
+                    background: 'rgba(240,120,20,0.15)',
                     color: '#B8960F', fontSize: 10, fontWeight: 600,
                     letterSpacing: '0.06em', textTransform: 'uppercase',
                   }}>
@@ -320,8 +320,8 @@ export default function ProductsPage() {
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           gap: 16, marginBottom: 20, padding: '14px 18px',
-          background: form.isActive ? 'rgba(90,138,106,0.08)' : 'rgba(232,184,75,0.08)',
-          border: `1.5px solid ${form.isActive ? 'rgba(90,138,106,0.35)' : 'rgba(232,184,75,0.35)'}`,
+          background: form.isActive ? 'rgba(90,138,106,0.08)' : 'rgba(240,120,20,0.08)',
+          border: `1.5px solid ${form.isActive ? 'rgba(90,138,106,0.35)' : 'rgba(240,120,20,0.35)'}`,
           borderRadius: 10,
         }}>
           <div>
@@ -402,7 +402,7 @@ export default function ProductsPage() {
                     <div key={i} style={{
                       display: 'flex', alignItems: 'center', gap: '10px',
                       padding: '10px 14px', background: C.offWhite,
-                      border: `1px solid ${file.uploading ? 'rgba(138,130,120,0.35)' : 'rgba(232,184,75,0.3)'}`,
+                      border: `1px solid ${file.uploading ? 'rgba(138,130,120,0.35)' : 'rgba(240,120,20,0.3)'}`,
                       borderRadius: '8px', opacity: file.uploading ? 0.7 : 1,
                     }}>
                       <span style={{ fontSize: '20px' }}>{file.uploading ? '⏳' : fileIcon(file.name)}</span>
@@ -434,7 +434,7 @@ export default function ProductsPage() {
                 <label style={{
                   display: 'inline-flex', alignItems: 'center', gap: '6px',
                   padding: '8px 16px', fontFamily: font, fontSize: '12px', fontWeight: 500,
-                  background: C.goldPale, border: '1.5px solid rgba(232,184,75,0.5)',
+                  background: C.goldPale, border: '1.5px solid rgba(240,120,20,0.5)',
                   borderRadius: '6px', cursor: 'pointer', color: C.charcoal,
                 }}>
                   📎 Upload Files
@@ -458,7 +458,7 @@ export default function ProductsPage() {
             {imagePreviews.length > 0 && (
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '12px' }}>
                 {imagePreviews.map((img, i) => (
-                  <div key={i} style={{ position: 'relative', width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: `1.5px solid rgba(232,184,75,0.3)` }}>
+                  <div key={i} style={{ position: 'relative', width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: `1.5px solid rgba(240,120,20,0.3)` }}>
                     <img
                       src={img}
                       alt={`Product ${i + 1}`}
@@ -468,7 +468,7 @@ export default function ProductsPage() {
                     {i === 0 && (
                       <div style={{
                         position: 'absolute', bottom: 0, left: 0, right: 0,
-                        background: 'rgba(232,184,75,0.9)', color: C.white,
+                        background: 'rgba(240,120,20,0.9)', color: C.white,
                         fontFamily: font, fontSize: '9px', fontWeight: 600,
                         textAlign: 'center', padding: '2px 0',
                         letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -498,7 +498,7 @@ export default function ProductsPage() {
               <label style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                 padding: '8px 16px', fontFamily: font, fontSize: '12px', fontWeight: 500,
-                background: C.goldPale, border: '1.5px solid rgba(232,184,75,0.5)',
+                background: C.goldPale, border: '1.5px solid rgba(240,120,20,0.5)',
                 borderRadius: '6px', cursor: 'pointer', color: C.charcoal,
               }}>
                 📁 {imagePreviews.length > 0 ? 'Add More Images' : 'Upload Product Images'}

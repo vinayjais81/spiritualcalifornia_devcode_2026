@@ -32,10 +32,10 @@ export function PostCard({
       onMouseLeave={() => setHovered(false)}
     >
       <div style={{
-        background: '#fff', border: '1px solid rgba(232,184,75,0.1)',
+        background: '#fff', border: '1px solid rgba(240,120,20,0.1)',
         borderRadius: 12, overflow: 'hidden',
         transition: 'box-shadow 0.3s, transform 0.3s',
-        boxShadow: hovered ? '0 8px 32px rgba(232,184,75,0.12)' : 'none',
+        boxShadow: hovered ? '0 8px 32px rgba(240,120,20,0.12)' : 'none',
         transform: hovered ? 'translateY(-3px)' : 'none',
       }}>
         {/* Image */}

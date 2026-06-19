@@ -153,8 +153,16 @@ All work on a feature branch **`design-v6-rebrand`** off `main`, shipped as smal
 4. Custom cursor: **already present** in the codebase (`globals.css` `.public-site { cursor: url('/cursor.png') }`) — no change needed.
 5. **Remaining for Phase 0 follow-up / Phase 1:** visual QA in the running app (token swap is mechanical; the dark→light AI-bar re-themes on practitioners/events/travels are Phase 1/2 work, not covered by the codemod).
 
-**Phase 1 — Pure restyles** *(low risk, high visible impact; validates the token system)*
-`events` · `soul-travels` (no rating tile) · `practitioners` (light AI bar) · `practitioner-public` · `register` · `checkout-digital` · `book-practitioner` · `about` (CMS recolor + copy).
+**Phase 1 — Pure restyles** ✅ **DONE 2026-06-19** (branch `design-v6-rebrand`)
+- **Phase 0 follow-up sweep:** the hex-only codemod missed the old gold in **rgba form** — swept `rgba(232,184,75,…)` → `rgba(240,120,20,…)` (541 occurrences / 109 files) and `rgba(253,246,227,…)` → `rgba(254,247,240,…)`. Zero stragglers.
+- ✅ `events` — hero flipped dark→light (`#F5F2EB→#FDE8D0`), title/subtitle re-themed to charcoal.
+- ✅ `soul-travels` — hero flipped dark→light; **rating tile kept removed** (compliance Task 7); Stat labels re-themed to charcoal.
+- ✅ `practitioners` — AI bar flipped dark→light: gradient, heading/subtitle/input/chips re-themed; `CrisisResourcesCard` + `AINonAdviceFooter` switched `variant="dark"`→`"light"`. Real `/ai/practitioner-match` + crisis detection preserved.
+- ✅ `register` — verified; already correctly rebranded by Phase 0 (the one `#fff` is white-on-charcoal button text). No change needed.
+- ✅ `checkout` (digital branch) — verified; the instant-delivery banner is **dark by design** (`background: var(--charcoal)`, gold-light heading) and already matches. 7-day download-link copy kept (design's "30 days" not adopted).
+- ✅ `book-practitioner` — verified; no dark sections, Calendly embed + Stripe intact.
+- ✅ `about` — recolored via the Phase 0 codemod (`StaticPageRenderer`). Loading the new "Two Girls, One Vision" copy into the `about` CMS row is a **client content task**, not code.
+- ⏸️ **`practitioner-public` (`/guides/[slug]`) — DEFERRED to Phase 2.** Page is rebranded by Phase 0, but the design moves the profile header from the current **dark cover-image banner** to a **white** header (`.profile-header-wrap { background: var(--white) }`), which requires repositioning the avatar + stat tiles — a structural change, not a token swap. Moved out of the low-risk pass.
 
 **Phase 2 — Structural restyles** *(careful — preserve logic)*
 `index` (home) · `practitioner-dashboard` (preserve all sidebar/widgets) · `checkout` / `checkout-physical` / `checkout-event` (keep Payment Element + flow) · `cart` (re-graft abandoned-items + warnings) · `product-digital` / `product-physical` · `mission` · `book-soul-tour` (preserve compliance JSX).

@@ -128,7 +128,7 @@ export default function SinglePostPage() {
         {/* Author bar */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 14,
-          paddingBottom: 32, borderBottom: '1px solid rgba(232,184,75,0.15)',
+          paddingBottom: 32, borderBottom: '1px solid rgba(240,120,20,0.15)',
         }}>
           <Link href={`/guides/${post.guide.slug}`} style={{ textDecoration: 'none' }}>
             <div style={{
@@ -155,7 +155,7 @@ export default function SinglePostPage() {
           </div>
           <button style={{
             padding: '7px 18px', borderRadius: 6,
-            background: 'transparent', border: '1.5px solid rgba(232,184,75,0.3)',
+            background: 'transparent', border: '1.5px solid rgba(240,120,20,0.3)',
             fontSize: 11, fontWeight: 500, color: '#3A3530', cursor: 'pointer',
           }}>
             Follow
@@ -218,7 +218,7 @@ export default function SinglePostPage() {
           {post.tags.map((tag) => (
             <span key={tag} style={{
               padding: '6px 16px', borderRadius: 20,
-              background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.2)',
+              background: '#FEF7F0', border: '1px solid rgba(240,120,20,0.2)',
               fontSize: 12, color: '#3A3530',
             }}>
               {tag}
@@ -230,8 +230,8 @@ export default function SinglePostPage() {
       {/* Share Bar */}
       <div style={{
         maxWidth: 680, margin: '0 auto', padding: '24px',
-        borderTop: '1px solid rgba(232,184,75,0.15)',
-        borderBottom: '1px solid rgba(232,184,75,0.15)',
+        borderTop: '1px solid rgba(240,120,20,0.15)',
+        borderBottom: '1px solid rgba(240,120,20,0.15)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -239,7 +239,7 @@ export default function SinglePostPage() {
           {['Twitter', 'LinkedIn', 'Copy Link'].map((s) => (
             <button key={s} style={{
               padding: '8px 16px', borderRadius: 6,
-              background: 'transparent', border: '1.5px solid rgba(232,184,75,0.2)',
+              background: 'transparent', border: '1.5px solid rgba(240,120,20,0.2)',
               fontSize: 11, color: '#3A3530', cursor: 'pointer',
             }}>
               {s}
@@ -276,7 +276,7 @@ export default function SinglePostPage() {
             display: 'flex', alignItems: 'center', gap: 12,
           }}>
             You May Also Like
-            <span style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.25)' }} />
+            <span style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.25)' }} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {related.map((rp) => (

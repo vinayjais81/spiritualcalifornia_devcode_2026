@@ -226,7 +226,7 @@ export default function ProductDetailPage() {
                 {['Audio · MP3', '47 Minutes', 'Instant Access', 'Lifetime Download'].map((tag, i) => (
                   <span key={i} style={{
                     padding: '5px 12px', borderRadius: 20,
-                    background: '#fff', border: '1px solid rgba(232,184,75,0.15)',
+                    background: '#fff', border: '1px solid rgba(240,120,20,0.15)',
                     fontSize: 11, color: '#8A8278',
                   }}>
                     {tag}
@@ -362,7 +362,7 @@ export default function ProductDetailPage() {
               <span style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8A8278' }}>
                 Qty
               </span>
-              <div style={{ display: 'flex', alignItems: 'center', border: '1px solid rgba(232,184,75,0.2)', borderRadius: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', border: '1px solid rgba(240,120,20,0.2)', borderRadius: 8 }}>
                 <button onClick={() => setQuantity(Math.max(1, quantity - 1))} style={{
                   padding: '8px 14px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: '#3A3530',
                 }}>−</button>
@@ -421,7 +421,7 @@ export default function ProductDetailPage() {
               ].map((f, i) => (
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: 10, padding: 12,
-                  background: '#F5F2EB', border: '1px solid rgba(232,184,75,0.1)',
+                  background: '#F5F2EB', border: '1px solid rgba(240,120,20,0.1)',
                   borderRadius: 8,
                 }}>
                   <span style={{ fontSize: 22 }}>{f.icon}</span>

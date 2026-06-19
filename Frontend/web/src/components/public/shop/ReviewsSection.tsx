@@ -28,7 +28,7 @@ export function ReviewsSection({ reviews, averageRating, totalReviews, columns =
             display: 'flex', alignItems: 'center', gap: 12,
           }}>
             Reviews
-            <span style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.25)' }} />
+            <span style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.25)' }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 16 }}>
             {columns === 2 && (
@@ -59,7 +59,7 @@ export function ReviewsSection({ reviews, averageRating, totalReviews, columns =
       }}>
         {reviews.map((review) => (
           <div key={review.id} style={{
-            background: '#fff', border: '1px solid rgba(232,184,75,0.1)',
+            background: '#fff', border: '1px solid rgba(240,120,20,0.1)',
             borderRadius: 12, padding: 24,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>

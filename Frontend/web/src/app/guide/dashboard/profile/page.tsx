@@ -108,7 +108,7 @@ export default function ProfilePage() {
               display: 'inline-flex', alignItems: 'center', gap: '6px',
               padding: '7px 14px', fontFamily: font, fontSize: '11px', fontWeight: 500,
               letterSpacing: '0.08em', textTransform: 'uppercase' as const,
-              background: 'transparent', border: '1.5px solid rgba(232,184,75,0.5)',
+              background: 'transparent', border: '1.5px solid rgba(240,120,20,0.5)',
               borderRadius: '6px', cursor: 'pointer', color: C.charcoal,
               transition: 'all 0.2s',
             }}>
@@ -178,7 +178,7 @@ export default function ProfilePage() {
               <span key={i} style={{
                 display: 'inline-flex', alignItems: 'center', gap: '6px',
                 padding: '5px 12px', borderRadius: '20px',
-                background: C.goldPale, border: '1px solid rgba(232,184,75,0.4)',
+                background: C.goldPale, border: '1px solid rgba(240,120,20,0.4)',
                 fontFamily: font, fontSize: '12px', color: C.charcoal,
               }}>
                 {tag}

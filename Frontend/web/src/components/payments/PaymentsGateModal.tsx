@@ -72,7 +72,7 @@ export function PaymentsGateModal() {
           maxWidth: 480,
           width: '100%',
           boxShadow: '0 12px 48px rgba(0,0,0,0.18)',
-          border: '1px solid rgba(232,184,75,0.18)',
+          border: '1px solid rgba(240,120,20,0.18)',
         }}
       >
         <div

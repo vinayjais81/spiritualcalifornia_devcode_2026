@@ -184,7 +184,7 @@ function PendingRow({
 
 const typeBadge = (type: string) => {
   const map: Record<string, { label: string; bg: string }> = {
-    DIGITAL: { label: 'Digital', bg: 'rgba(232,184,75,0.15)' },
+    DIGITAL: { label: 'Digital', bg: 'rgba(240,120,20,0.15)' },
     EVENT_TICKET: { label: 'Event', bg: 'rgba(90,138,106,0.12)' },
     SOUL_TOUR: { label: 'Tour', bg: 'rgba(240,120,32,0.1)' },
   };
@@ -343,7 +343,7 @@ export default function CartPage() {
                 <PendingRow
                   key={`tour-${tour.id}`}
                   badge="Tour · Deposit due"
-                  badgeColor="rgba(232,184,75,0.18)"
+                  badgeColor="rgba(240,120,20,0.18)"
                   icon="🌍"
                   coverUrl={tour.coverImageUrl}
                   title={tour.title}
@@ -469,11 +469,11 @@ export default function CartPage() {
                   <span>{section.label} ({sectionItems.length})</span>
                   <span style={{ fontWeight: 400, color: 'rgba(255,255,255,0.5)' }}>{section.note}</span>
                 </div>
-                <div style={{ border: '1px solid rgba(232,184,75,0.1)', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
+                <div style={{ border: '1px solid rgba(240,120,20,0.1)', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
                   {sectionItems.map((item, i) => (
                     <div key={item.id} style={{
                       display: 'flex', alignItems: 'center', gap: 16, padding: '16px 18px',
-                      borderBottom: i < sectionItems.length - 1 ? '1px solid rgba(232,184,75,0.08)' : 'none',
+                      borderBottom: i < sectionItems.length - 1 ? '1px solid rgba(240,120,20,0.08)' : 'none',
                     }}>
                       <div style={{
                         width: 80, height: 80, borderRadius: 8, overflow: 'hidden', flexShrink: 0,
@@ -494,7 +494,7 @@ export default function CartPage() {
                         {item.guideName && <div style={{ fontSize: 11, color: '#8A8278' }}>by {item.guideName}</div>}
                       </div>
                       {/* Qty controls */}
-                      <div style={{ display: 'flex', alignItems: 'center', border: '1px solid rgba(232,184,75,0.2)', borderRadius: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', border: '1px solid rgba(240,120,20,0.2)', borderRadius: 6 }}>
                         <button onClick={() => updateQuantity(item.id, item.quantity - 1)} style={{ padding: '6px 10px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#3A3530' }}>−</button>
                         <span style={{ padding: '6px 12px', fontSize: 13, fontWeight: 500, minWidth: 30, textAlign: 'center' }}>{item.quantity}</span>
                         <button onClick={() => updateQuantity(item.id, item.quantity + 1)} style={{ padding: '6px 10px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#3A3530' }}>+</button>
@@ -518,7 +518,7 @@ export default function CartPage() {
             time we're here items.length is guaranteed > 0 and the summary
             always renders. */}
         <div>
-          <div style={{ background: '#fff', border: '1px solid rgba(232,184,75,0.15)', borderRadius: 12, position: 'sticky', top: 100, padding: 24 }}>
+          <div style={{ background: '#fff', border: '1px solid rgba(240,120,20,0.15)', borderRadius: 12, position: 'sticky', top: 100, padding: 24 }}>
             <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 500, color: '#3A3530', marginBottom: 20 }}>
               Order Summary
             </h3>
@@ -545,7 +545,7 @@ export default function CartPage() {
                 title="Please review and acknowledge the warnings above first"
                 style={{
                   display: 'block', width: '100%', padding: 16, borderRadius: 8, marginTop: 20,
-                  background: 'rgba(58,53,48,0.35)', color: 'rgba(232,184,75,0.7)', textAlign: 'center',
+                  background: 'rgba(58,53,48,0.35)', color: 'rgba(240,120,20,0.7)', textAlign: 'center',
                   fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
                   cursor: 'not-allowed',
                 }}
@@ -564,7 +564,7 @@ export default function CartPage() {
             )}
             <Link href="/shop" style={{
               display: 'block', width: '100%', padding: 14, borderRadius: 8, marginTop: 10,
-              border: '1.5px solid rgba(232,184,75,0.3)', color: '#3A3530', textAlign: 'center',
+              border: '1.5px solid rgba(240,120,20,0.3)', color: '#3A3530', textAlign: 'center',
               fontSize: 12, fontWeight: 500, letterSpacing: '0.06em',
               textDecoration: 'none',
             }}>
@@ -647,7 +647,7 @@ export default function CartPage() {
               <PendingRow
                 key={`tour-${tour.id}`}
                 badge="Tour · Deposit due"
-                badgeColor="rgba(232,184,75,0.18)"
+                badgeColor="rgba(240,120,20,0.18)"
                 icon="🌍"
                 coverUrl={tour.coverImageUrl}
                 title={tour.title}

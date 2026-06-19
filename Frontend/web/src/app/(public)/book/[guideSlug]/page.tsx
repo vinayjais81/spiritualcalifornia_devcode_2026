@@ -86,7 +86,7 @@ function formatTypeBadge(type: string) {
   switch (type) {
     case 'VIRTUAL': return { label: 'Online', bg: '#E8F5E9', color: '#2E7D32', border: '#A5D6A7' };
     case 'IN_PERSON': return { label: 'In-Person', bg: '#FFF3E0', color: '#E65100', border: '#FFCC80' };
-    default: return { label: 'Online & In-Person', bg: C.goldPale, color: C.charcoal, border: 'rgba(232,184,75,0.4)' };
+    default: return { label: 'Online & In-Person', bg: C.goldPale, color: C.charcoal, border: 'rgba(240,120,20,0.4)' };
   }
 }
 
@@ -349,12 +349,12 @@ export default function BookPractitionerPage() {
   if (showSuccess) {
     return (
       <div style={{ minHeight: '100vh', background: C.offWhite }}>
-        <nav style={{ padding: '14px 48px', background: 'rgba(250,250,247,0.97)', borderBottom: '1px solid rgba(232,184,75,0.15)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <nav style={{ padding: '14px 48px', background: 'rgba(250,250,247,0.97)', borderBottom: '1px solid rgba(240,120,20,0.15)', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontFamily: serif, fontSize: '18px', fontWeight: 500, color: C.charcoal }}>Spiritual California</span>
         </nav>
 
         <div style={{ textAlign: 'center', padding: '60px 32px', maxWidth: '560px', margin: '0 auto' }}>
-          <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'rgba(232,184,75,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '32px', color: C.gold }}>
+          <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'rgba(240,120,20,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', fontSize: '32px', color: C.gold }}>
             ✓
           </div>
           <div style={{ fontFamily: serif, fontSize: '36px', fontWeight: 400, color: C.charcoal, marginBottom: '10px' }}>
@@ -364,7 +364,7 @@ export default function BookPractitionerPage() {
             A confirmation email has been sent to your inbox with the Zoom link and everything you need to prepare for your session with {guide.displayName}.
           </p>
 
-          <div style={{ background: C.white, border: '1px solid rgba(232,184,75,0.2)', borderRadius: '8px', padding: '24px', maxWidth: '440px', margin: '0 auto 24px', textAlign: 'left' }}>
+          <div style={{ background: C.white, border: '1px solid rgba(240,120,20,0.2)', borderRadius: '8px', padding: '24px', maxWidth: '440px', margin: '0 auto 24px', textAlign: 'left' }}>
             {[
               { label: 'Service', value: selectedService?.name },
               { label: 'Practitioner', value: guide.displayName },
@@ -375,7 +375,7 @@ export default function BookPractitionerPage() {
             ].map((row, i, arr) => (
               <div key={i} style={{
                 display: 'flex', justifyContent: 'space-between', fontFamily: font, fontSize: '12px',
-                padding: '7px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(232,184,75,0.08)' : 'none',
+                padding: '7px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(240,120,20,0.08)' : 'none',
               }}>
                 <span style={{ color: C.warmGray }}>{row.label}</span>
                 <span style={{
@@ -392,7 +392,7 @@ export default function BookPractitionerPage() {
 
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
             <a href={`/guides/${guide.slug}`} style={{
-              padding: '12px 24px', border: '1px solid rgba(232,184,75,0.3)', borderRadius: '4px',
+              padding: '12px 24px', border: '1px solid rgba(240,120,20,0.3)', borderRadius: '4px',
               fontFamily: font, fontSize: '12px', letterSpacing: '0.08em', textTransform: 'uppercase' as const,
               color: C.charcoal, textDecoration: 'none',
             }}>
@@ -420,7 +420,7 @@ export default function BookPractitionerPage() {
       {/* ── Top Nav ──────────────────────────────────────────────── */}
       <nav style={{
         padding: '14px 48px', background: 'rgba(250,250,247,0.97)',
-        borderBottom: '1px solid rgba(232,184,75,0.15)',
+        borderBottom: '1px solid rgba(240,120,20,0.15)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <a href="/" style={{ fontFamily: serif, fontSize: '18px', fontWeight: 500, color: C.charcoal, textDecoration: 'none' }}>
@@ -434,7 +434,7 @@ export default function BookPractitionerPage() {
       {/* ── Step Indicator ───────────────────────────────────────── */}
       <div style={{
         display: 'flex', justifyContent: 'center', gap: '0',
-        padding: '20px 32px', background: C.white, borderBottom: '1px solid rgba(232,184,75,0.1)',
+        padding: '20px 32px', background: C.white, borderBottom: '1px solid rgba(240,120,20,0.1)',
       }}>
         {['Choose Service', 'Select Time', 'Your Details', 'Payment'].map((label, i) => {
           const stepNum = i + 1;
@@ -461,7 +461,7 @@ export default function BookPractitionerPage() {
               }}>
                 {label}
               </span>
-              {i < 3 && <div style={{ width: '32px', height: '1px', background: isDone ? C.green : 'rgba(232,184,75,0.2)', marginLeft: '12px' }} />}
+              {i < 3 && <div style={{ width: '32px', height: '1px', background: isDone ? C.green : 'rgba(240,120,20,0.2)', marginLeft: '12px' }} />}
             </div>
           );
         })}
@@ -498,7 +498,7 @@ export default function BookPractitionerPage() {
                         display: 'grid', gridTemplateColumns: '40px 1fr auto',
                         gap: '16px', alignItems: 'center', padding: '18px 20px',
                         borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s',
-                        border: selected ? `2px solid ${C.gold}` : '1px solid rgba(232,184,75,0.15)',
+                        border: selected ? `2px solid ${C.gold}` : '1px solid rgba(240,120,20,0.15)',
                         background: selected ? C.goldPale : C.white,
                       }}
                     >
@@ -541,8 +541,8 @@ export default function BookPractitionerPage() {
                   <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: C.gold, color: C.white, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: font, fontSize: '13px', fontWeight: 600 }}>1</div>
                   <span style={{ fontFamily: font, fontSize: '14px', fontWeight: 500, color: C.charcoal }}>Book a slot in Calendly</span>
                 </div>
-                <div style={{ border: '1px solid rgba(232,184,75,0.2)', borderRadius: '8px', overflow: 'hidden', background: C.white }}>
-                  <div style={{ padding: '12px 18px', background: C.offWhite, borderBottom: '1px solid rgba(232,184,75,0.1)', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: font, fontSize: '13px', color: C.charcoal }}>
+                <div style={{ border: '1px solid rgba(240,120,20,0.2)', borderRadius: '8px', overflow: 'hidden', background: C.white }}>
+                  <div style={{ padding: '12px 18px', background: C.offWhite, borderBottom: '1px solid rgba(240,120,20,0.1)', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: font, fontSize: '13px', color: C.charcoal }}>
                     📅 {guide.displayName} — Calendly Booking
                   </div>
                   {guide.calendarLink ? (
@@ -575,18 +575,18 @@ export default function BookPractitionerPage() {
                     </button>
                   </div>
                 ) : (
-                  <div style={{ padding: '20px', background: C.white, border: '1px solid rgba(232,184,75,0.2)', borderRadius: '8px' }}>
+                  <div style={{ padding: '20px', background: C.white, border: '1px solid rgba(240,120,20,0.2)', borderRadius: '8px' }}>
                     <p style={{ fontFamily: font, fontSize: '12px', color: C.warmGray, marginBottom: '14px', lineHeight: 1.5 }}>
                       After scheduling in Calendly above, enter the date and time you booked:
                     </p>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                         <label style={{ fontFamily: font, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: C.warmGray, fontWeight: 500 }}>Date *</label>
-                        <input type="date" id="manual-date" min={new Date().toISOString().split('T')[0]} style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.offWhite, border: '1px solid rgba(232,184,75,0.25)', borderRadius: '6px', padding: '11px 14px', outline: 'none', width: '100%' }} />
+                        <input type="date" id="manual-date" min={new Date().toISOString().split('T')[0]} style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.offWhite, border: '1px solid rgba(240,120,20,0.25)', borderRadius: '6px', padding: '11px 14px', outline: 'none', width: '100%' }} />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                         <label style={{ fontFamily: font, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: C.warmGray, fontWeight: 500 }}>Time *</label>
-                        <input type="time" id="manual-time" style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.offWhite, border: '1px solid rgba(232,184,75,0.25)', borderRadius: '6px', padding: '11px 14px', outline: 'none', width: '100%' }} />
+                        <input type="time" id="manual-time" style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.offWhite, border: '1px solid rgba(240,120,20,0.25)', borderRadius: '6px', padding: '11px 14px', outline: 'none', width: '100%' }} />
                       </div>
                     </div>
                     <button onClick={() => {
@@ -688,7 +688,7 @@ export default function BookPractitionerPage() {
                 Review your booking details and enter your payment information.
               </p>
 
-              <div style={{ background: C.white, border: '1px solid rgba(232,184,75,0.2)', borderRadius: '8px', padding: '24px', marginBottom: '28px' }}>
+              <div style={{ background: C.white, border: '1px solid rgba(240,120,20,0.2)', borderRadius: '8px', padding: '24px', marginBottom: '28px' }}>
                 {[
                   { label: 'Service', value: selectedService?.name },
                   { label: 'Practitioner', value: guide.displayName },
@@ -699,7 +699,7 @@ export default function BookPractitionerPage() {
                 ].map((row, i, arr) => (
                   <div key={i} style={{
                     display: 'flex', justifyContent: 'space-between', fontFamily: font, fontSize: '13px',
-                    padding: '8px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(232,184,75,0.08)' : 'none',
+                    padding: '8px 0', borderBottom: i < arr.length - 1 ? '1px solid rgba(240,120,20,0.08)' : 'none',
                   }}>
                     <span style={{ color: C.warmGray }}>{row.label}</span>
                     <span style={{ color: row.highlight ? C.gold : C.charcoal, fontWeight: row.highlight ? 600 : 400, fontSize: row.highlight ? '15px' : '13px' }}>{row.value}</span>
@@ -727,12 +727,12 @@ export default function BookPractitionerPage() {
         </div>
 
         {/* ── RIGHT: Practitioner Sidebar ─────────────────────────── */}
-        <aside style={{ position: 'sticky', top: '24px', background: C.white, border: '1px solid rgba(232,184,75,0.15)', borderRadius: '8px', overflow: 'hidden' }}>
-          <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(232,184,75,0.1)', display: 'flex', gap: '14px', alignItems: 'center' }}>
+        <aside style={{ position: 'sticky', top: '24px', background: C.white, border: '1px solid rgba(240,120,20,0.15)', borderRadius: '8px', overflow: 'hidden' }}>
+          <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(240,120,20,0.1)', display: 'flex', gap: '14px', alignItems: 'center' }}>
             {guide.avatarUrl ? (
-              <img src={guide.avatarUrl} alt={guide.displayName} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(232,184,75,0.3)' }} />
+              <img src={guide.avatarUrl} alt={guide.displayName} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(240,120,20,0.3)' }} />
             ) : (
-              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: C.goldPale, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: C.gold, border: '2px solid rgba(232,184,75,0.3)' }}>
+              <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: C.goldPale, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', color: C.gold, border: '2px solid rgba(240,120,20,0.3)' }}>
                 {guide.displayName[0]}
               </div>
             )}
@@ -762,7 +762,7 @@ export default function BookPractitionerPage() {
                 <div style={{ background: C.goldPale, borderRadius: '6px', padding: '14px', fontFamily: font, fontSize: '12px', color: C.charcoal }}>
                   <div style={{ fontSize: '13px', fontWeight: 500, marginBottom: '4px' }}>{selectedService.name}</div>
                   <div style={{ color: C.warmGray }}>{formatDuration(selectedService.durationMin)} · {formatTypeBadge(selectedService.type).label}</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(232,184,75,0.2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(240,120,20,0.2)' }}>
                     <span>Total</span>
                     <span style={{ color: C.gold, fontWeight: 500 }}>{formatPrice(selectedService.price)}</span>
                   </div>
@@ -777,7 +777,7 @@ export default function BookPractitionerPage() {
               </div>
             )}
 
-            <div style={{ fontFamily: font, fontSize: '11px', color: C.warmGray, lineHeight: 1.7, marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(232,184,75,0.1)' }}>
+            <div style={{ fontFamily: font, fontSize: '11px', color: C.warmGray, lineHeight: 1.7, marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(240,120,20,0.1)' }}>
               Booking is not confirmed until payment is complete. You will receive a Zoom link or location details by email within 1 hour of booking.
             </div>
           </div>
@@ -838,7 +838,7 @@ function FormField({ label, value, onChange, placeholder, type, multiline, selec
 }) {
   const baseStyle: React.CSSProperties = {
     fontFamily: font, fontSize: '13px', color: C.charcoal,
-    background: C.white, border: '1px solid rgba(232,184,75,0.25)',
+    background: C.white, border: '1px solid rgba(240,120,20,0.25)',
     borderRadius: '4px', padding: '11px 14px', outline: 'none', width: '100%',
   };
 
@@ -871,5 +871,5 @@ const btnSecondary: React.CSSProperties = {
   letterSpacing: '0.08em', textTransform: 'uppercase',
   padding: '12px 28px', borderRadius: '4px',
   background: 'transparent', color: C.charcoal,
-  border: '1px solid rgba(232,184,75,0.3)', cursor: 'pointer',
+  border: '1px solid rgba(240,120,20,0.3)', cursor: 'pointer',
 };

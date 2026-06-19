@@ -83,7 +83,7 @@ export function PendingReviewsWidget() {
   if (rows.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: 32, padding: '20px 24px', background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.25)', borderRadius: 12 }}>
+    <div style={{ marginBottom: 32, padding: '20px 24px', background: '#FEF7F0', border: '1px solid rgba(240,120,20,0.25)', borderRadius: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <span style={{ fontSize: 18 }}>★</span>
         <div>
@@ -103,13 +103,13 @@ export function PendingReviewsWidget() {
             href={`/reviews/new?targetType=${r.targetType}&transactionId=${r.transactionId}`}
             style={{
               display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px',
-              background: '#fff', borderRadius: 8, border: '1px solid rgba(232,184,75,0.15)',
+              background: '#fff', borderRadius: 8, border: '1px solid rgba(240,120,20,0.15)',
               textDecoration: 'none', color: 'inherit',
             }}
           >
             <span style={{
               fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase',
-              padding: '4px 8px', borderRadius: 4, background: 'rgba(232,184,75,0.15)', color: '#8A6E1F',
+              padding: '4px 8px', borderRadius: 4, background: 'rgba(240,120,20,0.15)', color: '#8A6E1F',
             }}>
               {BADGE_LABEL[r.targetType]}
             </span>

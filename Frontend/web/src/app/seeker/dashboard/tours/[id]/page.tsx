@@ -188,7 +188,7 @@ export default function SeekerTourBookingDetailPage() {
       {/* Header */}
       <div style={{
         display: 'grid', gridTemplateColumns: '180px 1fr', gap: 24,
-        background: C.white, border: '1px solid rgba(232,184,75,0.15)',
+        background: C.white, border: '1px solid rgba(240,120,20,0.15)',
         borderRadius: 12, overflow: 'hidden', marginBottom: 24,
       }}>
         <div
@@ -213,7 +213,7 @@ export default function SeekerTourBookingDetailPage() {
             <div style={{
               display: 'inline-block', fontFamily: 'monospace', fontSize: 12, color: C.warmGray,
               padding: '4px 10px', background: C.offWhite, borderRadius: 4,
-              border: '1px solid rgba(232,184,75,0.15)', marginBottom: 12,
+              border: '1px solid rgba(240,120,20,0.15)', marginBottom: 12,
             }}>
               Reference: {booking.bookingReference}
             </div>
@@ -277,7 +277,7 @@ export default function SeekerTourBookingDetailPage() {
                 <div
                   key={t.id}
                   style={{
-                    background: C.offWhite, border: '1px solid rgba(232,184,75,0.12)',
+                    background: C.offWhite, border: '1px solid rgba(240,120,20,0.12)',
                     borderRadius: 8, padding: 16,
                   }}
                 >
@@ -374,7 +374,7 @@ export default function SeekerTourBookingDetailPage() {
                     style={{
                       display: 'grid', gridTemplateColumns: '1fr 100px 120px 100px',
                       padding: '14px 0',
-                      borderBottom: i < booking.payments.length - 1 ? '1px solid rgba(232,184,75,0.08)' : 'none',
+                      borderBottom: i < booking.payments.length - 1 ? '1px solid rgba(240,120,20,0.08)' : 'none',
                       fontFamily: font, fontSize: 13, alignItems: 'center',
                     }}
                   >
@@ -411,10 +411,10 @@ export default function SeekerTourBookingDetailPage() {
         {/* Right column — sidebar summary + actions */}
         <aside>
           <div style={{
-            background: C.white, border: '1px solid rgba(232,184,75,0.2)',
+            background: C.white, border: '1px solid rgba(240,120,20,0.2)',
             borderRadius: 12, padding: 24, position: 'sticky', top: 24,
           }}>
-            <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 500, color: C.charcoal, marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(232,184,75,0.15)' }}>
+            <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 500, color: C.charcoal, marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(240,120,20,0.15)' }}>
               Booking Summary
             </div>
 
@@ -428,7 +428,7 @@ export default function SeekerTourBookingDetailPage() {
                 <span style={{ color: C.green, fontWeight: 500 }}>${totalPaid.toLocaleString()}</span>
               </div>
               {Number(booking.balanceAmount || 0) > 0 && booking.status !== 'CANCELLED' && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: C.warmGray, paddingTop: 8, borderTop: '1px solid rgba(232,184,75,0.1)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: C.warmGray, paddingTop: 8, borderTop: '1px solid rgba(240,120,20,0.1)' }}>
                   <span>Balance due</span>
                   <span style={{ color: balanceOwed ? '#E65100' : C.charcoal, fontWeight: 500 }}>
                     ${Number(booking.balanceAmount).toLocaleString()}

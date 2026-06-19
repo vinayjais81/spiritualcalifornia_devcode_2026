@@ -155,7 +155,7 @@ export default function BlogPage() {
       </PageHeader>
       <Panel title="Your Posts" icon="✍️">
         {posts.length === 0 ? <EmptyState message="No blog posts yet. Write your first post!" /> : posts.map(post => (
-          <div key={post.id} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '14px 0', borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
+          <div key={post.id} style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '14px 0', borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
             <div style={{ width: '72px', height: '54px', borderRadius: '6px', background: C.goldPale, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
               {post.coverImageUrl ? (
                 post.coverImageUrl.startsWith('data:')
@@ -191,7 +191,7 @@ export default function BlogPage() {
             <label style={{
               display: 'inline-flex', alignItems: 'center', gap: '6px',
               padding: '8px 16px', fontFamily: font, fontSize: '12px', fontWeight: 500,
-              background: C.goldPale, border: '1.5px solid rgba(232,184,75,0.5)',
+              background: C.goldPale, border: '1.5px solid rgba(240,120,20,0.5)',
               borderRadius: '6px', cursor: 'pointer', color: C.charcoal,
             }}>
               📁 {uploadingCover ? 'Uploading…' : coverPreview ? 'Change Cover Image' : 'Upload Cover Image'}

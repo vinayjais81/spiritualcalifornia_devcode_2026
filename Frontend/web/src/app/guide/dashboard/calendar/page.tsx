@@ -127,7 +127,7 @@ export default function CalendarPage() {
       {/* Connection Status */}
       <Panel title="Calendly Integration" icon="🗓️">
         <div style={{
-          background: C.offWhite, border: '1.5px solid rgba(232,184,75,0.3)',
+          background: C.offWhite, border: '1.5px solid rgba(240,120,20,0.3)',
           borderRadius: '10px', padding: '28px', textAlign: 'center',
         }}>
           <div style={{ fontSize: '40px', marginBottom: '12px' }}>
@@ -162,7 +162,7 @@ export default function CalendarPage() {
                 {calendarLink && (
                   <span style={{
                     padding: '6px 16px', borderRadius: '20px',
-                    background: C.offWhite, border: '1px solid rgba(232,184,75,0.3)',
+                    background: C.offWhite, border: '1px solid rgba(240,120,20,0.3)',
                     fontFamily: font, fontSize: '11px', color: C.warmGray,
                     maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
@@ -237,7 +237,7 @@ export default function CalendarPage() {
                   <div key={ev.uri || i} style={{
                     display: 'grid', gridTemplateColumns: '140px 1fr 100px',
                     gap: '16px', alignItems: 'center', padding: '14px 0',
-                    borderBottom: i < upcomingEvents.length - 1 ? '1px solid rgba(232,184,75,0.1)' : 'none',
+                    borderBottom: i < upcomingEvents.length - 1 ? '1px solid rgba(240,120,20,0.1)' : 'none',
                   }}>
                     <div>
                       <div style={{ fontFamily: font, fontSize: '12px', fontWeight: 500, color: C.charcoal }}>{dateStr}</div>
@@ -274,7 +274,7 @@ export default function CalendarPage() {
             This is how your Calendly scheduling page appears to seekers on your profile:
           </p>
           <div style={{
-            border: '1.5px solid rgba(232,184,75,0.3)', borderRadius: '10px',
+            border: '1.5px solid rgba(240,120,20,0.3)', borderRadius: '10px',
             overflow: 'hidden', background: C.white,
           }}>
             <iframe

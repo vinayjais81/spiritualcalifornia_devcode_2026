@@ -40,7 +40,7 @@ const sectionLabel: React.CSSProperties = {
 };
 
 const dividerLine: React.CSSProperties = {
-  flex: 1, height: '1px', background: 'rgba(232,184,75,0.2)',
+  flex: 1, height: '1px', background: 'rgba(240,120,20,0.2)',
 };
 
 const addBtn: React.CSSProperties = {
@@ -88,7 +88,7 @@ function UploadZone({
     <div
       onClick={() => ref.current?.click()}
       style={{
-        border: `1.5px dashed rgba(232,184,75,0.5)`,
+        border: `1.5px dashed rgba(240,120,20,0.5)`,
         borderRadius: '10px', background: goldPale,
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         padding: '28px 20px', cursor: 'pointer', textAlign: 'center',
@@ -124,13 +124,13 @@ function PhotoStrip({
       {previews.map((src, i) => (
         <div key={i} style={{ position: 'relative' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} alt="" style={{ width: 70, height: 70, objectFit: 'cover', borderRadius: '8px', border: `1px solid rgba(232,184,75,0.3)` }} />
+          <img src={src} alt="" style={{ width: 70, height: 70, objectFit: 'cover', borderRadius: '8px', border: `1px solid rgba(240,120,20,0.3)` }} />
           <button onClick={() => onRemove(i)} style={{ position: 'absolute', top: -6, right: -6, background: '#C0392B', border: 'none', borderRadius: '50%', width: 18, height: 18, color: white, fontSize: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>×</button>
           {i === 0 && <div style={{ position: 'absolute', bottom: 3, left: 3, fontSize: '8px', background: 'rgba(0,0,0,0.55)', color: white, borderRadius: '3px', padding: '1px 4px', fontFamily: 'var(--font-inter), sans-serif', letterSpacing: '0.05em' }}>COVER</div>}
         </div>
       ))}
       {previews.length < 5 && (
-        <button onClick={() => ref.current?.click()} disabled={uploading} style={{ width: 70, height: 70, borderRadius: '8px', border: `1.5px dashed rgba(232,184,75,0.5)`, background: goldPale, cursor: 'pointer', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: gold }}>
+        <button onClick={() => ref.current?.click()} disabled={uploading} style={{ width: 70, height: 70, borderRadius: '8px', border: `1.5px dashed rgba(240,120,20,0.5)`, background: goldPale, cursor: 'pointer', fontSize: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: gold }}>
           {uploading ? '…' : '+'}
           <input ref={ref} type="file" accept="image/jpeg,image/png,image/webp" style={{ display: 'none' }}
             onChange={(e) => { const f = e.target.files?.[0]; if (f) onAdd(f); }} />
@@ -156,7 +156,7 @@ function PriceInput({ value, onChange, placeholder = '0' }: { value: string; onC
 
 function ItemCard({ children, onRemove, canRemove }: { children: React.ReactNode; onRemove: () => void; canRemove?: boolean }) {
   return (
-    <div style={{ border: '1px solid rgba(232,184,75,0.2)', borderRadius: '12px', padding: '20px', background: white, marginBottom: '12px', position: 'relative' }}>
+    <div style={{ border: '1px solid rgba(240,120,20,0.2)', borderRadius: '12px', padding: '20px', background: white, marginBottom: '12px', position: 'relative' }}>
       {canRemove && (
         <button onClick={onRemove} style={{ ...removeBtn, position: 'absolute', top: '14px', right: '14px', fontSize: '14px' }} title="Remove">
           ✕
@@ -474,7 +474,7 @@ export function Step6Products() {
       </button>
 
       {/* ═══ FOOTER ═══════════════════════════════════════════════════════ */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '48px', paddingTop: '28px', borderTop: '1px solid rgba(232,184,75,0.15)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '48px', paddingTop: '28px', borderTop: '1px solid rgba(240,120,20,0.15)' }}>
         <button type="button" onClick={prevStep} style={{ fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase', color: warmGray, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-inter), sans-serif' }}>
           ← Back
         </button>

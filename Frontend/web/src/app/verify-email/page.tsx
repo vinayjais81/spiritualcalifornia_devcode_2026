@@ -85,7 +85,7 @@ function VerifyEmailContent() {
           alignItems: 'center',
           justifyContent: 'center',
           padding: '20px 48px',
-          borderBottom: '1px solid rgba(232,184,75,0.15)',
+          borderBottom: '1px solid rgba(240,120,20,0.15)',
         }}
       >
         <Link
@@ -156,7 +156,7 @@ function VerifyingState() {
           style={{
             width: '56px',
             height: '56px',
-            border: '3px solid rgba(232,184,75,0.2)',
+            border: '3px solid rgba(240,120,20,0.2)',
             borderTopColor: '#F07814',
             borderRadius: '50%',
             animation: 'spin 0.8s linear infinite',
@@ -193,7 +193,7 @@ function SuccessState({ countdown }: { countdown: number }) {
           style={{
             width: '64px',
             height: '64px',
-            background: 'rgba(232,184,75,0.1)',
+            background: 'rgba(240,120,20,0.1)',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
@@ -382,7 +382,7 @@ function AlreadyVerifiedState() {
           style={{
             width: '64px',
             height: '64px',
-            background: 'rgba(232,184,75,0.1)',
+            background: 'rgba(240,120,20,0.1)',
             borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',

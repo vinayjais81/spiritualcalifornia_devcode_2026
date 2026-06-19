@@ -104,7 +104,7 @@ export default function PayBalancePage() {
           </Link>
         </div>
         <div style={{
-          background: C.white, border: '1px solid rgba(232,184,75,0.2)', borderRadius: 12,
+          background: C.white, border: '1px solid rgba(240,120,20,0.2)', borderRadius: 12,
           padding: 60, textAlign: 'center', maxWidth: 560, margin: '40px auto',
         }}>
           <div style={{
@@ -122,7 +122,7 @@ export default function PayBalancePage() {
             and your guide will be in touch as your departure date approaches.
           </p>
           <div style={{
-            background: C.offWhite, border: '1px solid rgba(232,184,75,0.15)',
+            background: C.offWhite, border: '1px solid rgba(240,120,20,0.15)',
             borderRadius: 8, padding: 20, textAlign: 'left', marginBottom: 28,
           }}>
             {[
@@ -133,7 +133,7 @@ export default function PayBalancePage() {
               <div key={i} style={{
                 display: 'flex', justifyContent: 'space-between', padding: '8px 0',
                 fontFamily: font, fontSize: 13,
-                borderBottom: i < arr.length - 1 ? '1px solid rgba(232,184,75,0.1)' : 'none',
+                borderBottom: i < arr.length - 1 ? '1px solid rgba(240,120,20,0.1)' : 'none',
               }}>
                 <span style={{ color: C.warmGray }}>{row.label}</span>
                 <span style={{ color: C.charcoal, fontWeight: 500 }}>{row.value}</span>
@@ -204,17 +204,17 @@ export default function PayBalancePage() {
         {/* Right — Summary */}
         <aside>
           <div style={{
-            background: C.white, border: '1px solid rgba(232,184,75,0.2)',
+            background: C.white, border: '1px solid rgba(240,120,20,0.2)',
             borderRadius: 12, padding: 24, position: 'sticky', top: 24,
           }}>
-            <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 500, color: C.charcoal, marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(232,184,75,0.15)' }}>
+            <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 500, color: C.charcoal, marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(240,120,20,0.15)' }}>
               Payment Summary
             </div>
             {info.bookingReference && (
               <div style={{
                 fontFamily: 'monospace', fontSize: 11, color: C.warmGray,
                 padding: '4px 10px', background: C.offWhite, borderRadius: 4,
-                border: '1px solid rgba(232,184,75,0.15)', marginBottom: 16, display: 'inline-block',
+                border: '1px solid rgba(240,120,20,0.15)', marginBottom: 16, display: 'inline-block',
               }}>
                 {info.bookingReference}
               </div>
@@ -230,7 +230,7 @@ export default function PayBalancePage() {
               </div>
               <div style={{
                 display: 'flex', justifyContent: 'space-between',
-                paddingTop: 10, borderTop: '1px solid rgba(232,184,75,0.15)',
+                paddingTop: 10, borderTop: '1px solid rgba(240,120,20,0.15)',
                 fontSize: 16, fontWeight: 500, color: C.charcoal,
               }}>
                 <span>Due today</span>

@@ -69,7 +69,7 @@ function ProgressBar({ step }: { step: number }) {
   return (
     <div style={{
       position: 'fixed', top: 73, left: 0, right: 0, zIndex: 99,
-      background: G.white, borderBottom: `1px solid rgba(232,184,75,0.15)`,
+      background: G.white, borderBottom: `1px solid rgba(240,120,20,0.15)`,
       padding: '12px 48px', display: 'flex', alignItems: 'center',
     }}>
       {STEPS.map((label, i) => {
@@ -278,7 +278,7 @@ function RegisterContent() {
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       padding: '14px 48px',
       background: 'rgba(250,250,247,0.94)', backdropFilter: 'blur(14px)',
-      borderBottom: 'rgba(232,184,75,0.15) 1px solid',
+      borderBottom: 'rgba(240,120,20,0.15) 1px solid',
     }}>
       <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
         <Image src="/images/logo.jpg" alt="Spiritual California" width={44} height={44}
@@ -321,7 +321,7 @@ function RegisterContent() {
   );
 
   const inputStyle: React.CSSProperties = {
-    background: G.white, border: `1px solid rgba(232,184,75,0.3)`,
+    background: G.white, border: `1px solid rgba(240,120,20,0.3)`,
     borderRadius: 4, padding: '12px 16px',
     fontFamily: 'var(--font-inter), sans-serif', fontSize: 14, color: G.charcoal,
     outline: 'none', width: '100%',
@@ -379,7 +379,7 @@ function RegisterContent() {
             maxWidth: 520,
             textAlign: 'center',
             background: '#fff',
-            border: '1px solid rgba(232,184,75,0.25)',
+            border: '1px solid rgba(240,120,20,0.25)',
             borderRadius: 12,
             padding: '40px 36px',
           }}
@@ -699,7 +699,7 @@ function RegisterContent() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 36 }}>
               {ALL_INTERESTS.map((tag) => (
                 <div key={tag} onClick={() => toggleInterest(tag)} style={{
-                  padding: '8px 18px', border: `1.5px solid ${interests.includes(tag) ? G.gold : 'rgba(232,184,75,0.35)'}`,
+                  padding: '8px 18px', border: `1.5px solid ${interests.includes(tag) ? G.gold : 'rgba(240,120,20,0.35)'}`,
                   borderRadius: 100, fontSize: 13, cursor: 'pointer', userSelect: 'none',
                   background: interests.includes(tag) ? G.gold : G.white,
                   color: interests.includes(tag) ? G.white : G.warmGray,
@@ -711,7 +711,7 @@ function RegisterContent() {
               ))}
               {customInterest && (
                 <div onClick={() => toggleInterest(customInterest)} style={{
-                  padding: '8px 18px', border: `1.5px solid ${interests.includes(customInterest) ? G.gold : 'rgba(232,184,75,0.35)'}`,
+                  padding: '8px 18px', border: `1.5px solid ${interests.includes(customInterest) ? G.gold : 'rgba(240,120,20,0.35)'}`,
                   borderRadius: 100, fontSize: 13, cursor: 'pointer', userSelect: 'none',
                   background: interests.includes(customInterest) ? G.gold : G.white,
                   color: interests.includes(customInterest) ? G.white : G.warmGray,
@@ -722,7 +722,7 @@ function RegisterContent() {
               )}
               {!showCustomInput ? (
                 <div onClick={() => setShowCustomInput(true)} style={{
-                  padding: '8px 18px', border: `1.5px dashed rgba(232,184,75,0.4)`,
+                  padding: '8px 18px', border: `1.5px dashed rgba(240,120,20,0.4)`,
                   borderRadius: 100, fontSize: 13, color: G.gold, cursor: 'pointer',
                   background: 'transparent', fontFamily: 'var(--font-inter), sans-serif',
                 }}>
@@ -767,7 +767,7 @@ function RegisterContent() {
                 <div key={i} onClick={() => setExpIndex(i)} style={{
                   display: 'flex', alignItems: 'flex-start', gap: 20,
                   padding: '24px 28px',
-                  border: `1.5px solid ${expIndex === i ? G.gold : 'rgba(232,184,75,0.25)'}`,
+                  border: `1.5px solid ${expIndex === i ? G.gold : 'rgba(240,120,20,0.25)'}`,
                   borderRadius: 8, background: expIndex === i ? G.goldPale : G.white,
                   cursor: 'pointer', transition: 'all 0.3s',
                 }}>
@@ -810,7 +810,7 @@ function RegisterContent() {
                 <div key={p} onClick={() => togglePractice(p)} style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   padding: '14px 16px',
-                  border: `1px solid ${practices.includes(p) ? G.gold : 'rgba(232,184,75,0.25)'}`,
+                  border: `1px solid ${practices.includes(p) ? G.gold : 'rgba(240,120,20,0.25)'}`,
                   borderRadius: 6, background: practices.includes(p) ? G.goldPale : G.white,
                   cursor: 'pointer', transition: 'all 0.25s',
                 }}>
@@ -865,7 +865,7 @@ function RegisterContent() {
                 value={aiInput} onChange={(e) => setAiInput(e.target.value)}
                 placeholder="Tell us what's on your mind… e.g. I've been feeling burnt out and disconnected from myself."
                 rows={3}
-                style={{ width: '100%', padding: '18px 56px 18px 20px', border: `1.5px solid rgba(232,184,75,0.4)`, borderRadius: 8, background: G.white, fontFamily: 'var(--font-inter), sans-serif', fontSize: 15, color: G.charcoal, outline: 'none', resize: 'none', minHeight: 80 }}
+                style={{ width: '100%', padding: '18px 56px 18px 20px', border: `1.5px solid rgba(240,120,20,0.4)`, borderRadius: 8, background: G.white, fontFamily: 'var(--font-inter), sans-serif', fontSize: 15, color: G.charcoal, outline: 'none', resize: 'none', minHeight: 80 }}
               />
               <button onClick={() => triggerAI()} style={{ position: 'absolute', bottom: 14, right: 14, background: G.gold, border: 'none', borderRadius: '50%', width: 36, height: 36, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
                 →
@@ -878,7 +878,7 @@ function RegisterContent() {
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 32 }}>
               {AI_CHIPS.map((chip) => (
                 <div key={chip} onClick={() => triggerAI(chip)} style={{
-                  padding: '7px 14px', border: `1px solid rgba(232,184,75,0.3)`,
+                  padding: '7px 14px', border: `1px solid rgba(240,120,20,0.3)`,
                   borderRadius: 100, fontSize: 12, color: G.warmGray, cursor: 'pointer',
                   background: G.white, fontFamily: 'var(--font-inter), sans-serif',
                 }}>
@@ -910,7 +910,7 @@ function RegisterContent() {
                   {[{ icon: '🌿', tag: '✦ Verified · Somatic Therapy', name: 'Dr. Priya Nair', meta: 'San Francisco · $120/session' },
                     { icon: '🧘', tag: '✦ Verified · Meditation Guide', name: 'Lena Kovacs', meta: 'Online · $85/session' },
                     { icon: '🌀', tag: '✦ Verified · Energy Healing', name: 'Marcus Webb', meta: 'Los Angeles · $95/session' }].map((c) => (
-                    <div key={c.name} style={{ flexShrink: 0, width: 180, border: `1px solid rgba(232,184,75,0.25)`, borderRadius: 8, overflow: 'hidden', background: G.white }}>
+                    <div key={c.name} style={{ flexShrink: 0, width: 180, border: `1px solid rgba(240,120,20,0.25)`, borderRadius: 8, overflow: 'hidden', background: G.white }}>
                       <div style={{ width: '100%', height: 110, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, background: `linear-gradient(135deg, ${G.goldPale}, ${G.goldLight})` }}>
                         {c.icon}
                       </div>

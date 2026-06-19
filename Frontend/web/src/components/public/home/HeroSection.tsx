@@ -109,21 +109,21 @@ export function HeroSection() {
             display: 'flex',
             alignItems: 'center',
             background: '#FFFFFF',
-            border: '1.5px solid rgba(232,184,75,0.5)',
+            border: '1.5px solid rgba(240,120,20,0.5)',
             borderRadius: '50px',
             padding: '12px 18px 12px 26px',
-            boxShadow: '0 4px 30px rgba(232,184,75,0.1)',
+            boxShadow: '0 4px 30px rgba(240,120,20,0.1)',
             transition: 'box-shadow 0.3s, border-color 0.3s',
           }}
           onFocusCapture={e => {
             const wrap = e.currentTarget as HTMLDivElement;
             wrap.style.borderColor = '#F07814';
-            wrap.style.boxShadow = '0 4px 40px rgba(232,184,75,0.2)';
+            wrap.style.boxShadow = '0 4px 40px rgba(240,120,20,0.2)';
           }}
           onBlurCapture={e => {
             const wrap = e.currentTarget as HTMLDivElement;
-            wrap.style.borderColor = 'rgba(232,184,75,0.5)';
-            wrap.style.boxShadow = '0 4px 30px rgba(232,184,75,0.1)';
+            wrap.style.borderColor = 'rgba(240,120,20,0.5)';
+            wrap.style.boxShadow = '0 4px 30px rgba(240,120,20,0.1)';
           }}
         >
           <input
@@ -243,7 +243,7 @@ export function HeroSection() {
               onMouseEnter={e => {
                 const el = e.currentTarget as HTMLDivElement;
                 el.style.transform = 'translateY(-6px)';
-                el.style.boxShadow = '0 20px 50px rgba(232,184,75,0.25)';
+                el.style.boxShadow = '0 20px 50px rgba(240,120,20,0.25)';
                 const img = el.querySelector('img') as HTMLImageElement | null;
                 if (img) img.style.filter = 'saturate(1.1)';
                 const label = el.closest('a')?.querySelector('span') as HTMLSpanElement | null;
@@ -268,7 +268,7 @@ export function HeroSection() {
                 style={{ filter: 'saturate(0.9)', transition: 'filter 0.4s' }}
               />
               {/* Gold radial overlay */}
-              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 55%, rgba(232,184,75,0.1) 100%)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 55%, rgba(240,120,20,0.1) 100%)', pointerEvents: 'none' }} />
             </div>
             <div style={{ width: '1.5px', height: '44px', background: 'linear-gradient(to bottom, #F07814, transparent)', marginTop: '4px' }} />
             <span

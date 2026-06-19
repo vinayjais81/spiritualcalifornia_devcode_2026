@@ -113,7 +113,7 @@ export default function MyEventsPage() {
             onClick={() => setFilter(f)}
             style={{
               padding: '8px 20px', borderRadius: 20, fontFamily: font, fontSize: 12, fontWeight: 500,
-              border: filter === f ? `1.5px solid ${C.gold}` : '1.5px solid rgba(232,184,75,0.2)',
+              border: filter === f ? `1.5px solid ${C.gold}` : '1.5px solid rgba(240,120,20,0.2)',
               background: filter === f ? C.goldPale : C.white,
               color: filter === f ? C.charcoal : C.warmGray,
               cursor: 'pointer', transition: 'all 0.2s', textTransform: 'capitalize',
@@ -142,7 +142,7 @@ export default function MyEventsPage() {
 
             return (
               <div key={p.purchaseGroupId} style={{
-                background: C.white, border: '1px solid rgba(232,184,75,0.12)', borderRadius: 12, overflow: 'hidden',
+                background: C.white, border: '1px solid rgba(240,120,20,0.12)', borderRadius: 12, overflow: 'hidden',
               }}>
                 {/* Summary row */}
                 <button
@@ -198,7 +198,7 @@ export default function MyEventsPage() {
 
                 {/* Expanded: ticket details + QR codes */}
                 {isOpen && (
-                  <div style={{ borderTop: '1px solid rgba(232,184,75,0.12)', padding: '20px 24px', background: C.offWhite }}>
+                  <div style={{ borderTop: '1px solid rgba(240,120,20,0.12)', padding: '20px 24px', background: C.offWhite }}>
                     {/* Guide info */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
                       {p.guide.avatarUrl ? (
@@ -230,7 +230,7 @@ export default function MyEventsPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(p.tickets.length, 3)}, 1fr)`, gap: 12 }}>
                       {p.tickets.map((t, i) => (
                         <div key={t.id} style={{
-                          background: C.white, border: '1px solid rgba(232,184,75,0.15)', borderRadius: 8,
+                          background: C.white, border: '1px solid rgba(240,120,20,0.15)', borderRadius: 8,
                           padding: 16, textAlign: 'center',
                         }}>
                           <div style={{ fontFamily: font, fontSize: 10, color: C.warmGray, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 4 }}>

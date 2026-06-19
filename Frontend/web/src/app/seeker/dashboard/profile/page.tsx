@@ -148,7 +148,7 @@ export default function SeekerProfilePage() {
             marginBottom: '20px',
             padding: '14px 18px',
             background: '#FEF7F0',
-            border: '1px solid rgba(232,184,75,0.25)',
+            border: '1px solid rgba(240,120,20,0.25)',
             borderRadius: 8,
             fontFamily: font,
             fontSize: 13,
@@ -168,7 +168,7 @@ export default function SeekerProfilePage() {
             style={{
               width: '100%',
               height: 6,
-              background: 'rgba(232,184,75,0.15)',
+              background: 'rgba(240,120,20,0.15)',
               borderRadius: 3,
               overflow: 'hidden',
             }}
@@ -274,7 +274,7 @@ export default function SeekerProfilePage() {
                   style={{
                     textAlign: 'left',
                     padding: '12px 14px',
-                    border: `1.5px solid ${selected ? '#F07814' : 'rgba(232,184,75,0.25)'}`,
+                    border: `1.5px solid ${selected ? '#F07814' : 'rgba(240,120,20,0.25)'}`,
                     borderRadius: 8,
                     background: selected ? '#FEF7F0' : '#fff',
                     cursor: 'pointer',
@@ -302,7 +302,7 @@ export default function SeekerProfilePage() {
                   style={{
                     padding: '7px 14px',
                     borderRadius: 100,
-                    border: `1.5px solid ${selected ? '#F07814' : 'rgba(232,184,75,0.3)'}`,
+                    border: `1.5px solid ${selected ? '#F07814' : 'rgba(240,120,20,0.3)'}`,
                     background: selected ? '#F07814' : '#fff',
                     color: selected ? '#fff' : C.warmGray,
                     fontFamily: font,

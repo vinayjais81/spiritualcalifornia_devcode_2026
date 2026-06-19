@@ -139,7 +139,7 @@ export function GlobalSearchModal({
         }}
       >
         {/* Search input */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '20px 24px', borderBottom: '1px solid rgba(232,184,75,0.15)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '20px 24px', borderBottom: '1px solid rgba(240,120,20,0.15)' }}>
           <span style={{ fontSize: 18, color: '#8A8278' }}>🔍</span>
           <input
             ref={inputRef}

@@ -91,9 +91,9 @@ export default function GuideBookingDetailPage() {
           <Panel title="Client Information" icon="👤">
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
               {seeker?.avatarUrl ? (
-                <img src={seeker.avatarUrl} alt="" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(232,184,75,0.3)' }} />
+                <img src={seeker.avatarUrl} alt="" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(240,120,20,0.3)' }} />
               ) : (
-                <div style={{ width: 56, height: 56, borderRadius: '50%', background: C.goldPale, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: C.gold, border: '2px solid rgba(232,184,75,0.3)' }}>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: C.goldPale, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: C.gold, border: '2px solid rgba(240,120,20,0.3)' }}>
                   {seeker?.firstName?.[0] || '?'}
                 </div>
               )}
@@ -119,7 +119,7 @@ export default function GuideBookingDetailPage() {
             ].map((row, i, arr) => (
               <div key={i} style={{
                 display: 'flex', justifyContent: 'space-between', padding: '10px 0',
-                borderBottom: i < arr.length - 1 ? '1px solid rgba(232,184,75,0.08)' : 'none',
+                borderBottom: i < arr.length - 1 ? '1px solid rgba(240,120,20,0.08)' : 'none',
               }}>
                 <span style={{ fontFamily: font, fontSize: '13px', color: C.warmGray }}>{row.label}</span>
                 <span style={{ fontFamily: font, fontSize: '13px', fontWeight: row.highlight ? 600 : 400, color: row.highlight ? C.gold : C.charcoal }}>{row.value}</span>
@@ -147,7 +147,7 @@ export default function GuideBookingDetailPage() {
               ].map((row, i, arr) => (
                 <div key={i} style={{
                   display: 'flex', justifyContent: 'space-between', padding: '8px 0',
-                  borderBottom: i < arr.length - 1 ? '1px solid rgba(232,184,75,0.08)' : 'none',
+                  borderBottom: i < arr.length - 1 ? '1px solid rgba(240,120,20,0.08)' : 'none',
                 }}>
                   <span style={{ fontFamily: font, fontSize: '12px', color: C.warmGray }}>{row.label}</span>
                   <span style={{ fontFamily: font, fontSize: '12px', fontWeight: 500, color: row.color || C.charcoal }}>{row.value}</span>
@@ -167,7 +167,7 @@ export default function GuideBookingDetailPage() {
               ].map((row, i, arr) => (
                 <div key={i} style={{
                   display: 'flex', justifyContent: 'space-between', padding: '8px 0',
-                  borderBottom: i < arr.length - 1 ? '1px solid rgba(232,184,75,0.08)' : 'none',
+                  borderBottom: i < arr.length - 1 ? '1px solid rgba(240,120,20,0.08)' : 'none',
                 }}>
                   <span style={{ fontFamily: font, fontSize: '12px', color: C.warmGray }}>{row.label}</span>
                   <span style={{ fontFamily: font, fontSize: '12px', color: C.charcoal }}>{row.value}</span>

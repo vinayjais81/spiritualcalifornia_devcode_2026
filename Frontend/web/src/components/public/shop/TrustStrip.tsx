@@ -9,8 +9,8 @@ export function TrustStrip() {
   return (
     <div style={{
       display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
-      gap: 1, background: 'rgba(232,184,75,0.1)',
-      border: '1px solid rgba(232,184,75,0.1)',
+      gap: 1, background: 'rgba(240,120,20,0.1)',
+      border: '1px solid rgba(240,120,20,0.1)',
       borderRadius: 12, overflow: 'hidden', marginBottom: 60,
     }}>
       {items.map((item, i) => (

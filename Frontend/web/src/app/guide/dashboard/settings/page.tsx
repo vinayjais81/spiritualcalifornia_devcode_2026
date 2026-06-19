@@ -127,7 +127,7 @@ export default function SettingsPage() {
           {/* Balance summary */}
           {earnings && (
             <div style={{
-              background: C.offWhite, border: '1px solid rgba(232,184,75,0.15)', borderRadius: 8,
+              background: C.offWhite, border: '1px solid rgba(240,120,20,0.15)', borderRadius: 8,
               padding: 20, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 20,
             }}>
               <BalanceItem label="Available Balance" value={fmtMoney(earnings.balance.available)} highlight />
@@ -173,7 +173,7 @@ export default function SettingsPage() {
         </div>
 
         {/* How payouts work */}
-        <div style={{ borderTop: '1px solid rgba(232,184,75,0.15)', paddingTop: 20 }}>
+        <div style={{ borderTop: '1px solid rgba(240,120,20,0.15)', paddingTop: 20 }}>
           <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray, marginBottom: 12 }}>How Payouts Work</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
             {[
@@ -297,7 +297,7 @@ export default function SettingsPage() {
 
 function StatusBadge({ label, value, loading }: { label: string; value?: boolean; loading: boolean }) {
   return (
-    <div style={{ background: C.white, border: '1px solid rgba(232,184,75,0.12)', borderRadius: 8, padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ background: C.white, border: '1px solid rgba(240,120,20,0.12)', borderRadius: 8, padding: '12px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <span style={{ fontFamily: font, fontSize: 11, color: C.warmGray }}>{label}</span>
       {loading ? (
         <span style={{ width: 40, height: 18, background: '#f0f0f0', borderRadius: 4, display: 'inline-block' }} />
@@ -331,7 +331,7 @@ function ActionButton({ children, onClick, loading, disabled, variant }: { child
       onClick={onClick}
       disabled={inactive}
       style={{
-        padding: '12px 24px', borderRadius: 8, border: isSecondary ? `1px solid rgba(232,184,75,0.3)` : 'none',
+        padding: '12px 24px', borderRadius: 8, border: isSecondary ? `1px solid rgba(240,120,20,0.3)` : 'none',
         background: inactive ? '#C4BDB5' : isSecondary ? C.white : C.charcoal,
         color: inactive ? C.white : isSecondary ? C.charcoal : C.gold,
         fontFamily: font, fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -354,7 +354,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 
 function InfoRow({ label, value, badge }: { label: string; value: string; badge?: 'verified' | 'unverified' }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(232,184,75,0.08)' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(240,120,20,0.08)' }}>
       <span style={{ fontFamily: font, fontSize: 12, color: C.warmGray }}>{label}</span>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <span style={{ fontFamily: font, fontSize: 13, color: C.charcoal }}>{value}</span>
@@ -377,7 +377,7 @@ function NotifToggle({ label, desc, defaultOn }: { label: string; desc: string; 
   return (
     <div style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '16px 0', borderBottom: '1px solid rgba(232,184,75,0.08)',
+      padding: '16px 0', borderBottom: '1px solid rgba(240,120,20,0.08)',
     }}>
       <div>
         <div style={{ fontFamily: font, fontSize: 13, fontWeight: 500, color: C.charcoal }}>{label}</div>
@@ -402,7 +402,7 @@ function NotifToggle({ label, desc, defaultOn }: { label: string; desc: string; 
 }
 
 const inputStyle: React.CSSProperties = {
-  borderWidth: 1, borderStyle: 'solid', borderColor: 'rgba(232,184,75,0.25)',
+  borderWidth: 1, borderStyle: 'solid', borderColor: 'rgba(240,120,20,0.25)',
   borderRadius: 6, padding: '11px 14px', fontSize: 13, fontFamily: font,
   background: C.white, color: C.charcoal, outline: 'none', width: '100%',
   boxSizing: 'border-box', transition: 'border-color 0.2s',

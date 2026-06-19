@@ -267,7 +267,7 @@ export default function CheckoutPage() {
 
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px 48px', background: '#fff', borderBottom: '1px solid rgba(232,184,75,0.1)', position: 'relative' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px 48px', background: '#fff', borderBottom: '1px solid rgba(240,120,20,0.1)', position: 'relative' }}>
         <Link href="/cart" style={{ position: 'absolute', left: 48, fontSize: 12, color: '#8A8278', textDecoration: 'none' }}>← Back to cart</Link>
         <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 500, color: '#3A3530' }}>
           Secure Checkout <span style={{ marginLeft: 8, fontSize: 12 }}>🔒</span>
@@ -290,7 +290,7 @@ export default function CheckoutPage() {
               display: 'flex', alignItems: 'center', gap: 16,
             }}>
               <div style={{
-                width: 40, height: 40, background: 'rgba(232,184,75,0.15)',
+                width: 40, height: 40, background: 'rgba(240,120,20,0.15)',
                 borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0, fontSize: 20,
               }}>⚡</div>
@@ -347,7 +347,7 @@ export default function CheckoutPage() {
                           display: 'flex', justifyContent: 'space-between',
                           padding: '14px 16px', borderRadius: 8, width: '100%', textAlign: 'left',
                           background: selected ? '#FEF7F0' : '#fff',
-                          border: `1.5px solid ${selected ? '#F07814' : 'rgba(232,184,75,0.15)'}`,
+                          border: `1.5px solid ${selected ? '#F07814' : 'rgba(240,120,20,0.15)'}`,
                           cursor: 'pointer',
                         }}
                       >
@@ -408,7 +408,7 @@ export default function CheckoutPage() {
                 disabled={submitting}
                 style={{
                   width: '100%', padding: 18, borderRadius: 8,
-                  background: submitting ? 'rgba(232,184,75,0.5)' : '#F07814',
+                  background: submitting ? 'rgba(240,120,20,0.5)' : '#F07814',
                   color: '#3A3530',
                   fontFamily: "'Inter', sans-serif",
                   fontSize: 13, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -424,7 +424,7 @@ export default function CheckoutPage() {
           {hasDigital && (
             <div style={{
               marginTop: 28, padding: 18,
-              background: '#FEF7F0', borderRadius: 8, border: '1px solid rgba(232,184,75,0.2)',
+              background: '#FEF7F0', borderRadius: 8, border: '1px solid rgba(240,120,20,0.2)',
             }}>
               <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8A8278', marginBottom: 12 }}>
                 What happens after payment
@@ -501,7 +501,7 @@ function ConfirmationScreen({ order }: { order: OrderResponse }) {
       {/* Digital downloads — inline CTAs */}
       {digitalItems.length > 0 && (
         <div style={{
-          background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.25)',
+          background: '#FEF7F0', border: '1px solid rgba(240,120,20,0.25)',
           borderRadius: 12, padding: '24px 28px', marginBottom: 24,
         }}>
           <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#F07814', marginBottom: 14, fontWeight: 600 }}>
@@ -510,7 +510,7 @@ function ConfirmationScreen({ order }: { order: OrderResponse }) {
           {digitalItems.map((item) => (
             <div key={item.id} style={{
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              gap: 14, padding: '12px 0', borderBottom: '1px solid rgba(232,184,75,0.12)',
+              gap: 14, padding: '12px 0', borderBottom: '1px solid rgba(240,120,20,0.12)',
             }}>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 500, color: '#3A3530' }}>{item.product.name}</div>
@@ -546,7 +546,7 @@ function ConfirmationScreen({ order }: { order: OrderResponse }) {
       {/* Physical shipping note */}
       {physicalItems.length > 0 && (
         <div style={{
-          background: '#fff', border: '1px solid rgba(232,184,75,0.15)',
+          background: '#fff', border: '1px solid rgba(240,120,20,0.15)',
           borderRadius: 12, padding: '20px 24px', marginBottom: 24,
         }}>
           <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#8A8278', marginBottom: 8 }}>
@@ -626,7 +626,7 @@ function Input({
         type={type}
         style={{
           padding: '12px 14px', borderRadius: 6,
-          border: '1.5px solid rgba(232,184,75,0.2)', background: '#F5F2EB',
+          border: '1.5px solid rgba(240,120,20,0.2)', background: '#F5F2EB',
           fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif",
         }}
       />

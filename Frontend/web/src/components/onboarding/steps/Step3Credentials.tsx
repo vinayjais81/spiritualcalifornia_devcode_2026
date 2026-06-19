@@ -31,9 +31,9 @@ const lbl: React.CSSProperties = {
 function SectionDivider({ label }: { label: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', margin: '32px 0 24px' }}>
-      <div style={{ flex: 1, height: '1px', background: 'rgba(232,184,75,0.2)' }} />
+      <div style={{ flex: 1, height: '1px', background: 'rgba(240,120,20,0.2)' }} />
       <div style={{ fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#8A8278', whiteSpace: 'nowrap', fontFamily: 'var(--font-inter), sans-serif' }}>{label}</div>
-      <div style={{ flex: 1, height: '1px', background: 'rgba(232,184,75,0.2)' }} />
+      <div style={{ flex: 1, height: '1px', background: 'rgba(240,120,20,0.2)' }} />
     </div>
   );
 }
@@ -148,7 +148,7 @@ export function Step3Credentials() {
       {/* Upload zone */}
       <div
         onClick={() => { addBlankCredential(); setTimeout(() => triggerDocumentUpload(credentials[credentials.length] ? credentials[credentials.length - 1]?.localId ?? '' : ''), 100); }}
-        style={{ border: '2px dashed rgba(232,184,75,0.4)', borderRadius: '12px', padding: '36px 24px', textAlign: 'center', background: '#FEF7F0', cursor: 'pointer', transition: 'all 0.3s', marginBottom: '16px' }}
+        style={{ border: '2px dashed rgba(240,120,20,0.4)', borderRadius: '12px', padding: '36px 24px', textAlign: 'center', background: '#FEF7F0', cursor: 'pointer', transition: 'all 0.3s', marginBottom: '16px' }}
       >
         <div style={{ fontSize: '36px', marginBottom: '10px' }}>📜</div>
         <div className="font-playfair" style={{ fontSize: '20px', fontWeight: 400, color: '#3A3530', marginBottom: '6px' }}>Upload Certificates & Diplomas</div>
@@ -202,7 +202,7 @@ export function Step3Credentials() {
         </select>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '40px', paddingTop: '28px', borderTop: '1px solid rgba(232,184,75,0.15)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '40px', paddingTop: '28px', borderTop: '1px solid rgba(240,120,20,0.15)' }}>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           <button type="button" onClick={prevStep} style={{ fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8A8278', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-inter), sans-serif' }}>← Back</button>
           <button type="button" onClick={() => nextStep()} style={{ fontSize: '12px', color: '#8A8278', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'var(--font-inter), sans-serif' }}>Skip for now</button>

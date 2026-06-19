@@ -76,7 +76,7 @@ export function StaticPageRenderer({
             padding: '14px 48px',
             background: 'rgba(250,250,247,0.95)',
             backdropFilter: 'blur(14px)',
-            borderBottom: '1px solid rgba(232,184,75,0.15)',
+            borderBottom: '1px solid rgba(240,120,20,0.15)',
           }}
         >
           <Link
@@ -258,7 +258,7 @@ export function StaticPageRenderer({
             padding: 12px 14px;
             text-align: left;
             vertical-align: top;
-            border-bottom: 1px solid rgba(232,184,75,0.15);
+            border-bottom: 1px solid rgba(240,120,20,0.15);
           }
           .static-page-body th {
             font-family: 'Playfair Display', serif;
@@ -267,14 +267,14 @@ export function StaticPageRenderer({
             color: ${G.warmGray};
             letter-spacing: 0.06em;
             text-transform: uppercase;
-            background: rgba(232,184,75,0.05);
+            background: rgba(240,120,20,0.05);
           }
           .static-page-body tr:last-child td {
             border-bottom: none;
           }
           .static-page-body hr {
             border: none;
-            border-top: 1px solid rgba(232,184,75,0.2);
+            border-top: 1px solid rgba(240,120,20,0.2);
             margin: 32px 0;
           }
           /* ── Rich layout blocks ────────────────────────────────────────
@@ -362,7 +362,7 @@ export function StaticPageRenderer({
             grid-area: icon;
             width: 48px;
             height: 48px;
-            background: rgba(232,184,75,0.1);
+            background: rgba(240,120,20,0.1);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -395,7 +395,7 @@ export function StaticPageRenderer({
             style={{
               marginTop: 64,
               paddingTop: 32,
-              borderTop: '1px solid rgba(232,184,75,0.2)',
+              borderTop: '1px solid rgba(240,120,20,0.2)',
               display: 'flex',
               gap: 24,
             }}

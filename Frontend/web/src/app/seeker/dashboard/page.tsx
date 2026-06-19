@@ -58,7 +58,7 @@ export default function SeekerDashboardPage() {
               <div key={b.id} style={{
                 display: 'grid', gridTemplateColumns: '1fr 1fr auto',
                 gap: '12px', alignItems: 'center', padding: '14px 0',
-                borderBottom: '1px solid rgba(232,184,75,0.08)',
+                borderBottom: '1px solid rgba(240,120,20,0.08)',
               }}>
                 <div>
                   <div style={{ fontFamily: font, fontSize: '14px', fontWeight: 500, color: C.charcoal }}>{b.service?.name}</div>

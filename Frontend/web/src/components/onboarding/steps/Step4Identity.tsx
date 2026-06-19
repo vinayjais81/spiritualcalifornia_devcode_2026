@@ -53,7 +53,7 @@ export function Step4Identity() {
       {error && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '12px 16px', fontSize: '13px', color: '#DC2626', fontFamily: 'var(--font-inter), sans-serif', marginBottom: '20px' }}>{error}</div>}
 
       {/* Persona block */}
-      <div style={{ border: '1.5px solid rgba(232,184,75,0.3)', borderRadius: '14px', padding: '28px', background: '#FFFFFF', marginBottom: '20px', display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
+      <div style={{ border: '1.5px solid rgba(240,120,20,0.3)', borderRadius: '14px', padding: '28px', background: '#FFFFFF', marginBottom: '20px', display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
         <div style={{ fontSize: '48px', flexShrink: 0 }}>🪪</div>
         <div>
           <div className="font-playfair" style={{ fontSize: '22px', fontWeight: 400, color: '#3A3530', marginBottom: '6px' }}>Verify with Persona</div>
@@ -100,7 +100,7 @@ export function Step4Identity() {
         <p style={{ fontSize: '13px', color: '#8A8278', lineHeight: 1.6, fontFamily: 'var(--font-inter), sans-serif', margin: 0 }}>Seekers on Spiritual California are sharing vulnerable moments of their lives. A verified badge signals that you are a real, accountable person. Verified practitioners receive <strong>40% more profile views</strong> and <strong>3× more bookings</strong> on average. You can complete this step later from your dashboard.</p>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '40px', paddingTop: '28px', borderTop: '1px solid rgba(232,184,75,0.15)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '40px', paddingTop: '28px', borderTop: '1px solid rgba(240,120,20,0.15)' }}>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           <button type="button" onClick={prevStep} style={{ fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8A8278', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-inter), sans-serif' }}>← Back</button>
           <button type="button" onClick={handleSkip} style={{ fontSize: '12px', color: '#8A8278', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: 'var(--font-inter), sans-serif' }}>Skip for now — verify later</button>

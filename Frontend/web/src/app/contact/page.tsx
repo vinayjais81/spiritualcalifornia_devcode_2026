@@ -75,7 +75,7 @@ const iBase: React.CSSProperties = {
 const iFocus: React.CSSProperties = {
   ...iBase,
   borderColor: G.gold,
-  boxShadow: '0 0 0 3px rgba(232,184,75,0.1)',
+  boxShadow: '0 0 0 3px rgba(240,120,20,0.1)',
 };
 
 const lbl: React.CSSProperties = {
@@ -153,7 +153,7 @@ export default function ContactPage() {
           <div>
             {success ? (
               /* Success state */
-              <div style={{ background: G.white, border: '1px solid rgba(232,184,75,0.25)', borderRadius: 16, padding: 56, textAlign: 'center' }}>
+              <div style={{ background: G.white, border: '1px solid rgba(240,120,20,0.25)', borderRadius: 16, padding: 56, textAlign: 'center' }}>
                 <div style={{ fontSize: 48, marginBottom: 20 }}>🌸</div>
                 <h2 style={{ fontFamily: 'var(--font-playfair-display), serif', fontSize: 36, fontWeight: 400, color: G.charcoal, marginBottom: 12 }}>
                   Message received
@@ -175,7 +175,7 @@ export default function ContactPage() {
               </div>
             ) : (
               /* Contact form */
-              <form onSubmit={handleSubmit} style={{ background: G.white, border: '1px solid rgba(232,184,75,0.15)', borderRadius: 16, padding: 40 }}>
+              <form onSubmit={handleSubmit} style={{ background: G.white, border: '1px solid rgba(240,120,20,0.15)', borderRadius: 16, padding: 40 }}>
                 <div style={{ marginBottom: 20 }}>
                   <FormLegend />
                 </div>
@@ -276,7 +276,7 @@ export default function ContactPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
 
             {/* Contact info card */}
-            <div style={{ background: G.white, border: '1px solid rgba(232,184,75,0.15)', borderRadius: 16, padding: 32 }}>
+            <div style={{ background: G.white, border: '1px solid rgba(240,120,20,0.15)', borderRadius: 16, padding: 32 }}>
               <h3 style={{ fontFamily: 'var(--font-playfair-display), serif', fontSize: 22, fontWeight: 400, color: G.charcoal, marginBottom: 24 }}>
                 Contact information
               </h3>
@@ -314,7 +314,7 @@ export default function ContactPage() {
             </div>
 
             {/* Quick links */}
-            <div style={{ background: 'rgba(232,184,75,0.06)', border: '1px solid rgba(232,184,75,0.15)', borderRadius: 16, padding: 28 }}>
+            <div style={{ background: 'rgba(240,120,20,0.06)', border: '1px solid rgba(240,120,20,0.15)', borderRadius: 16, padding: 28 }}>
               <h3 style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 12, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: G.warmGray, marginBottom: 16 }}>
                 Helpful links
               </h3>
@@ -326,7 +326,7 @@ export default function ContactPage() {
                 { label: 'Terms of Service', href: '/terms' },
                 { label: 'Privacy Policy', href: '/privacy' },
               ].map(({ label, href }) => (
-                <Link key={href} href={href} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(232,184,75,0.1)', textDecoration: 'none', fontFamily: 'var(--font-inter), sans-serif', fontSize: 13, color: G.charcoal }}>
+                <Link key={href} href={href} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid rgba(240,120,20,0.1)', textDecoration: 'none', fontFamily: 'var(--font-inter), sans-serif', fontSize: 13, color: G.charcoal }}>
                   {label}
                   <span style={{ color: G.gold, fontSize: 14 }}>→</span>
                 </Link>

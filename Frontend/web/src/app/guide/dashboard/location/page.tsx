@@ -138,7 +138,7 @@ export default function LocationPage() {
         {/* Map Preview */}
         <div style={{
           height: '280px', background: C.offWhite,
-          border: '1.5px solid rgba(232,184,75,0.3)',
+          border: '1.5px solid rgba(240,120,20,0.3)',
           borderRadius: '10px', overflow: 'hidden',
           marginTop: '20px', position: 'relative',
         }}>

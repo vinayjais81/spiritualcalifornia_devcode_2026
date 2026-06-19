@@ -132,7 +132,7 @@ export default function ServicesPage() {
             {/* Header row */}
             <div style={{
               display: 'grid', gridTemplateColumns: '1fr 100px 80px 90px 70px',
-              gap: '10px', padding: '0 0 10px', borderBottom: '1px solid rgba(232,184,75,0.15)',
+              gap: '10px', padding: '0 0 10px', borderBottom: '1px solid rgba(240,120,20,0.15)',
             }}>
               {['Service', 'Format', 'Duration', 'Price', ''].map(h => (
                 <div key={h} style={{
@@ -149,7 +149,7 @@ export default function ServicesPage() {
               <div key={s.id} style={{
                 display: 'grid', gridTemplateColumns: '1fr 100px 80px 90px 70px',
                 gap: '10px', alignItems: 'center', padding: '14px 0',
-                borderBottom: '1px solid rgba(232,184,75,0.08)',
+                borderBottom: '1px solid rgba(240,120,20,0.08)',
               }}>
                 <div>
                   <div style={{ fontFamily: font, fontSize: '14px', fontWeight: 500, color: C.charcoal }}>
@@ -174,7 +174,7 @@ export default function ServicesPage() {
                     onClick={() => openEdit(s)}
                     title="Edit"
                     style={{
-                      background: 'none', border: '1px solid rgba(232,184,75,0.3)',
+                      background: 'none', border: '1px solid rgba(240,120,20,0.3)',
                       borderRadius: '4px', padding: '4px 8px', cursor: 'pointer',
                       fontFamily: font, fontSize: '11px', color: C.warmGray,
                     }}

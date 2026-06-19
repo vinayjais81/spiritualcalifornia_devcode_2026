@@ -239,7 +239,7 @@ export default function EarningsPage() {
         )}
 
         {!earnings?.stripeConnected && (
-          <div style={{ marginTop: 16, padding: 12, background: 'rgba(232,184,75,0.15)', borderRadius: 6, fontFamily: font, fontSize: 12, color: C.goldLight }}>
+          <div style={{ marginTop: 16, padding: 12, background: 'rgba(240,120,20,0.15)', borderRadius: 6, fontFamily: font, fontSize: 12, color: C.goldLight }}>
             Connect your Stripe account to receive payouts. You&apos;ll need a bank account or debit card.
           </div>
         )}
@@ -262,7 +262,7 @@ export default function EarningsPage() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: font, fontSize: 13 }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(232,184,75,0.15)', textAlign: 'left' }}>
+                <tr style={{ borderBottom: '1px solid rgba(240,120,20,0.15)', textAlign: 'left' }}>
                   <th style={thStyle}>Date</th>
                   <th style={thStyle}>Type</th>
                   <th style={thStyle}>Total</th>
@@ -276,7 +276,7 @@ export default function EarningsPage() {
                 {earnings.recentPayments.map((p) => {
                   const sc = STATUS_COLORS[p.status] ?? STATUS_COLORS.PENDING;
                   return (
-                    <tr key={p.id} style={{ borderBottom: '1px solid rgba(232,184,75,0.06)' }}>
+                    <tr key={p.id} style={{ borderBottom: '1px solid rgba(240,120,20,0.06)' }}>
                       <td style={tdStyle}>{fmtDate(p.createdAt)}</td>
                       <td style={tdStyle}>
                         <span style={{ padding: '2px 8px', borderRadius: 4, background: C.goldPale, color: C.charcoal, fontSize: 11, fontWeight: 500 }}>{p.paymentType}</span>
@@ -305,7 +305,7 @@ export default function EarningsPage() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: font, fontSize: 13 }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(232,184,75,0.15)', textAlign: 'left' }}>
+                <tr style={{ borderBottom: '1px solid rgba(240,120,20,0.15)', textAlign: 'left' }}>
                   <th style={thStyle}>Date Requested</th>
                   <th style={thStyle}>Amount</th>
                   <th style={thStyle}>Status</th>
@@ -317,7 +317,7 @@ export default function EarningsPage() {
                 {payoutHistory.map((p) => {
                   const sc = STATUS_COLORS[p.status] ?? STATUS_COLORS.PENDING;
                   return (
-                    <tr key={p.id} style={{ borderBottom: '1px solid rgba(232,184,75,0.06)' }}>
+                    <tr key={p.id} style={{ borderBottom: '1px solid rgba(240,120,20,0.06)' }}>
                       <td style={tdStyle}>{fmtDate(p.createdAt)}</td>
                       <td style={{ ...tdStyle, fontWeight: 600 }}>{fmtMoney(p.amount)}</td>
                       <td style={tdStyle}>
@@ -335,7 +335,7 @@ export default function EarningsPage() {
       </Panel>
 
       {/* How it works info */}
-      <div style={{ background: C.goldPale, border: '1px solid rgba(232,184,75,0.2)', borderRadius: 12, padding: 24, fontFamily: font, fontSize: 13, color: C.charcoal, lineHeight: 1.8 }}>
+      <div style={{ background: C.goldPale, border: '1px solid rgba(240,120,20,0.2)', borderRadius: 12, padding: 24, fontFamily: font, fontSize: 13, color: C.charcoal, lineHeight: 1.8 }}>
         <strong style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray }}>How payouts work</strong>
         <ul style={{ margin: '8px 0 0 16px', padding: 0 }}>
           <li>When a seeker pays for your service, tour, or event, your earnings (minus {commissionPercent}% platform fee) are credited to your available balance.</li>
@@ -352,7 +352,7 @@ export default function EarningsPage() {
 
 function StatusCard({ label, value, ok }: { label: string; value: string; ok: boolean }) {
   return (
-    <div style={{ background: C.white, border: '1px solid rgba(232,184,75,0.12)', borderRadius: 8, padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <div style={{ background: C.white, border: '1px solid rgba(240,120,20,0.12)', borderRadius: 8, padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
       <span style={{ fontFamily: font, fontSize: 12, color: C.warmGray }}>{label}</span>
       <span style={{ padding: '3px 10px', borderRadius: 4, background: ok ? '#E8F5E9' : '#FFF3E0', color: ok ? '#2E7D32' : '#E65100', fontSize: 11, fontWeight: 600 }}>{value}</span>
     </div>

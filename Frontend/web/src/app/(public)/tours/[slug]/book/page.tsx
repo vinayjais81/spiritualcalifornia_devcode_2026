@@ -123,7 +123,7 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 
 const inputStyle: React.CSSProperties = {
   padding: '12px 14px', borderRadius: 6,
-  border: '1.5px solid rgba(232,184,75,0.2)',
+  border: '1.5px solid rgba(240,120,20,0.2)',
   background: C.offWhite, fontSize: 13, outline: 'none',
   fontFamily: "'Inter', sans-serif", color: C.charcoal,
 };
@@ -592,7 +592,7 @@ export default function BookTourPage() {
                         style={{
                           padding: '20px 18px', borderRadius: 8, textAlign: 'left',
                           background: isSelected ? C.goldPale : C.white,
-                          border: isSelected ? `1.5px solid ${C.gold}` : '1.5px solid rgba(232,184,75,0.2)',
+                          border: isSelected ? `1.5px solid ${C.gold}` : '1.5px solid rgba(240,120,20,0.2)',
                           cursor: d.spotsRemaining === 0 ? 'not-allowed' : 'pointer',
                           opacity: d.spotsRemaining === 0 ? 0.5 : 1,
                           fontFamily: 'Inter, sans-serif',
@@ -619,7 +619,7 @@ export default function BookTourPage() {
                   disabled={!canGoToStep2}
                   style={{
                     padding: '14px 32px', borderRadius: 8,
-                    background: canGoToStep2 ? C.gold : 'rgba(232,184,75,0.3)',
+                    background: canGoToStep2 ? C.gold : 'rgba(240,120,20,0.3)',
                     color: C.charcoal, border: 'none',
                     fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
                     cursor: canGoToStep2 ? 'pointer' : 'not-allowed',
@@ -650,7 +650,7 @@ export default function BookTourPage() {
                   onClick={() => setTravelersCount((c) => Math.max(1, c - 1))}
                   style={{
                     width: 36, height: 36, borderRadius: '50%',
-                    background: C.goldPale, border: '1px solid rgba(232,184,75,0.3)',
+                    background: C.goldPale, border: '1px solid rgba(240,120,20,0.3)',
                     fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center',
                     justifyContent: 'center', color: C.charcoal,
                   }}
@@ -665,7 +665,7 @@ export default function BookTourPage() {
                   }}
                   style={{
                     width: 36, height: 36, borderRadius: '50%',
-                    background: C.goldPale, border: '1px solid rgba(232,184,75,0.3)',
+                    background: C.goldPale, border: '1px solid rgba(240,120,20,0.3)',
                     fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center',
                     justifyContent: 'center', color: C.charcoal,
                   }}
@@ -694,7 +694,7 @@ export default function BookTourPage() {
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                           padding: '16px 18px', borderRadius: 8, textAlign: 'left', width: '100%',
                           background: isSelected ? C.goldPale : C.white,
-                          border: isSelected ? `1.5px solid ${C.gold}` : '1.5px solid rgba(232,184,75,0.15)',
+                          border: isSelected ? `1.5px solid ${C.gold}` : '1.5px solid rgba(240,120,20,0.15)',
                           cursor: insufficient ? 'not-allowed' : 'pointer',
                           opacity: insufficient ? 0.5 : 1,
                           fontFamily: 'Inter, sans-serif',
@@ -731,7 +731,7 @@ export default function BookTourPage() {
                   disabled={!canGoToStep3}
                   style={{
                     padding: '12px 24px', borderRadius: 8,
-                    background: canGoToStep3 ? C.gold : 'rgba(232,184,75,0.3)',
+                    background: canGoToStep3 ? C.gold : 'rgba(240,120,20,0.3)',
                     color: C.charcoal, border: 'none',
                     fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
                     cursor: canGoToStep3 ? 'pointer' : 'not-allowed',
@@ -756,7 +756,7 @@ export default function BookTourPage() {
 
               {!isAuthenticated && hasHydrated && (
                 <div style={{
-                  padding: '14px 18px', background: C.goldPale, border: '1px solid rgba(232,184,75,0.3)',
+                  padding: '14px 18px', background: C.goldPale, border: '1px solid rgba(240,120,20,0.3)',
                   borderRadius: 8, marginBottom: 20, fontSize: 13, color: C.charcoal,
                 }}>
                   💡 <strong>Tip:</strong> <Link href={`/signin?redirect=/tours/${slug}/book`} style={{ color: C.gold, textDecoration: 'underline' }}>Sign in</Link> to pre-fill your details and access your bookings later.
@@ -806,10 +806,10 @@ export default function BookTourPage() {
               {/* Per-traveler forms */}
               {travelers.map((t, i) => (
                 <div key={i} style={{
-                  background: C.white, border: '1px solid rgba(232,184,75,0.15)', borderRadius: 12,
+                  background: C.white, border: '1px solid rgba(240,120,20,0.15)', borderRadius: 12,
                   padding: 24, marginBottom: 20,
                 }}>
-                  <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 500, color: C.charcoal, marginBottom: 4, paddingBottom: 12, borderBottom: '1px solid rgba(232,184,75,0.15)' }}>
+                  <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 500, color: C.charcoal, marginBottom: 4, paddingBottom: 12, borderBottom: '1px solid rgba(240,120,20,0.15)' }}>
                     {i === 0 ? 'Primary Traveler' : `Traveler ${i + 1}`}
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 16 }}>
@@ -860,10 +860,10 @@ export default function BookTourPage() {
 
               {/* Health & preferences (booking-level) */}
               <div style={{
-                background: C.white, border: '1px solid rgba(232,184,75,0.15)', borderRadius: 12,
+                background: C.white, border: '1px solid rgba(240,120,20,0.15)', borderRadius: 12,
                 padding: 24, marginBottom: 20,
               }}>
-                <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 500, color: C.charcoal, marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(232,184,75,0.15)' }}>
+                <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 500, color: C.charcoal, marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(240,120,20,0.15)' }}>
                   Health &amp; Preferences
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
@@ -899,7 +899,7 @@ export default function BookTourPage() {
                       style={{
                         padding: '12px 16px',
                         background: C.white,
-                        border: '1px solid rgba(232,184,75,0.35)',
+                        border: '1px solid rgba(240,120,20,0.35)',
                         borderLeft: `3px solid ${C.gold}`,
                         borderRadius: 8,
                         marginBottom: 10,
@@ -1000,7 +1000,7 @@ export default function BookTourPage() {
                         onClick={() => setChosenDeposit(opt.amount)}
                         style={{
                           padding: '16px 14px', borderRadius: 8, textAlign: 'center',
-                          background: isSelected ? 'rgba(232,184,75,0.15)' : 'rgba(255,255,255,0.05)',
+                          background: isSelected ? 'rgba(240,120,20,0.15)' : 'rgba(255,255,255,0.05)',
                           border: isSelected ? `1.5px solid ${C.gold}` : '1.5px solid rgba(255,255,255,0.1)',
                           cursor: 'pointer',
                           fontFamily: 'Inter, sans-serif',
@@ -1025,7 +1025,7 @@ export default function BookTourPage() {
                   {hasHydrated && !isAuthenticated && (
                     <div style={{
                       padding: '14px 18px', background: '#FFFAF0',
-                      border: '1px solid rgba(232,184,75,0.3)', borderRadius: 8,
+                      border: '1px solid rgba(240,120,20,0.3)', borderRadius: 8,
                       marginBottom: 20, fontSize: 13, color: C.charcoal,
                     }}>
                       🔒 You'll be asked to sign in (or create an account) before completing payment. Your form data will be preserved.
@@ -1051,7 +1051,7 @@ export default function BookTourPage() {
                       gap: 10,
                       alignItems: 'flex-start',
                       padding: '14px 16px',
-                      border: '1px solid rgba(232,184,75,0.3)',
+                      border: '1px solid rgba(240,120,20,0.3)',
                       borderRadius: 8,
                       background: '#FFFEFB',
                       marginBottom: 20,
@@ -1098,7 +1098,7 @@ export default function BookTourPage() {
                         flex: 1, padding: '15px', borderRadius: 8,
                         background:
                           creatingBooking || !acceptedTerms || chosenDeposit === null
-                            ? 'rgba(232,184,75,0.5)'
+                            ? 'rgba(240,120,20,0.5)'
                             : C.charcoal,
                         color: C.gold, border: 'none',
                         fontFamily: 'Inter, sans-serif',
@@ -1126,7 +1126,7 @@ export default function BookTourPage() {
               {clientSecret && createdBooking && (
                 <div>
                   <div style={{
-                    background: C.goldPale, border: `1px solid rgba(232,184,75,0.3)`, borderRadius: 8,
+                    background: C.goldPale, border: `1px solid rgba(240,120,20,0.3)`, borderRadius: 8,
                     padding: '12px 16px', marginBottom: 20, fontSize: 12, color: C.charcoal,
                   }}>
                     ✓ Spot reserved. Reference: <strong>{createdBooking.bookingReference || createdBooking.id.slice(-8).toUpperCase()}</strong>. Complete payment below to confirm.
@@ -1158,7 +1158,7 @@ export default function BookTourPage() {
 
         {/* ─── RIGHT: sticky summary sidebar ──────────────────────────── */}
         <aside style={{
-          background: C.white, border: '1px solid rgba(232,184,75,0.2)',
+          background: C.white, border: '1px solid rgba(240,120,20,0.2)',
           borderRadius: 12, position: 'sticky', top: 24, overflow: 'hidden',
         }}>
           <div style={{ height: 160, background: 'linear-gradient(135deg, #2C2420, #3A3530)', overflow: 'hidden' }}>
@@ -1203,7 +1203,7 @@ export default function BookTourPage() {
               </>
             )}
 
-            <div style={{ borderTop: '1px solid rgba(232,184,75,0.1)', marginTop: 16, paddingTop: 16 }}>
+            <div style={{ borderTop: '1px solid rgba(240,120,20,0.1)', marginTop: 16, paddingTop: 16 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12, color: C.warmGray }}>
                 <span>Tour package — {travelersCount} × {room?.name || 'Standard'}</span>
                 <span>${totalAmount.toLocaleString()}</span>
@@ -1213,7 +1213,7 @@ export default function BookTourPage() {
               <div style={{ fontSize: 11, color: C.warmGray, marginBottom: 10, lineHeight: 1.5 }}>
                 Includes all applicable taxes and fees
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 10, borderTop: '1px solid rgba(232,184,75,0.15)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 10, borderTop: '1px solid rgba(240,120,20,0.15)' }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: C.charcoal }}>Total</span>
                 <span style={{ fontFamily: serif, fontSize: 22, fontWeight: 500, color: C.charcoal }}>
                   ${totalAmount.toLocaleString()}
@@ -1246,7 +1246,7 @@ export default function BookTourPage() {
               style={{
                 marginTop: 16,
                 paddingTop: 12,
-                borderTop: '1px solid rgba(232,184,75,0.1)',
+                borderTop: '1px solid rgba(240,120,20,0.1)',
                 fontSize: 10.5,
                 color: C.warmGray,
                 lineHeight: 1.5,
@@ -1265,7 +1265,7 @@ export default function BookTourPage() {
 // ─── Local style for secondary back button ─────────────────────────────────
 const btnSecondary: React.CSSProperties = {
   padding: '12px 24px', borderRadius: 8,
-  border: '1.5px solid rgba(232,184,75,0.3)', background: 'transparent',
+  border: '1.5px solid rgba(240,120,20,0.3)', background: 'transparent',
   fontSize: 12, color: C.charcoal, cursor: 'pointer',
   fontFamily: "'Inter', sans-serif",
 };

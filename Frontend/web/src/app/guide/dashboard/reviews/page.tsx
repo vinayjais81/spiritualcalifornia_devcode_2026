@@ -60,12 +60,12 @@ export default function ReviewsPage() {
     <div>
       <PageHeader title="Reviews & Testimonials" subtitle="Feedback from your clients across every offering. Reviews are verified and cannot be edited." />
 
-      <div style={{ fontFamily: font, fontSize: '11px', color: C.warmGray, fontStyle: 'italic', marginBottom: '20px', padding: '8px 14px', background: C.offWhite, borderRadius: '6px', borderLeft: '3px solid rgba(232,184,75,0.4)' }}>
+      <div style={{ fontFamily: font, fontSize: '11px', color: C.warmGray, fontStyle: 'italic', marginBottom: '20px', padding: '8px 14px', background: C.offWhite, borderRadius: '6px', borderLeft: '3px solid rgba(240,120,20,0.4)' }}>
         🔒 Reviews are submitted directly by clients after a verified purchase. You cannot edit or delete reviews — flag inappropriate content to an admin.
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid rgba(232,184,75,0.15)' }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid rgba(240,120,20,0.15)' }}>
         {TABS.map((t) => {
           const active = filter === t.key;
           return (
@@ -93,7 +93,7 @@ export default function ReviewsPage() {
           <EmptyState message="No reviews here yet. Reviews appear once a client completes a verified purchase in this category." />
         ) : (
           filtered.map((r) => (
-            <div key={r.id} style={{ padding: '18px 0', borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
+            <div key={r.id} style={{ padding: '18px 0', borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
                 <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: C.goldPale, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
                   {r.author.firstName[0]}

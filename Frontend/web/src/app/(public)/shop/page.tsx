@@ -142,7 +142,7 @@ export default function ShopPage() {
             display: 'flex', alignItems: 'center', gap: 12,
           }}>
             Shop All
-            <span style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.25)' }} />
+            <span style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.25)' }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 20 }}>
             <h2 style={{
@@ -158,7 +158,7 @@ export default function ShopPage() {
                 onChange={(e) => setSortBy(e.target.value)}
                 style={{
                   padding: '8px 12px', borderRadius: 8,
-                  border: '1px solid rgba(232,184,75,0.2)', background: '#fff',
+                  border: '1px solid rgba(240,120,20,0.2)', background: '#fff',
                   fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#3A3530',
                   cursor: 'pointer',
                 }}
@@ -180,7 +180,7 @@ export default function ShopPage() {
             {[...Array(8)].map((_, i) => (
               <div key={i} style={{
                 background: '#fff', borderRadius: 12, overflow: 'hidden',
-                border: '1px solid rgba(232,184,75,0.1)',
+                border: '1px solid rgba(240,120,20,0.1)',
               }}>
                 <div style={{ height: 220, background: '#FEF7F0', animation: 'pulse 1.5s ease-in-out infinite' }} />
                 <div style={{ padding: '16px 18px' }}>
@@ -222,7 +222,7 @@ export default function ShopPage() {
 
         {/* Testimonial */}
         <div style={{
-          background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.2)',
+          background: '#FEF7F0', border: '1px solid rgba(240,120,20,0.2)',
           borderRadius: 16, padding: '40px 48px', marginBottom: 60, textAlign: 'center',
         }}>
           <div style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#F07814', marginBottom: 16 }}>

@@ -96,7 +96,7 @@ function WriteReviewInner() {
           Your feedback helps other seekers find the right practitioner and helps {eligibility?.guideName ?? 'this guide'} improve their practice.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-          <Link href="/seeker/dashboard" style={{ padding: '12px 24px', borderRadius: 8, border: '1.5px solid rgba(232,184,75,0.3)', background: 'transparent', fontSize: 12, fontWeight: 500, color: '#3A3530', textDecoration: 'none' }}>
+          <Link href="/seeker/dashboard" style={{ padding: '12px 24px', borderRadius: 8, border: '1.5px solid rgba(240,120,20,0.3)', background: 'transparent', fontSize: 12, fontWeight: 500, color: '#3A3530', textDecoration: 'none' }}>
             My Dashboard
           </Link>
           <Link href="/practitioners" style={{ padding: '12px 24px', borderRadius: 8, background: '#F07814', color: '#3A3530', fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', textDecoration: 'none' }}>
@@ -171,7 +171,7 @@ function WriteReviewInner() {
         )}
       </div>
 
-      <div style={{ background: '#fff', border: '1px solid rgba(232,184,75,0.15)', borderRadius: 12, padding: 28 }}>
+      <div style={{ background: '#fff', border: '1px solid rgba(240,120,20,0.15)', borderRadius: 12, padding: 28 }}>
         <div style={{ marginBottom: 20 }}>
           <FieldLabel htmlFor="review-title" style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#8A8278', marginBottom: 8, display: 'block' }}>
             Review Title
@@ -182,7 +182,7 @@ function WriteReviewInner() {
             onChange={(e) => setTitle(e.target.value)}
             placeholder='e.g. "Transformative experience" or "Exactly what I needed"'
             maxLength={100}
-            style={{ width: '100%', padding: '12px 14px', borderRadius: 6, border: '1.5px solid rgba(232,184,75,0.2)', background: '#F5F2EB', fontSize: 14, outline: 'none', fontFamily: "'Inter', sans-serif" }}
+            style={{ width: '100%', padding: '12px 14px', borderRadius: 6, border: '1.5px solid rgba(240,120,20,0.2)', background: '#F5F2EB', fontSize: 14, outline: 'none', fontFamily: "'Inter', sans-serif" }}
           />
         </div>
 
@@ -201,7 +201,7 @@ function WriteReviewInner() {
             }
             rows={6}
             maxLength={2000}
-            style={{ width: '100%', padding: '14px', borderRadius: 6, border: '1.5px solid rgba(232,184,75,0.2)', background: '#F5F2EB', fontSize: 14, lineHeight: 1.7, outline: 'none', fontFamily: "'Inter', sans-serif", resize: 'vertical' }}
+            style={{ width: '100%', padding: '14px', borderRadius: 6, border: '1.5px solid rgba(240,120,20,0.2)', background: '#F5F2EB', fontSize: 14, lineHeight: 1.7, outline: 'none', fontFamily: "'Inter', sans-serif", resize: 'vertical' }}
           />
           <div style={{ textAlign: 'right', fontSize: 11, color: '#8A8278', marginTop: 4 }}>
             {body.length}/2000
@@ -217,13 +217,13 @@ function WriteReviewInner() {
         <button
           onClick={handleSubmit}
           disabled={rating === 0 || submitting}
-          style={{ width: '100%', padding: 16, borderRadius: 8, background: rating === 0 ? 'rgba(232,184,75,0.3)' : '#F07814', color: '#3A3530', fontSize: 13, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', border: 'none', cursor: rating === 0 ? 'not-allowed' : 'pointer' }}
+          style={{ width: '100%', padding: 16, borderRadius: 8, background: rating === 0 ? 'rgba(240,120,20,0.3)' : '#F07814', color: '#3A3530', fontSize: 13, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', border: 'none', cursor: rating === 0 ? 'not-allowed' : 'pointer' }}
         >
           {submitting ? 'Submitting…' : 'Submit Review'}
         </button>
       </div>
 
-      <div style={{ marginTop: 24, padding: '16px 20px', borderRadius: 8, background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.2)', fontSize: 12, color: '#3A3530', lineHeight: 1.7 }}>
+      <div style={{ marginTop: 24, padding: '16px 20px', borderRadius: 8, background: '#FEF7F0', border: '1px solid rgba(240,120,20,0.2)', fontSize: 12, color: '#3A3530', lineHeight: 1.7 }}>
         <strong style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Review Guidelines</strong>
         <ul style={{ marginTop: 8, paddingLeft: 16 }}>
           <li>Be honest and specific about your experience</li>

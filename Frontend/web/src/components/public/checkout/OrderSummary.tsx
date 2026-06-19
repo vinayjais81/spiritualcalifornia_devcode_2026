@@ -21,17 +21,17 @@ export function OrderSummary({ items, subtotal, shipping, tax, discount, total, 
 
   return (
     <div style={{
-      background: '#fff', border: '1px solid rgba(232,184,75,0.15)',
+      background: '#fff', border: '1px solid rgba(240,120,20,0.15)',
       borderRadius: 12, position: 'sticky', top: 40, overflow: 'hidden',
     }}>
-      <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
+      <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
         <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 500, color: '#3A3530' }}>
           Order Summary
         </h3>
       </div>
 
       {/* Items */}
-      <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
+      <div style={{ padding: '16px 24px', borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
         {items.map((item) => (
           <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
             <div style={{
@@ -71,14 +71,14 @@ export function OrderSummary({ items, subtotal, shipping, tax, discount, total, 
 
       {/* Promo code */}
       {onApplyPromo && !promoApplied && (
-        <div style={{ padding: '12px 24px', borderBottom: '1px solid rgba(232,184,75,0.1)', display: 'flex', gap: 8 }}>
+        <div style={{ padding: '12px 24px', borderBottom: '1px solid rgba(240,120,20,0.1)', display: 'flex', gap: 8 }}>
           <input
             value={promoCode}
             onChange={(e) => setPromoCode(e.target.value)}
             placeholder="Promo code"
             style={{
               flex: 1, padding: '9px 12px', borderRadius: 6,
-              border: '1.5px solid rgba(232,184,75,0.2)', background: '#F5F2EB',
+              border: '1.5px solid rgba(240,120,20,0.2)', background: '#F5F2EB',
               fontSize: 12, outline: 'none', fontFamily: "'Inter', sans-serif",
             }}
           />

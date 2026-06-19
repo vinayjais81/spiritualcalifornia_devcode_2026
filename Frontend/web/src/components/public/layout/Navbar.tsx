@@ -87,7 +87,7 @@ export function Navbar() {
           padding: '14px 48px',
           background: 'rgba(250,250,247,0.96)',
           backdropFilter: 'blur(14px)',
-          borderBottom: '1px solid rgba(232,184,75,0.12)',
+          borderBottom: '1px solid rgba(240,120,20,0.12)',
         }}
       >
         {/* Left — Desktop nav links */}
@@ -177,7 +177,7 @@ export function Navbar() {
               cursor: 'pointer',
               transition: 'background 0.2s',
             }}
-            onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(232,184,75,0.12)')}
+            onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = 'rgba(240,120,20,0.12)')}
             onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -202,7 +202,7 @@ export function Navbar() {
               textDecoration: 'none',
               transition: 'background 0.2s',
             }}
-            onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.background = 'rgba(232,184,75,0.12)')}
+            onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.background = 'rgba(240,120,20,0.12)')}
             onMouseLeave={e => ((e.currentTarget as HTMLAnchorElement).style.background = 'transparent')}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -294,7 +294,7 @@ export function Navbar() {
                     right: 0,
                     minWidth: '180px',
                     background: '#FFFFFF',
-                    border: '1px solid rgba(232,184,75,0.2)',
+                    border: '1px solid rgba(240,120,20,0.2)',
                     borderRadius: '8px',
                     boxShadow: '0 8px 24px rgba(58,53,48,0.12)',
                     zIndex: 20,
@@ -302,7 +302,7 @@ export function Navbar() {
                   }}>
                     <div style={{
                       padding: '12px 16px',
-                      borderBottom: '1px solid rgba(232,184,75,0.12)',
+                      borderBottom: '1px solid rgba(240,120,20,0.12)',
                     }}>
                       <div style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: '12px', fontWeight: 500, color: '#3A3530' }}>
                         {user.firstName} {user.lastName}
@@ -326,7 +326,7 @@ export function Navbar() {
                         color: '#3A3530',
                         background: 'none',
                         textDecoration: 'none',
-                        borderBottom: '1px solid rgba(232,184,75,0.08)',
+                        borderBottom: '1px solid rgba(240,120,20,0.08)',
                       }}
                     >
                       My Dashboard

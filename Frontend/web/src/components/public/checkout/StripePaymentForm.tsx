@@ -72,7 +72,7 @@ export function StripePaymentForm({ submitLabel, onSuccess, onError, returnUrl, 
 
       {cancellationNote && (
         <div style={{
-          background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.2)',
+          background: '#FEF7F0', border: '1px solid rgba(240,120,20,0.2)',
           borderRadius: 8, padding: '14px 18px', marginTop: 16,
           fontSize: 12, color: '#3A3530', lineHeight: 1.6,
         }}>
@@ -86,7 +86,7 @@ export function StripePaymentForm({ submitLabel, onSuccess, onError, returnUrl, 
         disabled={!stripe || !ready || loading}
         style={{
           width: '100%', padding: 18, borderRadius: 8, marginTop: 20,
-          background: loading ? 'rgba(232,184,75,0.5)' : '#F07814',
+          background: loading ? 'rgba(240,120,20,0.5)' : '#F07814',
           color: '#3A3530',
           fontFamily: "'Inter', sans-serif",
           fontSize: 13, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',

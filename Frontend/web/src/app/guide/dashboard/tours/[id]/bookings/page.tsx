@@ -188,7 +188,7 @@ export default function TourBookingsPage() {
 
       {/* Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-        <div style={{ background: C.white, border: `1px solid rgba(232,184,75,0.15)`, borderRadius: 12, padding: 20, textAlign: 'center' }}>
+        <div style={{ background: C.white, border: `1px solid rgba(240,120,20,0.15)`, borderRadius: 12, padding: 20, textAlign: 'center' }}>
           <div style={{ fontFamily: serif, fontSize: 32, fontWeight: 500, color: C.charcoal }}>{stats.totalBookings}</div>
           <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray }}>Bookings</div>
         </div>
@@ -196,11 +196,11 @@ export default function TourBookingsPage() {
           <div style={{ fontFamily: serif, fontSize: 32, fontWeight: 500, color: C.gold }}>{stats.totalTravelers}</div>
           <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray }}>Travelers</div>
         </div>
-        <div style={{ background: C.white, border: `1px solid rgba(232,184,75,0.15)`, borderRadius: 12, padding: 20, textAlign: 'center' }}>
+        <div style={{ background: C.white, border: `1px solid rgba(240,120,20,0.15)`, borderRadius: 12, padding: 20, textAlign: 'center' }}>
           <div style={{ fontFamily: serif, fontSize: 32, fontWeight: 500, color: C.charcoal }}>{stats.dietaryCount}</div>
           <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray }}>Dietary Notes</div>
         </div>
-        <div style={{ background: C.white, border: `1px solid rgba(232,184,75,0.15)`, borderRadius: 12, padding: 20, textAlign: 'center' }}>
+        <div style={{ background: C.white, border: `1px solid rgba(240,120,20,0.15)`, borderRadius: 12, padding: 20, textAlign: 'center' }}>
           <div style={{ fontFamily: serif, fontSize: 32, fontWeight: 500, color: stats.healthCount > 0 ? C.red : C.charcoal }}>{stats.healthCount}</div>
           <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray }}>Health Flags</div>
         </div>
@@ -216,7 +216,7 @@ export default function TourBookingsPage() {
           onChange={(e) => setDepartureFilter(e.target.value)}
           style={{
             fontFamily: font, fontSize: 13, color: C.charcoal, background: C.offWhite,
-            border: '1.5px solid rgba(232,184,75,0.3)', borderRadius: 8, padding: '8px 12px',
+            border: '1.5px solid rgba(240,120,20,0.3)', borderRadius: 8, padding: '8px 12px',
             outline: 'none',
           }}
         >
@@ -238,13 +238,13 @@ export default function TourBookingsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           {rows.map((row) => (
             <div key={row.bookingId} style={{
-              background: C.white, border: '1px solid rgba(232,184,75,0.15)',
+              background: C.white, border: '1px solid rgba(240,120,20,0.15)',
               borderRadius: 12, overflow: 'hidden',
             }}>
               {/* Header strip */}
               <div style={{
                 padding: '14px 20px', background: C.offWhite,
-                borderBottom: '1px solid rgba(232,184,75,0.15)',
+                borderBottom: '1px solid rgba(240,120,20,0.15)',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 flexWrap: 'wrap', gap: 12,
               }}>
@@ -267,7 +267,7 @@ export default function TourBookingsPage() {
               {(row.dietaryRequirements || row.healthConditions) && (
                 <div style={{
                   padding: '10px 20px', background: '#FFFAF0',
-                  borderBottom: '1px solid rgba(232,184,75,0.1)',
+                  borderBottom: '1px solid rgba(240,120,20,0.1)',
                   display: 'flex', flexWrap: 'wrap', gap: 24, fontSize: 12, fontFamily: font,
                 }}>
                   {row.dietaryRequirements && row.dietaryRequirements !== 'none' && (
@@ -286,7 +286,7 @@ export default function TourBookingsPage() {
                   gridTemplateColumns: '40px 1.4fr 1fr 1fr 1.2fr 1fr',
                   gap: 12, padding: '0 0 8px',
                   fontFamily: font, fontSize: 10, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.warmGray,
-                  borderBottom: '1px solid rgba(232,184,75,0.1)',
+                  borderBottom: '1px solid rgba(240,120,20,0.1)',
                 }}>
                   <div>#</div>
                   <div>Name</div>
@@ -303,7 +303,7 @@ export default function TourBookingsPage() {
                         gridTemplateColumns: '40px 1.4fr 1fr 1fr 1.2fr 1fr',
                         gap: 12, padding: '12px 0',
                         fontFamily: font, fontSize: 12, color: C.charcoal,
-                        borderBottom: i < row.manifest.length - 1 ? '1px solid rgba(232,184,75,0.06)' : 'none',
+                        borderBottom: i < row.manifest.length - 1 ? '1px solid rgba(240,120,20,0.06)' : 'none',
                         alignItems: 'center',
                       }}
                     >
@@ -327,7 +327,7 @@ export default function TourBookingsPage() {
 
                 {/* Contact strip */}
                 <div style={{
-                  marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(232,184,75,0.1)',
+                  marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(240,120,20,0.1)',
                   display: 'flex', gap: 24, fontSize: 11, fontFamily: font, color: C.warmGray,
                 }}>
                   <span>✉ {row.contactEmail || '—'}</span>

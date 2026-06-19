@@ -105,7 +105,7 @@ export function AIFinderBar() {
         {/* Input */}
         <div style={{
           display: 'flex', background: 'rgba(255,255,255,0.07)',
-          border: '1.5px solid rgba(232,184,75,0.35)', borderRadius: 12,
+          border: '1.5px solid rgba(240,120,20,0.35)', borderRadius: 12,
           overflow: 'hidden', maxWidth: 680, margin: '0 auto 16px',
         }}>
           <span style={{ padding: '0 16px', display: 'flex', alignItems: 'center', fontSize: 20, color: '#F07814' }}>
@@ -143,7 +143,7 @@ export function AIFinderBar() {
               onClick={() => fillAndAsk(suggestions[i])}
               style={{
                 padding: '7px 16px', borderRadius: 20,
-                background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(232,184,75,0.25)',
+                background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(240,120,20,0.25)',
                 fontSize: 12, color: 'rgba(255,255,255,0.65)', cursor: 'pointer',
               }}
             >
@@ -164,7 +164,7 @@ export function AIFinderBar() {
         {response && !response.crisis && (
           <div style={{
             maxWidth: 680, margin: '16px auto 0',
-            background: 'rgba(232,184,75,0.1)', border: '1px solid rgba(232,184,75,0.3)',
+            background: 'rgba(240,120,20,0.1)', border: '1px solid rgba(240,120,20,0.3)',
             borderRadius: 10, padding: '16px 20px', textAlign: 'left',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
@@ -182,18 +182,18 @@ export function AIFinderBar() {
                   key={p.id}
                   href={`/shop/${p.id}`}
                   style={{
-                    background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(232,184,75,0.2)',
+                    background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(240,120,20,0.2)',
                     borderRadius: 8, padding: '10px 14px', fontSize: 12, cursor: 'pointer',
                     textDecoration: 'none', display: 'block',
                     transition: 'background 0.2s, border-color 0.2s',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.background = 'rgba(255,255,255,0.14)';
-                    e.currentTarget.style.borderColor = 'rgba(232,184,75,0.45)';
+                    e.currentTarget.style.borderColor = 'rgba(240,120,20,0.45)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                    e.currentTarget.style.borderColor = 'rgba(232,184,75,0.2)';
+                    e.currentTarget.style.borderColor = 'rgba(240,120,20,0.2)';
                   }}
                 >
                   <div style={{ fontWeight: 500, color: '#fff', marginBottom: 2 }}>{p.name}</div>

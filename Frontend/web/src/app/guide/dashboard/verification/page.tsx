@@ -110,7 +110,7 @@ export default function VerificationPage() {
       <Panel title="Identity & Credentials" icon="🛡️">
 
         {/* ── Step 1: Email Verified ─────────────────────────────── */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '16px 0', borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '16px 0', borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
           <div style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0, background: emailVerified ? '#E8F5E9' : C.goldPale }}>
             {emailVerified ? '✅' : '⏳'}
           </div>
@@ -123,7 +123,7 @@ export default function VerificationPage() {
         </div>
 
         {/* ── Step 2: Government ID (Persona) ────────────────────── */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '16px 0', borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '16px 0', borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
           <div style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0, background: identityDone ? '#E8F5E9' : identityPending ? C.goldPale : '#FFF3E0' }}>
             {identityDone ? '✅' : identityPending ? '⏳' : '🪪'}
           </div>
@@ -147,7 +147,7 @@ export default function VerificationPage() {
         </div>
 
         {/* ── Step 3: Professional Certification — Upload ─────────── */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '16px 0', borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '16px 0', borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
           <div style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0, background: credentials.some(c => c.verificationStatus === 'PENDING') ? C.goldPale : credentials.length > 0 ? '#E8F5E9' : '#FFF3E0' }}>
             {credentials.some(c => c.verificationStatus === 'APPROVED') ? '✅' : credentials.length > 0 ? '⏳' : '📋'}
           </div>
@@ -161,7 +161,7 @@ export default function VerificationPage() {
             <label style={{
               display: 'inline-flex', alignItems: 'center', gap: '6px',
               padding: '8px 16px', fontFamily: font, fontSize: '12px', fontWeight: 500,
-              background: C.goldPale, border: '1.5px solid rgba(232,184,75,0.5)',
+              background: C.goldPale, border: '1.5px solid rgba(240,120,20,0.5)',
               borderRadius: '6px', cursor: 'pointer', color: C.charcoal,
               letterSpacing: '0.08em', textTransform: 'uppercase' as const,
             }}>
@@ -197,7 +197,7 @@ export default function VerificationPage() {
                 {credentials.map((cred) => (
                   <div key={cred.id} style={{
                     padding: '10px 16px', background: C.goldPale,
-                    border: '1px solid rgba(232,184,75,0.4)', borderRadius: '8px',
+                    border: '1px solid rgba(240,120,20,0.4)', borderRadius: '8px',
                     fontFamily: font, fontSize: '12px', color: C.charcoal,
                     display: 'flex', alignItems: 'center', gap: '8px',
                   }}>
@@ -225,7 +225,7 @@ export default function VerificationPage() {
             <label style={{
               display: 'inline-flex', alignItems: 'center', gap: '6px',
               padding: '8px 16px', fontFamily: font, fontSize: '12px', fontWeight: 500,
-              background: C.goldPale, border: '1.5px solid rgba(232,184,75,0.5)',
+              background: C.goldPale, border: '1.5px solid rgba(240,120,20,0.5)',
               borderRadius: '6px', cursor: 'pointer', color: C.charcoal,
               letterSpacing: '0.08em', textTransform: 'uppercase' as const,
             }}>
@@ -251,7 +251,7 @@ export default function VerificationPage() {
               padding: '10px 14px', background: C.offWhite, borderRadius: '8px',
               fontFamily: font, fontSize: '12px', color: C.charcoal,
               display: 'flex', alignItems: 'center', gap: '8px',
-              border: '1px solid rgba(232,184,75,0.3)',
+              border: '1px solid rgba(240,120,20,0.3)',
             }}>
               📄 <strong>{certFile.name}</strong> ({(certFile.size / 1024).toFixed(0)} KB)
             </div>

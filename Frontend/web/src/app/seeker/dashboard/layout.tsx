@@ -66,7 +66,7 @@ export default function SeekerDashboardLayout({ children }: { children: React.Re
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '14px 48px', background: 'rgba(250,250,247,0.97)',
-        backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(232,184,75,0.15)',
+        backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(240,120,20,0.15)',
       }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
           <Image src="/images/logo.jpg" alt="Spiritual California" width={40} height={40} style={{ borderRadius: '50%', objectFit: 'cover' }} />
@@ -98,7 +98,7 @@ export default function SeekerDashboardLayout({ children }: { children: React.Re
         {/* ── SIDEBAR ──────────────────────────────────────────── */}
         <aside style={{
           width: '240px', height: 'calc(100vh - 69px)', background: C.white,
-          borderRight: '1px solid rgba(232,184,75,0.12)', position: 'fixed',
+          borderRight: '1px solid rgba(240,120,20,0.12)', position: 'fixed',
           top: '69px', left: 0, overflowY: 'auto', zIndex: 100,
         }}>
           {sidebarSections.map((sec, si) => (
@@ -122,12 +122,12 @@ export default function SeekerDashboardLayout({ children }: { children: React.Re
                   );
                 })}
               </div>
-              {si < sidebarSections.length - 1 && <div style={{ height: '1px', background: 'rgba(232,184,75,0.12)', margin: '8px 0' }} />}
+              {si < sidebarSections.length - 1 && <div style={{ height: '1px', background: 'rgba(240,120,20,0.12)', margin: '8px 0' }} />}
             </div>
           ))}
 
           {/* Browse link */}
-          <div style={{ height: '1px', background: 'rgba(232,184,75,0.12)', margin: '8px 0' }} />
+          <div style={{ height: '1px', background: 'rgba(240,120,20,0.12)', margin: '8px 0' }} />
           <div style={{ padding: '8px 0' }}>
             <Link href="/practitioners"
               style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 24px', fontFamily: font, fontSize: '13px', color: C.warmGray, textDecoration: 'none' }}>
@@ -143,7 +143,7 @@ export default function SeekerDashboardLayout({ children }: { children: React.Re
       </div>
 
       {/* ── FOOTER ───────────────────────────────────────────────── */}
-      <footer style={{ marginLeft: '240px', padding: '24px 48px', borderTop: '1px solid rgba(232,184,75,0.12)', fontFamily: font, fontSize: '11px', color: C.warmGray, letterSpacing: '0.08em', textAlign: 'center' }}>
+      <footer style={{ marginLeft: '240px', padding: '24px 48px', borderTop: '1px solid rgba(240,120,20,0.12)', fontFamily: font, fontSize: '11px', color: C.warmGray, letterSpacing: '0.08em', textAlign: 'center' }}>
         © {new Date().getFullYear()} Spiritual California LLC · All rights reserved
       </footer>
     </div>

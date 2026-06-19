@@ -17,7 +17,7 @@ export function SectionHeader({ title, linkLabel, linkHref = '#' }: SectionHeade
       {/* Left rule */}
       <div
         className="flex-1 h-px"
-        style={{ background: 'linear-gradient(to right, transparent, rgba(232,184,75,0.3), transparent)' }}
+        style={{ background: 'linear-gradient(to right, transparent, rgba(240,120,20,0.3), transparent)' }}
       />
 
       <h2
@@ -30,7 +30,7 @@ export function SectionHeader({ title, linkLabel, linkHref = '#' }: SectionHeade
       {/* Right rule */}
       <div
         className="flex-1 h-px"
-        style={{ background: 'linear-gradient(to right, transparent, rgba(232,184,75,0.3), transparent)' }}
+        style={{ background: 'linear-gradient(to right, transparent, rgba(240,120,20,0.3), transparent)' }}
       />
 
       {linkLabel && (

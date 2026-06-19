@@ -242,7 +242,7 @@ export default function CategoriesPage() {
               style={{
                 padding: '8px 16px',
                 borderRadius: 24,
-                border: '1.5px dashed rgba(232,184,75,0.5)',
+                border: '1.5px dashed rgba(240,120,20,0.5)',
                 background: 'transparent',
                 fontFamily: font,
                 fontSize: 13,
@@ -270,7 +270,7 @@ export default function CategoriesPage() {
               autoFocus
               style={{
                 flex: 1,
-                border: '1px solid rgba(232,184,75,0.4)',
+                border: '1px solid rgba(240,120,20,0.4)',
                 borderRadius: 24,
                 padding: '8px 16px',
                 fontFamily: font,

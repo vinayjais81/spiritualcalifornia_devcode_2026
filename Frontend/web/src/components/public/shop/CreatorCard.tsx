@@ -14,14 +14,14 @@ interface CreatorCardProps {
 export function CreatorCard({ slug, displayName, tagline, avatarUrl, isVerified, compact }: CreatorCardProps) {
   const padding = compact ? '16px' : '20px 24px';
   const avatarSize = compact ? 48 : 56;
-  const bg = compact ? 'rgba(232,184,75,0.03)' : '#fff';
+  const bg = compact ? 'rgba(240,120,20,0.03)' : '#fff';
 
   return (
     <Link href={`/guides/${slug}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
       <div style={{
         display: 'flex', alignItems: 'center', gap: compact ? 14 : 16,
         padding, background: bg,
-        border: '1px solid rgba(232,184,75,0.15)', borderRadius: 12,
+        border: '1px solid rgba(240,120,20,0.15)', borderRadius: 12,
         transition: 'border-color 0.3s', cursor: 'pointer',
       }}>
         <div style={{

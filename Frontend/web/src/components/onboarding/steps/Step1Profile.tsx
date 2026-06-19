@@ -71,7 +71,7 @@ export function Step1Profile() {
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const iStyle = (f: string): React.CSSProperties =>
-    focused === f ? { ...iBase, borderColor: '#F07814', boxShadow: '0 0 0 3px rgba(232,184,75,0.1)' } : iBase;
+    focused === f ? { ...iBase, borderColor: '#F07814', boxShadow: '0 0 0 3px rgba(240,120,20,0.1)' } : iBase;
 
   const handleAvatarChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -229,7 +229,7 @@ export function Step1Profile() {
         </p>
         <p style={{
           fontSize: '14px', color: '#3A3530', fontWeight: 500,
-          background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.3)',
+          background: '#FEF7F0', border: '1px solid rgba(240,120,20,0.3)',
           padding: '10px 18px', borderRadius: 6, display: 'inline-block',
           marginBottom: '24px',
         }}>
@@ -278,7 +278,7 @@ export function Step1Profile() {
       <div style={{ marginBottom: '20px' }}>
         <FieldLabel style={lbl}>Profile Photo</FieldLabel>
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginTop: '6px' }}>
-          <button type="button" onClick={() => fileInputRef.current?.click()} style={{ width: '140px', height: '140px', borderRadius: '50%', border: '2px dashed rgba(232,184,75,0.5)', background: step1.avatarPreviewUrl ? 'transparent' : '#FEF7F0', cursor: 'pointer', overflow: 'hidden', padding: 0, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button type="button" onClick={() => fileInputRef.current?.click()} style={{ width: '140px', height: '140px', borderRadius: '50%', border: '2px dashed rgba(240,120,20,0.5)', background: step1.avatarPreviewUrl ? 'transparent' : '#FEF7F0', cursor: 'pointer', overflow: 'hidden', padding: 0, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {step1.avatarPreviewUrl
               // eslint-disable-next-line @next/next/no-img-element
               ? <img src={step1.avatarPreviewUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -418,7 +418,7 @@ export function Step1Profile() {
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px', paddingTop: '28px', borderTop: '1px solid rgba(232,184,75,0.15)' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px', paddingTop: '28px', borderTop: '1px solid rgba(240,120,20,0.15)' }}>
         {(() => {
           const submitDisabled = isLoading || (!isAuthenticated && !pwdStrength.allPassed);
           return (

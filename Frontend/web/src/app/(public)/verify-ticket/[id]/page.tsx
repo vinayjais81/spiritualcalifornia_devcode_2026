@@ -141,11 +141,11 @@ export default function VerifyTicketPage() {
 
       {/* Event Details Card */}
       <div style={{
-        background: C.white, border: '1px solid rgba(232,184,75,0.2)',
+        background: C.white, border: '1px solid rgba(240,120,20,0.2)',
         borderRadius: 12, overflow: 'hidden', marginBottom: 20,
       }}>
         {ticket.event.coverImageUrl && (
-          <div style={{ height: 160, background: `url(${ticket.event.coverImageUrl}) center/cover`, borderBottom: '1px solid rgba(232,184,75,0.2)' }} />
+          <div style={{ height: 160, background: `url(${ticket.event.coverImageUrl}) center/cover`, borderBottom: '1px solid rgba(240,120,20,0.2)' }} />
         )}
         <div style={{ padding: '20px 24px' }}>
           <h2 style={{ fontFamily: serif, fontSize: 22, color: C.charcoal, margin: '0 0 4px' }}>
@@ -166,7 +166,7 @@ export default function VerifyTicketPage() {
 
       {/* Attendee Details Card */}
       <div style={{
-        background: C.white, border: '1px solid rgba(232,184,75,0.2)',
+        background: C.white, border: '1px solid rgba(240,120,20,0.2)',
         borderRadius: 12, padding: '20px 24px', marginBottom: 20,
       }}>
         <h3 style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray, margin: '0 0 14px', fontWeight: 500 }}>
@@ -184,7 +184,7 @@ export default function VerifyTicketPage() {
             <Detail label="Accessibility" value={ticket.attendee.accessibilityNeeds} />
           )}
         </div>
-        <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(232,184,75,0.15)', fontSize: 11, color: C.warmGray }}>
+        <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(240,120,20,0.15)', fontSize: 11, color: C.warmGray }}>
           Ticket ID: {ticket.ticketId.slice(-8).toUpperCase()} &middot; Purchased {formatDate(ticket.purchasedAt)}
         </div>
       </div>

@@ -16,7 +16,7 @@ export function PaymentForm({ tabs = ['Credit / Debit', 'Apple Pay', 'PayPal'], 
   return (
     <div>
       {/* Payment Tabs */}
-      <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(232,184,75,0.2)' }}>
+      <div style={{ display: 'flex', gap: 0, marginBottom: 24, borderRadius: 8, overflow: 'hidden', border: '1px solid rgba(240,120,20,0.2)' }}>
         {tabs.map((tab, i) => (
           <button
             key={i}
@@ -44,7 +44,7 @@ export function PaymentForm({ tabs = ['Credit / Debit', 'Apple Pay', 'PayPal'], 
             </label>
             <div style={{
               padding: '14px 16px', borderRadius: 6,
-              border: '1.5px solid rgba(232,184,75,0.2)', background: '#F5F2EB',
+              border: '1.5px solid rgba(240,120,20,0.2)', background: '#F5F2EB',
               fontSize: 14, color: '#8A8278',
             }}>
               •••• •••• •••• ••••
@@ -57,7 +57,7 @@ export function PaymentForm({ tabs = ['Credit / Debit', 'Apple Pay', 'PayPal'], 
               </label>
               <input placeholder="MM / YY" style={{
                 width: '100%', padding: '12px 14px', borderRadius: 6,
-                border: '1.5px solid rgba(232,184,75,0.2)', background: '#F5F2EB',
+                border: '1.5px solid rgba(240,120,20,0.2)', background: '#F5F2EB',
                 fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif",
               }} />
             </div>
@@ -67,7 +67,7 @@ export function PaymentForm({ tabs = ['Credit / Debit', 'Apple Pay', 'PayPal'], 
               </label>
               <input placeholder="•••" style={{
                 width: '100%', padding: '12px 14px', borderRadius: 6,
-                border: '1.5px solid rgba(232,184,75,0.2)', background: '#F5F2EB',
+                border: '1.5px solid rgba(240,120,20,0.2)', background: '#F5F2EB',
                 fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif",
               }} />
             </div>
@@ -78,7 +78,7 @@ export function PaymentForm({ tabs = ['Credit / Debit', 'Apple Pay', 'PayPal'], 
             </label>
             <input placeholder="Full name as shown on card" style={{
               width: '100%', padding: '12px 14px', borderRadius: 6,
-              border: '1.5px solid rgba(232,184,75,0.2)', background: '#F5F2EB',
+              border: '1.5px solid rgba(240,120,20,0.2)', background: '#F5F2EB',
               fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif",
             }} />
           </div>
@@ -100,7 +100,7 @@ export function PaymentForm({ tabs = ['Credit / Debit', 'Apple Pay', 'PayPal'], 
       {/* Cancellation policy */}
       {cancellationNote && (
         <div style={{
-          background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.2)',
+          background: '#FEF7F0', border: '1px solid rgba(240,120,20,0.2)',
           borderRadius: 8, padding: '14px 18px', marginBottom: 24,
           fontSize: 12, color: '#3A3530', lineHeight: 1.6,
         }}>

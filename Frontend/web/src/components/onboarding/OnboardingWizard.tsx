@@ -134,7 +134,7 @@ export function OnboardingWizard() {
           padding: '14px 48px',
           background: 'rgba(250,250,247,0.95)',
           backdropFilter: 'blur(14px)',
-          borderBottom: '1px solid rgba(232,184,75,0.15)',
+          borderBottom: '1px solid rgba(240,120,20,0.15)',
         }}
       >
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
@@ -205,7 +205,7 @@ export function OnboardingWizard() {
           right: 0,
           zIndex: 99,
           background: '#FFFFFF',
-          borderBottom: '1px solid rgba(232,184,75,0.1)',
+          borderBottom: '1px solid rgba(240,120,20,0.1)',
           padding: '0 48px',
           overflowX: 'auto',
         }}
@@ -288,7 +288,7 @@ function CrossRoleBlock() {
           maxWidth: 520,
           textAlign: 'center',
           background: '#fff',
-          border: '1px solid rgba(232,184,75,0.25)',
+          border: '1px solid rgba(240,120,20,0.25)',
           borderRadius: 12,
           padding: '40px 36px',
         }}
@@ -354,7 +354,7 @@ function CrossRoleBlock() {
             href="/seeker/dashboard"
             style={{
               padding: '12px 24px',
-              border: '1px solid rgba(232,184,75,0.4)',
+              border: '1px solid rgba(240,120,20,0.4)',
               color: '#3A3530',
               borderRadius: 6,
               fontSize: 12,

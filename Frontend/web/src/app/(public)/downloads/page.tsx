@@ -59,7 +59,7 @@ export default function DownloadsPage() {
       <div style={{ maxWidth: 900, margin: '0 auto', padding: '80px 48px' }}>
         <div style={{ height: 32, background: '#f0eeeb', borderRadius: 4, width: '40%', marginBottom: 24 }} />
         {[1, 2, 3].map(i => (
-          <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 16, padding: 20, background: '#fff', borderRadius: 12, border: '1px solid rgba(232,184,75,0.1)' }}>
+          <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 16, padding: 20, background: '#fff', borderRadius: 12, border: '1px solid rgba(240,120,20,0.1)' }}>
             <div style={{ width: 80, height: 80, background: '#FEF7F0', borderRadius: 8 }} />
             <div style={{ flex: 1 }}>
               <div style={{ height: 16, background: '#f0eeeb', borderRadius: 4, width: '60%', marginBottom: 8 }} />
@@ -108,7 +108,7 @@ export default function DownloadsPage() {
           {items.map((item) => (
             <div key={item.orderItemId} style={{
               display: 'flex', alignItems: 'center', gap: 20, padding: '20px 24px',
-              background: '#fff', border: '1px solid rgba(232,184,75,0.1)', borderRadius: 12,
+              background: '#fff', border: '1px solid rgba(240,120,20,0.1)', borderRadius: 12,
               transition: 'box-shadow 0.2s',
             }}>
               {/* Image */}
@@ -165,7 +165,7 @@ export default function DownloadsPage() {
       {items.length > 0 && (
         <div style={{
           marginTop: 32, padding: '16px 20px', borderRadius: 8,
-          background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.2)',
+          background: '#FEF7F0', border: '1px solid rgba(240,120,20,0.2)',
           textAlign: 'center', fontSize: 12, color: '#3A3530',
         }}>
           🔒 All downloads include <strong>lifetime access</strong>. Re-download anytime from this page.

@@ -237,7 +237,7 @@ export default function TourDetailPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
             <span style={{
               padding: '5px 14px', borderRadius: 20,
-              background: 'rgba(232,184,75,0.2)', border: '1px solid rgba(232,184,75,0.5)',
+              background: 'rgba(240,120,20,0.2)', border: '1px solid rgba(240,120,20,0.5)',
               color: C.goldLight, fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
             }}>
               {days} day journey
@@ -344,7 +344,7 @@ export default function TourDetailPage() {
                     style={{
                       display: 'flex', alignItems: 'flex-start', gap: 12,
                       padding: '14px 18px', background: C.goldPale,
-                      border: '1px solid rgba(232,184,75,0.2)', borderRadius: 8,
+                      border: '1px solid rgba(240,120,20,0.2)', borderRadius: 8,
                     }}
                   >
                     <span style={{ color: C.gold, fontSize: 16, lineHeight: 1.4 }}>✦</span>
@@ -363,7 +363,7 @@ export default function TourDetailPage() {
                 {/* Vertical timeline line */}
                 <div style={{
                   position: 'absolute', left: 23, top: 16, bottom: 16,
-                  width: 2, background: 'rgba(232,184,75,0.25)',
+                  width: 2, background: 'rgba(240,120,20,0.25)',
                 }} />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                   {tour.itinerary
@@ -376,12 +376,12 @@ export default function TourDetailPage() {
                         background: C.gold, color: C.white,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontFamily: serif, fontSize: 18, fontWeight: 500,
-                        boxShadow: '0 2px 8px rgba(232,184,75,0.4)',
+                        boxShadow: '0 2px 8px rgba(240,120,20,0.4)',
                       }}>
                         {day.dayNumber}
                       </div>
                       <div style={{
-                        background: C.white, border: '1px solid rgba(232,184,75,0.15)',
+                        background: C.white, border: '1px solid rgba(240,120,20,0.15)',
                         borderRadius: 12, padding: 24,
                       }}>
                         <h3 style={{
@@ -402,7 +402,7 @@ export default function TourDetailPage() {
                             <span key={`a-${i}`} style={{
                               padding: '4px 10px', borderRadius: 16,
                               background: C.goldPale, fontSize: 11, color: C.charcoal,
-                              border: '1px solid rgba(232,184,75,0.2)',
+                              border: '1px solid rgba(240,120,20,0.2)',
                             }}>
                               {a}
                             </span>
@@ -418,7 +418,7 @@ export default function TourDetailPage() {
                           ))}
                         </div>
                         {day.accommodation && (
-                          <div style={{ fontSize: 12, color: C.warmGray, marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(232,184,75,0.1)' }}>
+                          <div style={{ fontSize: 12, color: C.warmGray, marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(240,120,20,0.1)' }}>
                             🏨 {day.accommodation}
                           </div>
                         )}
@@ -437,7 +437,7 @@ export default function TourDetailPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {tour.roomTypes.map((rt) => (
                   <div key={rt.id} style={{
-                    background: C.white, border: '1px solid rgba(232,184,75,0.15)', borderRadius: 12,
+                    background: C.white, border: '1px solid rgba(240,120,20,0.15)', borderRadius: 12,
                     padding: 24, display: 'grid', gridTemplateColumns: '1fr auto', gap: 24, alignItems: 'center',
                   }}>
                     <div>
@@ -455,7 +455,7 @@ export default function TourDetailPage() {
                             <span key={i} style={{
                               fontSize: 11, color: C.warmGray,
                               padding: '2px 8px', background: C.offWhite, borderRadius: 12,
-                              border: '1px solid rgba(232,184,75,0.15)',
+                              border: '1px solid rgba(240,120,20,0.15)',
                             }}>
                               ✓ {a}
                             </span>
@@ -529,7 +529,7 @@ export default function TourDetailPage() {
             <div style={{ marginBottom: 56 }}>
               <SectionHeader>Requirements</SectionHeader>
               <div style={{
-                background: '#FFFAF0', border: '1px solid rgba(232,184,75,0.25)', borderRadius: 12,
+                background: '#FFFAF0', border: '1px solid rgba(240,120,20,0.25)', borderRadius: 12,
                 padding: 24, fontSize: 14, color: C.charcoal, lineHeight: 1.7,
                 whiteSpace: 'pre-wrap',
               }}>
@@ -543,7 +543,7 @@ export default function TourDetailPage() {
             <SectionHeader>Your trip leader</SectionHeader>
             <Link href={`/guides/${tour.guide.slug}`} style={{ textDecoration: 'none' }}>
               <div style={{
-                background: C.white, border: '1px solid rgba(232,184,75,0.15)', borderRadius: 12,
+                background: C.white, border: '1px solid rgba(240,120,20,0.15)', borderRadius: 12,
                 padding: 24, display: 'flex', alignItems: 'center', gap: 20,
                 cursor: 'pointer', transition: 'box-shadow 0.2s',
               }}>
@@ -583,7 +583,7 @@ export default function TourDetailPage() {
           <div style={{ marginBottom: 56 }}>
             <SectionHeader>Cancellation policy</SectionHeader>
             <div style={{
-              background: C.goldPale, border: '1px solid rgba(232,184,75,0.25)', borderRadius: 12,
+              background: C.goldPale, border: '1px solid rgba(240,120,20,0.25)', borderRadius: 12,
               padding: 24, fontSize: 14, color: C.charcoal, lineHeight: 1.8,
             }}>
               <p style={{ marginBottom: 8 }}>
@@ -605,7 +605,7 @@ export default function TourDetailPage() {
         {/* ─── RIGHT: sticky booking sidebar ───────────────────────────── */}
         <aside style={{
           position: 'sticky', top: 100,
-          background: C.white, border: '1px solid rgba(232,184,75,0.2)',
+          background: C.white, border: '1px solid rgba(240,120,20,0.2)',
           borderRadius: 16, padding: 28, boxShadow: '0 4px 24px rgba(58,53,48,0.06)',
         }}>
           <div style={{ marginBottom: 20 }}>
@@ -639,7 +639,7 @@ export default function TourDetailPage() {
                       background: selectedDeparture === d.id ? C.goldPale : C.white,
                       border: selectedDeparture === d.id
                         ? `1.5px solid ${C.gold}`
-                        : '1.5px solid rgba(232,184,75,0.2)',
+                        : '1.5px solid rgba(240,120,20,0.2)',
                       cursor: 'pointer', transition: 'all 0.15s',
                       fontFamily: 'Inter, sans-serif',
                     }}
@@ -674,7 +674,7 @@ export default function TourDetailPage() {
           {/* Quick facts */}
           <div style={{
             display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20,
-            paddingTop: 16, borderTop: '1px solid rgba(232,184,75,0.15)',
+            paddingTop: 16, borderTop: '1px solid rgba(240,120,20,0.15)',
           }}>
             {tour.location && (
               <FactRow icon="📍" text={tour.location} />
@@ -735,7 +735,7 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
     <h2 style={{
       fontFamily: serif, fontSize: 30, fontWeight: 400, color: C.charcoal,
-      marginBottom: 24, paddingBottom: 12, borderBottom: '1px solid rgba(232,184,75,0.2)',
+      marginBottom: 24, paddingBottom: 12, borderBottom: '1px solid rgba(240,120,20,0.2)',
     }}>
       {children}
     </h2>

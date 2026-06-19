@@ -12,7 +12,7 @@ export function AuthorBioCard({ slug, name, tagline, bio, avatarUrl }: AuthorBio
   return (
     <div style={{
       maxWidth: 680, margin: '48px auto', padding: 32,
-      background: '#fff', border: '1px solid rgba(232,184,75,0.15)',
+      background: '#fff', border: '1px solid rgba(240,120,20,0.15)',
       borderRadius: 16, display: 'flex', gap: 24,
     }}>
       {/* Avatar */}
@@ -59,7 +59,7 @@ export function AuthorBioCard({ slug, name, tagline, bio, avatarUrl }: AuthorBio
             padding: '7px 18px', borderRadius: 6,
             background: 'transparent', color: '#3A3530',
             fontSize: 11, fontWeight: 500, letterSpacing: '0.08em',
-            border: '1.5px solid rgba(232,184,75,0.3)', cursor: 'pointer',
+            border: '1.5px solid rgba(240,120,20,0.3)', cursor: 'pointer',
           }}>
             Follow
           </button>

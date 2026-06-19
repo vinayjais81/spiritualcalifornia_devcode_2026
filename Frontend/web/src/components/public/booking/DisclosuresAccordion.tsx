@@ -28,7 +28,7 @@ export function DisclosuresAccordion({
   return (
     <section
       style={{
-        border: '1px solid rgba(232,184,75,0.3)',
+        border: '1px solid rgba(240,120,20,0.3)',
         borderRadius: 10,
         background: '#FFFFFF',
         marginBottom: 16,
@@ -75,7 +75,7 @@ export function DisclosuresAccordion({
           id="disclosures-content"
           style={{
             padding: '0 18px 16px',
-            borderTop: '1px solid rgba(232,184,75,0.15)',
+            borderTop: '1px solid rgba(240,120,20,0.15)',
             fontFamily: "'Inter', sans-serif",
             fontSize: 12.5,
             lineHeight: 1.65,

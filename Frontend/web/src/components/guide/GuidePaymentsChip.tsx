@@ -84,13 +84,13 @@ export function GuidePaymentsChip() {
 
   const accent = tone === 'amber' ? C.gold : tone === 'green' ? '#5A8A6A' : C.warmGray;
   const tint =
-    tone === 'amber' ? 'rgba(232,184,75,0.08)' : tone === 'green' ? '#F0F7F1' : '#F5F2EB';
+    tone === 'amber' ? 'rgba(240,120,20,0.08)' : tone === 'green' ? '#F0F7F1' : '#F5F2EB';
 
   return (
     <div
       style={{
         background: tint,
-        border: `1px solid ${tone === 'amber' ? 'rgba(232,184,75,0.4)' : 'rgba(90,138,106,0.35)'}`,
+        border: `1px solid ${tone === 'amber' ? 'rgba(240,120,20,0.4)' : 'rgba(90,138,106,0.35)'}`,
         borderRadius: 12,
         padding: '16px 20px',
         marginBottom: 16,

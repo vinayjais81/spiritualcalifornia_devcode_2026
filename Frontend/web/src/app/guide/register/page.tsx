@@ -24,7 +24,7 @@ const G = {
 
 const inputStyle: React.CSSProperties = {
   background: G.white,
-  border: `1px solid rgba(232,184,75,0.3)`,
+  border: `1px solid rgba(240,120,20,0.3)`,
   borderRadius: 4,
   padding: '12px 16px',
   fontFamily: 'var(--font-inter), sans-serif',
@@ -102,7 +102,7 @@ export default function GuideRegisterPage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '14px 48px',
         background: 'rgba(250,250,247,0.95)', backdropFilter: 'blur(14px)',
-        borderBottom: '1px solid rgba(232,184,75,0.15)',
+        borderBottom: '1px solid rgba(240,120,20,0.15)',
       }}>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
           <Image src="/images/logo.jpg" alt="Spiritual California" width={40} height={40}
@@ -169,11 +169,11 @@ export default function GuideRegisterPage() {
 
           {/* Divider */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
-            <div style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.2)' }} />
+            <div style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.2)' }} />
             <span style={{ fontSize: 11, color: G.warmGray, letterSpacing: '0.1em', fontFamily: 'var(--font-inter), sans-serif' }}>
               or register with email
             </span>
-            <div style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.2)' }} />
+            <div style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.2)' }} />
           </div>
 
           {/* Form */}

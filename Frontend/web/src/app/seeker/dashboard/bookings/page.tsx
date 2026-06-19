@@ -59,7 +59,7 @@ export default function MyBookingsPage() {
             fontWeight: filter === f ? 500 : 400, cursor: 'pointer', transition: 'all 0.2s',
             background: filter === f ? C.charcoal : 'transparent',
             color: filter === f ? C.gold : C.warmGray,
-            border: filter === f ? 'none' : '1px solid rgba(232,184,75,0.3)',
+            border: filter === f ? 'none' : '1px solid rgba(240,120,20,0.3)',
             textTransform: 'capitalize',
           }}>
             {f} {f === 'all' ? `(${bookings.length})` : ''}
@@ -79,7 +79,7 @@ export default function MyBookingsPage() {
               <a key={b.id} href={`/seeker/dashboard/bookings/${b.id}`} style={{
                 display: 'grid', gridTemplateColumns: '1fr 160px 100px 80px',
                 gap: '12px', alignItems: 'center', padding: '16px 0',
-                borderBottom: '1px solid rgba(232,184,75,0.08)',
+                borderBottom: '1px solid rgba(240,120,20,0.08)',
                 textDecoration: 'none', cursor: 'pointer',
               }}>
                 <div>

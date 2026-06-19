@@ -52,11 +52,11 @@ export function ProductCard({
       onMouseLeave={() => setHovered(false)}
       style={{
         background: '#fff',
-        border: '1px solid rgba(232,184,75,0.1)',
+        border: '1px solid rgba(240,120,20,0.1)',
         borderRadius: 12, overflow: 'hidden',
         transition: 'box-shadow 0.3s, transform 0.3s',
         position: 'relative',
-        boxShadow: hovered ? '0 10px 40px rgba(232,184,75,0.15)' : 'none',
+        boxShadow: hovered ? '0 10px 40px rgba(240,120,20,0.15)' : 'none',
         transform: hovered ? 'translateY(-4px)' : 'none',
       }}
     >
@@ -92,7 +92,7 @@ export function ProductCard({
                   fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
                   background: badge === 'New' ? '#3A3530' : badge === 'Bestseller' ? '#F07814' : 'rgba(255,255,255,0.9)',
                   color: badge === 'New' ? '#F07814' : badge === 'Bestseller' ? '#3A3530' : '#3A3530',
-                  border: badge !== 'New' && badge !== 'Bestseller' ? '1px solid rgba(232,184,75,0.4)' : 'none',
+                  border: badge !== 'New' && badge !== 'Bestseller' ? '1px solid rgba(240,120,20,0.4)' : 'none',
                 }}>
                   {badge}
                 </span>

@@ -41,9 +41,9 @@ const lbl: React.CSSProperties = { fontSize: '11px', letterSpacing: '0.12em', te
 function SectionDivider({ label }: { label: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', margin: '32px 0 24px' }}>
-      <div style={{ flex: 1, height: '1px', background: 'rgba(232,184,75,0.2)' }} />
+      <div style={{ flex: 1, height: '1px', background: 'rgba(240,120,20,0.2)' }} />
       <div style={{ fontSize: '11px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#8A8278', whiteSpace: 'nowrap', fontFamily: 'var(--font-inter), sans-serif' }}>{label}</div>
-      <div style={{ flex: 1, height: '1px', background: 'rgba(232,184,75,0.2)' }} />
+      <div style={{ flex: 1, height: '1px', background: 'rgba(240,120,20,0.2)' }} />
     </div>
   );
 }
@@ -181,7 +181,7 @@ export function Step2Services() {
           <button
             type="button"
             onClick={() => setShowCustomInput(true)}
-            style={{ padding: '8px 16px', borderRadius: '24px', border: '1.5px dashed rgba(232,184,75,0.5)', background: 'transparent', fontSize: '13px', color: '#8A8278', cursor: 'pointer', fontFamily: 'var(--font-inter), sans-serif', transition: 'all 0.2s' }}
+            style={{ padding: '8px 16px', borderRadius: '24px', border: '1.5px dashed rgba(240,120,20,0.5)', background: 'transparent', fontSize: '13px', color: '#8A8278', cursor: 'pointer', fontFamily: 'var(--font-inter), sans-serif', transition: 'all 0.2s' }}
           >
             + Add your modality
           </button>
@@ -195,7 +195,7 @@ export function Step2Services() {
             onChange={(e) => setCustomModality(e.target.value)}
             placeholder="e.g. Pranic Healing"
             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomModality())}
-            style={{ flex: 1, border: '1px solid rgba(232,184,75,0.4)', borderRadius: '24px', padding: '8px 16px', fontSize: '13px', outline: 'none', fontFamily: 'var(--font-inter), sans-serif' }}
+            style={{ flex: 1, border: '1px solid rgba(240,120,20,0.4)', borderRadius: '24px', padding: '8px 16px', fontSize: '13px', outline: 'none', fontFamily: 'var(--font-inter), sans-serif' }}
             autoFocus
           />
           <button onClick={addCustomModality} type="button" style={{ padding: '8px 18px', borderRadius: '24px', background: '#F07814', color: '#FFFFFF', border: 'none', fontSize: '12px', cursor: 'pointer', fontFamily: 'var(--font-inter), sans-serif' }}>Add</button>
@@ -228,7 +228,7 @@ export function Step2Services() {
         })}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '40px', paddingTop: '28px', borderTop: '1px solid rgba(232,184,75,0.15)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '40px', paddingTop: '28px', borderTop: '1px solid rgba(240,120,20,0.15)' }}>
         <button type="button" onClick={prevStep} style={{ fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8A8278', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-inter), sans-serif', display: 'flex', alignItems: 'center', gap: '6px' }}>← Back</button>
         <button type="button" onClick={handleContinue} disabled={isLoading} style={{ padding: '14px 36px', borderRadius: '8px', background: isLoading ? '#C4BDB5' : '#3A3530', color: '#FFFFFF', fontSize: '12px', letterSpacing: '0.12em', textTransform: 'uppercase', border: 'none', cursor: isLoading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-inter), sans-serif', transition: 'background 0.3s' }}>
           {isLoading ? 'Saving…' : 'Continue → Credentials'}

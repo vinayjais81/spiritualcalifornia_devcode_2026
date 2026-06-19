@@ -201,11 +201,11 @@ export default function TravelsPage() {
       }}>
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'linear-gradient(135deg, #1E1A17 0%, #2C2420 50%, #3A3530 100%)',
+          background: 'linear-gradient(135deg, #F5F2EB 0%, #FDE8D0 100%)',
         }} />
         <div style={{
           position: 'absolute', inset: 0,
-          background: 'radial-gradient(ellipse at 60% 40%, rgba(232,184,75,0.08) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse at 60% 40%, rgba(240,120,20,0.08) 0%, transparent 70%)',
         }} />
         <div style={{
           position: 'absolute', inset: 0, opacity: 0.04,
@@ -221,19 +221,19 @@ export default function TravelsPage() {
             color: '#F07814', marginBottom: 14,
             display: 'flex', alignItems: 'center', gap: 10,
           }}>
-            <span style={{ flex: '0 0 40px', height: 1, background: 'rgba(232,184,75,0.4)' }} />
+            <span style={{ flex: '0 0 40px', height: 1, background: 'rgba(240,120,20,0.4)' }} />
             Soul Travels
-            <span style={{ flex: '0 0 40px', height: 1, background: 'rgba(232,184,75,0.4)' }} />
+            <span style={{ flex: '0 0 40px', height: 1, background: 'rgba(240,120,20,0.4)' }} />
           </div>
           <h1 style={{
             fontFamily: "'Playfair Display', serif", fontSize: 64, fontWeight: 300,
-            color: '#fff', lineHeight: 1.05, marginBottom: 16,
+            color: '#3A3530', lineHeight: 1.05, marginBottom: 16,
           }}>
             Journey to the<br />
             <em style={{ fontStyle: 'italic', color: '#F07814' }}>Sacred Places</em>
           </h1>
           <p style={{
-            fontSize: 15, color: 'rgba(255,255,255,0.55)',
+            fontSize: 15, color: 'rgba(58,53,48,0.6)',
             maxWidth: 560, lineHeight: 1.7, marginBottom: 32,
           }}>
             Curated pilgrimages and healing journeys led by verified guides. From ancient temples in Nepal
@@ -259,12 +259,12 @@ export default function TravelsPage() {
         background: 'rgba(250,250,247,0.97)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(232,184,75,0.12)',
+        borderBottom: '1px solid rgba(240,120,20,0.12)',
       }}>
         <div style={{
           maxWidth: 1280, margin: '0 auto',
           display: 'flex', alignItems: 'stretch', padding: '0 48px',
-          borderBottom: '1px solid rgba(232,184,75,0.1)',
+          borderBottom: '1px solid rgba(240,120,20,0.1)',
           overflowX: 'auto',
         }}>
           <TabBtn
@@ -293,7 +293,7 @@ export default function TravelsPage() {
               aria-label="Search soul tours"
               style={{
                 width: '100%', padding: '8px 32px 8px 14px', borderRadius: 24,
-                background: '#fff', border: '1px solid rgba(232,184,75,0.25)',
+                background: '#fff', border: '1px solid rgba(240,120,20,0.25)',
                 fontSize: 13, color: '#3A3530', outline: 'none',
               }}
             />
@@ -339,7 +339,7 @@ export default function TravelsPage() {
         {!loading && tours.length === 0 && (
           <div style={{
             textAlign: 'center', padding: 80,
-            background: '#fff', border: '1px dashed rgba(232,184,75,0.3)', borderRadius: 16,
+            background: '#fff', border: '1px dashed rgba(240,120,20,0.3)', borderRadius: 16,
           }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🏔️</div>
             <h2 style={{
@@ -364,7 +364,7 @@ export default function TravelsPage() {
               }}>{month}</div>
               <div style={{
                 flex: 1, height: 1,
-                background: 'linear-gradient(to right, rgba(232,184,75,0.3), transparent)',
+                background: 'linear-gradient(to right, rgba(240,120,20,0.3), transparent)',
               }} />
             </div>
 
@@ -397,7 +397,7 @@ function Stat({ value, label }: { value: string; label: string }) {
       }}>{value}</div>
       <div style={{
         fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
-        color: 'rgba(255,255,255,0.4)', marginTop: 2,
+        color: 'rgba(58,53,48,0.6)', marginTop: 2,
       }}>{label}</div>
     </div>
   );
@@ -533,7 +533,7 @@ function TourCard({ tour }: { tour: Tour }) {
           <div style={{
             display: 'flex', alignItems: 'center', gap: 10,
             marginBottom: 18, paddingBottom: 18,
-            borderBottom: '1px solid rgba(232,184,75,0.15)',
+            borderBottom: '1px solid rgba(240,120,20,0.15)',
           }}>
             <Link href={`/guides/${tour.guide.slug}`} style={{ flexShrink: 0 }}>
               <div style={{
@@ -571,7 +571,7 @@ function TourCard({ tour }: { tour: Tour }) {
 
           {tour.latestUpdate && (
             <div style={{
-              background: 'rgba(232,184,75,0.07)',
+              background: 'rgba(240,120,20,0.07)',
               borderLeft: '3px solid #F07814',
               padding: '12px 16px',
               borderRadius: '0 8px 8px 0',
@@ -603,7 +603,7 @@ function TourCard({ tour }: { tour: Tour }) {
                   key={h}
                   style={{
                     fontSize: 11, padding: '4px 12px', borderRadius: 12,
-                    background: 'rgba(232,184,75,0.1)', color: '#8A8278',
+                    background: 'rgba(240,120,20,0.1)', color: '#8A8278',
                   }}
                 >
                   {h}
