@@ -288,10 +288,12 @@ export function StaticPageRenderer({
             background: #FFFFFF;
             border-radius: 12px;
             padding: 32px;
-            margin: 24px 0;
+            margin: 40px 0;
           }
           .static-page-body .steps-box h3 {
+            font-size: 22px;
             margin-top: 0;
+            margin-bottom: 24px;
           }
           .static-page-body .step {
             display: flex;
@@ -352,7 +354,7 @@ export function StaticPageRenderer({
               "icon text";
             column-gap: 20px;
             align-items: start;
-            margin-bottom: 16px;
+            margin-bottom: 24px;
             padding: 24px;
             background: #FFFFFF;
             border-radius: 12px;
@@ -362,7 +364,7 @@ export function StaticPageRenderer({
             grid-area: icon;
             width: 48px;
             height: 48px;
-            background: rgba(240,120,20,0.1);
+            background: #FEF7F0;
             border-radius: 50%;
             display: flex;
             align-items: center;

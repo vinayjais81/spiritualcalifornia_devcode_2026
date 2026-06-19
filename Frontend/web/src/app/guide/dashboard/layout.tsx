@@ -157,6 +157,18 @@ export default function GuideDashboardLayout({ children }: { children: React.Rea
                   const active = isActive(item.href);
                   return (
                     <Link key={item.href} href={item.href}
+                      onMouseEnter={(e) => {
+                        if (!active) {
+                          e.currentTarget.style.background = C.goldPale;
+                          e.currentTarget.style.color = C.charcoal;
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!active) {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = C.warmGray;
+                        }
+                      }}
                       style={{
                         display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 24px',
                         fontFamily: font, fontSize: '13px', fontWeight: active ? 500 : 400,
