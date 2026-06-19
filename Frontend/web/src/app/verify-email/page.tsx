@@ -73,7 +73,7 @@ function VerifyEmailContent() {
     <div
       style={{
         minHeight: '100vh',
-        background: '#FAFAF7',
+        background: '#F5F2EB',
         display: 'flex',
         flexDirection: 'column',
       }}
@@ -106,7 +106,7 @@ function VerifyEmailContent() {
           />
           <div>
             <div
-              className="font-cormorant"
+              className="font-playfair"
               style={{ fontSize: '18px', fontWeight: 500, color: '#3A3530', lineHeight: 1.1 }}
             >
               Spiritual California
@@ -157,7 +157,7 @@ function VerifyingState() {
             width: '56px',
             height: '56px',
             border: '3px solid rgba(232,184,75,0.2)',
-            borderTopColor: '#E8B84B',
+            borderTopColor: '#F07814',
             borderRadius: '50%',
             animation: 'spin 0.8s linear infinite',
             margin: '0 auto 24px',
@@ -166,7 +166,7 @@ function VerifyingState() {
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
       <h1
-        className="font-cormorant"
+        className="font-playfair"
         style={{ fontSize: '36px', fontWeight: 300, color: '#3A3530', marginBottom: '12px' }}
       >
         Verifying your email…
@@ -204,7 +204,7 @@ function SuccessState({ countdown }: { countdown: number }) {
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
             <path
               d="M20 6L9 17L4 12"
-              stroke="#E8B84B"
+              stroke="#F07814"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -219,7 +219,7 @@ function SuccessState({ countdown }: { countdown: number }) {
           fontSize: '11px',
           letterSpacing: '0.2em',
           textTransform: 'uppercase',
-          color: '#E8B84B',
+          color: '#F07814',
           marginBottom: '10px',
         }}
       >
@@ -227,11 +227,11 @@ function SuccessState({ countdown }: { countdown: number }) {
       </div>
 
       <h1
-        className="font-cormorant"
+        className="font-playfair"
         style={{ fontSize: '40px', fontWeight: 300, color: '#3A3530', margin: '0 0 16px' }}
       >
         Welcome to{' '}
-        <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>Spiritual California</em>
+        <em style={{ fontStyle: 'italic', color: '#F07814' }}>Spiritual California</em>
       </h1>
 
       <p
@@ -319,7 +319,7 @@ function ExpiredState() {
       </div>
 
       <h1
-        className="font-cormorant"
+        className="font-playfair"
         style={{ fontSize: '40px', fontWeight: 300, color: '#3A3530', margin: '0 0 16px' }}
       >
         This link has expired
@@ -393,7 +393,7 @@ function AlreadyVerifiedState() {
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
             <path
               d="M20 6L9 17L4 12"
-              stroke="#E8B84B"
+              stroke="#F07814"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -408,7 +408,7 @@ function AlreadyVerifiedState() {
           fontSize: '11px',
           letterSpacing: '0.2em',
           textTransform: 'uppercase',
-          color: '#E8B84B',
+          color: '#F07814',
           marginBottom: '10px',
         }}
       >
@@ -416,7 +416,7 @@ function AlreadyVerifiedState() {
       </div>
 
       <h1
-        className="font-cormorant"
+        className="font-playfair"
         style={{ fontSize: '40px', fontWeight: 300, color: '#3A3530', margin: '0 0 16px' }}
       >
         You're already verified
@@ -499,7 +499,7 @@ function InvalidState() {
       </div>
 
       <h1
-        className="font-cormorant"
+        className="font-playfair"
         style={{ fontSize: '40px', fontWeight: 300, color: '#3A3530', margin: '0 0 16px' }}
       >
         This link is not valid

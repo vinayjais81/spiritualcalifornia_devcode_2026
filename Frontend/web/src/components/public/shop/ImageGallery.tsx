@@ -42,7 +42,7 @@ export function ImageGallery({ images, alt, badges }: ImageGalleryProps) {
               <span style={{
                 position: 'absolute', top: 20, left: 20,
                 padding: '6px 14px', borderRadius: 20,
-                background: '#3A3530', color: '#E8B84B',
+                background: '#3A3530', color: '#F07814',
                 fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
               }}>
                 {badges[0]}
@@ -52,7 +52,7 @@ export function ImageGallery({ images, alt, badges }: ImageGalleryProps) {
               <span style={{
                 position: 'absolute', top: 20, right: 20,
                 padding: '6px 14px', borderRadius: 20,
-                background: '#E8B84B', color: '#3A3530',
+                background: '#F07814', color: '#3A3530',
                 fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
               }}>
                 {badges[1]}
@@ -71,7 +71,7 @@ export function ImageGallery({ images, alt, badges }: ImageGalleryProps) {
               onClick={() => setActiveIndex(i)}
               style={{
                 flex: 1, aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden',
-                border: activeIndex === i ? '2px solid #E8B84B' : '2px solid transparent',
+                border: activeIndex === i ? '2px solid #F07814' : '2px solid transparent',
                 cursor: 'pointer', background: '#1a1714', padding: 0,
               }}
             >

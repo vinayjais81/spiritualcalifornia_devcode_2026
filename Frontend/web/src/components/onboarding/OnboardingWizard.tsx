@@ -120,7 +120,7 @@ export function OnboardingWizard() {
   if (isExistingSeeker) return <CrossRoleBlock />;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAFAF7', fontFamily: 'var(--font-inter), sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#F5F2EB', fontFamily: 'var(--font-inter), sans-serif' }}>
 
       {/* ── NAV (fixed) ─────────────────────────────────────────── */}
       <nav
@@ -147,7 +147,7 @@ export function OnboardingWizard() {
           />
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
             <span
-              className="font-cormorant"
+              className="font-playfair"
               style={{ fontSize: '18px', fontWeight: 500, color: '#3A3530', letterSpacing: '0.04em' }}
             >
               Spiritual California
@@ -183,8 +183,8 @@ export function OnboardingWizard() {
           }}
           onMouseEnter={e => {
             const el = e.currentTarget as HTMLAnchorElement;
-            el.style.color = '#E8B84B';
-            el.style.borderColor = '#E8B84B';
+            el.style.color = '#F07814';
+            el.style.borderColor = '#F07814';
           }}
           onMouseLeave={e => {
             const el = e.currentTarget as HTMLAnchorElement;
@@ -274,7 +274,7 @@ function CrossRoleBlock() {
     <div
       style={{
         minHeight: '100vh',
-        background: '#FAFAF7',
+        background: '#F5F2EB',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -298,7 +298,7 @@ function CrossRoleBlock() {
             fontSize: 11,
             letterSpacing: '0.22em',
             textTransform: 'uppercase',
-            color: '#E8B84B',
+            color: '#F07814',
             marginBottom: 14,
             fontWeight: 500,
           }}
@@ -307,7 +307,7 @@ function CrossRoleBlock() {
         </div>
         <h1
           style={{
-            fontFamily: 'var(--font-cormorant-garamond), serif',
+            fontFamily: 'var(--font-playfair-display), serif',
             fontSize: 32,
             fontWeight: 400,
             color: '#3A3530',
@@ -316,7 +316,7 @@ function CrossRoleBlock() {
           }}
         >
           One email,{' '}
-          <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>one role</em>
+          <em style={{ fontStyle: 'italic', color: '#F07814' }}>one role</em>
         </h1>
         <p
           style={{

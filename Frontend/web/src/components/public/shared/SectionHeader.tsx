@@ -21,7 +21,7 @@ export function SectionHeader({ title, linkLabel, linkHref = '#' }: SectionHeade
       />
 
       <h2
-        className="font-cormorant whitespace-nowrap"
+        className="font-playfair whitespace-nowrap"
         style={{ fontSize: '30px', fontWeight: 400, fontStyle: 'italic', color: '#3A3530' }}
       >
         {title}
@@ -49,8 +49,8 @@ export function SectionHeader({ title, linkLabel, linkHref = '#' }: SectionHeade
             paddingBottom: '1px',
           }}
           onMouseEnter={e => {
-            (e.currentTarget as HTMLAnchorElement).style.color = '#E8B84B';
-            (e.currentTarget as HTMLAnchorElement).style.borderColor = '#E8B84B';
+            (e.currentTarget as HTMLAnchorElement).style.color = '#F07814';
+            (e.currentTarget as HTMLAnchorElement).style.borderColor = '#F07814';
           }}
           onMouseLeave={e => {
             (e.currentTarget as HTMLAnchorElement).style.color = '#8A8278';

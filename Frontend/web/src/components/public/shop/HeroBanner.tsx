@@ -45,18 +45,18 @@ export function HeroBanner({ main, side }: HeroBannerProps) {
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 6,
               padding: '5px 14px', borderRadius: 20,
-              background: '#E8B84B', color: '#3A3530',
+              background: '#F07814', color: '#3A3530',
               fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
               marginBottom: 12,
             }}>
               ✦ {main.badge}
             </div>
           )}
-          <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#E8B84B', marginBottom: 8 }}>
+          <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#F07814', marginBottom: 8 }}>
             {main.category}
           </div>
           <h2 style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Playfair Display', serif",
             fontSize: 32, fontWeight: 400, color: '#fff', lineHeight: 1.2, marginBottom: 8,
           }}>
             {main.name}
@@ -66,13 +66,13 @@ export function HeroBanner({ main, side }: HeroBannerProps) {
               {main.description}
             </p>
           )}
-          <div style={{ fontSize: 22, fontWeight: 500, color: '#E8B84B', marginBottom: 16 }}>
+          <div style={{ fontSize: 22, fontWeight: 500, color: '#F07814', marginBottom: 16 }}>
             ${main.price}
           </div>
           <button style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             padding: '12px 24px', borderRadius: 8,
-            background: '#E8B84B', color: '#3A3530',
+            background: '#F07814', color: '#3A3530',
             fontFamily: "'Inter', sans-serif",
             fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
             border: 'none', cursor: 'pointer',
@@ -106,16 +106,16 @@ export function HeroBanner({ main, side }: HeroBannerProps) {
               background: 'linear-gradient(to top, rgba(30,22,18,0.88) 0%, transparent 100%)',
               padding: 20,
             }}>
-              <div style={{ fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#E8B84B', marginBottom: 4 }}>
+              <div style={{ fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#F07814', marginBottom: 4 }}>
                 {item.category}
               </div>
               <div style={{
-                fontFamily: "'Cormorant Garamond', serif",
+                fontFamily: "'Playfair Display', serif",
                 fontSize: 20, color: '#fff', marginBottom: 4,
               }}>
                 {item.name}
               </div>
-              <div style={{ fontSize: 15, fontWeight: 500, color: '#E8B84B' }}>${item.price}</div>
+              <div style={{ fontSize: 15, fontWeight: 500, color: '#F07814' }}>${item.price}</div>
             </div>
           </Link>
         ))}

@@ -138,7 +138,7 @@ export default function ShopPage() {
         <div style={{ marginBottom: 20 }}>
           <div style={{
             fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase',
-            color: '#E8B84B', marginBottom: 20,
+            color: '#F07814', marginBottom: 20,
             display: 'flex', alignItems: 'center', gap: 12,
           }}>
             Shop All
@@ -146,7 +146,7 @@ export default function ShopPage() {
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 20 }}>
             <h2 style={{
-              fontFamily: "'Cormorant Garamond', serif",
+              fontFamily: "'Playfair Display', serif",
               fontSize: 32, fontWeight: 400, color: '#3A3530',
             }}>
               {CATEGORY_LABEL[activeCategory] ?? 'All Products'}
@@ -182,7 +182,7 @@ export default function ShopPage() {
                 background: '#fff', borderRadius: 12, overflow: 'hidden',
                 border: '1px solid rgba(232,184,75,0.1)',
               }}>
-                <div style={{ height: 220, background: '#FDF6E3', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                <div style={{ height: 220, background: '#FEF7F0', animation: 'pulse 1.5s ease-in-out infinite' }} />
                 <div style={{ padding: '16px 18px' }}>
                   <div style={{ height: 12, background: '#f0eeeb', borderRadius: 4, marginBottom: 8, width: '60%' }} />
                   <div style={{ height: 18, background: '#f0eeeb', borderRadius: 4, marginBottom: 8 }} />
@@ -222,15 +222,15 @@ export default function ShopPage() {
 
         {/* Testimonial */}
         <div style={{
-          background: '#FDF6E3', border: '1px solid rgba(232,184,75,0.2)',
+          background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.2)',
           borderRadius: 16, padding: '40px 48px', marginBottom: 60, textAlign: 'center',
         }}>
-          <div style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#E8B84B', marginBottom: 16 }}>
+          <div style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#F07814', marginBottom: 16 }}>
             ✦ What Our Community Says
           </div>
-          <div style={{ color: '#E8B84B', fontSize: 18, marginBottom: 12 }}>★★★★★</div>
+          <div style={{ color: '#F07814', fontSize: 18, marginBottom: 12 }}>★★★★★</div>
           <blockquote style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Playfair Display', serif",
             fontSize: 26, fontWeight: 400, fontStyle: 'italic',
             color: '#3A3530', lineHeight: 1.5, maxWidth: 680,
             margin: '0 auto 20px',

@@ -344,7 +344,7 @@ export function RichTextEditor({
           margin: 0 0 0.5em 0;
         }
         .tiptap h2 {
-          font-family: var(--font-cormorant-garamond), 'Cormorant Garamond', serif;
+          font-family: var(--font-playfair-display), 'Playfair Display', serif;
           font-size: 24px;
           font-weight: 500;
           color: ${C.charcoal};
@@ -425,7 +425,7 @@ export function RichTextEditor({
         }
         .tiptap .pillar-title {
           grid-area: title;
-          font-family: var(--font-cormorant-garamond), 'Cormorant Garamond', serif;
+          font-family: var(--font-playfair-display), 'Playfair Display', serif;
           font-size: 18px; font-weight: 500;
           color: ${C.charcoal};
           margin: 0 0 4px;
@@ -444,7 +444,7 @@ export function RichTextEditor({
           margin: 12px 0;
         }
         .tiptap .steps-box h3 {
-          font-family: var(--font-cormorant-garamond), 'Cormorant Garamond', serif;
+          font-family: var(--font-playfair-display), 'Playfair Display', serif;
           font-size: 20px; font-weight: 500;
           color: ${C.charcoal};
           margin: 0 0 16px;

@@ -25,7 +25,7 @@ export function ReadingProgressBar() {
       height: 3, background: 'rgba(232,184,75,0.1)',
     }}>
       <div style={{
-        height: '100%', background: '#E8B84B',
+        height: '100%', background: '#F07814',
         width: `${progress}%`, transition: 'width 0.1s linear',
       }} />
     </div>

@@ -278,7 +278,7 @@ function Section({ title, linkHref, children }: { title: string; linkHref: strin
         <Link
           href={linkHref}
           style={{
-            fontSize: 11, color: '#E8B84B', textDecoration: 'none',
+            fontSize: 11, color: '#F07814', textDecoration: 'none',
             letterSpacing: '0.06em',
           }}
         >
@@ -309,7 +309,7 @@ function ResultRow({
         background: 'transparent', border: 'none', width: '100%',
         textAlign: 'left', transition: 'background 0.15s',
       }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#FAFAF7'; }}
+      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#F5F2EB'; }}
       onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
     >
       {imageUrl ? (
@@ -327,7 +327,7 @@ function ResultRow({
         <div style={{
           width: 40, height: 40, flexShrink: 0,
           borderRadius: circleImage ? '50%' : 6,
-          background: '#FDF6E3', color: '#E8B84B',
+          background: '#FEF7F0', color: '#F07814',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 14, fontWeight: 600,
         }}>{title.charAt(0)}</div>

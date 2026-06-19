@@ -55,7 +55,7 @@ export function FeaturedHero({
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '5px 14px', borderRadius: 20, width: 'fit-content',
-            background: '#E8B84B', color: '#3A3530',
+            background: '#F07814', color: '#3A3530',
             fontSize: 10, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
             marginBottom: 16,
           }}>
@@ -64,13 +64,13 @@ export function FeaturedHero({
           {category && (
             <div style={{
               fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase',
-              color: '#E8B84B', marginBottom: 10,
+              color: '#F07814', marginBottom: 10,
             }}>
               {category}
             </div>
           )}
           <h2 style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Playfair Display', serif",
             fontSize: 36, fontWeight: 400, color: '#fff', lineHeight: 1.2, marginBottom: 12,
           }}>
             {title}
@@ -82,9 +82,9 @@ export function FeaturedHero({
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{
-              width: 36, height: 36, borderRadius: '50%', border: '2px solid #E8B84B',
-              background: '#FDF6E3', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 12, fontWeight: 600, color: '#E8B84B', overflow: 'hidden',
+              width: 36, height: 36, borderRadius: '50%', border: '2px solid #F07814',
+              background: '#FEF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 12, fontWeight: 600, color: '#F07814', overflow: 'hidden',
             }}>
               {authorAvatar ? (
                 <img src={authorAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

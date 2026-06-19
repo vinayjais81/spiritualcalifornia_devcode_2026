@@ -141,7 +141,7 @@ function DLabel({ children }: { children: React.ReactNode }) {
   return (
     <h4
       style={{
-        fontFamily: "'Cormorant Garamond', serif",
+        fontFamily: "'Playfair Display', serif",
         fontSize: 14,
         fontWeight: 600,
         color: '#3A3530',
@@ -164,7 +164,7 @@ function DLink({ href, children }: { href: string; children: React.ReactNode }) 
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      style={{ color: '#E8B84B', textDecoration: 'underline' }}
+      style={{ color: '#F07814', textDecoration: 'underline' }}
     >
       {children}
     </Link>

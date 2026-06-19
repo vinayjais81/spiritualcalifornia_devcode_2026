@@ -62,7 +62,7 @@ export function ProductCard({
     >
       {/* Image */}
       <Link href={`/shop/${id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
-        <div style={{ position: 'relative', overflow: 'hidden', background: '#FDF6E3' }}>
+        <div style={{ position: 'relative', overflow: 'hidden', background: '#FEF7F0' }}>
           {imageUrl ? (
             <img
               src={imageUrl}
@@ -90,8 +90,8 @@ export function ProductCard({
                 <span key={i} style={{
                   display: 'inline-flex', padding: '4px 10px', borderRadius: 20,
                   fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
-                  background: badge === 'New' ? '#3A3530' : badge === 'Bestseller' ? '#E8B84B' : 'rgba(255,255,255,0.9)',
-                  color: badge === 'New' ? '#E8B84B' : badge === 'Bestseller' ? '#3A3530' : '#3A3530',
+                  background: badge === 'New' ? '#3A3530' : badge === 'Bestseller' ? '#F07814' : 'rgba(255,255,255,0.9)',
+                  color: badge === 'New' ? '#F07814' : badge === 'Bestseller' ? '#3A3530' : '#3A3530',
                   border: badge !== 'New' && badge !== 'Bestseller' ? '1px solid rgba(232,184,75,0.4)' : 'none',
                 }}>
                   {badge}
@@ -147,7 +147,7 @@ export function ProductCard({
         </div>
         <Link href={`/shop/${id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
           <h3 style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Playfair Display', serif",
             fontSize: 20, fontWeight: 500, color: '#3A3530',
             lineHeight: 1.3, marginBottom: 6,
           }}>
@@ -174,7 +174,7 @@ export function ProductCard({
           </div>
           {rating !== undefined && reviewCount !== undefined && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#8A8278' }}>
-              <span style={{ color: '#E8B84B', fontSize: 11 }}>★★★★★</span>
+              <span style={{ color: '#F07814', fontSize: 11 }}>★★★★★</span>
               ({reviewCount})
             </div>
           )}

@@ -22,7 +22,7 @@ export function CrisisResourcesCard({
   variant?: 'light' | 'dark';
 }) {
   const isLight = variant === 'light';
-  const bg = isLight ? '#FDF6E3' : 'rgba(232,184,75,0.12)';
+  const bg = isLight ? '#FEF7F0' : 'rgba(232,184,75,0.12)';
   const border = isLight ? 'rgba(192,57,43,0.35)' : 'rgba(232,184,75,0.35)';
   const text = isLight ? '#3A3530' : 'rgba(255,255,255,0.85)';
   const subtle = isLight ? '#8A8278' : 'rgba(255,255,255,0.55)';

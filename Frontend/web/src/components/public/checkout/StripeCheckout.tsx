@@ -76,7 +76,7 @@ export function StripeCheckout({
           onClick={() => window.location.reload()}
           style={{
             marginTop: 12, padding: '8px 20px', borderRadius: 6,
-            background: '#3A3530', color: '#E8B84B', border: 'none',
+            background: '#3A3530', color: '#F07814', border: 'none',
             fontSize: 12, fontWeight: 600, cursor: 'pointer',
           }}
         >

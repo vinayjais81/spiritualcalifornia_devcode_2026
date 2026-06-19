@@ -30,7 +30,7 @@ function PricingRow({ label, priceKey, typeKey }: { label: string; priceKey: key
     <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '16px' }}>
       <label style={{ ...lbl, minWidth: '180px', marginBottom: 0, textTransform: 'none', letterSpacing: 0, fontSize: '13px', color: '#3A3530', fontWeight: 400 }}>{label}</label>
       <div style={{ display: 'flex', alignItems: 'center', border: '1px solid rgba(138,130,120,0.25)', borderRadius: '8px', overflow: 'hidden', background: '#FFFFFF', flexShrink: 0 }}>
-        <span style={{ padding: '10px 14px', background: '#FDF6E3', fontSize: '14px', color: '#8A8278', borderRight: '1px solid rgba(138,130,120,0.15)' }}>$</span>
+        <span style={{ padding: '10px 14px', background: '#FEF7F0', fontSize: '14px', color: '#8A8278', borderRight: '1px solid rgba(138,130,120,0.15)' }}>$</span>
         <input
           type="number"
           placeholder="0"
@@ -103,9 +103,9 @@ export function Step5Calendar() {
   return (
     <div>
       <div style={{ marginBottom: '44px' }}>
-        <div style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#E8B84B', marginBottom: '10px', fontFamily: 'var(--font-inter), sans-serif' }}>Step 5 of 6</div>
-        <h1 className="font-cormorant" style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, lineHeight: 1.1, color: '#3A3530', marginBottom: '10px' }}>
-          Calendar &amp; <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>pricing</em>
+        <div style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#F07814', marginBottom: '10px', fontFamily: 'var(--font-inter), sans-serif' }}>Step 5 of 6</div>
+        <h1 className="font-playfair" style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, lineHeight: 1.1, color: '#3A3530', marginBottom: '10px' }}>
+          Calendar &amp; <em style={{ fontStyle: 'italic', color: '#F07814' }}>pricing</em>
         </h1>
         <p style={{ fontSize: '14px', color: '#8A8278', lineHeight: 1.7, maxWidth: '560px', fontFamily: 'var(--font-inter), sans-serif', margin: 0 }}>
           Connect your Calendly account so seekers can book sessions directly. Set your rates — you keep 80–88% of every transaction.
@@ -120,7 +120,7 @@ export function Step5Calendar() {
       <div style={{ border: calendlyConnected ? '1.5px solid #86EFAC' : '1.5px solid rgba(232,184,75,0.3)', borderRadius: '14px', padding: '28px', background: calendlyConnected ? '#F0FDF4' : '#FFFFFF', marginBottom: '24px', display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
         <div style={{ fontSize: '40px', flexShrink: 0 }}>📅</div>
         <div style={{ flex: 1 }}>
-          <div className="font-cormorant" style={{ fontSize: '22px', fontWeight: 400, color: '#3A3530', marginBottom: '6px' }}>Calendly</div>
+          <div className="font-playfair" style={{ fontSize: '22px', fontWeight: 400, color: '#3A3530', marginBottom: '6px' }}>Calendly</div>
           <p style={{ fontSize: '13px', color: '#8A8278', lineHeight: 1.6, fontFamily: 'var(--font-inter), sans-serif', marginBottom: '16px', margin: '0 0 16px' }}>
             The industry standard for booking sessions. Seekers see your real-time availability and book instantly — no back-and-forth.
           </p>

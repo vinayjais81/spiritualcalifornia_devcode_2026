@@ -209,7 +209,7 @@ export default function TravelsPage() {
         }} />
         <div style={{
           position: 'absolute', inset: 0, opacity: 0.04,
-          backgroundImage: 'repeating-linear-gradient(45deg, #E8B84B 0, #E8B84B 1px, transparent 0, transparent 50%)',
+          backgroundImage: 'repeating-linear-gradient(45deg, #F07814 0, #F07814 1px, transparent 0, transparent 50%)',
           backgroundSize: '20px 20px',
         }} />
         <div style={{
@@ -218,7 +218,7 @@ export default function TravelsPage() {
         }}>
           <div style={{
             fontSize: 10, letterSpacing: '0.28em', textTransform: 'uppercase',
-            color: '#E8B84B', marginBottom: 14,
+            color: '#F07814', marginBottom: 14,
             display: 'flex', alignItems: 'center', gap: 10,
           }}>
             <span style={{ flex: '0 0 40px', height: 1, background: 'rgba(232,184,75,0.4)' }} />
@@ -226,11 +226,11 @@ export default function TravelsPage() {
             <span style={{ flex: '0 0 40px', height: 1, background: 'rgba(232,184,75,0.4)' }} />
           </div>
           <h1 style={{
-            fontFamily: "'Cormorant Garamond', serif", fontSize: 64, fontWeight: 300,
+            fontFamily: "'Playfair Display', serif", fontSize: 64, fontWeight: 300,
             color: '#fff', lineHeight: 1.05, marginBottom: 16,
           }}>
             Journey to the<br />
-            <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>Sacred Places</em>
+            <em style={{ fontStyle: 'italic', color: '#F07814' }}>Sacred Places</em>
           </h1>
           <p style={{
             fontSize: 15, color: 'rgba(255,255,255,0.55)',
@@ -343,7 +343,7 @@ export default function TravelsPage() {
           }}>
             <div style={{ fontSize: 48, marginBottom: 16 }}>🏔️</div>
             <h2 style={{
-              fontFamily: "'Cormorant Garamond', serif",
+              fontFamily: "'Playfair Display', serif",
               fontSize: 28, color: '#3A3530', marginBottom: 8,
             }}>
               No journeys found
@@ -358,7 +358,7 @@ export default function TravelsPage() {
           <div key={month} style={{ marginBottom: 64 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 32 }}>
               <div style={{
-                fontFamily: "'Cormorant Garamond', serif",
+                fontFamily: "'Playfair Display', serif",
                 fontSize: 13, letterSpacing: '0.2em', textTransform: 'uppercase',
                 color: '#8A8278', whiteSpace: 'nowrap',
               }}>{month}</div>
@@ -392,8 +392,8 @@ function Stat({ value, label }: { value: string; label: string }) {
   return (
     <div>
       <div style={{
-        fontFamily: "'Cormorant Garamond', serif",
-        fontSize: 32, color: '#E8B84B',
+        fontFamily: "'Playfair Display', serif",
+        fontSize: 32, color: '#F07814',
       }}>{value}</div>
       <div style={{
         fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -420,7 +420,7 @@ function TabBtn({ active, onClick, icon, label }: {
         cursor: 'pointer',
         background: 'none',
         border: 'none',
-        borderBottom: `2px solid ${active ? '#E8B84B' : 'transparent'}`,
+        borderBottom: `2px solid ${active ? '#F07814' : 'transparent'}`,
         marginBottom: -1,
         fontWeight: active ? 500 : 400,
         transition: 'all 0.25s',
@@ -447,11 +447,11 @@ function CountryTag({ active, onClick, flag, label }: {
       style={{
         padding: '6px 14px',
         borderRadius: 20,
-        border: `1px solid ${active ? '#E8B84B' : 'rgba(138,130,120,0.25)'}`,
+        border: `1px solid ${active ? '#F07814' : 'rgba(138,130,120,0.25)'}`,
         fontSize: 12,
         color: active ? '#3A3530' : '#8A8278',
         cursor: 'pointer',
-        background: active ? '#E8B84B' : 'transparent',
+        background: active ? '#F07814' : 'transparent',
         fontWeight: active ? 500 : 400,
         transition: 'all 0.2s',
         whiteSpace: 'nowrap',
@@ -514,7 +514,7 @@ function TourCard({ tour }: { tour: Tour }) {
         <div style={{ padding: '36px 40px', display: 'flex', flexDirection: 'column' }}>
           <div style={{
             fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase',
-            color: '#E8B84B', marginBottom: 10,
+            color: '#F07814', marginBottom: 10,
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
             <span>✦</span> {trackLabel}
@@ -523,7 +523,7 @@ function TourCard({ tour }: { tour: Tour }) {
             )}
           </div>
           <h2 style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Playfair Display', serif",
             fontSize: 28, fontWeight: 400, color: '#3A3530',
             lineHeight: 1.2, marginBottom: 14,
           }}>
@@ -539,9 +539,9 @@ function TourCard({ tour }: { tour: Tour }) {
               <div style={{
                 width: 36, height: 36, borderRadius: '50%',
                 overflow: 'hidden',
-                background: '#FDF6E3', border: '2px solid #E8B84B',
+                background: '#FEF7F0', border: '2px solid #F07814',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, fontWeight: 600, color: '#E8B84B',
+                fontSize: 12, fontWeight: 600, color: '#F07814',
               }}>
                 {tour.guide.user.avatarUrl ? (
                   <img src={tour.guide.user.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -572,14 +572,14 @@ function TourCard({ tour }: { tour: Tour }) {
           {tour.latestUpdate && (
             <div style={{
               background: 'rgba(232,184,75,0.07)',
-              borderLeft: '3px solid #E8B84B',
+              borderLeft: '3px solid #F07814',
               padding: '12px 16px',
               borderRadius: '0 8px 8px 0',
               marginBottom: 20,
             }}>
               <div style={{
                 fontSize: 9, letterSpacing: '0.15em', textTransform: 'uppercase',
-                color: '#E8B84B', marginBottom: 4,
+                color: '#F07814', marginBottom: 4,
               }}>
                 ✦ Latest Update from {tour.guide.displayName.split(' ')[0]}
               </div>
@@ -623,7 +623,7 @@ function TourCard({ tour }: { tour: Tour }) {
                 transition: 'all 0.3s',
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#E8B84B';
+                e.currentTarget.style.background = '#F07814';
                 e.currentTarget.style.color = '#3A3530';
               }}
               onMouseLeave={(e) => {

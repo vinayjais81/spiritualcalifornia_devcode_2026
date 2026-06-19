@@ -75,7 +75,7 @@ export function MiniCalendar({ eventDates, selectedDate, onSelectDate }: Props) 
           ‹
         </button>
         <div style={{
-          fontFamily: "'Cormorant Garamond', serif",
+          fontFamily: "'Playfair Display', serif",
           fontSize: 18, color: '#fff', fontWeight: 400,
         }}>
           {MONTHS[viewMonth]} {viewYear}
@@ -114,7 +114,7 @@ export function MiniCalendar({ eventDates, selectedDate, onSelectDate }: Props) 
             const isSelected = dateStr === selectedDate;
             const hasEvent = eventSet.has(dateStr);
 
-            const bg = isSelected ? '#3A3530' : isToday ? '#E8B84B' : 'transparent';
+            const bg = isSelected ? '#3A3530' : isToday ? '#F07814' : 'transparent';
             const color = isSelected ? '#fff' : '#3A3530';
 
             return (
@@ -139,7 +139,7 @@ export function MiniCalendar({ eventDates, selectedDate, onSelectDate }: Props) 
                     position: 'absolute', bottom: 3, left: '50%',
                     transform: 'translateX(-50%)',
                     width: 4, height: 4, borderRadius: '50%',
-                    background: isSelected ? '#E8B84B' : '#E8B84B',
+                    background: isSelected ? '#F07814' : '#F07814',
                   }} />
                 )}
               </button>

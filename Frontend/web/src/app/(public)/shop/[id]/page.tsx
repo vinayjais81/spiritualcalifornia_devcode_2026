@@ -145,7 +145,7 @@ export default function ProductDetailPage() {
     return (
       <div style={{ maxWidth: 1300, margin: '0 auto', padding: '100px 60px' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80 }}>
-          <div style={{ aspectRatio: '1/1', background: '#FDF6E3', borderRadius: 16 }} />
+          <div style={{ aspectRatio: '1/1', background: '#FEF7F0', borderRadius: 16 }} />
           <div>
             <div style={{ height: 16, background: '#f0eeeb', borderRadius: 4, width: '30%', marginBottom: 16 }} />
             <div style={{ height: 40, background: '#f0eeeb', borderRadius: 4, width: '80%', marginBottom: 12 }} />
@@ -204,7 +204,7 @@ export default function ProductDetailPage() {
             <div style={{ position: 'sticky', top: 90 }}>
               <div style={{
                 aspectRatio: '1/1', borderRadius: 16, overflow: 'hidden',
-                background: '#FDF6E3', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: '#FEF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 position: 'relative',
               }}>
                 {product.imageUrls[0] ? (
@@ -215,7 +215,7 @@ export default function ProductDetailPage() {
                 <span style={{
                   position: 'absolute', bottom: 20, left: 20,
                   padding: '6px 14px', borderRadius: 20,
-                  background: '#3A3530', color: '#E8B84B',
+                  background: '#3A3530', color: '#F07814',
                   fontSize: 10, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
                 }}>
                   Digital Download
@@ -248,14 +248,14 @@ export default function ProductDetailPage() {
           {/* Category */}
           <div style={{
             fontSize: 10, letterSpacing: '0.18em', textTransform: 'uppercase',
-            color: '#E8B84B', marginBottom: 10,
+            color: '#F07814', marginBottom: 10,
           }}>
             {isDigital ? 'Digital Download' : 'Jewelry & Art · Handmade'}
           </div>
 
           {/* Title */}
           <h1 style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Playfair Display', serif",
             fontSize: 'clamp(28px, 3.5vw, 44px)',
             fontWeight: 400, color: '#3A3530', lineHeight: 1.15, marginBottom: 6,
           }}>
@@ -265,7 +265,7 @@ export default function ProductDetailPage() {
           {/* Subtitle (physical only) */}
           {!isDigital && (
             <p style={{
-              fontFamily: "'Cormorant Garamond', serif",
+              fontFamily: "'Playfair Display', serif",
               fontSize: 18, fontStyle: 'italic', color: '#8A8278',
               marginBottom: 20,
             }}>
@@ -276,7 +276,7 @@ export default function ProductDetailPage() {
           {/* Rating (physical only) — hidden until the product has any reviews */}
           {!isDigital && reviews.length > 0 && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-              <span style={{ color: '#E8B84B', fontSize: 14 }}>
+              <span style={{ color: '#F07814', fontSize: 14 }}>
                 {'★'.repeat(Math.round(averageRating))}{'☆'.repeat(5 - Math.round(averageRating))}
               </span>
               <span style={{ fontSize: 12, color: '#8A8278' }}>
@@ -300,7 +300,7 @@ export default function ProductDetailPage() {
           {/* Price */}
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 14, marginBottom: isDigital ? 24 : 8 }}>
             <span style={{
-              fontFamily: "'Cormorant Garamond', serif",
+              fontFamily: "'Playfair Display', serif",
               fontSize: isDigital ? 38 : 42, fontWeight: isDigital ? 500 : 400, color: '#3A3530',
             }}>
               ${activePrice}
@@ -324,7 +324,7 @@ export default function ProductDetailPage() {
           {/* What's Included (digital) */}
           {isDigital && (
             <div style={{
-              background: '#FDF6E3', border: '1px solid #F5D98A',
+              background: '#FEF7F0', border: '1px solid #FDE8D0',
               borderRadius: 12, padding: '20px 24px', marginBottom: 24,
             }}>
               <div style={{
@@ -340,7 +340,7 @@ export default function ProductDetailPage() {
                 'Lifetime access — re-download anytime',
               ].map((item, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                  <span style={{ color: '#E8B84B', fontSize: 16 }}>✓</span>
+                  <span style={{ color: '#F07814', fontSize: 16 }}>✓</span>
                   <span style={{ fontSize: 13, color: '#3A3530' }}>{item}</span>
                 </div>
               ))}
@@ -379,7 +379,7 @@ export default function ProductDetailPage() {
             onClick={handleBuyNow}
             style={{
               width: '100%', padding: 18, borderRadius: 10,
-              background: '#3A3530', color: '#E8B84B',
+              background: '#3A3530', color: '#F07814',
               fontFamily: "'Inter', sans-serif",
               fontSize: 12, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase',
               border: 'none', cursor: 'pointer', marginBottom: 12,
@@ -406,7 +406,7 @@ export default function ProductDetailPage() {
 
           {/* Secure note */}
           <div style={{ fontSize: 11, color: '#8A8278', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 32 }}>
-            🔒 Secured by <span style={{ color: '#E8B84B' }}>Stripe</span>
+            🔒 Secured by <span style={{ color: '#F07814' }}>Stripe</span>
             {isDigital ? ' · Instant delivery' : ' · Free shipping'}
           </div>
 
@@ -421,7 +421,7 @@ export default function ProductDetailPage() {
               ].map((f, i) => (
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: 10, padding: 12,
-                  background: '#FAFAF7', border: '1px solid rgba(232,184,75,0.1)',
+                  background: '#F5F2EB', border: '1px solid rgba(232,184,75,0.1)',
                   borderRadius: 8,
                 }}>
                   <span style={{ fontSize: 22 }}>{f.icon}</span>

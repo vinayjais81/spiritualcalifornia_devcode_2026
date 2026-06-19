@@ -83,11 +83,11 @@ export function PendingReviewsWidget() {
   if (rows.length === 0) return null;
 
   return (
-    <div style={{ marginBottom: 32, padding: '20px 24px', background: '#FDF6E3', border: '1px solid rgba(232,184,75,0.25)', borderRadius: 12 }}>
+    <div style={{ marginBottom: 32, padding: '20px 24px', background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.25)', borderRadius: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
         <span style={{ fontSize: 18 }}>★</span>
         <div>
-          <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, color: '#3A3530' }}>
+          <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, color: '#3A3530' }}>
             Share your experience
           </div>
           <div style={{ fontSize: 12, color: '#8A8278' }}>
@@ -117,7 +117,7 @@ export function PendingReviewsWidget() {
               <div style={{ fontSize: 13, fontWeight: 500, color: '#3A3530' }}>{r.title}</div>
               <div style={{ fontSize: 11, color: '#8A8278' }}>{r.subtitle}</div>
             </div>
-            <span style={{ fontSize: 11, color: '#E8B84B', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>
+            <span style={{ fontSize: 11, color: '#F07814', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>
               Write review →
             </span>
           </Link>

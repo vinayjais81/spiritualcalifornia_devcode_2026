@@ -63,8 +63,8 @@ export function Carousel({ id, children, scrollAmount = 2 }: CarouselProps) {
         onClick={() => scroll(-1)}
         onMouseEnter={e => {
           const el = e.currentTarget;
-          el.style.background = '#E8B84B';
-          el.style.borderColor = '#E8B84B';
+          el.style.background = '#F07814';
+          el.style.borderColor = '#F07814';
           el.style.color = '#FFFFFF';
         }}
         onMouseLeave={e => {
@@ -94,8 +94,8 @@ export function Carousel({ id, children, scrollAmount = 2 }: CarouselProps) {
         onClick={() => scroll(1)}
         onMouseEnter={e => {
           const el = e.currentTarget;
-          el.style.background = '#E8B84B';
-          el.style.borderColor = '#E8B84B';
+          el.style.background = '#F07814';
+          el.style.borderColor = '#F07814';
           el.style.color = '#FFFFFF';
         }}
         onMouseLeave={e => {

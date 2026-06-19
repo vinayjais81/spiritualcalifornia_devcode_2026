@@ -15,12 +15,12 @@ import { FieldLabel, FormLegend } from '@/components/forms';
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const G = {
-  gold:      '#E8B84B',
-  goldLight: '#F5D98A',
-  goldPale:  '#FDF6E3',
+  gold:      '#F07814',
+  goldLight: '#FDE8D0',
+  goldPale:  '#FEF7F0',
   charcoal:  '#3A3530',
   warmGray:  '#8A8278',
-  offWhite:  '#FAFAF7',
+  offWhite:  '#F5F2EB',
   white:     '#FFFFFF',
   green:     '#5A8A6A',
   red:       '#C0392B',
@@ -284,7 +284,7 @@ function RegisterContent() {
         <Image src="/images/logo.jpg" alt="Spiritual California" width={44} height={44}
           style={{ borderRadius: '50%', objectFit: 'cover' }} />
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-          <span style={{ fontFamily: 'var(--font-cormorant-garamond), serif', fontSize: 18, fontWeight: 500, color: G.charcoal }}>
+          <span style={{ fontFamily: 'var(--font-playfair-display), serif', fontSize: 18, fontWeight: 500, color: G.charcoal }}>
             Spiritual California
           </span>
           <span style={{ fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: G.warmGray, marginTop: 3 }}>
@@ -313,10 +313,10 @@ function RegisterContent() {
   const BotanicalBg = () => (
     <svg style={{ position: 'fixed', top: 0, right: 0, width: 320, height: '100vh', pointerEvents: 'none', zIndex: 0, opacity: 0.04 }}
       viewBox="0 0 320 800" fill="none">
-      <ellipse cx="260" cy="200" rx="120" ry="180" stroke="#E8B84B" strokeWidth="1.5" transform="rotate(-20 260 200)" />
-      <ellipse cx="200" cy="400" rx="90" ry="140" stroke="#E8B84B" strokeWidth="1" transform="rotate(15 200 400)" />
-      <line x1="260" y1="380" x2="260" y2="800" stroke="#E8B84B" strokeWidth="1" />
-      <ellipse cx="180" cy="600" rx="70" ry="110" stroke="#E8B84B" strokeWidth="1" transform="rotate(-10 180 600)" />
+      <ellipse cx="260" cy="200" rx="120" ry="180" stroke="#F07814" strokeWidth="1.5" transform="rotate(-20 260 200)" />
+      <ellipse cx="200" cy="400" rx="90" ry="140" stroke="#F07814" strokeWidth="1" transform="rotate(15 200 400)" />
+      <line x1="260" y1="380" x2="260" y2="800" stroke="#F07814" strokeWidth="1" />
+      <ellipse cx="180" cy="600" rx="70" ry="110" stroke="#F07814" strokeWidth="1" transform="rotate(-10 180 600)" />
     </svg>
   );
 
@@ -341,7 +341,7 @@ function RegisterContent() {
     color: G.gold, marginBottom: 10, fontFamily: 'var(--font-inter), sans-serif',
   };
   const titleStyle: React.CSSProperties = {
-    fontFamily: 'var(--font-cormorant-garamond), serif', fontSize: 42, fontWeight: 400,
+    fontFamily: 'var(--font-playfair-display), serif', fontSize: 42, fontWeight: 400,
     lineHeight: 1.15, color: G.charcoal, marginBottom: 8,
   };
   const subtitleStyle: React.CSSProperties = {
@@ -398,7 +398,7 @@ function RegisterContent() {
           </div>
           <h1
             style={{
-              fontFamily: 'var(--font-cormorant-garamond), serif',
+              fontFamily: 'var(--font-playfair-display), serif',
               fontSize: 32,
               fontWeight: 400,
               color: G.charcoal,
@@ -776,7 +776,7 @@ function RegisterContent() {
                     <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: G.gold, marginBottom: 4, fontFamily: 'var(--font-inter), sans-serif' }}>
                       {card.subtitle}
                     </div>
-                    <div style={{ fontFamily: 'var(--font-cormorant-garamond), serif', fontSize: 22, fontWeight: 500, color: G.charcoal, marginBottom: 4 }}>
+                    <div style={{ fontFamily: 'var(--font-playfair-display), serif', fontSize: 22, fontWeight: 500, color: G.charcoal, marginBottom: 4 }}>
                       {card.title}
                     </div>
                     <div style={{ fontSize: 13, color: G.warmGray, lineHeight: 1.5, fontFamily: 'var(--font-inter), sans-serif' }}>
@@ -916,7 +916,7 @@ function RegisterContent() {
                       </div>
                       <div style={{ padding: 12 }}>
                         <div style={{ fontSize: 9, letterSpacing: '0.12em', textTransform: 'uppercase', color: G.gold, marginBottom: 4, fontFamily: 'var(--font-inter), sans-serif' }}>{c.tag}</div>
-                        <div style={{ fontFamily: 'var(--font-cormorant-garamond), serif', fontSize: 15, color: G.charcoal, lineHeight: 1.3 }}>{c.name}</div>
+                        <div style={{ fontFamily: 'var(--font-playfair-display), serif', fontSize: 15, color: G.charcoal, lineHeight: 1.3 }}>{c.name}</div>
                         <div style={{ fontSize: 11, color: G.warmGray, marginTop: 4, fontFamily: 'var(--font-inter), sans-serif' }}>{c.meta}</div>
                       </div>
                     </div>

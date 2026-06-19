@@ -180,7 +180,7 @@ export function LocationAutocomplete({
                 background: i === activeIndex ? 'rgba(232,184,75,0.1)' : 'transparent',
                 cursor: 'pointer',
                 userSelect: 'none',
-                borderLeft: i === activeIndex ? '3px solid #E8B84B' : '3px solid transparent',
+                borderLeft: i === activeIndex ? '3px solid #F07814' : '3px solid transparent',
                 transition: 'background 0.1s',
               }}
             >
@@ -201,7 +201,7 @@ function highlight(text: string, query: string) {
   return (
     <>
       {text.slice(0, idx)}
-      <strong style={{ color: '#E8B84B', fontWeight: 600 }}>{text.slice(idx, idx + query.length)}</strong>
+      <strong style={{ color: '#F07814', fontWeight: 600 }}>{text.slice(idx, idx + query.length)}</strong>
       {text.slice(idx + query.length)}
     </>
   );

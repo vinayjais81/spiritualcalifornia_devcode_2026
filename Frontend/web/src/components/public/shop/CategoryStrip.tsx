@@ -40,7 +40,7 @@ export function CategoryStrip({ active, onChange }: CategoryStripProps) {
               fontSize: 10, fontWeight: 500, letterSpacing: '0.06em', textTransform: 'uppercase',
               color: active === cat.key ? '#3A3530' : '#8A8278',
               background: 'none', border: 'none', cursor: 'pointer',
-              borderBottom: active === cat.key ? '2px solid #E8B84B' : '2px solid transparent',
+              borderBottom: active === cat.key ? '2px solid #F07814' : '2px solid transparent',
               whiteSpace: 'nowrap',
               transition: 'all 0.2s',
             }}

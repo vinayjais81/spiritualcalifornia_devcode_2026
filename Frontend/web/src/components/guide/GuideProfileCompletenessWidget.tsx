@@ -22,8 +22,8 @@ interface Props {
 }
 
 const C = {
-  gold: '#E8B84B',
-  goldPale: '#FDF6E3',
+  gold: '#F07814',
+  goldPale: '#FEF7F0',
   charcoal: '#3A3530',
   warmGray: '#8A8278',
 };
@@ -99,7 +99,7 @@ export function GuideProfileCompletenessWidget({
           </div>
           <h3
             style={{
-              fontFamily: 'var(--font-cormorant-garamond), serif',
+              fontFamily: 'var(--font-playfair-display), serif',
               fontSize: 22,
               fontWeight: 400,
               color: C.charcoal,

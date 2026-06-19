@@ -24,7 +24,7 @@ export function LegalReceiptBlock() {
       style={{
         marginTop: 32,
         padding: 24,
-        background: '#FAFAF7',
+        background: '#F5F2EB',
         border: '1px solid rgba(232,184,75,0.18)',
         borderRadius: 12,
         fontFamily: "'Inter', sans-serif",
@@ -41,7 +41,7 @@ export function LegalReceiptBlock() {
           fontWeight: 600,
           letterSpacing: '0.18em',
           textTransform: 'uppercase',
-          color: '#E8B84B',
+          color: '#F07814',
           marginBottom: 16,
         }}
       >
@@ -136,7 +136,7 @@ export function LegalReceiptBlock() {
 const H = ({ children }: { children: React.ReactNode }) => (
   <h3
     style={{
-      fontFamily: "'Cormorant Garamond', serif",
+      fontFamily: "'Playfair Display', serif",
       fontSize: 15,
       fontWeight: 500,
       color: '#3A3530',
@@ -153,7 +153,7 @@ const para: React.CSSProperties = {
 };
 
 const link: React.CSSProperties = {
-  color: '#E8B84B',
+  color: '#F07814',
   textDecoration: 'underline',
   fontWeight: 500,
 };

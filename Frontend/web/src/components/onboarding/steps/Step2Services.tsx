@@ -117,9 +117,9 @@ export function Step2Services() {
   return (
     <div>
       <div style={{ marginBottom: '44px' }}>
-        <div style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#E8B84B', marginBottom: '10px', fontFamily: 'var(--font-inter), sans-serif' }}>Step 2 of 6</div>
-        <h1 className="font-cormorant" style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, lineHeight: 1.1, color: '#3A3530', marginBottom: '10px' }}>
-          Your <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>services</em>
+        <div style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#F07814', marginBottom: '10px', fontFamily: 'var(--font-inter), sans-serif' }}>Step 2 of 6</div>
+        <h1 className="font-playfair" style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, lineHeight: 1.1, color: '#3A3530', marginBottom: '10px' }}>
+          Your <em style={{ fontStyle: 'italic', color: '#F07814' }}>services</em>
         </h1>
         <p style={{ fontSize: '14px', color: '#8A8278', lineHeight: 1.7, maxWidth: '560px', fontFamily: 'var(--font-inter), sans-serif', margin: 0 }}>
           Tell us what you offer. You can select multiple categories — many practitioners work across body, mind, and soul.
@@ -138,16 +138,16 @@ export function Step2Services() {
               key={name}
               onClick={() => toggleCategory(name)}
               style={{
-                border: sel ? '1.5px solid #E8B84B' : '1.5px solid #E0DBD4',
+                border: sel ? '1.5px solid #F07814' : '1.5px solid #E0DBD4',
                 borderRadius: '12px', padding: '20px 16px', textAlign: 'center',
                 cursor: 'pointer', transition: 'all 0.25s',
-                background: sel ? '#FDF6E3' : '#FFFFFF',
+                background: sel ? '#FEF7F0' : '#FFFFFF',
               }}
             >
               <div style={{ fontSize: '28px', marginBottom: '8px' }}>{icon}</div>
-              <div className="font-cormorant" style={{ fontSize: '17px', fontWeight: 500, color: '#3A3530', marginBottom: '4px' }}>{name}</div>
+              <div className="font-playfair" style={{ fontSize: '17px', fontWeight: 500, color: '#3A3530', marginBottom: '4px' }}>{name}</div>
               <div style={{ fontSize: '11px', color: '#8A8278', lineHeight: 1.5, fontFamily: 'var(--font-inter), sans-serif' }}>{desc}</div>
-              {sel && <div style={{ fontSize: '14px', color: '#E8B84B', marginTop: '8px', fontFamily: 'var(--font-inter), sans-serif' }}>✦ Selected</div>}
+              {sel && <div style={{ fontSize: '14px', color: '#F07814', marginTop: '8px', fontFamily: 'var(--font-inter), sans-serif' }}>✦ Selected</div>}
             </div>
           );
         })}
@@ -167,8 +167,8 @@ export function Step2Services() {
               onClick={() => toggleModality(m)}
               style={{
                 padding: '8px 16px', borderRadius: '24px',
-                border: sel ? '1.5px solid #E8B84B' : '1.5px solid #E0DBD4',
-                background: sel ? '#FDF6E3' : '#FFFFFF',
+                border: sel ? '1.5px solid #F07814' : '1.5px solid #E0DBD4',
+                background: sel ? '#FEF7F0' : '#FFFFFF',
                 fontSize: '13px', color: '#3A3530', cursor: 'pointer',
                 fontFamily: 'var(--font-inter), sans-serif', transition: 'all 0.2s',
               }}
@@ -198,7 +198,7 @@ export function Step2Services() {
             style={{ flex: 1, border: '1px solid rgba(232,184,75,0.4)', borderRadius: '24px', padding: '8px 16px', fontSize: '13px', outline: 'none', fontFamily: 'var(--font-inter), sans-serif' }}
             autoFocus
           />
-          <button onClick={addCustomModality} type="button" style={{ padding: '8px 18px', borderRadius: '24px', background: '#E8B84B', color: '#FFFFFF', border: 'none', fontSize: '12px', cursor: 'pointer', fontFamily: 'var(--font-inter), sans-serif' }}>Add</button>
+          <button onClick={addCustomModality} type="button" style={{ padding: '8px 18px', borderRadius: '24px', background: '#F07814', color: '#FFFFFF', border: 'none', fontSize: '12px', cursor: 'pointer', fontFamily: 'var(--font-inter), sans-serif' }}>Add</button>
         </div>
       )}
 
@@ -215,8 +215,8 @@ export function Step2Services() {
               onClick={() => toggleIssue(issue)}
               style={{
                 padding: '10px 14px', borderRadius: '10px',
-                border: sel ? '1.5px solid #E8B84B' : '1.5px solid #E0DBD4',
-                background: sel ? '#FDF6E3' : '#FFFFFF',
+                border: sel ? '1.5px solid #F07814' : '1.5px solid #E0DBD4',
+                background: sel ? '#FEF7F0' : '#FFFFFF',
                 fontSize: '13px', color: '#3A3530', cursor: 'pointer',
                 textAlign: 'center', transition: 'all 0.2s',
                 fontFamily: 'var(--font-inter), sans-serif',

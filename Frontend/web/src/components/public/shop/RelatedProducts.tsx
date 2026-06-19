@@ -22,7 +22,7 @@ export function RelatedProducts({ title, subtitle, products }: RelatedProductsPr
     <div style={{ maxWidth: 1300, margin: '0 auto', padding: '0 60px 80px' }}>
       <div style={{ marginBottom: 24 }}>
         <h3 style={{
-          fontFamily: "'Cormorant Garamond', serif",
+          fontFamily: "'Playfair Display', serif",
           fontSize: 26, fontWeight: 400, color: '#3A3530', marginBottom: 4,
         }}>
           {title}
@@ -36,7 +36,7 @@ export function RelatedProducts({ title, subtitle, products }: RelatedProductsPr
               background: '#fff', border: '1px solid rgba(232,184,75,0.1)',
               borderRadius: 12, overflow: 'hidden', transition: 'box-shadow 0.3s, transform 0.3s',
             }}>
-              <div style={{ aspectRatio: '1/1', background: '#FDF6E3', overflow: 'hidden' }}>
+              <div style={{ aspectRatio: '1/1', background: '#FEF7F0', overflow: 'hidden' }}>
                 {p.imageUrl ? (
                   <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
@@ -52,9 +52,9 @@ export function RelatedProducts({ title, subtitle, products }: RelatedProductsPr
                 {p.guideName && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                     <div style={{
-                      width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #E8B84B',
-                      background: '#FDF6E3', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 10, fontWeight: 600, color: '#E8B84B', overflow: 'hidden',
+                      width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #F07814',
+                      background: '#FEF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 10, fontWeight: 600, color: '#F07814', overflow: 'hidden',
                     }}>
                       {p.guideAvatar ? (
                         <img src={p.guideAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -68,7 +68,7 @@ export function RelatedProducts({ title, subtitle, products }: RelatedProductsPr
                   </div>
                 )}
                 <div style={{
-                  fontFamily: "'Cormorant Garamond', serif",
+                  fontFamily: "'Playfair Display', serif",
                   fontSize: 15, fontWeight: 500, color: '#3A3530', lineHeight: 1.3, marginBottom: 6,
                 }}>
                   {p.name}

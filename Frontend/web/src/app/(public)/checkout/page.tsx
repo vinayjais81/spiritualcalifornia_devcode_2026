@@ -255,7 +255,7 @@ export default function CheckoutPage() {
     return (
       <div style={{ maxWidth: 560, margin: '0 auto', padding: '80px 32px', textAlign: 'center' }}>
         <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>🛒</span>
-        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 32, color: '#3A3530', marginBottom: 10 }}>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, color: '#3A3530', marginBottom: 10 }}>
           Your cart is empty
         </h1>
         <Link href="/shop" style={ctaStyle}>Browse the Shop</Link>
@@ -269,7 +269,7 @@ export default function CheckoutPage() {
     <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px 48px', background: '#fff', borderBottom: '1px solid rgba(232,184,75,0.1)', position: 'relative' }}>
         <Link href="/cart" style={{ position: 'absolute', left: 48, fontSize: 12, color: '#8A8278', textDecoration: 'none' }}>← Back to cart</Link>
-        <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontWeight: 500, color: '#3A3530' }}>
+        <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 500, color: '#3A3530' }}>
           Secure Checkout <span style={{ marginLeft: 8, fontSize: 12 }}>🔒</span>
         </span>
       </div>
@@ -295,7 +295,7 @@ export default function CheckoutPage() {
                 flexShrink: 0, fontSize: 20,
               }}>⚡</div>
               <div>
-                <div style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 17, color: '#F5D98A', marginBottom: 4 }}>
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 17, color: '#FDE8D0', marginBottom: 4 }}>
                   {hasPhysical ? 'Mixed order — digital items ship instantly' : 'Instant Digital Delivery'}
                 </div>
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
@@ -346,8 +346,8 @@ export default function CheckoutPage() {
                         style={{
                           display: 'flex', justifyContent: 'space-between',
                           padding: '14px 16px', borderRadius: 8, width: '100%', textAlign: 'left',
-                          background: selected ? '#FDF6E3' : '#fff',
-                          border: `1.5px solid ${selected ? '#E8B84B' : 'rgba(232,184,75,0.15)'}`,
+                          background: selected ? '#FEF7F0' : '#fff',
+                          border: `1.5px solid ${selected ? '#F07814' : 'rgba(232,184,75,0.15)'}`,
                           cursor: 'pointer',
                         }}
                       >
@@ -408,7 +408,7 @@ export default function CheckoutPage() {
                 disabled={submitting}
                 style={{
                   width: '100%', padding: 18, borderRadius: 8,
-                  background: submitting ? 'rgba(232,184,75,0.5)' : '#E8B84B',
+                  background: submitting ? 'rgba(232,184,75,0.5)' : '#F07814',
                   color: '#3A3530',
                   fontFamily: "'Inter', sans-serif",
                   fontSize: 13, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -424,7 +424,7 @@ export default function CheckoutPage() {
           {hasDigital && (
             <div style={{
               marginTop: 28, padding: 18,
-              background: '#FDF6E3', borderRadius: 8, border: '1px solid rgba(232,184,75,0.2)',
+              background: '#FEF7F0', borderRadius: 8, border: '1px solid rgba(232,184,75,0.2)',
             }}>
               <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#8A8278', marginBottom: 12 }}>
                 What happens after payment
@@ -437,7 +437,7 @@ export default function CheckoutPage() {
               ].map((step, i) => (
                 <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 8, fontSize: 12, color: '#3A3530', lineHeight: 1.5 }}>
                   <span style={{
-                    width: 20, height: 20, background: '#E8B84B', borderRadius: '50%',
+                    width: 20, height: 20, background: '#F07814', borderRadius: '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 10, fontWeight: 600, flexShrink: 0,
                   }}>{i + 1}</span>
@@ -487,7 +487,7 @@ function ConfirmationScreen({ order }: { order: OrderResponse }) {
         <span style={{ fontSize: 56, display: 'block', marginBottom: 16 }}>
           {isPaid ? '✓' : '⏳'}
         </span>
-        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 36, fontWeight: 400, color: '#3A3530', marginBottom: 10 }}>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 36, fontWeight: 400, color: '#3A3530', marginBottom: 10 }}>
           {isPaid ? 'Order Confirmed!' : 'Order Received'}
         </h1>
         <p style={{ fontSize: 14, color: '#8A8278', maxWidth: 460, margin: '0 auto' }}>
@@ -501,10 +501,10 @@ function ConfirmationScreen({ order }: { order: OrderResponse }) {
       {/* Digital downloads — inline CTAs */}
       {digitalItems.length > 0 && (
         <div style={{
-          background: '#FDF6E3', border: '1px solid rgba(232,184,75,0.25)',
+          background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.25)',
           borderRadius: 12, padding: '24px 28px', marginBottom: 24,
         }}>
-          <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#E8B84B', marginBottom: 14, fontWeight: 600 }}>
+          <div style={{ fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#F07814', marginBottom: 14, fontWeight: 600 }}>
             ⚡ Your Digital Downloads
           </div>
           {digitalItems.map((item) => (
@@ -522,7 +522,7 @@ function ConfirmationScreen({ order }: { order: OrderResponse }) {
                 <a
                   href={item.downloadUrl}
                   style={{
-                    padding: '10px 20px', background: '#3A3530', color: '#E8B84B',
+                    padding: '10px 20px', background: '#3A3530', color: '#F07814',
                     borderRadius: 8, textDecoration: 'none',
                     fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
                   }}
@@ -538,7 +538,7 @@ function ConfirmationScreen({ order }: { order: OrderResponse }) {
           ))}
           <div style={{ fontSize: 11, color: '#8A8278', marginTop: 14, textAlign: 'center' }}>
             Links stay valid for 7 days — or regenerate anytime from{' '}
-            <Link href="/downloads" style={{ color: '#E8B84B', textDecoration: 'none' }}>your Downloads library</Link>.
+            <Link href="/downloads" style={{ color: '#F07814', textDecoration: 'none' }}>your Downloads library</Link>.
           </div>
         </div>
       )}
@@ -563,7 +563,7 @@ function ConfirmationScreen({ order }: { order: OrderResponse }) {
 
       <div style={{ textAlign: 'center', marginTop: 32, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
         <Link href="/seeker/dashboard" style={ctaStyle}>View My Orders</Link>
-        <Link href="/shop" style={{ ...ctaStyle, background: 'transparent', color: '#3A3530', border: '1.5px solid #E8B84B' }}>
+        <Link href="/shop" style={{ ...ctaStyle, background: 'transparent', color: '#3A3530', border: '1.5px solid #F07814' }}>
           Continue Shopping
         </Link>
       </div>
@@ -626,7 +626,7 @@ function Input({
         type={type}
         style={{
           padding: '12px 14px', borderRadius: 6,
-          border: '1.5px solid rgba(232,184,75,0.2)', background: '#FAFAF7',
+          border: '1.5px solid rgba(232,184,75,0.2)', background: '#F5F2EB',
           fontSize: 13, outline: 'none', fontFamily: "'Inter', sans-serif",
         }}
       />
@@ -638,7 +638,7 @@ const ctaStyle: React.CSSProperties = {
   display: 'inline-block',
   padding: '14px 32px',
   borderRadius: 8,
-  background: '#E8B84B',
+  background: '#F07814',
   color: '#3A3530',
   fontSize: 12,
   fontWeight: 600,

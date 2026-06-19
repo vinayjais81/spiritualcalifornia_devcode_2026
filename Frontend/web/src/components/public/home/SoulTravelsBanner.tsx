@@ -29,7 +29,7 @@ export function SoulTravelsBanner() {
             fontWeight: 500,
             letterSpacing: '0.22em',
             textTransform: 'uppercase',
-            color: '#F5D98A',
+            color: '#FDE8D0',
             marginBottom: '14px',
           }}
         >
@@ -37,7 +37,7 @@ export function SoulTravelsBanner() {
         </div>
 
         <h2
-          className="font-cormorant"
+          className="font-playfair"
           style={{
             fontSize: 'clamp(38px, 5.5vw, 68px)',
             fontWeight: 300,

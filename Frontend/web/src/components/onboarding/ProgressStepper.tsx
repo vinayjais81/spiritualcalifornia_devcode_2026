@@ -48,7 +48,7 @@ export function ProgressStepper({ currentStep, completedSteps }: Props) {
                 fontSize: '11px',
                 letterSpacing: '0.1em',
                 textTransform: 'uppercase',
-                color: isCompleted ? '#E8B84B' : isCurrent ? '#3A3530' : '#C4BDB5',
+                color: isCompleted ? '#F07814' : isCurrent ? '#3A3530' : '#C4BDB5',
                 whiteSpace: 'nowrap',
                 transition: 'color 0.3s',
               }}
@@ -60,11 +60,11 @@ export function ProgressStepper({ currentStep, completedSteps }: Props) {
                   height: '22px',
                   borderRadius: '50%',
                   border: isCompleted
-                    ? '1.5px solid #E8B84B'
+                    ? '1.5px solid #F07814'
                     : isCurrent
                     ? '1.5px solid #3A3530'
                     : '1.5px solid #C4BDB5',
-                  background: isCompleted ? '#E8B84B' : 'transparent',
+                  background: isCompleted ? '#F07814' : 'transparent',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',

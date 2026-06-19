@@ -122,9 +122,9 @@ export function Step3Credentials() {
   return (
     <div>
       <div style={{ marginBottom: '44px' }}>
-        <div style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#E8B84B', marginBottom: '10px', fontFamily: 'var(--font-inter), sans-serif' }}>Step 3 of 6</div>
-        <h1 className="font-cormorant" style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, lineHeight: 1.1, color: '#3A3530', marginBottom: '10px' }}>
-          Your <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>credentials</em>
+        <div style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#F07814', marginBottom: '10px', fontFamily: 'var(--font-inter), sans-serif' }}>Step 3 of 6</div>
+        <h1 className="font-playfair" style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, lineHeight: 1.1, color: '#3A3530', marginBottom: '10px' }}>
+          Your <em style={{ fontStyle: 'italic', color: '#F07814' }}>credentials</em>
         </h1>
         <p style={{ fontSize: '14px', color: '#8A8278', lineHeight: 1.7, maxWidth: '560px', fontFamily: 'var(--font-inter), sans-serif', margin: 0 }}>
           Upload your certificates, diplomas, or letters from your teachers. Our AI will verify that the name matches and the institution is recognized.
@@ -132,8 +132,8 @@ export function Step3Credentials() {
       </div>
 
       {/* Trust box */}
-      <div style={{ borderLeft: '3px solid #E8B84B', padding: '16px 20px', background: '#FDF6E3', borderRadius: '0 10px 10px 0', marginBottom: '28px' }}>
-        <div style={{ fontSize: '12px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#E8B84B', marginBottom: '6px', fontFamily: 'var(--font-inter), sans-serif' }}>✦ Why this matters</div>
+      <div style={{ borderLeft: '3px solid #F07814', padding: '16px 20px', background: '#FEF7F0', borderRadius: '0 10px 10px 0', marginBottom: '28px' }}>
+        <div style={{ fontSize: '12px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#F07814', marginBottom: '6px', fontFamily: 'var(--font-inter), sans-serif' }}>✦ Why this matters</div>
         <p style={{ fontSize: '13px', color: '#8A8278', lineHeight: 1.6, fontFamily: 'var(--font-inter), sans-serif', margin: 0 }}>Verified credentials earn you a <strong>✦ Verified Modality</strong> badge on each practice you have proven training in. Seekers trust verified practitioners 3× more and are significantly more likely to book. You can skip this step and complete it later from your dashboard.</p>
       </div>
 
@@ -148,10 +148,10 @@ export function Step3Credentials() {
       {/* Upload zone */}
       <div
         onClick={() => { addBlankCredential(); setTimeout(() => triggerDocumentUpload(credentials[credentials.length] ? credentials[credentials.length - 1]?.localId ?? '' : ''), 100); }}
-        style={{ border: '2px dashed rgba(232,184,75,0.4)', borderRadius: '12px', padding: '36px 24px', textAlign: 'center', background: '#FDF6E3', cursor: 'pointer', transition: 'all 0.3s', marginBottom: '16px' }}
+        style={{ border: '2px dashed rgba(232,184,75,0.4)', borderRadius: '12px', padding: '36px 24px', textAlign: 'center', background: '#FEF7F0', cursor: 'pointer', transition: 'all 0.3s', marginBottom: '16px' }}
       >
         <div style={{ fontSize: '36px', marginBottom: '10px' }}>📜</div>
-        <div className="font-cormorant" style={{ fontSize: '20px', fontWeight: 400, color: '#3A3530', marginBottom: '6px' }}>Upload Certificates & Diplomas</div>
+        <div className="font-playfair" style={{ fontSize: '20px', fontWeight: 400, color: '#3A3530', marginBottom: '6px' }}>Upload Certificates & Diplomas</div>
         <div style={{ fontSize: '13px', color: '#8A8278', lineHeight: 1.6, fontFamily: 'var(--font-inter), sans-serif' }}>PDF, JPG, or PNG · Up to 10 files · Max 10MB each<br />Accepted: Certificates, diplomas, official letters from teachers</div>
       </div>
 
@@ -169,20 +169,20 @@ export function Step3Credentials() {
               </div>
               <div>
                 <FieldLabel style={lbl}>Certificate Document</FieldLabel>
-                <button type="button" onClick={() => triggerDocumentUpload(entry.localId)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', width: '100%', border: '1.5px dashed #D5CFC8', borderRadius: '10px', background: entry.documentS3Key ? '#F0FDF4' : '#FAFAF7', cursor: 'pointer', textAlign: 'left' }}>
+                <button type="button" onClick={() => triggerDocumentUpload(entry.localId)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 16px', width: '100%', border: '1.5px dashed #D5CFC8', borderRadius: '10px', background: entry.documentS3Key ? '#F0FDF4' : '#F5F2EB', cursor: 'pointer', textAlign: 'left' }}>
                   <span style={{ fontSize: '20px' }}>{entry.documentS3Key ? '📄' : '⬆️'}</span>
                   <span style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: '13px', color: '#3A3530' }}>{entry.documentFileName || 'Upload certificate (PDF or image)'}</span>
                 </button>
               </div>
               {!entry.persisted && entry.title.trim() && (
-                <button type="button" onClick={() => persistCredential(entry)} style={{ padding: '8px 16px', background: 'none', border: '1.5px solid #E8B84B', borderRadius: '8px', color: '#E8B84B', fontFamily: 'var(--font-inter), sans-serif', fontSize: '12px', fontWeight: 600, cursor: 'pointer', alignSelf: 'flex-start' }}>Save credential</button>
+                <button type="button" onClick={() => persistCredential(entry)} style={{ padding: '8px 16px', background: 'none', border: '1.5px solid #F07814', borderRadius: '8px', color: '#F07814', fontFamily: 'var(--font-inter), sans-serif', fontSize: '12px', fontWeight: 600, cursor: 'pointer', alignSelf: 'flex-start' }}>Save credential</button>
               )}
             </div>
           </div>
         ))}
       </div>
 
-      <button type="button" onClick={addBlankCredential} style={{ width: '100%', padding: '14px', border: '1.5px dashed #E8B84B', borderRadius: '12px', background: 'transparent', color: '#E8B84B', fontFamily: 'var(--font-inter), sans-serif', fontSize: '13px', fontWeight: 600, cursor: 'pointer', marginBottom: '32px', transition: 'background 0.2s' }}>+ Add credential</button>
+      <button type="button" onClick={addBlankCredential} style={{ width: '100%', padding: '14px', border: '1.5px dashed #F07814', borderRadius: '12px', background: 'transparent', color: '#F07814', fontFamily: 'var(--font-inter), sans-serif', fontSize: '13px', fontWeight: 600, cursor: 'pointer', marginBottom: '32px', transition: 'background 0.2s' }}>+ Add credential</button>
 
       <SectionDivider label="Teacher Attestation" />
       <p style={{ fontSize: '13px', color: '#8A8278', marginBottom: '20px', lineHeight: 1.6, fontFamily: 'var(--font-inter), sans-serif' }}>For traditional lineage-based practices (Tibetan medicine, Shamanism, etc.), you may provide your teacher's contact for attestation instead of a formal certificate.</p>

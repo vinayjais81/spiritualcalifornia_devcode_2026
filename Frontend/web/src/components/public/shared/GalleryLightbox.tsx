@@ -168,7 +168,7 @@ export function GalleryLightbox({
                 flex: '0 0 auto',
                 width: 60, height: 44, padding: 0,
                 borderRadius: 4, overflow: 'hidden',
-                border: i === safeIndex ? '2px solid #E8B84B' : '2px solid transparent',
+                border: i === safeIndex ? '2px solid #F07814' : '2px solid transparent',
                 background: 'none', cursor: 'pointer',
                 opacity: i === safeIndex ? 1 : 0.6,
                 transition: 'opacity 0.15s, border-color 0.15s',

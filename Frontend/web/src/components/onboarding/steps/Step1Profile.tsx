@@ -71,7 +71,7 @@ export function Step1Profile() {
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const iStyle = (f: string): React.CSSProperties =>
-    focused === f ? { ...iBase, borderColor: '#E8B84B', boxShadow: '0 0 0 3px rgba(232,184,75,0.1)' } : iBase;
+    focused === f ? { ...iBase, borderColor: '#F07814', boxShadow: '0 0 0 3px rgba(232,184,75,0.1)' } : iBase;
 
   const handleAvatarChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -211,15 +211,15 @@ export function Step1Profile() {
       <div style={{ padding: '40px 0', textAlign: 'center' }}>
         <div style={{
           fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase',
-          color: '#E8B84B', marginBottom: '14px', fontWeight: 500,
+          color: '#F07814', marginBottom: '14px', fontWeight: 500,
         }}>
           ✦ Almost there
         </div>
-        <h1 className="font-cormorant" style={{
+        <h1 className="font-playfair" style={{
           fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, lineHeight: 1.1,
           color: '#3A3530', marginBottom: '14px',
         }}>
-          Check your <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>inbox</em>
+          Check your <em style={{ fontStyle: 'italic', color: '#F07814' }}>inbox</em>
         </h1>
         <p style={{
           fontSize: '15px', color: '#8A8278', lineHeight: 1.7,
@@ -229,7 +229,7 @@ export function Step1Profile() {
         </p>
         <p style={{
           fontSize: '14px', color: '#3A3530', fontWeight: 500,
-          background: '#FDF6E3', border: '1px solid rgba(232,184,75,0.3)',
+          background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.3)',
           padding: '10px 18px', borderRadius: 6, display: 'inline-block',
           marginBottom: '24px',
         }}>
@@ -247,7 +247,7 @@ export function Step1Profile() {
           Didn&rsquo;t receive it? Check your spam folder, or{' '}
           <button
             onClick={() => setAwaitingVerification(null)}
-            style={{ background: 'none', border: 'none', color: '#E8B84B', cursor: 'pointer', textDecoration: 'underline', padding: 0, fontSize: '12px' }}
+            style={{ background: 'none', border: 'none', color: '#F07814', cursor: 'pointer', textDecoration: 'underline', padding: 0, fontSize: '12px' }}
           >
             edit your details and try again
           </button>
@@ -260,9 +260,9 @@ export function Step1Profile() {
   return (
     <form onSubmit={handleSubmit}>
       <div style={{ marginBottom: '44px' }}>
-        <div style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#E8B84B', marginBottom: '10px', fontFamily: 'var(--font-inter), sans-serif' }}>Step 1 of 6</div>
-        <h1 className="font-cormorant" style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, lineHeight: 1.1, color: '#3A3530', marginBottom: '10px' }}>
-          Your <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>profile</em>
+        <div style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#F07814', marginBottom: '10px', fontFamily: 'var(--font-inter), sans-serif' }}>Step 1 of 6</div>
+        <h1 className="font-playfair" style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, lineHeight: 1.1, color: '#3A3530', marginBottom: '10px' }}>
+          Your <em style={{ fontStyle: 'italic', color: '#F07814' }}>profile</em>
         </h1>
         <p style={{ fontSize: '14px', color: '#8A8278', lineHeight: 1.7, maxWidth: '560px', fontFamily: 'var(--font-inter), sans-serif', margin: 0 }}>
           This is the first thing seekers will see. Make it authentic — your story, your presence, your invitation.
@@ -278,7 +278,7 @@ export function Step1Profile() {
       <div style={{ marginBottom: '20px' }}>
         <FieldLabel style={lbl}>Profile Photo</FieldLabel>
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginTop: '6px' }}>
-          <button type="button" onClick={() => fileInputRef.current?.click()} style={{ width: '140px', height: '140px', borderRadius: '50%', border: '2px dashed rgba(232,184,75,0.5)', background: step1.avatarPreviewUrl ? 'transparent' : '#FDF6E3', cursor: 'pointer', overflow: 'hidden', padding: 0, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button type="button" onClick={() => fileInputRef.current?.click()} style={{ width: '140px', height: '140px', borderRadius: '50%', border: '2px dashed rgba(232,184,75,0.5)', background: step1.avatarPreviewUrl ? 'transparent' : '#FEF7F0', cursor: 'pointer', overflow: 'hidden', padding: 0, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {step1.avatarPreviewUrl
               // eslint-disable-next-line @next/next/no-img-element
               ? <img src={step1.avatarPreviewUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -287,7 +287,7 @@ export function Step1Profile() {
           </button>
           <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} style={{ display: 'none' }} />
           <div style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: '13px', color: '#8A8278', lineHeight: 1.7 }}>
-            A warm, clear headshot works best.<br />Minimum 400×400px · JPG or PNG<br /><span style={{ color: '#E8B84B' }}>Tip:</span> Natural light, genuine smile.
+            A warm, clear headshot works best.<br />Minimum 400×400px · JPG or PNG<br /><span style={{ color: '#F07814' }}>Tip:</span> Natural light, genuine smile.
           </div>
         </div>
       </div>
@@ -321,7 +321,7 @@ export function Step1Profile() {
         <div>
           <FieldLabel htmlFor="step1-email" required={!isAuthenticated} style={lbl}>Email Address</FieldLabel>
           {isAuthenticated
-            ? <input id="step1-email" style={{ ...iBase, background: '#FAFAF7', color: '#8A8278' }} type="email" value={user?.email ?? ''} readOnly />
+            ? <input id="step1-email" style={{ ...iBase, background: '#F5F2EB', color: '#8A8278' }} type="email" value={user?.email ?? ''} readOnly />
             : <input id="step1-email" style={iStyle('em')} type="email" placeholder="maya@example.com" value={email} onChange={(e) => setEmail(e.target.value)} onFocus={() => setFocused('em')} onBlur={() => setFocused(null)} required aria-required="true" autoComplete="email" />
           }
         </div>
@@ -386,7 +386,7 @@ export function Step1Profile() {
           {LANGUAGES.map(({ flag, label }) => {
             const sel = (step1.languages ?? ['English']).includes(label);
             return (
-              <button key={label} type="button" onClick={() => toggleLanguage(label)} style={{ cursor: 'pointer', padding: '8px 18px', borderRadius: '24px', border: sel ? '1.5px solid #E8B84B' : '1.5px solid #ddd', background: sel ? '#FDF6E3' : '#FFFFFF', fontFamily: 'var(--font-inter), sans-serif', fontSize: '13px', color: '#3A3530', transition: 'all 0.2s' }}>
+              <button key={label} type="button" onClick={() => toggleLanguage(label)} style={{ cursor: 'pointer', padding: '8px 18px', borderRadius: '24px', border: sel ? '1.5px solid #F07814' : '1.5px solid #ddd', background: sel ? '#FEF7F0' : '#FFFFFF', fontFamily: 'var(--font-inter), sans-serif', fontSize: '13px', color: '#3A3530', transition: 'all 0.2s' }}>
                 {flag} {label}
               </button>
             );
@@ -407,13 +407,13 @@ export function Step1Profile() {
             id="guide-terms"
             checked={terms}
             onChange={(e) => setTerms(e.target.checked)}
-            style={{ width: 18, height: 18, flexShrink: 0, marginTop: 2, accentColor: '#E8B84B', cursor: 'pointer' }}
+            style={{ width: 18, height: 18, flexShrink: 0, marginTop: 2, accentColor: '#F07814', cursor: 'pointer' }}
           />
           <label htmlFor="guide-terms" style={{ fontSize: 13, color: '#8A8278', lineHeight: 1.5, fontFamily: 'var(--font-inter), sans-serif', cursor: 'pointer' }}>
             I agree to the{' '}
-            <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#E8B84B', textDecoration: 'none' }}>Terms of Service</a>
+            <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#F07814', textDecoration: 'none' }}>Terms of Service</a>
             {' '}and{' '}
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#E8B84B', textDecoration: 'none' }}>Privacy Policy</a>.
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#F07814', textDecoration: 'none' }}>Privacy Policy</a>.
           </label>
         </div>
       )}

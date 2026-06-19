@@ -147,7 +147,7 @@ export default function SeekerProfilePage() {
           style={{
             marginBottom: '20px',
             padding: '14px 18px',
-            background: '#FDF6E3',
+            background: '#FEF7F0',
             border: '1px solid rgba(232,184,75,0.25)',
             borderRadius: 8,
             fontFamily: font,
@@ -177,7 +177,7 @@ export default function SeekerProfilePage() {
               style={{
                 width: `${pct}%`,
                 height: '100%',
-                background: '#E8B84B',
+                background: '#F07814',
                 transition: 'width 0.4s ease',
               }}
             />
@@ -274,9 +274,9 @@ export default function SeekerProfilePage() {
                   style={{
                     textAlign: 'left',
                     padding: '12px 14px',
-                    border: `1.5px solid ${selected ? '#E8B84B' : 'rgba(232,184,75,0.25)'}`,
+                    border: `1.5px solid ${selected ? '#F07814' : 'rgba(232,184,75,0.25)'}`,
                     borderRadius: 8,
-                    background: selected ? '#FDF6E3' : '#fff',
+                    background: selected ? '#FEF7F0' : '#fff',
                     cursor: 'pointer',
                     fontFamily: font,
                     color: C.charcoal,
@@ -302,8 +302,8 @@ export default function SeekerProfilePage() {
                   style={{
                     padding: '7px 14px',
                     borderRadius: 100,
-                    border: `1.5px solid ${selected ? '#E8B84B' : 'rgba(232,184,75,0.3)'}`,
-                    background: selected ? '#E8B84B' : '#fff',
+                    border: `1.5px solid ${selected ? '#F07814' : 'rgba(232,184,75,0.3)'}`,
+                    background: selected ? '#F07814' : '#fff',
                     color: selected ? '#fff' : C.warmGray,
                     fontFamily: font,
                     fontSize: 12,

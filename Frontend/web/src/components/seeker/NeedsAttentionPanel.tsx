@@ -231,7 +231,7 @@ function AttentionRow({
   return (
     <div style={{
       background: 'linear-gradient(135deg, #3A3530 0%, #4A4036 100%)',
-      color: '#E8B84B',
+      color: '#F07814',
       borderRadius: 14,
       padding: '18px 22px',
       display: 'flex',
@@ -287,7 +287,7 @@ function AttentionRow({
         </div>
         <div style={{
           fontFamily: serif, fontSize: 19, fontWeight: 500,
-          color: '#F5D98A', marginBottom: 3,
+          color: '#FDE8D0', marginBottom: 3,
           lineHeight: 1.25,
         }}>
           {title}
@@ -317,7 +317,7 @@ function AttentionRow({
           href={primaryHref}
           style={{
             padding: '10px 20px', borderRadius: 8,
-            background: '#E8B84B', color: '#3A3530',
+            background: '#F07814', color: '#3A3530',
             fontFamily: font, fontSize: 11, fontWeight: 600,
             letterSpacing: '0.08em', textTransform: 'uppercase',
             textDecoration: 'none', whiteSpace: 'nowrap',
@@ -330,7 +330,7 @@ function AttentionRow({
             href={secondaryHref}
             style={{
               padding: '10px 20px', borderRadius: 8,
-              background: 'transparent', color: '#F5D98A',
+              background: 'transparent', color: '#FDE8D0',
               border: '1.5px solid rgba(232,184,75,0.35)',
               fontFamily: font, fontSize: 11, fontWeight: 500,
               letterSpacing: '0.08em', textTransform: 'uppercase',

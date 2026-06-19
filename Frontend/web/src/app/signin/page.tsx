@@ -9,12 +9,12 @@ import { useAuthStore } from '@/store/auth.store';
 import { FieldLabel, FormLegend } from '@/components/forms';
 
 const G = {
-  gold:      '#E8B84B',
-  goldLight: '#F5D98A',
-  goldPale:  '#FDF6E3',
+  gold:      '#F07814',
+  goldLight: '#FDE8D0',
+  goldPale:  '#FEF7F0',
   charcoal:  '#3A3530',
   warmGray:  '#8A8278',
-  offWhite:  '#FAFAF7',
+  offWhite:  '#F5F2EB',
   white:     '#FFFFFF',
   red:       '#C0392B',
 };
@@ -102,10 +102,10 @@ function SignInContent() {
         style={{ position: 'fixed', top: 0, right: 0, width: 320, height: '100vh', pointerEvents: 'none', zIndex: 0, opacity: 0.04 }}
         viewBox="0 0 320 800" fill="none"
       >
-        <ellipse cx="260" cy="200" rx="120" ry="180" stroke="#E8B84B" strokeWidth="1.5" transform="rotate(-20 260 200)" />
-        <ellipse cx="200" cy="400" rx="90" ry="140" stroke="#E8B84B" strokeWidth="1" transform="rotate(15 200 400)" />
-        <line x1="260" y1="380" x2="260" y2="800" stroke="#E8B84B" strokeWidth="1" />
-        <ellipse cx="180" cy="600" rx="70" ry="110" stroke="#E8B84B" strokeWidth="1" transform="rotate(-10 180 600)" />
+        <ellipse cx="260" cy="200" rx="120" ry="180" stroke="#F07814" strokeWidth="1.5" transform="rotate(-20 260 200)" />
+        <ellipse cx="200" cy="400" rx="90" ry="140" stroke="#F07814" strokeWidth="1" transform="rotate(15 200 400)" />
+        <line x1="260" y1="380" x2="260" y2="800" stroke="#F07814" strokeWidth="1" />
+        <ellipse cx="180" cy="600" rx="70" ry="110" stroke="#F07814" strokeWidth="1" transform="rotate(-10 180 600)" />
       </svg>
 
       {/* Nav */}
@@ -120,7 +120,7 @@ function SignInContent() {
           <Image src="/images/logo.jpg" alt="Spiritual California" width={44} height={44}
             style={{ borderRadius: '50%', objectFit: 'cover' }} />
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-            <span className="font-cormorant" style={{ fontSize: 18, fontWeight: 500, color: G.charcoal }}>
+            <span className="font-playfair" style={{ fontSize: 18, fontWeight: 500, color: G.charcoal }}>
               Spiritual California
             </span>
             <span style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: G.warmGray, marginTop: 3 }}>
@@ -142,7 +142,7 @@ function SignInContent() {
             <p style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: G.gold, marginBottom: 10 }}>
               Welcome Back
             </p>
-            <h1 className="font-cormorant" style={{ fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: 300, color: G.charcoal, margin: '0 0 10px', lineHeight: 1.1 }}>
+            <h1 className="font-playfair" style={{ fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: 300, color: G.charcoal, margin: '0 0 10px', lineHeight: 1.1 }}>
               Sign in to your{' '}
               <em style={{ fontStyle: 'italic', color: G.gold }}>journey</em>
             </h1>

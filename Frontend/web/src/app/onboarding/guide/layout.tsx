@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 
 export default function GuideOnboardingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ minHeight: '100vh', background: '#FAFAF7' }}>
+    <div style={{ minHeight: '100vh', background: '#F5F2EB' }}>
       {children}
     </div>
   );

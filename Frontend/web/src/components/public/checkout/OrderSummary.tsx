@@ -25,7 +25,7 @@ export function OrderSummary({ items, subtotal, shipping, tax, discount, total, 
       borderRadius: 12, position: 'sticky', top: 40, overflow: 'hidden',
     }}>
       <div style={{ padding: '20px 24px', borderBottom: '1px solid rgba(232,184,75,0.1)' }}>
-        <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 500, color: '#3A3530' }}>
+        <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 500, color: '#3A3530' }}>
           Order Summary
         </h3>
       </div>
@@ -36,7 +36,7 @@ export function OrderSummary({ items, subtotal, shipping, tax, discount, total, 
           <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
             <div style={{
               width: 56, height: 56, borderRadius: 8, overflow: 'hidden', flexShrink: 0,
-              background: '#FDF6E3', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: '#FEF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center',
               position: 'relative',
             }}>
               {item.imageUrl ? (
@@ -49,7 +49,7 @@ export function OrderSummary({ items, subtotal, shipping, tax, discount, total, 
               {item.quantity > 1 && (
                 <span style={{
                   position: 'absolute', top: -4, right: -4,
-                  width: 20, height: 20, borderRadius: '50%', background: '#E8B84B', color: '#3A3530',
+                  width: 20, height: 20, borderRadius: '50%', background: '#F07814', color: '#3A3530',
                   fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
                   {item.quantity}
@@ -78,14 +78,14 @@ export function OrderSummary({ items, subtotal, shipping, tax, discount, total, 
             placeholder="Promo code"
             style={{
               flex: 1, padding: '9px 12px', borderRadius: 6,
-              border: '1.5px solid rgba(232,184,75,0.2)', background: '#FAFAF7',
+              border: '1.5px solid rgba(232,184,75,0.2)', background: '#F5F2EB',
               fontSize: 12, outline: 'none', fontFamily: "'Inter', sans-serif",
             }}
           />
           <button
             onClick={() => promoCode && onApplyPromo(promoCode)}
             style={{
-              padding: '9px 16px', borderRadius: 6, background: '#3A3530', color: '#E8B84B',
+              padding: '9px 16px', borderRadius: 6, background: '#3A3530', color: '#F07814',
               fontSize: 11, fontWeight: 600, border: 'none', cursor: 'pointer',
             }}
           >
@@ -116,17 +116,17 @@ export function OrderSummary({ items, subtotal, shipping, tax, discount, total, 
         )}
         <div style={{
           display: 'flex', justifyContent: 'space-between', paddingTop: 12, marginTop: 4,
-          borderTop: '2px solid #E8B84B',
+          borderTop: '2px solid #F07814',
         }}>
           <span style={{ fontSize: 14, fontWeight: 600, color: '#3A3530' }}>Total</span>
-          <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, fontWeight: 500, color: '#3A3530' }}>
+          <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 500, color: '#3A3530' }}>
             ${total.toFixed(2)}
           </span>
         </div>
       </div>
 
       {note && (
-        <div style={{ padding: '12px 24px 16px', fontSize: 11, color: '#8A8278', textAlign: 'center', background: '#FDF6E3' }}>
+        <div style={{ padding: '12px 24px 16px', fontSize: 11, color: '#8A8278', textAlign: 'center', background: '#FEF7F0' }}>
           {note}
         </div>
       )}

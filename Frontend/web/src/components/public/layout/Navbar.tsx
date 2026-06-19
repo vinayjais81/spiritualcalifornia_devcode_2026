@@ -109,7 +109,7 @@ export function Navbar() {
                   textDecoration: 'none',
                   transition: 'color 0.3s',
                 }}
-                onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.color = '#E8B84B')}
+                onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.color = '#F07814')}
                 onMouseLeave={e => ((e.currentTarget as HTMLAnchorElement).style.color = '#8A8278')}
               >
                 {label}
@@ -132,7 +132,7 @@ export function Navbar() {
           />
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
             <span
-              className="font-cormorant"
+              className="font-playfair"
               style={{ fontSize: '18px', fontWeight: 500, letterSpacing: '0.04em', color: '#3A3530' }}
             >
               Spiritual California
@@ -219,7 +219,7 @@ export function Navbar() {
                   minWidth: '18px',
                   height: '18px',
                   padding: '0 5px',
-                  background: '#E8B84B',
+                  background: '#F07814',
                   color: '#3A3530',
                   fontFamily: 'var(--font-inter), sans-serif',
                   fontSize: '10px',
@@ -254,7 +254,7 @@ export function Navbar() {
                   width: '32px',
                   height: '32px',
                   borderRadius: '50%',
-                  background: '#E8B84B',
+                  background: '#F07814',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -348,7 +348,7 @@ export function Navbar() {
                         textAlign: 'left',
                         cursor: 'pointer',
                       }}
-                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#FAFAF7'; (e.currentTarget as HTMLButtonElement).style.color = '#C0392B'; }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = '#F5F2EB'; (e.currentTarget as HTMLButtonElement).style.color = '#C0392B'; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'none'; (e.currentTarget as HTMLButtonElement).style.color = '#8A8278'; }}
                     >
                       Sign Out
@@ -370,7 +370,7 @@ export function Navbar() {
                 textDecoration: 'none',
                 transition: 'color 0.3s',
               }}
-              onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.color = '#E8B84B')}
+              onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.color = '#F07814')}
               onMouseLeave={e => ((e.currentTarget as HTMLAnchorElement).style.color = '#8A8278')}
             >
               Sign In
@@ -387,11 +387,11 @@ export function Navbar() {
                 textTransform: 'uppercase',
                 color: '#3A3530',
                 textDecoration: 'none',
-                borderBottom: '1.5px solid #E8B84B',
+                borderBottom: '1.5px solid #F07814',
                 paddingBottom: '2px',
                 transition: 'color 0.3s',
               }}
-              onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.color = '#E8B84B')}
+              onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.color = '#F07814')}
               onMouseLeave={e => ((e.currentTarget as HTMLAnchorElement).style.color = '#3A3530')}
             >
               {practiceCtaLabel}
@@ -451,7 +451,7 @@ export function Navbar() {
               key={href}
               href={href}
               onClick={closeMenu}
-              className="font-cormorant"
+              className="font-playfair"
               style={{
                 fontSize: '32px',
                 fontWeight: 400,
@@ -461,7 +461,7 @@ export function Navbar() {
                 letterSpacing: '0.02em',
                 transition: 'color 0.3s',
               }}
-              onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.color = '#E8B84B')}
+              onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.color = '#F07814')}
               onMouseLeave={e => ((e.currentTarget as HTMLAnchorElement).style.color = '#3A3530')}
             >
               {label}
@@ -480,7 +480,7 @@ export function Navbar() {
                 textTransform: 'uppercase',
                 color: '#3A3530',
                 textDecoration: 'none',
-                borderBottom: '1.5px solid #E8B84B',
+                borderBottom: '1.5px solid #F07814',
                 paddingBottom: '2px',
               }}
             >
@@ -505,7 +505,7 @@ export function Navbar() {
                   position: 'absolute',
                   top: '-6px',
                   right: '-8px',
-                  background: '#E8B84B',
+                  background: '#F07814',
                   color: '#fff',
                   fontSize: '10px',
                   fontWeight: 600,

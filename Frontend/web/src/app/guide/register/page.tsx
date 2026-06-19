@@ -13,9 +13,9 @@ import {
 import { FieldLabel, FormLegend } from '@/components/forms';
 
 const G = {
-  gold:      '#E8B84B',
-  goldLight: '#F5D98A',
-  goldPale:  '#FDF6E3',
+  gold:      '#F07814',
+  goldLight: '#FDE8D0',
+  goldPale:  '#FEF7F0',
   charcoal:  '#3A3530',
   warmGray:  '#8A8278',
   white:     '#FFFFFF',
@@ -94,7 +94,7 @@ export default function GuideRegisterPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#FAFAF7', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: '#F5F2EB', display: 'flex', flexDirection: 'column' }}>
 
       {/* Nav */}
       <nav style={{
@@ -108,7 +108,7 @@ export default function GuideRegisterPage() {
           <Image src="/images/logo.jpg" alt="Spiritual California" width={40} height={40}
             style={{ borderRadius: '50%', objectFit: 'cover' }} />
           <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-            <span style={{ fontFamily: 'var(--font-cormorant-garamond), serif', fontSize: 18, fontWeight: 500, color: G.charcoal }}>
+            <span style={{ fontFamily: 'var(--font-playfair-display), serif', fontSize: 18, fontWeight: 500, color: G.charcoal }}>
               Spiritual California
             </span>
             <span style={{ fontSize: 9, letterSpacing: '0.22em', textTransform: 'uppercase', color: G.warmGray, marginTop: 2 }}>
@@ -140,7 +140,7 @@ export default function GuideRegisterPage() {
             Become a Guide
           </p>
           <h1 style={{
-            fontFamily: 'var(--font-cormorant-garamond), serif', fontSize: 42,
+            fontFamily: 'var(--font-playfair-display), serif', fontSize: 42,
             fontWeight: 400, lineHeight: 1.15, color: G.charcoal, marginBottom: 8,
           }}>
             Share your <em style={{ fontStyle: 'italic', color: G.gold }}>practice</em>

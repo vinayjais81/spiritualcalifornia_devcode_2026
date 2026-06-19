@@ -18,9 +18,9 @@ interface FeedCardProps {
 }
 
 const tagColors: Record<string, string> = {
-  default: '#E8B84B',
+  default: '#F07814',
   place: '#7BAE8A',
-  editors: '#F07820',
+  editors: '#F07814',
 };
 
 export function FeedCard({
@@ -87,7 +87,7 @@ export function FeedCard({
             position: 'absolute',
             top: '14px',
             right: '14px',
-            background: '#F07820',
+            background: '#F07814',
             color: '#FFFFFF',
             fontFamily: 'var(--font-inter), sans-serif',
             fontSize: '9px',
@@ -119,7 +119,7 @@ export function FeedCard({
         </div>
 
         <div
-          className="font-cormorant"
+          className="font-playfair"
           style={{
             fontSize: '20px', fontWeight: 500, lineHeight: 1.3, color: '#3A3530', marginBottom: '8px',
             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any,
@@ -148,7 +148,7 @@ export function FeedCard({
               height: '28px',
               borderRadius: '50%',
               overflow: 'hidden',
-              border: '1.5px solid #F5D98A',
+              border: '1.5px solid #FDE8D0',
               flexShrink: 0,
               position: 'relative',
             }}

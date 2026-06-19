@@ -30,7 +30,7 @@ export function ProductTabs({ tabs }: ProductTabsProps) {
               fontWeight: activeTab === i ? 600 : 400,
               color: activeTab === i ? '#3A3530' : '#8A8278',
               background: 'none', border: 'none', cursor: 'pointer',
-              borderBottom: activeTab === i ? '2px solid #E8B84B' : '2px solid transparent',
+              borderBottom: activeTab === i ? '2px solid #F07814' : '2px solid transparent',
               marginBottom: -1, transition: 'all 0.2s',
             }}
           >

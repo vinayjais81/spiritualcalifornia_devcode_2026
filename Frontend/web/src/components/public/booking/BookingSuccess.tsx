@@ -13,13 +13,13 @@ export function BookingSuccess({ title, subtitle, details, primaryAction, second
     <div style={{ maxWidth: 560, margin: '0 auto', padding: '60px 32px', textAlign: 'center' }}>
       <div style={{
         width: 72, height: 72, borderRadius: '50%', margin: '0 auto 24px',
-        background: '#FDF6E3', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: '#FEF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 32,
       }}>
         ✓
       </div>
       <h1 style={{
-        fontFamily: "'Cormorant Garamond', serif",
+        fontFamily: "'Playfair Display', serif",
         fontSize: 36, fontWeight: 400, color: '#3A3530', marginBottom: 10,
       }}>
         {title}
@@ -56,7 +56,7 @@ export function BookingSuccess({ title, subtitle, details, primaryAction, second
         )}
         <Link href={primaryAction.href} style={{
           padding: '14px 28px', borderRadius: 8,
-          background: '#E8B84B', color: '#3A3530',
+          background: '#F07814', color: '#3A3530',
           fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
           textDecoration: 'none',
         }}>

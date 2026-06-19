@@ -55,7 +55,7 @@ export function SearchResultsList({
     return (
       <div style={{ textAlign: 'center', padding: 60, color: '#8A8278' }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
-        <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, color: '#3A3530', marginBottom: 8 }}>
+        <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: '#3A3530', marginBottom: 8 }}>
           No results for &ldquo;{query}&rdquo;
         </h3>
         <p>Try a different word or check your spelling.</p>
@@ -99,7 +99,7 @@ export function SearchResultsList({
             <div style={{ padding: '16px 4px', display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
               <h3
                 style={{
-                  fontFamily: "'Cormorant Garamond', serif",
+                  fontFamily: "'Playfair Display', serif",
                   fontSize: 22, fontWeight: 500, color: '#3A3530',
                   margin: 0, lineHeight: 1.25,
                 }}
@@ -122,7 +122,7 @@ export function SearchResultsList({
                 ) : (
                   <div style={{
                     width: 22, height: 22, borderRadius: '50%',
-                    background: '#FDF6E3', color: '#E8B84B',
+                    background: '#FEF7F0', color: '#F07814',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 10, fontWeight: 600,
                   }}>
@@ -146,15 +146,15 @@ export function SearchResultsList({
               {r.badge && (
                 <span style={{
                   fontSize: 10, fontWeight: 600, letterSpacing: '0.1em',
-                  textTransform: 'uppercase', color: '#E8B84B',
-                  background: '#FDF6E3', padding: '4px 10px', borderRadius: 20,
+                  textTransform: 'uppercase', color: '#F07814',
+                  background: '#FEF7F0', padding: '4px 10px', borderRadius: 20,
                 }}>
                   {r.badge}
                 </span>
               )}
               {r.priceLabel && (
                 <span style={{
-                  fontFamily: "'Cormorant Garamond', serif",
+                  fontFamily: "'Playfair Display', serif",
                   fontSize: 20, fontWeight: 500, color: '#3A3530',
                 }}>
                   {r.priceLabel}

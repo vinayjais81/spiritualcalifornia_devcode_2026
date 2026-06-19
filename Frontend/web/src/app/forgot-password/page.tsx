@@ -7,10 +7,10 @@ import { api } from '@/lib/api';
 import { FieldLabel, FormLegend } from '@/components/forms';
 
 const G = {
-  gold:     '#E8B84B',
+  gold:     '#F07814',
   charcoal: '#3A3530',
   warmGray: '#8A8278',
-  offWhite: '#FAFAF7',
+  offWhite: '#F5F2EB',
   white:    '#FFFFFF',
 };
 
@@ -45,7 +45,7 @@ export default function ForgotPasswordPage() {
           <Image src="/images/logo.jpg" alt="Spiritual California" width={36} height={36}
             style={{ borderRadius: '50%', objectFit: 'cover' }} />
           <div>
-            <div className="font-cormorant" style={{ fontSize: 18, fontWeight: 500, color: G.charcoal, lineHeight: 1.1 }}>
+            <div className="font-playfair" style={{ fontSize: 18, fontWeight: 500, color: G.charcoal, lineHeight: 1.1 }}>
               Spiritual California
             </div>
             <div style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 10, letterSpacing: '0.15em', color: G.warmGray, textTransform: 'uppercase' }}>
@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
                 ✉️
               </div>
               <p style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 10, letterSpacing: '0.2em', textTransform: 'uppercase', color: G.gold, marginBottom: 10 }}>Check Your Inbox</p>
-              <h1 className="font-cormorant" style={{ fontSize: 40, fontWeight: 300, color: G.charcoal, margin: '0 0 16px' }}>
+              <h1 className="font-playfair" style={{ fontSize: 40, fontWeight: 300, color: G.charcoal, margin: '0 0 16px' }}>
                 Reset link sent
               </h1>
               <p style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 14, color: G.warmGray, lineHeight: 1.7, marginBottom: 32 }}>
@@ -79,7 +79,7 @@ export default function ForgotPasswordPage() {
                 <p style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: G.gold, marginBottom: 10 }}>
                   Account Recovery
                 </p>
-                <h1 className="font-cormorant" style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 300, color: G.charcoal, margin: '0 0 10px', lineHeight: 1.1 }}>
+                <h1 className="font-playfair" style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 300, color: G.charcoal, margin: '0 0 10px', lineHeight: 1.1 }}>
                   Forgot your{' '}
                   <em style={{ fontStyle: 'italic', color: G.gold }}>password?</em>
                 </h1>

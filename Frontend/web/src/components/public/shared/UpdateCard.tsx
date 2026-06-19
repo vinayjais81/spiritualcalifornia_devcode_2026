@@ -29,7 +29,7 @@ export function UpdateCard({
         display: 'block',
         width: '280px',
         flex: '0 0 280px',
-        background: '#FAFAF7',
+        background: '#F5F2EB',
         borderRadius: '4px',
         overflow: 'hidden',
         textDecoration: 'none',
@@ -66,7 +66,7 @@ export function UpdateCard({
             fontWeight: 600,
             letterSpacing: '0.2em',
             textTransform: 'uppercase',
-            color: '#F07820',
+            color: '#F07814',
             marginBottom: '7px',
           }}
         >
@@ -74,7 +74,7 @@ export function UpdateCard({
         </div>
 
         <div
-          className="font-cormorant"
+          className="font-playfair"
           style={{
             fontSize: '18px', fontWeight: 500, lineHeight: 1.3, color: '#3A3530', marginBottom: '7px',
             display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any,

@@ -106,7 +106,7 @@ function PendingRow({
         gap: 14,
         padding: '12px 14px',
         marginBottom: 8,
-        background: '#FAFAF7',
+        background: '#F5F2EB',
         border: '1px solid rgba(138,130,120,0.18)',
         borderRadius: 8,
       }}
@@ -282,7 +282,7 @@ export default function CartPage() {
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 48px 80px' }}>
         <div style={{ maxWidth: 600, margin: '0 auto', padding: '60px 0', textAlign: 'center' }}>
           <span style={{ fontSize: 64, display: 'block', marginBottom: 24 }}>🛍️</span>
-          <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 32, fontWeight: 400, color: '#3A3530', marginBottom: 10 }}>
+          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 400, color: '#3A3530', marginBottom: 10 }}>
             Your cart is empty
           </h1>
           <p style={{ fontSize: 14, color: '#8A8278', marginBottom: 32 }}>
@@ -290,7 +290,7 @@ export default function CartPage() {
           </p>
           <Link href="/shop" style={{
             display: 'inline-block', padding: '14px 32px', borderRadius: 8,
-            background: '#E8B84B', color: '#3A3530',
+            background: '#F07814', color: '#3A3530',
             fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
             textDecoration: 'none',
           }}>
@@ -391,7 +391,7 @@ export default function CartPage() {
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 48px 80px' }}>
       <h1 style={{
-        fontFamily: "'Cormorant Garamond', serif",
+        fontFamily: "'Playfair Display', serif",
         fontSize: 32, fontWeight: 400, color: '#3A3530', marginBottom: 6,
       }}>
         Your Cart
@@ -401,8 +401,8 @@ export default function CartPage() {
       {/* Warnings banner — pricing changes + stock issues. Blocks checkout until acknowledged. */}
       {blockingWarnings.length > 0 && (
         <div style={{
-          background: '#FDF6E3',
-          border: '1.5px solid #E8B84B',
+          background: '#FEF7F0',
+          border: '1.5px solid #F07814',
           borderRadius: 12,
           padding: '16px 20px',
           marginBottom: 28,
@@ -413,7 +413,7 @@ export default function CartPage() {
           <div style={{ fontSize: 20, lineHeight: 1 }}>⚠️</div>
           <div style={{ flex: 1 }}>
             <div style={{
-              fontFamily: "'Cormorant Garamond', serif",
+              fontFamily: "'Playfair Display', serif",
               fontSize: 17, color: '#3A3530', marginBottom: 8, fontWeight: 500,
             }}>
               Some items in your cart changed while you were away
@@ -431,7 +431,7 @@ export default function CartPage() {
                   padding: '8px 18px',
                   borderRadius: 6,
                   background: '#3A3530',
-                  color: '#E8B84B',
+                  color: '#F07814',
                   border: 'none',
                   fontSize: 11,
                   fontWeight: 600,
@@ -462,7 +462,7 @@ export default function CartPage() {
             return (
               <div key={section.label} style={{ marginBottom: 32 }}>
                 <div style={{
-                  background: '#3A3530', color: '#E8B84B', padding: '10px 18px', borderRadius: '8px 8px 0 0',
+                  background: '#3A3530', color: '#F07814', padding: '10px 18px', borderRadius: '8px 8px 0 0',
                   fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
                   display: 'flex', justifyContent: 'space-between',
                 }}>
@@ -477,7 +477,7 @@ export default function CartPage() {
                     }}>
                       <div style={{
                         width: 80, height: 80, borderRadius: 8, overflow: 'hidden', flexShrink: 0,
-                        background: '#FDF6E3', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: '#FEF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}>
                         {item.imageUrl ? (
                           <img src={item.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -519,7 +519,7 @@ export default function CartPage() {
             always renders. */}
         <div>
           <div style={{ background: '#fff', border: '1px solid rgba(232,184,75,0.15)', borderRadius: 12, position: 'sticky', top: 100, padding: 24 }}>
-            <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 20, fontWeight: 500, color: '#3A3530', marginBottom: 20 }}>
+            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 500, color: '#3A3530', marginBottom: 20 }}>
               Order Summary
             </h3>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13, color: '#8A8278' }}>
@@ -532,10 +532,10 @@ export default function CartPage() {
             )}
             <div style={{
               display: 'flex', justifyContent: 'space-between', paddingTop: 16, marginTop: 8,
-              borderTop: '2px solid #E8B84B',
+              borderTop: '2px solid #F07814',
             }}>
               <span style={{ fontSize: 14, fontWeight: 600, color: '#3A3530' }}>Estimated Total</span>
-              <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 26, fontWeight: 500, color: '#3A3530' }}>
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 500, color: '#3A3530' }}>
                 ${subtotal.toFixed(2)}
               </span>
             </div>
@@ -555,7 +555,7 @@ export default function CartPage() {
             ) : (
               <Link href={getCheckoutRoute()} style={{
                 display: 'block', width: '100%', padding: 16, borderRadius: 8, marginTop: 20,
-                background: '#3A3530', color: '#E8B84B', textAlign: 'center',
+                background: '#3A3530', color: '#F07814', textAlign: 'center',
                 fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
                 textDecoration: 'none',
               }}>
@@ -573,7 +573,7 @@ export default function CartPage() {
 
             {/* Notes */}
             {hasDigital && (
-              <div style={{ background: '#FDF6E3', borderRadius: 6, padding: '10px 14px', marginTop: 14, fontSize: 11, color: '#3A3530', display: 'flex', gap: 8 }}>
+              <div style={{ background: '#FEF7F0', borderRadius: 6, padding: '10px 14px', marginTop: 14, fontSize: 11, color: '#3A3530', display: 'flex', gap: 8 }}>
                 <span>⚡</span> Digital items will be available for instant download after purchase.
               </div>
             )}

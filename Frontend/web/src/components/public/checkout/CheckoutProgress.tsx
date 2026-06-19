@@ -12,12 +12,12 @@ export function CheckoutProgress({ steps, current }: CheckoutProgressProps) {
           const isActive = i === current;
           return (
             <div key={i} style={{ display: 'flex', alignItems: 'center' }}>
-              {i > 0 && <div style={{ width: 40, height: 1, background: isDone ? '#E8B84B' : 'rgba(232,184,75,0.2)' }} />}
+              {i > 0 && <div style={{ width: 40, height: 1, background: isDone ? '#F07814' : 'rgba(232,184,75,0.2)' }} />}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{
                   width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 11, fontWeight: 600,
-                  background: isDone ? '#5A8A6A' : isActive ? '#E8B84B' : 'rgba(232,184,75,0.1)',
+                  background: isDone ? '#5A8A6A' : isActive ? '#F07814' : 'rgba(232,184,75,0.1)',
                   color: isDone || isActive ? '#fff' : '#8A8278',
                 }}>
                   {isDone ? '✓' : i + 1}

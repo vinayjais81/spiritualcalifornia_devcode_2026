@@ -88,12 +88,12 @@ export function AIFinderBar() {
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
           fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase' as const,
-          color: '#E8B84B', marginBottom: 10,
+          color: '#F07814', marginBottom: 10,
         }}>
           ✦ AI Shopping Guide
         </div>
         <h2 style={{
-          fontFamily: "'Cormorant Garamond', serif",
+          fontFamily: "'Playfair Display', serif",
           fontSize: 28, fontWeight: 400, color: '#fff', marginBottom: 6,
         }}>
           What are you looking for today?
@@ -108,7 +108,7 @@ export function AIFinderBar() {
           border: '1.5px solid rgba(232,184,75,0.35)', borderRadius: 12,
           overflow: 'hidden', maxWidth: 680, margin: '0 auto 16px',
         }}>
-          <span style={{ padding: '0 16px', display: 'flex', alignItems: 'center', fontSize: 20, color: '#E8B84B' }}>
+          <span style={{ padding: '0 16px', display: 'flex', alignItems: 'center', fontSize: 20, color: '#F07814' }}>
             ✨
           </span>
           <input
@@ -125,7 +125,7 @@ export function AIFinderBar() {
             onClick={() => askAI()}
             disabled={loading}
             style={{
-              padding: '0 24px', background: '#E8B84B', color: '#3A3530',
+              padding: '0 24px', background: '#F07814', color: '#3A3530',
               fontFamily: "'Inter', sans-serif", fontSize: 12, fontWeight: 600,
               letterSpacing: '0.08em', textTransform: 'uppercase' as const,
               border: 'none', cursor: 'pointer', flexShrink: 0,
@@ -169,7 +169,7 @@ export function AIFinderBar() {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
               <span style={{ fontSize: 18 }}>✨</span>
-              <span style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#E8B84B' }}>
+              <span style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: '#F07814' }}>
                 Guide&apos;s Recommendation
               </span>
             </div>
@@ -197,7 +197,7 @@ export function AIFinderBar() {
                   }}
                 >
                   <div style={{ fontWeight: 500, color: '#fff', marginBottom: 2 }}>{p.name}</div>
-                  <div style={{ color: '#E8B84B' }}>{p.price}</div>
+                  <div style={{ color: '#F07814' }}>{p.price}</div>
                 </Link>
               ))}
             </div>

@@ -54,7 +54,7 @@ function FooterLinkList({ links }: { links: { label: string; href: string }[] })
           <Link
             href={href}
             style={linkStyle}
-            onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.color = '#F5D98A')}
+            onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.color = '#FDE8D0')}
             onMouseLeave={e => ((e.currentTarget as HTMLAnchorElement).style.color = 'rgba(255,255,255,0.45)')}
           >
             {label}
@@ -71,7 +71,7 @@ const colTitleStyle: React.CSSProperties = {
   fontWeight: 500,
   letterSpacing: '0.18em',
   textTransform: 'uppercase',
-  color: '#F5D98A',
+  color: '#FDE8D0',
   marginBottom: '14px',
 };
 
@@ -100,7 +100,7 @@ export function Footer() {
             />
             <div>
               <span
-                className="font-cormorant block"
+                className="font-playfair block"
                 style={{ fontSize: '20px', fontWeight: 400, color: '#FFFFFF' }}
               >
                 Spiritual California
@@ -112,7 +112,7 @@ export function Footer() {
                   fontSize: '9px',
                   letterSpacing: '0.2em',
                   textTransform: 'uppercase',
-                  color: '#F5D98A',
+                  color: '#FDE8D0',
                   marginTop: '2px',
                 }}
               >
@@ -204,7 +204,7 @@ export function Footer() {
                 textDecoration: 'none',
                 transition: 'color 0.3s',
               }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = '#F5D98A')}
+              onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = '#FDE8D0')}
               onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = 'rgba(255,255,255,0.4)')}
             >
               {label}

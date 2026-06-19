@@ -73,7 +73,7 @@ export function ShopSection({ products }: Props) {
   }));
 
   return (
-    <section id="shop" style={{ padding: '60px 0 72px', background: '#FDF6E3' }}>
+    <section id="shop" style={{ padding: '60px 0 72px', background: '#FEF7F0' }}>
       <SectionHeader title="From the Shop" linkLabel="Browse All" linkHref="/shop" />
 
       <Carousel id="shop-feed">

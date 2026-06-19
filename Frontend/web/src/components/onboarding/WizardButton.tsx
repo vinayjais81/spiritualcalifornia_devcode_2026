@@ -87,7 +87,7 @@ export function WizardButton({ children, loading, variant = 'primary', style, di
         transition: 'background 0.3s',
         ...style,
       }}
-      onMouseEnter={e => { if (!disabled && !loading) (e.currentTarget as HTMLButtonElement).style.background = '#E8B84B'; }}
+      onMouseEnter={e => { if (!disabled && !loading) (e.currentTarget as HTMLButtonElement).style.background = '#F07814'; }}
       onMouseLeave={e => { if (!disabled && !loading) (e.currentTarget as HTMLButtonElement).style.background = '#3A3530'; }}
       {...rest}
     >

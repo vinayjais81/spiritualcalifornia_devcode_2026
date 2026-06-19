@@ -26,21 +26,21 @@ export function CreatorCard({ slug, displayName, tagline, avatarUrl, isVerified,
       }}>
         <div style={{
           width: avatarSize, height: avatarSize, borderRadius: '50%',
-          border: '2px solid #E8B84B', overflow: 'hidden', flexShrink: 0,
-          background: '#FDF6E3',
+          border: '2px solid #F07814', overflow: 'hidden', flexShrink: 0,
+          background: '#FEF7F0',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           {avatarUrl ? (
             <img src={avatarUrl} alt={displayName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           ) : (
-            <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: avatarSize * 0.4, fontWeight: 600, color: '#E8B84B' }}>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: avatarSize * 0.4, fontWeight: 600, color: '#F07814' }}>
               {displayName.split(' ').map(w => w[0]).join('').slice(0, 2)}
             </span>
           )}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Playfair Display', serif",
             fontSize: compact ? 16 : 18, fontWeight: 500, color: '#3A3530',
           }}>
             {displayName}

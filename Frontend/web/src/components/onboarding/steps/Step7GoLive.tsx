@@ -42,8 +42,8 @@ export function Step7GoLive() {
     return (
       <div style={{ textAlign: 'center', padding: '60px 20px' }}>
         <div style={{ fontSize: '64px', marginBottom: '20px' }}>⏳</div>
-        <h1 className="font-cormorant" style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 300, color: '#3A3530', marginBottom: '14px', lineHeight: 1.1 }}>
-          Already <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>under review</em>
+        <h1 className="font-playfair" style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: 300, color: '#3A3530', marginBottom: '14px', lineHeight: 1.1 }}>
+          Already <em style={{ fontStyle: 'italic', color: '#F07814' }}>under review</em>
         </h1>
         <p style={{ fontSize: '14px', color: '#8A8278', lineHeight: 1.8, maxWidth: '480px', margin: '0 auto 36px', fontFamily: 'var(--font-inter), sans-serif' }}>
           Your profile has already been submitted and is currently under review by our team. You will receive an email once it has been approved. There is nothing more you need to do right now.
@@ -64,7 +64,7 @@ export function Step7GoLive() {
     return (
       <div style={{ textAlign: 'center', padding: '60px 20px' }}>
         <div style={{ fontSize: '48px', marginBottom: '16px' }}>😔</div>
-        <h2 className="font-cormorant" style={{ fontSize: '32px', fontWeight: 300, color: '#3A3530', marginBottom: '12px' }}>Something went wrong</h2>
+        <h2 className="font-playfair" style={{ fontSize: '32px', fontWeight: 300, color: '#3A3530', marginBottom: '12px' }}>Something went wrong</h2>
         <p style={{ fontSize: '14px', color: '#8A8278', lineHeight: 1.7, fontFamily: 'var(--font-inter), sans-serif', marginBottom: '24px' }}>{error}</p>
         <button
           onClick={() => { setError(null); window.location.reload(); }}
@@ -88,8 +88,8 @@ export function Step7GoLive() {
   return (
     <div style={{ textAlign: 'center', padding: '60px 20px' }}>
       <div style={{ fontSize: '64px', marginBottom: '20px' }}>🌸</div>
-      <h1 className="font-cormorant" style={{ fontSize: 'clamp(36px, 6vw, 52px)', fontWeight: 300, color: '#3A3530', marginBottom: '14px', lineHeight: 1.1 }}>
-        You are <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>live</em>.
+      <h1 className="font-playfair" style={{ fontSize: 'clamp(36px, 6vw, 52px)', fontWeight: 300, color: '#3A3530', marginBottom: '14px', lineHeight: 1.1 }}>
+        You are <em style={{ fontStyle: 'italic', color: '#F07814' }}>live</em>.
       </h1>
       <p style={{ fontSize: '15px', color: '#8A8278', lineHeight: 1.8, maxWidth: '480px', margin: '0 auto 36px', fontFamily: 'var(--font-inter), sans-serif' }}>
         Welcome to the Spiritual California community. Your profile is now visible to seekers across California and beyond. Check your email to verify your address and unlock full dashboard access.

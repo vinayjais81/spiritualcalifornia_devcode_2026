@@ -41,9 +41,9 @@ export function Step4Identity() {
   return (
     <div>
       <div style={{ marginBottom: '44px' }}>
-        <div style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#E8B84B', marginBottom: '10px', fontFamily: 'var(--font-inter), sans-serif' }}>Step 4 of 6</div>
-        <h1 className="font-cormorant" style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, lineHeight: 1.1, color: '#3A3530', marginBottom: '10px' }}>
-          Verify your <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>identity</em>
+        <div style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#F07814', marginBottom: '10px', fontFamily: 'var(--font-inter), sans-serif' }}>Step 4 of 6</div>
+        <h1 className="font-playfair" style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, lineHeight: 1.1, color: '#3A3530', marginBottom: '10px' }}>
+          Verify your <em style={{ fontStyle: 'italic', color: '#F07814' }}>identity</em>
         </h1>
         <p style={{ fontSize: '14px', color: '#8A8278', lineHeight: 1.7, maxWidth: '560px', fontFamily: 'var(--font-inter), sans-serif', margin: 0 }}>
           Identity verification is powered by Persona — the same trusted technology used by LinkedIn, Airbnb, and leading marketplaces. It takes about 2 minutes.
@@ -56,7 +56,7 @@ export function Step4Identity() {
       <div style={{ border: '1.5px solid rgba(232,184,75,0.3)', borderRadius: '14px', padding: '28px', background: '#FFFFFF', marginBottom: '20px', display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
         <div style={{ fontSize: '48px', flexShrink: 0 }}>🪪</div>
         <div>
-          <div className="font-cormorant" style={{ fontSize: '22px', fontWeight: 400, color: '#3A3530', marginBottom: '6px' }}>Verify with Persona</div>
+          <div className="font-playfair" style={{ fontSize: '22px', fontWeight: 400, color: '#3A3530', marginBottom: '6px' }}>Verify with Persona</div>
           {verificationStarted ? (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '8px', background: '#F0FDF4', border: '1px solid #86EFAC', marginBottom: '12px', fontSize: '13px', color: '#166534', fontFamily: 'var(--font-inter), sans-serif' }}>
@@ -86,7 +86,7 @@ export function Step4Identity() {
               >
                 🔒 {isLoading ? 'Opening Persona…' : 'Start Verification →'}
               </button>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '20px', background: '#FDF6E3', border: '1px solid #E8B84B', fontSize: '12px', color: '#3A3530', marginTop: '10px', fontFamily: 'var(--font-inter), sans-serif', marginLeft: '12px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '20px', background: '#FEF7F0', border: '1px solid #F07814', fontSize: '12px', color: '#3A3530', marginTop: '10px', fontFamily: 'var(--font-inter), sans-serif', marginLeft: '12px' }}>
                 ✦ Verified · Spiritual California
               </div>
             </>
@@ -95,8 +95,8 @@ export function Step4Identity() {
       </div>
 
       {/* Trust box */}
-      <div style={{ borderLeft: '3px solid #E8B84B', padding: '16px 20px', background: '#FDF6E3', borderRadius: '0 10px 10px 0', marginBottom: '28px' }}>
-        <div style={{ fontSize: '12px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#E8B84B', marginBottom: '6px', fontFamily: 'var(--font-inter), sans-serif' }}>✦ Why it increases trust</div>
+      <div style={{ borderLeft: '3px solid #F07814', padding: '16px 20px', background: '#FEF7F0', borderRadius: '0 10px 10px 0', marginBottom: '28px' }}>
+        <div style={{ fontSize: '12px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#F07814', marginBottom: '6px', fontFamily: 'var(--font-inter), sans-serif' }}>✦ Why it increases trust</div>
         <p style={{ fontSize: '13px', color: '#8A8278', lineHeight: 1.6, fontFamily: 'var(--font-inter), sans-serif', margin: 0 }}>Seekers on Spiritual California are sharing vulnerable moments of their lives. A verified badge signals that you are a real, accountable person. Verified practitioners receive <strong>40% more profile views</strong> and <strong>3× more bookings</strong> on average. You can complete this step later from your dashboard.</p>
       </div>
 

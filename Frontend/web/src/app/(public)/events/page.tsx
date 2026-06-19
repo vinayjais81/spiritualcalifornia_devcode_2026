@@ -226,12 +226,12 @@ export default function EventsPage() {
       }}>
         <div style={{
           fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase',
-          color: '#E8B84B', marginBottom: 10,
+          color: '#F07814', marginBottom: 10,
         }}>
           ✦ Upcoming Gatherings
         </div>
         <h1 style={{
-          fontFamily: "'Cormorant Garamond', serif",
+          fontFamily: "'Playfair Display', serif",
           fontSize: 44, fontWeight: 300, color: '#fff', marginBottom: 8,
         }}>
           Events &amp; Experiences
@@ -296,11 +296,11 @@ export default function EventsPage() {
                   onClick={() => setTypeFilter(t.value)}
                   style={{
                     padding: '7px 14px', borderRadius: 20,
-                    border: `1px solid ${typeFilter === t.value ? '#E8B84B' : 'rgba(138,130,120,0.25)'}`,
+                    border: `1px solid ${typeFilter === t.value ? '#F07814' : 'rgba(138,130,120,0.25)'}`,
                     fontSize: 12,
                     color: typeFilter === t.value ? '#3A3530' : '#8A8278',
                     cursor: 'pointer',
-                    background: typeFilter === t.value ? '#E8B84B' : 'transparent',
+                    background: typeFilter === t.value ? '#F07814' : 'transparent',
                     fontWeight: typeFilter === t.value ? 500 : 400,
                     transition: 'all 0.2s',
                   }}
@@ -320,7 +320,7 @@ export default function EventsPage() {
           <>
           {selectedDate && (
             <div style={{
-              fontFamily: "'Cormorant Garamond', serif",
+              fontFamily: "'Playfair Display', serif",
               fontSize: 28, fontWeight: 300, color: '#3A3530', marginBottom: 28,
               display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
             }}>
@@ -350,7 +350,7 @@ export default function EventsPage() {
             <div style={{ textAlign: 'center', padding: 60, color: '#8A8278' }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>🗓️</div>
               <h3 style={{
-                fontFamily: "'Cormorant Garamond', serif",
+                fontFamily: "'Playfair Display', serif",
                 fontSize: 22, color: '#3A3530', marginBottom: 8,
               }}>
                 No events found
@@ -365,7 +365,7 @@ export default function EventsPage() {
                 display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20,
               }}>
                 <div style={{
-                  fontFamily: "'Cormorant Garamond', serif",
+                  fontFamily: "'Playfair Display', serif",
                   fontSize: 20, fontWeight: 400, color: '#3A3530',
                   whiteSpace: 'nowrap',
                 }}>
@@ -446,8 +446,8 @@ function EventCard({ event }: { event: EventItem }) {
           borderRadius: 10, padding: '8px 12px', textAlign: 'center',
         }}>
           <div style={{
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: 24, color: '#E8B84B', lineHeight: 1,
+            fontFamily: "'Playfair Display', serif",
+            fontSize: 24, color: '#F07814', lineHeight: 1,
           }}>
             {fmtDay(event.startTime)}
           </div>
@@ -463,12 +463,12 @@ function EventCard({ event }: { event: EventItem }) {
       <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column' }}>
         <div style={{
           fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase',
-          color: '#E8B84B', marginBottom: 10,
+          color: '#F07814', marginBottom: 10,
         }}>
           {event.type === 'RETREAT' ? 'Retreat' : event.type === 'SOUL_TRAVEL' ? 'Soul Travel' : event.type === 'VIRTUAL' ? 'Online Event' : 'In-Person Event'}
         </div>
         <h3 style={{
-          fontFamily: "'Cormorant Garamond', serif",
+          fontFamily: "'Playfair Display', serif",
           fontSize: 22, fontWeight: 500, color: '#3A3530',
           marginBottom: 8, lineHeight: 1.3,
         }}>
@@ -484,9 +484,9 @@ function EventCard({ event }: { event: EventItem }) {
         >
           <div style={{
             width: 28, height: 28, borderRadius: '50%', overflow: 'hidden',
-            background: '#FDF6E3', border: '1.5px solid #E8B84B',
+            background: '#FEF7F0', border: '1.5px solid #F07814',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 10, fontWeight: 600, color: '#E8B84B',
+            fontSize: 10, fontWeight: 600, color: '#F07814',
           }}>
             {event.guide.user?.avatarUrl ? (
               <img src={event.guide.user.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -530,13 +530,13 @@ function EventCard({ event }: { event: EventItem }) {
           <Link
             href={`/events/${event.id}/checkout`}
             style={{
-              padding: '12px 28px', background: '#E8B84B', color: '#3A3530',
+              padding: '12px 28px', background: '#F07814', color: '#3A3530',
               fontSize: 12, fontWeight: 600, letterSpacing: '0.08em',
               textTransform: 'uppercase', borderRadius: 8, textDecoration: 'none',
               transition: 'background 0.2s',
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = '#F5D98A'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = '#E8B84B'; }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#FDE8D0'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = '#F07814'; }}
           >
             {isFree ? 'Register Free' : 'Buy Ticket'}
           </Link>
@@ -553,7 +553,7 @@ function EventCard({ event }: { event: EventItem }) {
             Full Details
           </Link>
           <div style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Playfair Display', serif",
             fontSize: 22, fontWeight: 500, marginLeft: 'auto',
             color: isFree ? '#4CAF50' : '#3A3530',
           }}>

@@ -136,18 +136,18 @@ interface GuideProfile {
 // ─── Design tokens ───────────────────────────────────────────────────────────
 
 const C = {
-  gold: '#E8B84B',
-  goldLight: '#F5D98A',
-  goldPale: '#FDF6E3',
+  gold: '#F07814',
+  goldLight: '#FDE8D0',
+  goldPale: '#FEF7F0',
   charcoal: '#3A3530',
   warmGray: '#8A8278',
-  offWhite: '#FAFAF7',
+  offWhite: '#F5F2EB',
   white: '#FFFFFF',
   green: '#5A8A6A',
 };
 
 const font = "var(--font-inter), 'Inter', sans-serif";
-const serif = "var(--font-cormorant-garamond), 'Cormorant Garamond', serif";
+const serif = "var(--font-playfair-display), 'Playfair Display', serif";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -908,7 +908,7 @@ export default function GuideProfilePage() {
       <style>{`
         .badge-online { background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
         .badge-offline { background: #FFF3E0; color: #E65100; border: 1px solid #FFCC80; }
-        .badge-both { background: #FDF6E3; color: #3A3530; border: 1px solid rgba(232,184,75,0.4); }
+        .badge-both { background: #FEF7F0; color: #3A3530; border: 1px solid rgba(232,184,75,0.4); }
         @media (max-width: 900px) {
           .profile-body-grid { grid-template-columns: 1fr !important; padding: 24px 20px !important; }
           .profile-meta { flex-direction: column !important; padding-left: 24px !important; padding-top: 90px !important; }

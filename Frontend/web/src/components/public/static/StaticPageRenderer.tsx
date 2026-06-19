@@ -5,10 +5,10 @@ import { Navbar } from '@/components/public/layout/Navbar';
 import { Footer } from '@/components/public/layout/Footer';
 
 const G = {
-  gold: '#E8B84B',
+  gold: '#F07814',
   charcoal: '#3A3530',
   warmGray: '#8A8278',
-  offWhite: '#FAFAF7',
+  offWhite: '#F5F2EB',
 };
 
 interface Props {
@@ -93,7 +93,7 @@ export function StaticPageRenderer({
             <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
               <span
                 style={{
-                  fontFamily: 'var(--font-cormorant-garamond), serif',
+                  fontFamily: 'var(--font-playfair-display), serif',
                   fontSize: 17,
                   fontWeight: 500,
                   color: G.charcoal,
@@ -158,7 +158,7 @@ export function StaticPageRenderer({
         )}
         <h1
           style={{
-            fontFamily: 'var(--font-cormorant-garamond), serif',
+            fontFamily: 'var(--font-playfair-display), serif',
             fontSize: isMarketing ? 'clamp(40px, 6vw, 64px)' : 'clamp(36px, 5vw, 56px)',
             fontWeight: 400,
             color: G.charcoal,
@@ -171,7 +171,7 @@ export function StaticPageRenderer({
         {page.subtitle && (
           <p
             style={{
-              fontFamily: 'var(--font-cormorant-garamond), serif',
+              fontFamily: 'var(--font-playfair-display), serif',
               fontSize: isMarketing ? 22 : 20,
               fontStyle: 'italic',
               color: G.warmGray,
@@ -211,7 +211,7 @@ export function StaticPageRenderer({
             color: ${G.charcoal};
           }
           .static-page-body h2 {
-            font-family: 'Cormorant Garamond', serif;
+            font-family: 'Playfair Display', serif;
             font-size: 22px;
             font-weight: 500;
             color: ${G.charcoal};
@@ -219,7 +219,7 @@ export function StaticPageRenderer({
             margin: 40px 0 12px;
           }
           .static-page-body h3 {
-            font-family: 'Cormorant Garamond', serif;
+            font-family: 'Playfair Display', serif;
             font-size: 18px;
             font-weight: 500;
             color: ${G.charcoal};
@@ -261,7 +261,7 @@ export function StaticPageRenderer({
             border-bottom: 1px solid rgba(232,184,75,0.15);
           }
           .static-page-body th {
-            font-family: 'Cormorant Garamond', serif;
+            font-family: 'Playfair Display', serif;
             font-size: 13px;
             font-weight: 600;
             color: ${G.warmGray};
@@ -372,7 +372,7 @@ export function StaticPageRenderer({
           }
           .static-page-body .pillar-title {
             grid-area: title;
-            font-family: 'Cormorant Garamond', serif;
+            font-family: 'Playfair Display', serif;
             font-size: 19px;
             font-weight: 500;
             color: ${G.charcoal};

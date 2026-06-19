@@ -99,16 +99,16 @@ export default function JournalPage() {
       {/* Page Hero */}
       <div style={{
         textAlign: 'center', padding: '72px 48px 48px',
-        background: 'linear-gradient(180deg, #fff 0%, #FAFAF7 100%)',
+        background: 'linear-gradient(180deg, #fff 0%, #F5F2EB 100%)',
       }}>
         <div style={{
           fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase',
-          color: '#E8B84B', marginBottom: 12,
+          color: '#F07814', marginBottom: 12,
         }}>
           ✦ The Journal
         </div>
         <h1 style={{
-          fontFamily: "'Cormorant Garamond', serif",
+          fontFamily: "'Playfair Display', serif",
           fontSize: 48, fontWeight: 400, color: '#3A3530', lineHeight: 1.15, marginBottom: 10,
         }}>
           Stories, Practices &amp; Wisdom
@@ -138,7 +138,7 @@ export default function JournalPage() {
                   fontSize: 12, letterSpacing: '0.06em',
                   fontWeight: activeFilter === tab ? 600 : 400,
                   color: activeFilter === tab ? '#3A3530' : '#8A8278',
-                  borderBottom: activeFilter === tab ? '2px solid #E8B84B' : '2px solid transparent',
+                  borderBottom: activeFilter === tab ? '2px solid #F07814' : '2px solid transparent',
                   transition: 'all 0.2s',
                 }}
               >
@@ -153,7 +153,7 @@ export default function JournalPage() {
               placeholder="Search articles..."
               style={{
                 padding: '9px 16px 9px 36px', borderRadius: 24,
-                background: '#FAFAF7', border: '1px solid rgba(232,184,75,0.15)',
+                background: '#F5F2EB', border: '1px solid rgba(232,184,75,0.15)',
                 fontSize: 12, color: '#3A3530', outline: 'none', width: 200,
               }}
             />
@@ -174,7 +174,7 @@ export default function JournalPage() {
           {topics.map((topic) => (
             <button key={topic} style={{
               padding: '6px 14px', borderRadius: 20,
-              background: '#FDF6E3', border: '1px solid rgba(232,184,75,0.2)',
+              background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.2)',
               fontSize: 12, color: '#3A3530', cursor: 'pointer',
               transition: 'all 0.2s',
             }}>
@@ -190,7 +190,7 @@ export default function JournalPage() {
         {/* Section Label */}
         <div style={{
           fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase',
-          color: '#E8B84B', marginBottom: 24,
+          color: '#F07814', marginBottom: 24,
           display: 'flex', alignItems: 'center', gap: 12,
         }}>
           Featured
@@ -216,7 +216,7 @@ export default function JournalPage() {
         {/* Latest Posts */}
         <div style={{
           fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase',
-          color: '#E8B84B', marginBottom: 24, marginTop: 40,
+          color: '#F07814', marginBottom: 24, marginTop: 40,
           display: 'flex', alignItems: 'center', gap: 12,
         }}>
           Latest Posts
@@ -227,7 +227,7 @@ export default function JournalPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28 }}>
             {[...Array(6)].map((_, i) => (
               <div key={i} style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(232,184,75,0.1)' }}>
-                <div style={{ height: 190, background: '#FDF6E3' }} />
+                <div style={{ height: 190, background: '#FEF7F0' }} />
                 <div style={{ padding: '18px 20px' }}>
                   <div style={{ height: 12, background: '#f0eeeb', borderRadius: 4, width: '40%', marginBottom: 10 }} />
                   <div style={{ height: 18, background: '#f0eeeb', borderRadius: 4, marginBottom: 8 }} />
@@ -239,7 +239,7 @@ export default function JournalPage() {
         ) : posts.length === 0 ? (
           <div style={{
             textAlign: 'center', padding: '60px 24px',
-            background: '#FDF6E3', border: '1px solid rgba(232,184,75,0.2)', borderRadius: 16,
+            background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.2)', borderRadius: 16,
             color: '#8A8278', fontSize: 14,
           }}>
             No articles yet. Check back soon — new stories land here from our verified practitioners.

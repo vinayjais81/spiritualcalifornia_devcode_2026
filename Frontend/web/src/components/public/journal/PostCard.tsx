@@ -39,7 +39,7 @@ export function PostCard({
         transform: hovered ? 'translateY(-3px)' : 'none',
       }}>
         {/* Image */}
-        <div style={{ overflow: 'hidden', height: imageHeight, background: '#FDF6E3' }}>
+        <div style={{ overflow: 'hidden', height: imageHeight, background: '#FEF7F0' }}>
           {coverImageUrl ? (
             <img src={coverImageUrl} alt={title} style={{
               width: '100%', height: '100%', objectFit: 'cover',
@@ -49,7 +49,7 @@ export function PostCard({
           ) : (
             <div style={{
               width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 48, background: 'linear-gradient(135deg, #FDF6E3, #F5D98A)',
+              fontSize: 48, background: 'linear-gradient(135deg, #FEF7F0, #FDE8D0)',
             }}>
               ✦
             </div>
@@ -61,13 +61,13 @@ export function PostCard({
           {category && (
             <div style={{
               fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase',
-              color: '#E8B84B', marginBottom: 8,
+              color: '#F07814', marginBottom: 8,
             }}>
               {category}
             </div>
           )}
           <h3 style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Playfair Display', serif",
             fontSize: featured ? 22 : 20, fontWeight: 500, color: '#3A3530',
             lineHeight: 1.3, marginBottom: 8,
           }}>
@@ -84,9 +84,9 @@ export function PostCard({
           )}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
-              width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #E8B84B',
-              background: '#FDF6E3', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 10, fontWeight: 600, color: '#E8B84B', overflow: 'hidden', flexShrink: 0,
+              width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #F07814',
+              background: '#FEF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 10, fontWeight: 600, color: '#F07814', overflow: 'hidden', flexShrink: 0,
             }}>
               {authorAvatar ? (
                 <img src={authorAvatar} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

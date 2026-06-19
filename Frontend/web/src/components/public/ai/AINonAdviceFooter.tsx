@@ -34,7 +34,7 @@ export function AINonAdviceFooter({
       call or text{' '}
       <a
         href="tel:988"
-        style={{ color: isLight ? '#3A3530' : '#E8B84B', fontWeight: 500, textDecoration: 'underline' }}
+        style={{ color: isLight ? '#3A3530' : '#F07814', fontWeight: 500, textDecoration: 'underline' }}
       >
         988
       </a>{' '}

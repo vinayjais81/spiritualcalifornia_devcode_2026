@@ -200,12 +200,12 @@ function PractitionersPageInner() {
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase',
-            color: '#E8B84B', marginBottom: 8,
+            color: '#F07814', marginBottom: 8,
           }}>
             ✦ AI Guide
           </div>
           <h2 style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Playfair Display', serif",
             fontSize: 26, fontWeight: 400, color: '#fff', marginBottom: 4,
           }}>
             Who are you looking for?
@@ -224,7 +224,7 @@ function PractitionersPageInner() {
           >
             <span style={{
               padding: '0 16px', display: 'flex', alignItems: 'center',
-              fontSize: 20, color: '#E8B84B',
+              fontSize: 20, color: '#F07814',
             }}>✨</span>
             <input
               value={aiInput}
@@ -240,7 +240,7 @@ function PractitionersPageInner() {
               type="submit"
               disabled={aiLoading}
               style={{
-                padding: '14px 24px', background: '#E8B84B', border: 'none',
+                padding: '14px 24px', background: '#F07814', border: 'none',
                 color: '#3A3530', fontSize: 12, fontWeight: 600,
                 letterSpacing: '0.08em', cursor: aiLoading ? 'wait' : 'pointer',
                 opacity: aiLoading ? 0.7 : 1,
@@ -293,7 +293,7 @@ function PractitionersPageInner() {
                       href={`/guides/${p.slug}`}
                       style={{
                         padding: '6px 14px', borderRadius: 20,
-                        background: '#E8B84B', color: '#3A3530',
+                        background: '#F07814', color: '#3A3530',
                         fontSize: 12, fontWeight: 500, textDecoration: 'none',
                       }}
                     >
@@ -313,7 +313,7 @@ function PractitionersPageInner() {
       {/* ── PAGE HEADER ───────────────────────────────────────────────── */}
       <div style={{ padding: '48px 48px 0', maxWidth: 1280, margin: '0 auto' }}>
         <h1 style={{
-          fontFamily: "'Cormorant Garamond', serif",
+          fontFamily: "'Playfair Display', serif",
           fontSize: 42, fontWeight: 300, color: '#3A3530', marginBottom: 6,
         }}>
           Our Practitioners
@@ -393,7 +393,7 @@ function PractitionersPageInner() {
         ) : guides.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 60, color: '#8A8278' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🌿</div>
-            <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 22, color: '#3A3530', marginBottom: 8 }}>
+            <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 22, color: '#3A3530', marginBottom: 8 }}>
               No practitioners found
             </h3>
             <p>Try adjusting your filters or ask the AI guide above.</p>
@@ -445,11 +445,11 @@ function FilterPill({ active, onClick, label }: { active: boolean; onClick: () =
       onClick={onClick}
       style={{
         padding: '6px 14px', borderRadius: 20,
-        border: `1px solid ${active ? '#E8B84B' : 'rgba(138,130,120,0.3)'}`,
+        border: `1px solid ${active ? '#F07814' : 'rgba(138,130,120,0.3)'}`,
         fontSize: 12,
         color: active ? '#3A3530' : '#8A8278',
         cursor: 'pointer',
-        background: active ? '#E8B84B' : 'transparent',
+        background: active ? '#F07814' : 'transparent',
         fontWeight: active ? 500 : 400,
         whiteSpace: 'nowrap',
         transition: 'all 0.2s',
@@ -465,7 +465,7 @@ function SectionHead({ title, badge }: { title: string; badge?: string }) {
     <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
       <div style={{ flex: 1, height: 1, background: 'rgba(232,184,75,0.25)' }} />
       <h2 style={{
-        fontFamily: "'Cormorant Garamond', serif",
+        fontFamily: "'Playfair Display', serif",
         fontSize: 22, fontWeight: 400, color: '#3A3530', whiteSpace: 'nowrap',
       }}>
         {title}
@@ -473,7 +473,7 @@ function SectionHead({ title, badge }: { title: string; badge?: string }) {
       {badge && (
         <span style={{
           fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase',
-          color: '#E8B84B', background: 'rgba(232,184,75,0.1)',
+          color: '#F07814', background: 'rgba(232,184,75,0.1)',
           padding: '4px 10px', borderRadius: 12, whiteSpace: 'nowrap',
         }}>
           {badge}
@@ -514,12 +514,12 @@ function FeaturedCard({ guide }: { guide: Guide }) {
         <div style={{ padding: 20, flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div style={{
             fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase',
-            color: '#E8B84B', marginBottom: 6,
+            color: '#F07814', marginBottom: 6,
           }}>
             {primaryMod}{post ? ' · Latest Post' : ''}
           </div>
           <div style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Playfair Display', serif",
             fontSize: 16, fontWeight: 500, color: '#3A3530',
             marginBottom: 12, lineHeight: 1.4,
           }}>
@@ -531,9 +531,9 @@ function FeaturedCard({ guide }: { guide: Guide }) {
           }}>
             <div style={{
               width: 36, height: 36, borderRadius: '50%', overflow: 'hidden',
-              background: '#FDF6E3',
+              background: '#FEF7F0',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 12, fontWeight: 600, color: '#E8B84B',
+              fontSize: 12, fontWeight: 600, color: '#F07814',
             }}>
               {guide.user.avatarUrl ? (
                 <img src={guide.user.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -569,7 +569,7 @@ function FeaturedCard({ guide }: { guide: Guide }) {
       </Link>
       <div style={{
         position: 'absolute', top: 12, left: 12,
-        background: '#E8B84B', color: '#3A3530',
+        background: '#F07814', color: '#3A3530',
         fontSize: 9, fontWeight: 600, letterSpacing: '0.12em',
         textTransform: 'uppercase', padding: '4px 10px', borderRadius: 10,
       }}>
@@ -611,9 +611,9 @@ function PractitionerCard({ guide }: { guide: Guide }) {
           <div style={{
             width: 48, height: 48, borderRadius: '50%',
             border: '3px solid #fff', overflow: 'hidden',
-            background: '#FDF6E3',
+            background: '#FEF7F0',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 14, fontWeight: 600, color: '#E8B84B',
+            fontSize: 14, fontWeight: 600, color: '#F07814',
           }}>
             {guide.user.avatarUrl ? (
               <img src={guide.user.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -636,7 +636,7 @@ function PractitionerCard({ guide }: { guide: Guide }) {
       </div>
       <div style={{ padding: '32px 16px 16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
         <div style={{
-          fontFamily: "'Cormorant Garamond', serif",
+          fontFamily: "'Playfair Display', serif",
           fontSize: 17, fontWeight: 500, color: '#3A3530', marginBottom: 3,
         }}>
           {guide.displayName}
@@ -668,7 +668,7 @@ function PractitionerCard({ guide }: { guide: Guide }) {
           paddingTop: 12, borderTop: '1px solid rgba(232,184,75,0.15)',
         }}>
           <div style={{ fontSize: 12, color: '#3A3530' }}>
-            <span style={{ color: '#E8B84B' }}>★</span> {guide.averageRating ? guide.averageRating.toFixed(1) : '—'}
+            <span style={{ color: '#F07814' }}>★</span> {guide.averageRating ? guide.averageRating.toFixed(1) : '—'}
             {guide.totalReviews > 0 && (
               <span style={{ color: '#8A8278' }}> · {guide.totalReviews} review{guide.totalReviews !== 1 ? 's' : ''}</span>
             )}
@@ -681,7 +681,7 @@ function PractitionerCard({ guide }: { guide: Guide }) {
             }}
             style={{
               fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
-              color: '#3A3530', background: '#E8B84B',
+              color: '#3A3530', background: '#F07814',
               padding: '6px 14px', borderRadius: 6,
               fontWeight: 600, cursor: 'pointer',
             }}

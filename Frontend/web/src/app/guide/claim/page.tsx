@@ -98,7 +98,7 @@ function ClaimAccountContent() {
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
               <path
                 d="M20 6L9 17L4 12"
-                stroke="#E8B84B"
+                stroke="#F07814"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -111,14 +111,14 @@ function ClaimAccountContent() {
               fontSize: '11px',
               letterSpacing: '0.2em',
               textTransform: 'uppercase' as const,
-              color: '#E8B84B',
+              color: '#F07814',
               marginBottom: '10px',
             }}
           >
             Account Claimed
           </div>
           <h1
-            className="font-cormorant"
+            className="font-playfair"
             style={{ fontSize: '40px', fontWeight: 300, color: '#3A3530', margin: '0 0 16px' }}
           >
             Welcome aboard
@@ -145,7 +145,7 @@ function ClaimAccountContent() {
     fontSize: '14px',
     color: '#3A3530',
     background: '#FFFFFF',
-    border: `1px solid ${focused === field ? '#E8B84B' : 'rgba(138,130,120,0.25)'}`,
+    border: `1px solid ${focused === field ? '#F07814' : 'rgba(138,130,120,0.25)'}`,
     borderRadius: '8px',
     boxShadow: focused === field ? '0 0 0 3px rgba(232,184,75,0.1)' : 'none',
     outline: 'none',
@@ -163,14 +163,14 @@ function ClaimAccountContent() {
               fontSize: '11px',
               letterSpacing: '0.2em',
               textTransform: 'uppercase',
-              color: '#E8B84B',
+              color: '#F07814',
               marginBottom: '10px',
             }}
           >
             Guide Account
           </div>
           <h1
-            className="font-cormorant"
+            className="font-playfair"
             style={{
               fontSize: 'clamp(32px, 5vw, 48px)',
               fontWeight: 300,
@@ -179,7 +179,7 @@ function ClaimAccountContent() {
             }}
           >
             Claim your{' '}
-            <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>account</em>
+            <em style={{ fontStyle: 'italic', color: '#F07814' }}>account</em>
           </h1>
           <p
             style={{
@@ -403,7 +403,7 @@ function ClaimAccountContent() {
 
 function PageShell({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ minHeight: '100vh', background: '#FAFAF7', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: '#F5F2EB', display: 'flex', flexDirection: 'column' }}>
       <nav
         style={{
           display: 'flex',
@@ -426,7 +426,7 @@ function PageShell({ children }: { children: React.ReactNode }) {
           />
           <div>
             <div
-              className="font-cormorant"
+              className="font-playfair"
               style={{ fontSize: '18px', fontWeight: 500, color: '#3A3530', lineHeight: 1.1 }}
             >
               Spiritual California
@@ -465,7 +465,7 @@ function ErrorLayout({ message }: { message: string }) {
     <PageShell>
       <div style={{ textAlign: 'center', maxWidth: '440px' }}>
         <h1
-          className="font-cormorant"
+          className="font-playfair"
           style={{ fontSize: '40px', fontWeight: 300, color: '#3A3530', margin: '0 0 16px' }}
         >
           Invalid link

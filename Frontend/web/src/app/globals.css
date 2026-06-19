@@ -4,22 +4,28 @@
 
 /* ─── SPIRITUAL CALIFORNIA DESIGN SYSTEM ──────────────────── */
 @theme inline {
-  /* Brand colours */
-  --color-gold:        #E8B84B;
-  --color-gold-light:  #F5D98A;
-  --color-gold-pale:   #FDF6E3;
+  /* Brand colours — Design v6 rebrand (2026-06-19): gold → orange #F07814.
+     The `--color-gold*` token names are kept (used widely) but now hold the
+     orange palette, so any token-based consumer rebrands automatically.
+     Charcoal stays #3A3530 (design #3D3D3D is imperceptibly different). */
+  --color-gold:        #F07814;
+  --color-gold-light:  #FDE8D0;
+  --color-gold-pale:   #FEF7F0;
   --color-charcoal:    #3A3530;
   --color-warm-gray:   #8A8278;
-  --color-off-white:   #FAFAF7;
-  --color-brand-orange: #F07820;
-  --color-green:        #5A8A6A;
+  --color-off-white:   #F5F2EB;
+  --color-brand-orange: #F07814;
+  --color-green:        #7BAE8A;
 
   /* Semantic — validation / errors. Distinct from --color-destructive
      (delete actions) so the meaning of red is unambiguous in code. */
   --color-error:        #C0392B;
 
-  /* Font families */
-  --font-cormorant: var(--font-cormorant-garamond);
+  /* Font families — Design v6: headings use Playfair Display.
+     --font-cormorant is kept as a legacy alias pointing at Playfair so any
+     un-migrated `font-cormorant` class still renders the new serif. */
+  --font-playfair:  var(--font-playfair-display);
+  --font-cormorant: var(--font-playfair-display);
   --font-inter:     var(--font-inter);
 }
 
@@ -154,15 +160,16 @@
 /* ─── PUBLIC SITE UTILITIES ───────────────────────────────── */
 .public-site {
   font-family: var(--font-inter), sans-serif;
-  background-color: #FAFAF7;
+  background-color: #F5F2EB;
   color: #3A3530;
   overflow-x: hidden;
   cursor: url('/cursor.png') 16 16, auto;
 }
 
-/* Cormorant Garamond helper class */
+/* Heading serif helper. Legacy class name `.font-cormorant` retained
+   (used widely); now renders Playfair Display per the v6 rebrand. */
 .font-cormorant {
-  font-family: var(--font-cormorant-garamond), Georgia, serif;
+  font-family: var(--font-playfair-display), Georgia, serif;
 }
 
 /* Scroll-hide scrollbar utility */

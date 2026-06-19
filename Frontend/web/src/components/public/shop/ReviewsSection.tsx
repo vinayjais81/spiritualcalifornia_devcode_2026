@@ -24,7 +24,7 @@ export function ReviewsSection({ reviews, averageRating, totalReviews, columns =
         <div>
           <div style={{
             fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase',
-            color: '#E8B84B', marginBottom: 12,
+            color: '#F07814', marginBottom: 12,
             display: 'flex', alignItems: 'center', gap: 12,
           }}>
             Reviews
@@ -33,14 +33,14 @@ export function ReviewsSection({ reviews, averageRating, totalReviews, columns =
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 16 }}>
             {columns === 2 && (
               <span style={{
-                fontFamily: "'Cormorant Garamond', serif",
+                fontFamily: "'Playfair Display', serif",
                 fontSize: 64, fontWeight: 300, color: '#3A3530',
               }}>
                 {averageRating.toFixed(1)}
               </span>
             )}
             <div>
-              <div style={{ color: '#E8B84B', fontSize: columns === 2 ? 20 : 14, marginBottom: 4 }}>
+              <div style={{ color: '#F07814', fontSize: columns === 2 ? 20 : 14, marginBottom: 4 }}>
                 {stars(Math.round(averageRating))}
               </div>
               <span style={{ fontSize: 13, color: '#8A8278' }}>
@@ -65,8 +65,8 @@ export function ReviewsSection({ reviews, averageRating, totalReviews, columns =
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
               <div style={{
                 width: 40, height: 40, borderRadius: '50%',
-                background: '#FDF6E3', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: "'Cormorant Garamond', serif", fontSize: 16, fontWeight: 600, color: '#E8B84B',
+                background: '#FEF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: "'Playfair Display', serif", fontSize: 16, fontWeight: 600, color: '#F07814',
               }}>
                 {review.authorName.split(' ').map(w => w[0]).join('').slice(0, 2)}
               </div>
@@ -77,7 +77,7 @@ export function ReviewsSection({ reviews, averageRating, totalReviews, columns =
                 </div>
               </div>
             </div>
-            <div style={{ color: '#E8B84B', fontSize: 12, marginBottom: 8 }}>
+            <div style={{ color: '#F07814', fontSize: 12, marginBottom: 8 }}>
               {stars(review.rating)}
             </div>
             <p style={{ fontSize: 13, color: '#3A3530', lineHeight: 1.7, fontStyle: 'italic' }}>

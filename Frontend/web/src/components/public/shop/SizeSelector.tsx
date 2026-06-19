@@ -29,9 +29,9 @@ export function SizeSelector({ variants, selectedId, onChange }: SizeSelectorPro
               style={{
                 padding: '8px 16px', borderRadius: 8,
                 fontSize: 12, fontWeight: isActive ? 500 : 400,
-                background: isActive ? '#E8B84B' : '#fff',
+                background: isActive ? '#F07814' : '#fff',
                 color: isActive ? '#3A3530' : isOutOfStock ? '#ccc' : '#3A3530',
-                border: isActive ? '1.5px solid #E8B84B' : '1.5px solid rgba(232,184,75,0.2)',
+                border: isActive ? '1.5px solid #F07814' : '1.5px solid rgba(232,184,75,0.2)',
                 cursor: isOutOfStock ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s',
                 textDecoration: isOutOfStock ? 'line-through' : 'none',

@@ -82,7 +82,7 @@ export default function SinglePostPage() {
         <div style={{ height: 16, background: '#f0eeeb', borderRadius: 4, width: '30%', marginBottom: 20 }} />
         <div style={{ height: 48, background: '#f0eeeb', borderRadius: 4, marginBottom: 16 }} />
         <div style={{ height: 20, background: '#f0eeeb', borderRadius: 4, width: '60%', marginBottom: 40 }} />
-        <div style={{ height: 400, background: '#FDF6E3', borderRadius: 12 }} />
+        <div style={{ height: 400, background: '#FEF7F0', borderRadius: 12 }} />
       </div>
     );
   }
@@ -102,13 +102,13 @@ export default function SinglePostPage() {
           fontSize: 10, letterSpacing: '0.15em', textTransform: 'uppercase',
           color: '#8A8278', marginBottom: 20,
         }}>
-          <Link href="/journal" style={{ color: '#E8B84B', textDecoration: 'none' }}>Journal</Link>
-          {post.tags[0] && <> › <span style={{ color: '#E8B84B' }}>{post.tags[0]}</span></>}
+          <Link href="/journal" style={{ color: '#F07814', textDecoration: 'none' }}>Journal</Link>
+          {post.tags[0] && <> › <span style={{ color: '#F07814' }}>{post.tags[0]}</span></>}
         </div>
 
         {/* Title */}
         <h1 style={{
-          fontFamily: "'Cormorant Garamond', serif",
+          fontFamily: "'Playfair Display', serif",
           fontSize: 52, fontWeight: 400, color: '#3A3530', lineHeight: 1.15, marginBottom: 12,
         }}>
           {post.title}
@@ -117,7 +117,7 @@ export default function SinglePostPage() {
         {/* Subtitle */}
         {post.excerpt && (
           <p style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Playfair Display', serif",
             fontSize: 22, fontStyle: 'italic', color: '#8A8278',
             lineHeight: 1.5, marginBottom: 32,
           }}>
@@ -132,14 +132,14 @@ export default function SinglePostPage() {
         }}>
           <Link href={`/guides/${post.guide.slug}`} style={{ textDecoration: 'none' }}>
             <div style={{
-              width: 52, height: 52, borderRadius: '50%', border: '2px solid #E8B84B',
-              overflow: 'hidden', background: '#FDF6E3',
+              width: 52, height: 52, borderRadius: '50%', border: '2px solid #F07814',
+              overflow: 'hidden', background: '#FEF7F0',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               {post.guide.user.avatarUrl ? (
                 <img src={post.guide.user.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <span style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontWeight: 600, color: '#E8B84B' }}>
+                <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 600, color: '#F07814' }}>
                   {post.guide.displayName.split(' ').map(w => w[0]).join('').slice(0, 2)}
                 </span>
               )}
@@ -179,21 +179,21 @@ export default function SinglePostPage() {
       }}>
         <style>{`
           .article-body h2 {
-            font-family: 'Cormorant Garamond', serif;
+            font-family: 'Playfair Display', serif;
             font-size: 34px; font-weight: 500; color: #3A3530;
             margin: 48px 0 16px; line-height: 1.25;
           }
           .article-body h3 {
-            font-family: 'Cormorant Garamond', serif;
+            font-family: 'Playfair Display', serif;
             font-size: 26px; font-weight: 500; color: #3A3530;
             margin: 36px 0 12px; line-height: 1.3;
           }
           .article-body p { margin-bottom: 28px; }
           .article-body blockquote {
-            border-left: 4px solid #E8B84B;
-            background: #FDF6E3; padding: 24px 32px;
+            border-left: 4px solid #F07814;
+            background: #FEF7F0; padding: 24px 32px;
             margin: 32px 0; border-radius: 0 8px 8px 0;
-            font-family: 'Cormorant Garamond', serif;
+            font-family: 'Playfair Display', serif;
             font-size: 22px; font-style: italic; color: #3A3530;
             line-height: 1.5;
           }
@@ -218,7 +218,7 @@ export default function SinglePostPage() {
           {post.tags.map((tag) => (
             <span key={tag} style={{
               padding: '6px 16px', borderRadius: 20,
-              background: '#FDF6E3', border: '1px solid rgba(232,184,75,0.2)',
+              background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.2)',
               fontSize: 12, color: '#3A3530',
             }}>
               {tag}
@@ -250,7 +250,7 @@ export default function SinglePostPage() {
             Until then, render a functional button without a fake count. */}
         <button style={{
           padding: '10px 20px', borderRadius: 24,
-          background: 'transparent', border: '1.5px solid #E8B84B',
+          background: 'transparent', border: '1.5px solid #F07814',
           fontSize: 12, color: '#3A3530', cursor: 'pointer',
           display: 'flex', alignItems: 'center', gap: 6,
         }}>
@@ -272,7 +272,7 @@ export default function SinglePostPage() {
         <div style={{ maxWidth: 1000, margin: '0 auto', padding: '0 24px 80px' }}>
           <div style={{
             fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase',
-            color: '#E8B84B', marginBottom: 24,
+            color: '#F07814', marginBottom: 24,
             display: 'flex', alignItems: 'center', gap: 12,
           }}>
             You May Also Like

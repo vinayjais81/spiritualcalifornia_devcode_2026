@@ -21,7 +21,7 @@ export function WizardFormCard({ eyebrow, title, subtitle, children }: Props) {
               fontSize: '11px',
               letterSpacing: '0.2em',
               textTransform: 'uppercase',
-              color: '#E8B84B',
+              color: '#F07814',
               marginBottom: '10px',
             }}
           >
@@ -29,7 +29,7 @@ export function WizardFormCard({ eyebrow, title, subtitle, children }: Props) {
           </div>
         )}
         <h1
-          className="font-cormorant"
+          className="font-playfair"
           style={{
             fontSize: 'clamp(32px, 5vw, 52px)',
             fontWeight: 300,

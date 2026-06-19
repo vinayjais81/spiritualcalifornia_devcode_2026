@@ -72,7 +72,7 @@ export default function EventDetailPage() {
   if (notFound || !event) {
     return (
       <div style={{ maxWidth: 600, margin: '160px auto', textAlign: 'center', padding: '0 24px' }}>
-        <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 42, fontWeight: 300, color: '#3A3530', marginBottom: 16 }}>
+        <p style={{ fontFamily: "'Playfair Display', serif", fontSize: 42, fontWeight: 300, color: '#3A3530', marginBottom: 16 }}>
           Event not found.
         </p>
         <p style={{ fontSize: 14, color: '#8A8278', marginBottom: 32 }}>
@@ -83,7 +83,7 @@ export default function EventDetailPage() {
           style={{
             fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase',
             color: '#3A3530', textDecoration: 'none',
-            borderBottom: '1.5px solid #E8B84B', paddingBottom: 2,
+            borderBottom: '1.5px solid #F07814', paddingBottom: 2,
           }}
         >
           Browse All Events
@@ -131,12 +131,12 @@ export default function EventDetailPage() {
         }}>
           <div style={{
             fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase',
-            color: '#E8B84B', marginBottom: 10,
+            color: '#F07814', marginBottom: 10,
           }}>
             ✦ {typeLabel}
           </div>
           <h1 style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Playfair Display', serif",
             fontSize: 40, fontWeight: 400, color: '#3A3530',
             lineHeight: 1.2, marginBottom: 20,
           }}>
@@ -148,15 +148,15 @@ export default function EventDetailPage() {
             style={{
               display: 'inline-flex', alignItems: 'center', gap: 12,
               padding: '12px 18px',
-              background: '#FDF6E3', borderRadius: 10,
+              background: '#FEF7F0', borderRadius: 10,
               textDecoration: 'none', marginBottom: 28,
             }}
           >
             <div style={{
               width: 40, height: 40, borderRadius: '50%', overflow: 'hidden',
-              background: '#fff', border: '2px solid #E8B84B',
+              background: '#fff', border: '2px solid #F07814',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 12, fontWeight: 600, color: '#E8B84B',
+              fontSize: 12, fontWeight: 600, color: '#F07814',
             }}>
               {event.guide.user.avatarUrl ? (
                 <img src={event.guide.user.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -174,7 +174,7 @@ export default function EventDetailPage() {
                   <span style={{
                     marginLeft: 8, fontSize: 10,
                     padding: '2px 8px', borderRadius: 10,
-                    background: '#fff', border: '1px solid #E8B84B',
+                    background: '#fff', border: '1px solid #F07814',
                     color: '#3A3530',
                   }}>
                     ✓ Verified
@@ -208,7 +208,7 @@ export default function EventDetailPage() {
           {event.description && (
             <div style={{ marginBottom: 32 }}>
               <h2 style={{
-                fontFamily: "'Cormorant Garamond', serif",
+                fontFamily: "'Playfair Display', serif",
                 fontSize: 22, fontWeight: 400, color: '#3A3530', marginBottom: 14,
               }}>
                 About this event
@@ -223,7 +223,7 @@ export default function EventDetailPage() {
           {event.ticketTiers.length > 0 && (
             <div style={{ marginBottom: 32 }}>
               <h2 style={{
-                fontFamily: "'Cormorant Garamond', serif",
+                fontFamily: "'Playfair Display', serif",
                 fontSize: 22, fontWeight: 400, color: '#3A3530', marginBottom: 14,
               }}>
                 Tickets
@@ -238,7 +238,7 @@ export default function EventDetailPage() {
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         padding: '14px 18px', gap: 16,
                         border: '1px solid rgba(232,184,75,0.15)', borderRadius: 10,
-                        background: '#FAFAF7',
+                        background: '#F5F2EB',
                       }}
                     >
                       <div>
@@ -251,7 +251,7 @@ export default function EventDetailPage() {
                         </div>
                       </div>
                       <div style={{
-                        fontFamily: "'Cormorant Garamond', serif",
+                        fontFamily: "'Playfair Display', serif",
                         fontSize: 24, fontWeight: 500,
                         color: Number(t.price) === 0 ? '#4CAF50' : '#3A3530',
                       }}>
@@ -268,13 +268,13 @@ export default function EventDetailPage() {
             <Link
               href={`/events/${event.id}/checkout`}
               style={{
-                padding: '14px 36px', background: '#E8B84B', color: '#3A3530',
+                padding: '14px 36px', background: '#F07814', color: '#3A3530',
                 fontSize: 13, fontWeight: 600, letterSpacing: '0.08em',
                 textTransform: 'uppercase', borderRadius: 8, textDecoration: 'none',
                 transition: 'background 0.2s',
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = '#F5D98A'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#E8B84B'; }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#FDE8D0'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#F07814'; }}
             >
               {isFree ? 'Register Free' : `Buy Tickets · From $${lowestPrice}`}
             </Link>

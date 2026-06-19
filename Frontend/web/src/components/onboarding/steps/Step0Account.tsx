@@ -91,7 +91,7 @@ export function Step0Account() {
     return (
       <WizardFormCard
         eyebrow="Account"
-        title={<>Welcome back, <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>{user.firstName}</em></>}
+        title={<>Welcome back, <em style={{ fontStyle: 'italic', color: '#F07814' }}>{user.firstName}</em></>}
         subtitle={`Signed in as ${user.firstName} ${user.lastName}. Let's set up your guide profile.`}
       >
         {error && <ErrorBanner message={error} />}
@@ -113,7 +113,7 @@ export function Step0Account() {
     return (
       <WizardFormCard
         eyebrow="Account"
-        title={<>Sign in to <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>continue</em></>}
+        title={<>Sign in to <em style={{ fontStyle: 'italic', color: '#F07814' }}>continue</em></>}
         subtitle="Use your existing Spiritual California account."
       >
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -158,7 +158,7 @@ export function Step0Account() {
   return (
     <WizardFormCard
       eyebrow="Account"
-      title={<>Create your <em style={{ fontStyle: 'italic', color: '#E8B84B' }}>guide account</em></>}
+      title={<>Create your <em style={{ fontStyle: 'italic', color: '#F07814' }}>guide account</em></>}
       subtitle="Start your journey as a verified guide on Spiritual California."
     >
       <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -254,7 +254,7 @@ const linkStyle: React.CSSProperties = {
   border: 'none',
   padding: 0,
   cursor: 'pointer',
-  color: '#E8B84B',
+  color: '#F07814',
   fontWeight: 600,
   fontSize: '13px',
   fontFamily: 'var(--font-inter), sans-serif',

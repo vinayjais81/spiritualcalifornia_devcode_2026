@@ -35,7 +35,7 @@ export function PractitionerCard({
           transition: 'border-color 0.3s, transform 0.3s',
           flexShrink: 0,
         }}
-        className="group-hover:[border-color:#E8B84B] group-hover:scale-[1.04]"
+        className="group-hover:[border-color:#F07814] group-hover:scale-[1.04]"
       >
         <Image
           src={image}
@@ -67,7 +67,7 @@ export function PractitionerCard({
               fontFamily: 'var(--font-inter), sans-serif',
               fontSize: '8px',
               fontWeight: 600,
-              color: '#E8B84B',
+              color: '#F07814',
               letterSpacing: '0.06em',
               boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
             }}
@@ -78,7 +78,7 @@ export function PractitionerCard({
       </div>
 
       <div
-        className="font-cormorant"
+        className="font-playfair"
         style={{ fontSize: '17px', fontWeight: 500, color: '#3A3530', marginBottom: '3px' }}
       >
         {name}

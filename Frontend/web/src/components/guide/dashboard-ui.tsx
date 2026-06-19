@@ -6,12 +6,12 @@ import { FieldLabel } from '@/components/forms';
 
 // ─── Design tokens ───────────────────────────────────────────────────────────
 export const C = {
-  gold: '#E8B84B', goldLight: '#F5D98A', goldPale: '#FDF6E3',
-  charcoal: '#3A3530', warmGray: '#8A8278', offWhite: '#FAFAF7',
+  gold: '#F07814', goldLight: '#FDE8D0', goldPale: '#FEF7F0',
+  charcoal: '#3A3530', warmGray: '#8A8278', offWhite: '#F5F2EB',
   white: '#FFFFFF', green: '#5A8A6A', red: '#C0392B',
 };
 export const font = "var(--font-inter), 'Inter', sans-serif";
-export const serif = "var(--font-cormorant-garamond), 'Cormorant Garamond', serif";
+export const serif = "var(--font-playfair-display), 'Playfair Display', serif";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 export function formatPrice(p: number | string) { const n = typeof p === 'string' ? parseFloat(p) : p; return n === 0 ? 'Free' : `$${n.toFixed(0)}`; }

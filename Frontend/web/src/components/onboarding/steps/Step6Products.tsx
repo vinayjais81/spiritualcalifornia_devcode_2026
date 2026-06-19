@@ -6,11 +6,11 @@ import { api } from '@/lib/api';
 import type { PhysicalProduct } from '@/types/onboarding';
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
-const gold     = '#E8B84B';
+const gold     = '#F07814';
 const charcoal = '#3A3530';
 const warmGray = '#8A8278';
 const white    = '#FFFFFF';
-const goldPale = '#FDF6E3';
+const goldPale = '#FEF7F0';
 
 const iBase: React.CSSProperties = {
   border: '1px solid rgba(138,130,120,0.25)',
@@ -320,7 +320,7 @@ export function Step6Products() {
       {/* Header */}
       <div style={{ marginBottom: '36px' }}>
         <div style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: gold, marginBottom: '10px', fontFamily: 'var(--font-inter), sans-serif' }}>Step 6 of 6</div>
-        <h1 className="font-cormorant" style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, lineHeight: 1.1, color: charcoal, marginBottom: '10px' }}>
+        <h1 className="font-playfair" style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, lineHeight: 1.1, color: charcoal, marginBottom: '10px' }}>
           Products &amp; <em style={{ fontStyle: 'italic', color: gold }}>events</em>
         </h1>
         <p style={{ fontSize: '14px', color: warmGray, lineHeight: 1.7, maxWidth: '560px', fontFamily: 'var(--font-inter), sans-serif', margin: 0 }}>

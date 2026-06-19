@@ -65,27 +65,27 @@ export function HeroSection() {
         viewBox="0 0 400 500" fill="none"
         aria-hidden
       >
-        <path d="M200 480 C200 480 180 380 120 300 C60 220 20 160 80 80 C140 0 220 40 240 120 C260 200 200 280 220 360 C240 440 200 480 200 480Z" stroke="#E8B84B" strokeWidth="1.5" fill="none"/>
-        <path d="M200 480 C200 480 220 380 280 300 C340 220 380 160 320 80" stroke="#E8B84B" strokeWidth="1" fill="none"/>
-        <circle cx="80" cy="80" r="28" stroke="#E8B84B" strokeWidth="1.2" fill="none"/>
-        <circle cx="320" cy="80" r="22" stroke="#E8B84B" strokeWidth="1" fill="none"/>
-        <circle cx="200" cy="40" r="18" stroke="#E8B84B" strokeWidth="1" fill="none"/>
+        <path d="M200 480 C200 480 180 380 120 300 C60 220 20 160 80 80 C140 0 220 40 240 120 C260 200 200 280 220 360 C240 440 200 480 200 480Z" stroke="#F07814" strokeWidth="1.5" fill="none"/>
+        <path d="M200 480 C200 480 220 380 280 300 C340 220 380 160 320 80" stroke="#F07814" strokeWidth="1" fill="none"/>
+        <circle cx="80" cy="80" r="28" stroke="#F07814" strokeWidth="1.2" fill="none"/>
+        <circle cx="320" cy="80" r="22" stroke="#F07814" strokeWidth="1" fill="none"/>
+        <circle cx="200" cy="40" r="18" stroke="#F07814" strokeWidth="1" fill="none"/>
       </svg>
       <svg
         style={{ position: 'absolute', bottom: '40px', left: '-60px', width: '300px', opacity: 0.07, pointerEvents: 'none' }}
         viewBox="0 0 300 400" fill="none"
         aria-hidden
       >
-        <path d="M150 380 C150 380 100 300 60 220 C20 140 10 80 70 40 C130 0 180 50 170 130 C160 210 150 380 150 380Z" stroke="#E8B84B" strokeWidth="1.2" fill="none"/>
-        <circle cx="70" cy="40" r="24" stroke="#E8B84B" strokeWidth="1" fill="none"/>
-        <circle cx="150" cy="20" r="16" stroke="#E8B84B" strokeWidth="0.8" fill="none"/>
+        <path d="M150 380 C150 380 100 300 60 220 C20 140 10 80 70 40 C130 0 180 50 170 130 C160 210 150 380 150 380Z" stroke="#F07814" strokeWidth="1.2" fill="none"/>
+        <circle cx="70" cy="40" r="24" stroke="#F07814" strokeWidth="1" fill="none"/>
+        <circle cx="150" cy="20" r="16" stroke="#F07814" strokeWidth="0.8" fill="none"/>
       </svg>
 
       {/* AI Guide input — top of hero */}
       <div style={{ width: '100%', maxWidth: '600px', margin: '0 auto 40px', position: 'relative', zIndex: 2 }}>
         <p
-          className="font-cormorant"
-          style={{ fontSize: '28px', fontWeight: 500, fontStyle: 'normal', color: '#E8B84B', textAlign: 'center', marginBottom: '8px' }}
+          className="font-playfair"
+          style={{ fontSize: '28px', fontWeight: 500, fontStyle: 'normal', color: '#F07814', textAlign: 'center', marginBottom: '8px' }}
         >
           How Do You Feel Today?
         </p>
@@ -117,7 +117,7 @@ export function HeroSection() {
           }}
           onFocusCapture={e => {
             const wrap = e.currentTarget as HTMLDivElement;
-            wrap.style.borderColor = '#E8B84B';
+            wrap.style.borderColor = '#F07814';
             wrap.style.boxShadow = '0 4px 40px rgba(232,184,75,0.2)';
           }}
           onBlurCapture={e => {
@@ -145,7 +145,7 @@ export function HeroSection() {
           <button
             onClick={submitQuery}
             style={{
-              background: '#E8B84B',
+              background: '#F07814',
               color: '#FFFFFF',
               border: 'none',
               borderRadius: '50px',
@@ -160,7 +160,7 @@ export function HeroSection() {
               whiteSpace: 'nowrap',
             }}
             onMouseEnter={e => ((e.currentTarget as HTMLButtonElement).style.background = '#D4A43A')}
-            onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#E8B84B')}
+            onMouseLeave={e => ((e.currentTarget as HTMLButtonElement).style.background = '#F07814')}
           >
             Guide Me
           </button>
@@ -185,8 +185,8 @@ export function HeroSection() {
               }}
               onMouseEnter={e => {
                 const el = e.currentTarget as HTMLButtonElement;
-                el.style.borderColor = '#E8B84B';
-                el.style.color = '#E8B84B';
+                el.style.borderColor = '#F07814';
+                el.style.color = '#F07814';
               }}
               onMouseLeave={e => {
                 const el = e.currentTarget as HTMLButtonElement;
@@ -208,7 +208,7 @@ export function HeroSection() {
 
       {/* Headline */}
       <h1
-        className="font-cormorant hero-headline"
+        className="font-playfair hero-headline"
         style={{
           fontSize: 'clamp(52px, 8.5vw, 108px)',
           fontWeight: 300,
@@ -236,7 +236,7 @@ export function HeroSection() {
                 height: '200px',
                 borderRadius: '50%',
                 overflow: 'hidden',
-                border: '2.5px solid #E8B84B',
+                border: '2.5px solid #F07814',
                 position: 'relative',
                 transition: 'transform 0.4s ease, box-shadow 0.4s ease',
               }}
@@ -247,7 +247,7 @@ export function HeroSection() {
                 const img = el.querySelector('img') as HTMLImageElement | null;
                 if (img) img.style.filter = 'saturate(1.1)';
                 const label = el.closest('a')?.querySelector('span') as HTMLSpanElement | null;
-                if (label) label.style.color = '#E8B84B';
+                if (label) label.style.color = '#F07814';
               }}
               onMouseLeave={e => {
                 const el = e.currentTarget as HTMLDivElement;
@@ -270,7 +270,7 @@ export function HeroSection() {
               {/* Gold radial overlay */}
               <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 55%, rgba(232,184,75,0.1) 100%)', pointerEvents: 'none' }} />
             </div>
-            <div style={{ width: '1.5px', height: '44px', background: 'linear-gradient(to bottom, #E8B84B, transparent)', marginTop: '4px' }} />
+            <div style={{ width: '1.5px', height: '44px', background: 'linear-gradient(to bottom, #F07814, transparent)', marginTop: '4px' }} />
             <span
               style={{
                 fontFamily: 'var(--font-inter), sans-serif',
@@ -307,7 +307,7 @@ export function HeroSection() {
         <span style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#8A8278' }}>
           Explore
         </span>
-        <div style={{ width: '1px', height: '32px', background: 'linear-gradient(to bottom, #E8B84B, transparent)' }} />
+        <div style={{ width: '1px', height: '32px', background: 'linear-gradient(to bottom, #F07814, transparent)' }} />
       </div>
 
       {/* Responsive overrides */}

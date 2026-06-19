@@ -9,10 +9,10 @@ import { useSiteConfigOrFallback } from '@/lib/siteConfig';
 import { FieldLabel, FormLegend } from '@/components/forms';
 
 const G = {
-  gold:     '#E8B84B',
+  gold:     '#F07814',
   charcoal: '#3A3530',
   warmGray: '#8A8278',
-  offWhite: '#FAFAF7',
+  offWhite: '#F5F2EB',
   white:    '#FFFFFF',
   red:      '#C0392B',
 };
@@ -138,7 +138,7 @@ export default function ContactPage() {
           <p style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 11, letterSpacing: '0.24em', textTransform: 'uppercase', color: G.gold, marginBottom: 14 }}>
             Get in Touch
           </p>
-          <h1 style={{ fontFamily: 'var(--font-cormorant-garamond), serif', fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: 400, color: G.charcoal, lineHeight: 1.1, marginBottom: 14 }}>
+          <h1 style={{ fontFamily: 'var(--font-playfair-display), serif', fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: 400, color: G.charcoal, lineHeight: 1.1, marginBottom: 14 }}>
             We&apos;d love to <em style={{ fontStyle: 'italic', color: G.gold }}>hear from you</em>
           </h1>
           <p style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 15, color: G.warmGray, lineHeight: 1.7, maxWidth: 520 }}>
@@ -155,7 +155,7 @@ export default function ContactPage() {
               /* Success state */
               <div style={{ background: G.white, border: '1px solid rgba(232,184,75,0.25)', borderRadius: 16, padding: 56, textAlign: 'center' }}>
                 <div style={{ fontSize: 48, marginBottom: 20 }}>🌸</div>
-                <h2 style={{ fontFamily: 'var(--font-cormorant-garamond), serif', fontSize: 36, fontWeight: 400, color: G.charcoal, marginBottom: 12 }}>
+                <h2 style={{ fontFamily: 'var(--font-playfair-display), serif', fontSize: 36, fontWeight: 400, color: G.charcoal, marginBottom: 12 }}>
                   Message received
                 </h2>
                 <p style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 14, color: G.warmGray, lineHeight: 1.7, marginBottom: 8 }}>
@@ -277,7 +277,7 @@ export default function ContactPage() {
 
             {/* Contact info card */}
             <div style={{ background: G.white, border: '1px solid rgba(232,184,75,0.15)', borderRadius: 16, padding: 32 }}>
-              <h3 style={{ fontFamily: 'var(--font-cormorant-garamond), serif', fontSize: 22, fontWeight: 400, color: G.charcoal, marginBottom: 24 }}>
+              <h3 style={{ fontFamily: 'var(--font-playfair-display), serif', fontSize: 22, fontWeight: 400, color: G.charcoal, marginBottom: 24 }}>
                 Contact information
               </h3>
               {infoItems.map((item) => (
@@ -300,7 +300,7 @@ export default function ContactPage() {
             {/* Response time card */}
             <div style={{ background: G.charcoal, borderRadius: 16, padding: 32 }}>
               <div style={{ fontSize: 28, marginBottom: 16 }}>⏱️</div>
-              <h3 style={{ fontFamily: 'var(--font-cormorant-garamond), serif', fontSize: 22, fontWeight: 400, color: G.white, marginBottom: 12 }}>
+              <h3 style={{ fontFamily: 'var(--font-playfair-display), serif', fontSize: 22, fontWeight: 400, color: G.white, marginBottom: 12 }}>
                 Response time
               </h3>
               <p style={{ fontFamily: 'var(--font-inter), sans-serif', fontSize: 13, color: 'rgba(255,255,255,0.55)', lineHeight: 1.7, marginBottom: 16 }}>

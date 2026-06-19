@@ -5,17 +5,17 @@ import { useParams } from 'next/navigation';
 import { api } from '@/lib/api';
 
 const C = {
-  gold: '#E8B84B',
+  gold: '#F07814',
   charcoal: '#3A3530',
   warmGray: '#8A8278',
-  cream: '#FAFAF7',
+  cream: '#F5F2EB',
   white: '#FFFFFF',
   green: '#27AE60',
   red: '#C0392B',
   orange: '#E67E22',
-  goldPale: '#FDF6E3',
+  goldPale: '#FEF7F0',
 };
-const serif = "'Cormorant Garamond', serif";
+const serif = "'Playfair Display', serif";
 const sans = "'Inter', sans-serif";
 
 interface TicketData {

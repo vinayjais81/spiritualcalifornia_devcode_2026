@@ -19,11 +19,11 @@ export function PromoBanner() {
       marginBottom: 60,
     }}>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#E8B84B', marginBottom: 8 }}>
+        <div style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#F07814', marginBottom: 8 }}>
           ✦ Limited Time Offer
         </div>
         <h2 style={{
-          fontFamily: "'Cormorant Garamond', serif",
+          fontFamily: "'Playfair Display', serif",
           fontSize: 36, fontWeight: 400, color: '#fff', lineHeight: 1.2, marginBottom: 8,
         }}>
           40% Off Your First Order
@@ -34,8 +34,8 @@ export function PromoBanner() {
       </div>
       <div style={{ flexShrink: 0, marginLeft: 40, textAlign: 'center' }}>
         <div style={{
-          fontFamily: "'Cormorant Garamond', serif",
-          fontSize: 42, fontWeight: 600, color: '#E8B84B', letterSpacing: '0.08em', marginBottom: 8,
+          fontFamily: "'Playfair Display', serif",
+          fontSize: 42, fontWeight: 600, color: '#F07814', letterSpacing: '0.08em', marginBottom: 8,
         }}>
           WELCOME40
         </div>
@@ -47,7 +47,7 @@ export function PromoBanner() {
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             padding: '13px 28px', borderRadius: 8,
-            background: '#E8B84B', color: '#3A3530',
+            background: '#F07814', color: '#3A3530',
             fontFamily: "'Inter', sans-serif",
             fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
             border: 'none', cursor: 'pointer',

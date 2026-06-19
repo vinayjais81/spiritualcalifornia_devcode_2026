@@ -112,7 +112,7 @@ export function TourImageCarousel({
                 width: i === current ? 18 : 6,
                 height: 6,
                 borderRadius: i === current ? 3 : '50%',
-                background: i === current ? '#E8B84B' : 'rgba(255,255,255,0.4)',
+                background: i === current ? '#F07814' : 'rgba(255,255,255,0.4)',
                 border: 'none',
                 padding: 0,
                 cursor: 'pointer',
@@ -152,14 +152,14 @@ export function TourImageCarousel({
       {typeof priceFrom === 'number' && (
         <div style={{
           position: 'absolute', bottom: 18, right: 18, zIndex: 3,
-          background: '#E8B84B', borderRadius: 12, padding: '10px 18px',
+          background: '#F07814', borderRadius: 12, padding: '10px 18px',
         }}>
           <div style={{
             fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase',
             color: 'rgba(44,36,32,0.7)',
           }}>From</div>
           <div style={{
-            fontFamily: "'Cormorant Garamond', serif",
+            fontFamily: "'Playfair Display', serif",
             fontSize: 24, fontWeight: 600, color: '#3A3530', lineHeight: 1,
           }}>
             ${priceFrom.toLocaleString()}

@@ -60,7 +60,7 @@ export default function DownloadsPage() {
         <div style={{ height: 32, background: '#f0eeeb', borderRadius: 4, width: '40%', marginBottom: 24 }} />
         {[1, 2, 3].map(i => (
           <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 16, padding: 20, background: '#fff', borderRadius: 12, border: '1px solid rgba(232,184,75,0.1)' }}>
-            <div style={{ width: 80, height: 80, background: '#FDF6E3', borderRadius: 8 }} />
+            <div style={{ width: 80, height: 80, background: '#FEF7F0', borderRadius: 8 }} />
             <div style={{ flex: 1 }}>
               <div style={{ height: 16, background: '#f0eeeb', borderRadius: 4, width: '60%', marginBottom: 8 }} />
               <div style={{ height: 12, background: '#f0eeeb', borderRadius: 4, width: '30%' }} />
@@ -74,10 +74,10 @@ export default function DownloadsPage() {
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 48px 80px' }}>
       <div style={{ marginBottom: 32 }}>
-        <div style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#E8B84B', marginBottom: 8 }}>
+        <div style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#F07814', marginBottom: 8 }}>
           ✦ My Library
         </div>
-        <h1 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 36, fontWeight: 400, color: '#3A3530', marginBottom: 6 }}>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 36, fontWeight: 400, color: '#3A3530', marginBottom: 6 }}>
           Digital Downloads
         </h1>
         <p style={{ fontSize: 14, color: '#8A8278' }}>
@@ -88,7 +88,7 @@ export default function DownloadsPage() {
       {items.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
           <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>📥</span>
-          <h2 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: 24, fontWeight: 400, color: '#3A3530', marginBottom: 8 }}>
+          <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 24, fontWeight: 400, color: '#3A3530', marginBottom: 8 }}>
             No downloads yet
           </h2>
           <p style={{ fontSize: 14, color: '#8A8278', marginBottom: 24 }}>
@@ -96,7 +96,7 @@ export default function DownloadsPage() {
           </p>
           <Link href="/shop" style={{
             display: 'inline-block', padding: '12px 28px', borderRadius: 8,
-            background: '#E8B84B', color: '#3A3530',
+            background: '#F07814', color: '#3A3530',
             fontSize: 12, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
             textDecoration: 'none',
           }}>
@@ -114,7 +114,7 @@ export default function DownloadsPage() {
               {/* Image */}
               <div style={{
                 width: 80, height: 80, borderRadius: 10, overflow: 'hidden', flexShrink: 0,
-                background: '#FDF6E3', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: '#FEF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 {item.imageUrl ? (
                   <img src={item.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -126,13 +126,13 @@ export default function DownloadsPage() {
               {/* Info */}
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h3 style={{
-                  fontFamily: "'Cormorant Garamond', serif",
+                  fontFamily: "'Playfair Display', serif",
                   fontSize: 18, fontWeight: 500, color: '#3A3530', marginBottom: 4,
                 }}>
                   {item.productName}
                 </h3>
                 <div style={{ fontSize: 12, color: '#8A8278', marginBottom: 4 }}>
-                  by <Link href={`/guides/${item.guideSlug}`} style={{ color: '#E8B84B', textDecoration: 'none' }}>{item.guideName}</Link>
+                  by <Link href={`/guides/${item.guideSlug}`} style={{ color: '#F07814', textDecoration: 'none' }}>{item.guideName}</Link>
                 </div>
                 <div style={{ fontSize: 11, color: '#8A8278' }}>
                   Purchased {new Date(item.purchasedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -147,7 +147,7 @@ export default function DownloadsPage() {
                 style={{
                   padding: '12px 24px', borderRadius: 8, flexShrink: 0,
                   background: downloading === item.orderItemId ? '#8A8278' : '#3A3530',
-                  color: '#E8B84B',
+                  color: '#F07814',
                   fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
                   border: 'none', cursor: !item.hasFile ? 'not-allowed' : 'pointer',
                   opacity: !item.hasFile ? 0.5 : 1,
@@ -165,7 +165,7 @@ export default function DownloadsPage() {
       {items.length > 0 && (
         <div style={{
           marginTop: 32, padding: '16px 20px', borderRadius: 8,
-          background: '#FDF6E3', border: '1px solid rgba(232,184,75,0.2)',
+          background: '#FEF7F0', border: '1px solid rgba(232,184,75,0.2)',
           textAlign: 'center', fontSize: 12, color: '#3A3530',
         }}>
           🔒 All downloads include <strong>lifetime access</strong>. Re-download anytime from this page.

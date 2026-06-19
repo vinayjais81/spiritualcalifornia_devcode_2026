@@ -13,12 +13,12 @@ const BOOKING_STATE_KEY = 'sc-booking-state';
 
 // ─── Design tokens (matching client design + project palette) ────────────────
 const C = {
-  gold: '#E8B84B', goldLight: '#F5D98A', goldPale: '#FDF6E3',
-  charcoal: '#3A3530', warmGray: '#8A8278', offWhite: '#FAFAF7', white: '#FFFFFF',
+  gold: '#F07814', goldLight: '#FDE8D0', goldPale: '#FEF7F0',
+  charcoal: '#3A3530', warmGray: '#8A8278', offWhite: '#F5F2EB', white: '#FFFFFF',
   green: '#5A8A6A', red: '#C0392B',
 };
 const font = "'Inter', sans-serif";
-const serif = "'Cormorant Garamond', serif";
+const serif = "'Playfair Display', serif";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface GuideInfo {
