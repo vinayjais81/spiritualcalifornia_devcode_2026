@@ -161,6 +161,9 @@ Frontend "identity done" = `status === 'verified'` (plus the existing stub value
 
 ---
 
+## 8a. Reconciliation (auto-correction for missed webhooks) — ADDED 2026-06-22
+Webhooks are best-effort; a missed delivery (endpoint down, or a verification that fired before the webhook subscription was active) would otherwise leave a row stuck at `requires_input`/`processing` forever. The `IdentityReconcileQueue` (`identity-reconcile.queue.ts`, mirrors `PayoutsTasksQueue`) runs **every 15 min**: it finds non-terminal `IdentityVerification` rows older than 2 min, calls `stripe.identity.verificationSessions.retrieve()`, and if the live status advanced, pushes it through the **same** `handleIdentityWebhook` path (→ `verified`, guide IN_REVIEW). Idempotent; skips in stub mode; gated by `IDENTITY_RECONCILE_ENABLED` (default true); needs Redis. This makes the webhook an optimization and reconciliation the guarantee of eventual consistency with Stripe.
+
 ## 9. What is explicitly NOT changing
 Credential OCR/NLP (Textract + Claude), `CredentialVerification` audit trail, admin verification queue + approve/reject, the `isPublished AND isVerified` publish gate, deferred onboarding, role-mutex. Identity is one isolated step in the pipeline.
 

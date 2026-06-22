@@ -308,4 +308,12 @@ export class StripeService {
     const secret = this.config.get<string>('STRIPE_IDENTITY_WEBHOOK_SECRET')!;
     return this.stripe.webhooks.constructEvent(payload, signature, secret);
   }
+
+  /**
+   * Fetch the live state of a VerificationSession. Used by the reconciliation
+   * job to self-heal rows whose webhook was missed.
+   */
+  async retrieveIdentitySession(id: string): Promise<Stripe.Identity.VerificationSession> {
+    return this.stripe.identity.verificationSessions.retrieve(id);
+  }
 }

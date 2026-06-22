@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { VerificationController } from './verification.controller';
 import { VerificationService } from './verification.service';
+import { IdentityReconcileQueue } from './identity-reconcile.queue';
 import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
@@ -10,7 +11,7 @@ import { PaymentsModule } from '../payments/payments.module';
   // does not depend on Verification/Guides.
   imports: [ConfigModule, PaymentsModule],
   controllers: [VerificationController],
-  providers: [VerificationService],
+  providers: [VerificationService, IdentityReconcileQueue],
   exports: [VerificationService],
 })
 export class VerificationModule {}

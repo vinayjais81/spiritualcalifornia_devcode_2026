@@ -125,6 +125,14 @@ export class VerificationService implements OnModuleInit, OnModuleDestroy {
   // ─── Public API ────────────────────────────────────────────────────────────
 
   /**
+   * True when Stripe Identity is live (real keys + webhook secret). The
+   * reconciliation job uses this to skip when running in stub mode.
+   */
+  isIdentityLive(): boolean {
+    return !this.isIdentityStub;
+  }
+
+  /**
    * Called by GuidesController after a guide submits onboarding.
    * Enqueues the full credential + identity verification pipeline.
    */
