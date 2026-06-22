@@ -40,10 +40,10 @@ const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1),
   EMAIL_FROM: z.string().min(1).default('noreply@spiritualcalifornia.com'),
 
-  // Persona (Identity Verification)
-  PERSONA_API_KEY: z.string().min(1),
-  PERSONA_WEBHOOK_SECRET: z.string().min(1),
-  PERSONA_TEMPLATE_ID: z.string().min(1),
+  // Stripe Identity (identity verification). Uses STRIPE_SECRET_KEY for the
+  // API; the webhook secret is optional — the verification service stays in
+  // stub mode until it's set (and the real Stripe Identity endpoint is live).
+  STRIPE_IDENTITY_WEBHOOK_SECRET: z.string().optional(),
 
   // Algolia (Search)
   ALGOLIA_APP_ID: z.string().min(1),

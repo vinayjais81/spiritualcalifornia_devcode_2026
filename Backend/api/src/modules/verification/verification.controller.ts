@@ -14,13 +14,14 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
-import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { VerificationService } from './verification.service';
-import { createHmac, timingSafeEqual } from 'crypto';
+import { StripeService } from '../payments/stripe.service';
+import { PrismaService } from '../../database/prisma.service';
+import Stripe from 'stripe';
 import type { RawBodyRequest } from '@nestjs/common';
 import type { Request } from 'express';
 
@@ -31,79 +32,57 @@ export class VerificationController {
 
   constructor(
     private readonly verificationService: VerificationService,
-    private readonly config: ConfigService,
+    private readonly stripeService: StripeService,
+    private readonly prisma: PrismaService,
   ) {}
 
-  // ─── Persona Webhook (no auth — Persona calls this directly) ─────────────
+  // ─── Stripe Identity Webhook (no auth — Stripe calls this directly) ──────
 
   /**
-   * POST /verification/persona/webhook
-   * Persona posts identity verification results here.
-   * Validates the Persona-Signature HMAC-SHA256 header before processing.
-   * Signature format: "t=<timestamp>,v1=<hmac_sha256_hex>"
-   * Signed payload: "<timestamp>.<rawBody>"
+   * POST /verification/stripe-identity/webhook
+   * Stripe posts identity.verification_session.* events here. The Stripe SDK
+   * verifies the signature (HMAC + replay protection) against the dedicated
+   * STRIPE_IDENTITY_WEBHOOK_SECRET. Idempotent via the stripe_webhook_events
+   * table (shared with payments).
    */
-  @Post('persona/webhook')
+  @Post('stripe-identity/webhook')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: '[Persona] Receive identity verification webhook' })
-  async personaWebhook(
+  @ApiOperation({ summary: '[Stripe Identity] Receive identity verification webhook' })
+  async stripeIdentityWebhook(
     @Req() req: RawBodyRequest<Request>,
-    @Body() body: any,
-    @Headers('persona-signature') signatureHeader: string,
+    @Headers('stripe-signature') signature: string,
   ) {
-    const webhookSecret = this.config.get<string>('PERSONA_WEBHOOK_SECRET', '');
-
-    if (webhookSecret) {
-      if (!signatureHeader) {
-        throw new UnauthorizedException('Missing Persona-Signature header');
-      }
-
-      // Parse t=<timestamp>,v1=<signature>
-      const parts = Object.fromEntries(
-        signatureHeader.split(',').map((p) => p.split('=')),
-      );
-      const timestamp = parts['t'];
-      const receivedSig = parts['v1'];
-
-      if (!timestamp || !receivedSig) {
-        throw new UnauthorizedException('Malformed Persona-Signature header');
-      }
-
-      // Reject replays older than 5 minutes
-      const age = Date.now() / 1000 - parseInt(timestamp, 10);
-      if (age > 300) {
-        throw new UnauthorizedException('Persona webhook replay detected — timestamp too old');
-      }
-
-      const rawBody = req.rawBody ?? Buffer.from(JSON.stringify(body));
-      const expectedSig = createHmac('sha256', webhookSecret)
-        .update(`${timestamp}.${rawBody.toString()}`)
-        .digest('hex');
-
-      const expected = Buffer.from(expectedSig, 'hex');
-      const received = Buffer.from(receivedSig, 'hex');
-
-      if (expected.length !== received.length || !timingSafeEqual(expected, received)) {
-        this.logger.warn('[Persona] Webhook signature mismatch — rejecting');
-        throw new UnauthorizedException('Invalid Persona webhook signature');
-      }
-    } else {
-      this.logger.warn('[Persona] PERSONA_WEBHOOK_SECRET not set — skipping signature check');
+    const rawBody = req.rawBody;
+    if (!rawBody || !signature) {
+      throw new BadRequestException('Missing raw body or Stripe signature');
     }
 
-    const eventType: string = body?.data?.type ?? '';
-    const inquiryId: string = body?.data?.id ?? '';
-
-    if (!inquiryId) {
-      throw new BadRequestException('Missing inquiry id in Persona webhook payload');
+    let event: Stripe.Event;
+    try {
+      event = this.stripeService.constructIdentityEvent(rawBody, signature);
+    } catch (err: any) {
+      this.logger.warn(`[Identity] Webhook signature verification failed: ${err.message}`);
+      throw new UnauthorizedException('Invalid Stripe Identity webhook signature');
     }
 
-    // Map Persona event types to internal status
-    let status: 'approved' | 'declined' | 'needs_review' = 'needs_review';
-    if (eventType === 'inquiry.approved') status = 'approved';
-    else if (eventType === 'inquiry.declined') status = 'declined';
+    // Idempotency — skip if we've already processed this event id.
+    const seen = await this.prisma.stripeWebhookEvent.findUnique({ where: { id: event.id } });
+    if (seen) {
+      return { received: true, duplicate: true };
+    }
 
-    await this.verificationService.handlePersonaWebhook({ inquiryId, status });
+    if (event.type.startsWith('identity.verification_session.')) {
+      const session = event.data.object as Stripe.Identity.VerificationSession;
+      await this.verificationService.handleIdentityWebhook({
+        verificationSessionId: session.id,
+        status: session.status,
+        lastError: session.last_error?.reason ?? null,
+      });
+    }
+
+    await this.prisma.stripeWebhookEvent.create({
+      data: { id: event.id, type: event.type },
+    });
 
     return { received: true };
   }
@@ -112,14 +91,15 @@ export class VerificationController {
 
   /**
    * POST /verification/identity/start
-   * Initiates a Persona identity inquiry for the authenticated guide.
-   * [STUB] Returns a mock inquiry ID until Persona API keys are configured.
+   * Creates a Stripe Identity VerificationSession for the authenticated guide
+   * and returns the hosted URL. [STUB] Returns a mock session id until the
+   * Stripe Identity webhook secret is configured.
    */
   @Post('identity/start')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Start a Persona identity verification inquiry' })
+  @ApiOperation({ summary: 'Start a Stripe Identity verification session' })
   async startIdentityVerification(@Req() req: any) {
     const userId: string = req.user?.id;
     return this.verificationService.startIdentityVerification(userId);

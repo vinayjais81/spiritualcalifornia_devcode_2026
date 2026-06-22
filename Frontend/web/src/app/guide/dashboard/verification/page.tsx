@@ -50,13 +50,20 @@ export default function VerificationPage() {
       .finally(() => setLoading(false));
   }, [user]);
 
-  // Start Persona identity verification
+  // Start Stripe Identity verification — opens the hosted document+selfie flow
   const startIdentityVerification = async () => {
     setStartingIdentity(true);
     try {
       const res = await api.post('/verification/identity/start');
-      setIdentity({ status: res.data.status || 'pending', completedAt: null });
-      toast.success('Identity verification initiated');
+      if (res.data.verifyUrl) {
+        setIdentity({ status: 'processing', completedAt: null });
+        window.open(res.data.verifyUrl, '_blank', 'noopener,noreferrer');
+        toast.success('Identity verification opened in a new tab');
+      } else {
+        // Stub mode — no hosted URL configured yet
+        setIdentity({ status: res.data.stub ? 'stub_verified' : 'processing', completedAt: null });
+        toast.success('Identity verification initiated');
+      }
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Failed to start identity verification');
     } finally {
@@ -96,7 +103,7 @@ export default function VerificationPage() {
     }
   };
 
-  const identityDone = identity?.status === 'completed' || identity?.status === 'approved' || identity?.status === 'stub_completed';
+  const identityDone = identity?.status === 'verified' || identity?.status === 'stub_verified';
   const identityPending = identity && !identityDone;
 
   if (loading) {
@@ -122,7 +129,7 @@ export default function VerificationPage() {
           </div>
         </div>
 
-        {/* ── Step 2: Government ID (Persona) ────────────────────── */}
+        {/* ── Step 2: Government ID (Stripe Identity) ────────────── */}
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', padding: '16px 0', borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
           <div style={{ width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0, background: identityDone ? '#E8F5E9' : identityPending ? C.goldPale : '#FFF3E0' }}>
             {identityDone ? '✅' : identityPending ? '⏳' : '🪪'}

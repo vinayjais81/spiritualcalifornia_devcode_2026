@@ -24,7 +24,7 @@ const iconMap: Record<string, React.ElementType> = {
   'PostgreSQL':           Database,
   'Stripe Connect':       CreditCard,
   'Resend':               Mail,
-  'Persona':              ShieldCheck,
+  'Stripe Identity':      ShieldCheck,
   'AWS S3 + CloudFront':  Cloud,
   'Anthropic Claude':     MessageSquare,
   'Algolia':              Search,

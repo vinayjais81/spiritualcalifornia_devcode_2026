@@ -272,4 +272,40 @@ export class StripeService {
     }
     return out;
   }
+
+  // ─── Stripe Identity (identity proofing — gov ID + selfie) ──────────────────
+
+  /**
+   * Create a Stripe Identity VerificationSession (document + matching selfie).
+   * Returns the session ("vs_...") incl. hosted `url` + `client_secret`.
+   * `metadata` carries our userId/guideId so the webhook can map back to the
+   * IdentityVerification row without a DB lookup on Stripe's side.
+   */
+  async createIdentityVerificationSession(
+    userId: string,
+    guideId: string,
+    returnUrl: string,
+  ): Promise<Stripe.Identity.VerificationSession> {
+    return this.stripe.identity.verificationSessions.create({
+      type: 'document',
+      metadata: { userId, guideId },
+      options: {
+        document: {
+          require_matching_selfie: true,
+          require_live_capture: true,
+        },
+      },
+      return_url: returnUrl,
+    });
+  }
+
+  /**
+   * Verify + parse a Stripe Identity webhook using the DEDICATED Identity
+   * endpoint secret (separate from the payments STRIPE_WEBHOOK_SECRET so the
+   * two webhook endpoints stay isolated).
+   */
+  constructIdentityEvent(payload: Buffer, signature: string): Stripe.Event {
+    const secret = this.config.get<string>('STRIPE_IDENTITY_WEBHOOK_SECRET')!;
+    return this.stripe.webhooks.constructEvent(payload, signature, secret);
+  }
 }

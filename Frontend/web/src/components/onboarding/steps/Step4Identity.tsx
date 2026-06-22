@@ -13,7 +13,7 @@ export function Step4Identity() {
     setLoading(true); setError(null);
     try {
       const { data } = await api.post('/verification/identity/start');
-      setStep4({ skipped: false, inquiryId: data.inquiryId });
+      setStep4({ skipped: false, verificationSessionId: data.verificationSessionId });
 
       if (data.verifyUrl) {
         setVerifyUrl(data.verifyUrl);
@@ -46,25 +46,25 @@ export function Step4Identity() {
           Verify your <em style={{ fontStyle: 'italic', color: '#F07814' }}>identity</em>
         </h1>
         <p style={{ fontSize: '14px', color: '#8A8278', lineHeight: 1.7, maxWidth: '560px', fontFamily: 'var(--font-inter), sans-serif', margin: 0 }}>
-          Identity verification is powered by Persona — the same trusted technology used by LinkedIn, Airbnb, and leading marketplaces. It takes about 2 minutes.
+          Identity verification is powered by Stripe Identity — the same trusted technology used by leading global marketplaces. It takes about 2 minutes.
         </p>
       </div>
 
       {error && <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: '8px', padding: '12px 16px', fontSize: '13px', color: '#DC2626', fontFamily: 'var(--font-inter), sans-serif', marginBottom: '20px' }}>{error}</div>}
 
-      {/* Persona block */}
+      {/* Stripe Identity block */}
       <div style={{ border: '1.5px solid rgba(240,120,20,0.3)', borderRadius: '14px', padding: '28px', background: '#FFFFFF', marginBottom: '20px', display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
         <div style={{ fontSize: '48px', flexShrink: 0 }}>🪪</div>
         <div>
-          <div className="font-playfair" style={{ fontSize: '22px', fontWeight: 400, color: '#3A3530', marginBottom: '6px' }}>Verify with Persona</div>
+          <div className="font-playfair" style={{ fontSize: '22px', fontWeight: 400, color: '#3A3530', marginBottom: '6px' }}>Verify with Stripe Identity</div>
           {verificationStarted ? (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', borderRadius: '8px', background: '#F0FDF4', border: '1px solid #86EFAC', marginBottom: '12px', fontSize: '13px', color: '#166534', fontFamily: 'var(--font-inter), sans-serif' }}>
-                ✓ Persona verification opened in a new tab. Complete the ID check there, then return here.
+                ✓ Identity verification opened in a new tab. Complete the ID check there, then return here.
               </div>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 <button type="button" onClick={() => verifyUrl && window.open(verifyUrl, '_blank', 'noopener,noreferrer')} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '9px 18px', borderRadius: '8px', background: 'transparent', color: '#3A3530', fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase', border: '1.5px solid #3A3530', cursor: 'pointer', fontFamily: 'var(--font-inter), sans-serif' }}>
-                  Re-open Persona ↗
+                  Re-open verification ↗
                 </button>
                 <button type="button" onClick={handleContinueAfterVerification} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '9px 20px', borderRadius: '8px', background: '#3A3530', color: '#FFFFFF', fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-inter), sans-serif' }}>
                   I've completed verification →
@@ -74,7 +74,7 @@ export function Step4Identity() {
           ) : (
             <>
               <p style={{ fontSize: '13px', color: '#8A8278', lineHeight: 1.6, fontFamily: 'var(--font-inter), sans-serif', marginBottom: '14px' }}>
-                A quick government ID check + selfie liveness test. Your data is encrypted, never stored on our servers, and handled exclusively by Persona in compliance with CCPA and GDPR.
+                A quick government ID check + selfie liveness test. Your data is encrypted, never stored on our servers, and handled exclusively by Stripe Identity in compliance with CCPA and GDPR.
                 <br /><br />
                 Once verified, your profile will display the coveted <strong>✦ Verified</strong> badge — making you significantly more discoverable and bookable.
               </p>
@@ -84,7 +84,7 @@ export function Step4Identity() {
                 disabled={isLoading}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '11px 24px', borderRadius: '8px', background: isLoading ? '#C4BDB5' : '#3A3530', color: '#FFFFFF', fontSize: '12px', letterSpacing: '0.1em', textTransform: 'uppercase', border: 'none', cursor: isLoading ? 'not-allowed' : 'pointer', fontFamily: 'var(--font-inter), sans-serif', transition: 'background 0.3s' }}
               >
-                🔒 {isLoading ? 'Opening Persona…' : 'Start Verification →'}
+                🔒 {isLoading ? 'Opening verification…' : 'Start Verification →'}
               </button>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '6px 14px', borderRadius: '20px', background: '#FEF7F0', border: '1px solid #F07814', fontSize: '12px', color: '#3A3530', marginTop: '10px', fontFamily: 'var(--font-inter), sans-serif', marginLeft: '12px' }}>
                 ✦ Verified · Spiritual California

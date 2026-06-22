@@ -3,12 +3,12 @@ import {
   Logger,
   OnModuleInit,
   OnModuleDestroy,
-  BadGatewayException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue, Worker, Job } from 'bullmq';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
+import { StripeService } from '../payments/stripe.service';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { TextractClient, DetectDocumentTextCommand } from '@aws-sdk/client-textract';
 import Anthropic from '@anthropic-ai/sdk';
@@ -39,14 +39,13 @@ export class VerificationService implements OnModuleInit, OnModuleDestroy {
   private worker: Worker | null = null;
 
   // Stub mode flags
-  private readonly isPersonaStub: boolean;
+  private readonly isIdentityStub: boolean;
   private readonly isTextractStub: boolean;
   private readonly isClaudeStub: boolean;
   private readonly isRedisStub: boolean;
 
-  // Persona config
-  private readonly personaApiKey: string;
-  private readonly personaTemplateId: string;
+  // Frontend base URL for Stripe Identity return_url
+  private readonly frontendUrl: string;
 
   // Redis connection config
   private readonly redisHost: string;
@@ -56,23 +55,30 @@ export class VerificationService implements OnModuleInit, OnModuleDestroy {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly stripe: StripeService,
   ) {
-    const personaKey = this.config.get<string>('PERSONA_API_KEY', '');
+    const stripeKey = this.config.get<string>('STRIPE_SECRET_KEY', '');
+    const identityWebhookSecret = this.config.get<string>('STRIPE_IDENTITY_WEBHOOK_SECRET', '');
     const anthropicKey = this.config.get<string>('ANTHROPIC_API_KEY', '');
     const awsKey = this.config.get<string>('AWS_ACCESS_KEY_ID', '');
 
-    this.isPersonaStub = !personaKey || personaKey.startsWith('your-');
+    // Identity is "live" only when BOTH the Stripe key is real AND the
+    // dedicated Identity webhook secret is set — otherwise we'd create
+    // sessions whose results we can't receive. Safe default: stub.
+    this.isIdentityStub =
+      !stripeKey || stripeKey.includes('placeholder') ||
+      !identityWebhookSecret || identityWebhookSecret.includes('placeholder');
     this.isTextractStub = !awsKey || awsKey.startsWith('your-');
     this.isClaudeStub = !anthropicKey || anthropicKey.startsWith('your-');
-    this.personaApiKey = personaKey;
-    this.personaTemplateId = this.config.get<string>('PERSONA_TEMPLATE_ID', '');
+
+    this.frontendUrl = this.config.get<string>('FRONTEND_URL', 'http://localhost:3000');
 
     this.redisHost = this.config.get<string>('REDIS_HOST', 'localhost');
     this.redisPort = this.config.get<number>('REDIS_PORT', 6379);
     this.redisPassword = this.config.get<string>('REDIS_PASSWORD');
 
     // Stub mode: skip BullMQ if Redis is unavailable or all APIs are stubs
-    this.isRedisStub = this.isPersonaStub && this.isTextractStub && this.isClaudeStub;
+    this.isRedisStub = this.isIdentityStub && this.isTextractStub && this.isClaudeStub;
   }
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
@@ -157,7 +163,7 @@ export class VerificationService implements OnModuleInit, OnModuleDestroy {
    *   2. OCR each credential document (Textract / stub)
    *   3. NLP entity extraction on OCR text (Claude / stub)
    *   4. Persist results to DB
-   *   5. Initiate Persona identity check (Persona / stub)
+   *   5. Seed Stripe Identity state (guide completes the session from dashboard)
    *   6. Guide remains IN_REVIEW — admin picks up from verification queue
    */
   private async processVerificationJob(guideId: string): Promise<void> {
@@ -254,8 +260,8 @@ export class VerificationService implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    // ── Step 3: Persona identity check ────────────────────────────────────
-    await this.initiatePersonaCheck(guide.userId, guideId);
+    // ── Step 3: Stripe Identity check ─────────────────────────────────────
+    await this.initiateIdentityCheck(guide.userId, guideId);
 
     this.logger.log(
       `[Verification] Pipeline complete for guide: ${guideId} — awaiting admin review`,
@@ -399,182 +405,124 @@ ${ocrText}`;
     return { rawText: ocrText, ...parsed };
   }
 
-  // ─── Persona Identity Check ────────────────────────────────────────────────
+  // ─── Stripe Identity Check ─────────────────────────────────────────────────
 
   /**
-   * Create a Persona identity verification inquiry for the guide's user account.
-   * Persona calls back to POST /verification/persona/webhook with the result.
+   * Pipeline step 3. Stripe Identity is GUIDE-driven (the guide completes the
+   * hosted document + selfie flow themselves), so here we only seed state:
+   *   - stub mode: write a stub record so dev/admin queue shows identity done
+   *   - live mode: no-op — the real VerificationSession is created when the
+   *     guide clicks "Verify" in the dashboard → startIdentityVerification().
    */
-  private async initiatePersonaCheck(userId: string, guideId: string): Promise<void> {
-    if (this.isPersonaStub) {
-      const stubInquiryId = `stub-inquiry-${randomUUID()}`;
+  private async initiateIdentityCheck(userId: string, guideId: string): Promise<void> {
+    if (this.isIdentityStub) {
+      const stubId = `vs_stub_${randomUUID()}`;
       this.logger.warn(
-        `[STUB] Persona identity check skipped for user: ${userId} — fake inquiryId: ${stubInquiryId}`,
+        `[STUB] Stripe Identity skipped for user: ${userId} — fake session: ${stubId}`,
       );
 
-      await this.prisma.personaVerification.upsert({
+      await this.prisma.identityVerification.upsert({
         where: { userId },
-        create: { userId, inquiryId: stubInquiryId, status: 'stub_pending', referenceId: guideId },
-        update: { inquiryId: stubInquiryId, status: 'stub_pending', referenceId: guideId },
+        create: { userId, verificationSessionId: stubId, status: 'stub_verified', referenceId: guideId },
+        update: { verificationSessionId: stubId, status: 'stub_verified', referenceId: guideId },
       });
 
       return;
     }
 
-    const apiKey = this.config.get<string>('PERSONA_API_KEY')!;
-    const templateId = this.config.get<string>('PERSONA_TEMPLATE_ID')!;
-
-    const response = await fetch('https://api.withpersona.com/api/v1/inquiries', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Persona-Version': '2023-01-05',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        data: {
-          attributes: {
-            'inquiry-template-id': templateId,
-            'reference-id': userId,
-          },
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      const errorBody = await response.text();
-      throw new Error(`Persona API error: ${response.status} ${response.statusText} — ${errorBody}`);
-    }
-
-    const json = (await response.json()) as any;
-    const inquiryId: string = json.data?.id;
-
-    if (!inquiryId) {
-      throw new Error('Persona API returned no inquiry ID');
-    }
-
-    await this.prisma.personaVerification.upsert({
-      where: { userId },
-      create: { userId, inquiryId, status: 'created', referenceId: guideId },
-      update: { inquiryId, status: 'created', referenceId: guideId },
-    });
-
-    this.logger.log(`[Persona] Inquiry created: ${inquiryId} for user: ${userId}`);
+    this.logger.log(
+      `[Identity] Pipeline done for user ${userId} — awaiting guide-initiated Stripe Identity session`,
+    );
   }
 
-  // ─── Persona Webhook Handler ───────────────────────────────────────────────
+  // ─── Start Identity Verification (Stripe Identity) ──────────────────────────
 
   /**
-   * Called by VerificationController when Persona posts a webhook event.
-   * Updates PersonaVerification status and conditionally approves the guide.
+   * Guide-initiated: create a Stripe Identity VerificationSession (document +
+   * matching selfie) and return the hosted `url` to redirect the guide to.
+   * Stripe posts the result to POST /verification/stripe-identity/webhook.
    */
-  // ─── Start Identity Verification (Persona) ──────────────────────────────────
-
   async startIdentityVerification(userId: string): Promise<{
-    inquiryId: string;
-    sessionToken: string | null;
+    verificationSessionId: string;
     verifyUrl: string | null;
     stub: boolean;
   }> {
-    if (this.isPersonaStub) {
-      const stubId = `stub_inq_${randomUUID()}`;
-      this.logger.warn(`[STUB] Persona identity verification — returning mock inquiryId: ${stubId}`);
-      return { inquiryId: stubId, sessionToken: null, verifyUrl: null, stub: true };
+    if (this.isIdentityStub) {
+      const stubId = `vs_stub_${randomUUID()}`;
+      this.logger.warn(`[STUB] Stripe Identity — returning mock session: ${stubId}`);
+      return { verificationSessionId: stubId, verifyUrl: null, stub: true };
     }
 
-    // Check if an existing pending inquiry exists for this user
-    const existing = await this.prisma.personaVerification.findUnique({ where: { userId } });
-    if (existing && existing.status === 'pending') {
-      this.logger.log(`[Persona] Resuming existing inquiry ${existing.inquiryId} for user ${userId}`);
-      return {
-        inquiryId: existing.inquiryId,
-        sessionToken: null,
-        verifyUrl: `https://withpersona.com/verify?inquiry-id=${existing.inquiryId}`,
-        stub: false,
-      };
-    }
-
-    // Create new Persona inquiry via REST API
-    // itmplv_ prefix = template version → use inquiry-template-version-id
-    // itmpl_  prefix = template          → use inquiry-template-id
-    const isTemplateVersion = this.personaTemplateId.startsWith('itmplv_');
-    const templateAttrKey = isTemplateVersion ? 'inquiry-template-version-id' : 'inquiry-template-id';
-
-    const response = await fetch('https://withpersona.com/api/v1/inquiries', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.personaApiKey}`,
-        'Content-Type': 'application/json',
-        'Persona-Version': '2023-01-05',
-      },
-      body: JSON.stringify({
-        data: {
-          attributes: {
-            [templateAttrKey]: this.personaTemplateId,
-            'reference-id': userId,
-          },
-        },
-      }),
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      this.logger.error(`[Persona] Failed to create inquiry: ${response.status} ${errText}`);
-      throw new BadGatewayException(`Persona API error: ${response.status} — ${errText}`);
-    }
-
-    const json: any = await response.json();
-    const inquiryId: string = json?.data?.id;
-    const sessionToken: string | undefined = json?.data?.attributes?.['session-token'];
-
-    if (!inquiryId) {
-      throw new Error('Persona returned no inquiry ID');
-    }
-
-    // Persist inquiry record
-    await this.prisma.personaVerification.upsert({
+    const guide = await this.prisma.guideProfile.findFirst({
       where: { userId },
-      create: { userId, inquiryId, status: 'pending' },
-      update: { inquiryId, status: 'pending', completedAt: null },
+      select: { id: true },
+    });
+    const guideId = guide?.id ?? '';
+    const returnUrl = `${this.frontendUrl}/guide/dashboard/verification`;
+
+    const session = await this.stripe.createIdentityVerificationSession(userId, guideId, returnUrl);
+
+    await this.prisma.identityVerification.upsert({
+      where: { userId },
+      create: {
+        userId,
+        verificationSessionId: session.id,
+        status: session.status,
+        referenceId: guideId,
+      },
+      update: {
+        verificationSessionId: session.id,
+        status: session.status,
+        referenceId: guideId,
+        completedAt: null,
+        lastError: null,
+      },
     });
 
-    this.logger.log(`[Persona] Created inquiry ${inquiryId} for user ${userId}`);
+    this.logger.log(`[Identity] Created session ${session.id} for user ${userId}`);
 
     return {
-      inquiryId,
-      sessionToken: sessionToken ?? null,
-      verifyUrl: `https://withpersona.com/verify?inquiry-id=${inquiryId}${sessionToken ? `&session-token=${sessionToken}` : ''}`,
+      verificationSessionId: session.id,
+      verifyUrl: session.url ?? null,
       stub: false,
     };
   }
 
-  async handlePersonaWebhook(payload: {
-    inquiryId: string;
-    status: 'approved' | 'declined' | 'needs_review';
+  /**
+   * Called by VerificationController when Stripe posts an identity webhook.
+   * Updates IdentityVerification status; on `verified` moves the guide to
+   * IN_REVIEW (admin still does the final credential approval).
+   */
+  async handleIdentityWebhook(payload: {
+    verificationSessionId: string;
+    status: string; // requires_input | processing | verified | canceled
+    lastError?: string | null;
   }): Promise<void> {
-    const { inquiryId, status } = payload;
+    const { verificationSessionId, status, lastError } = payload;
 
-    const record = await this.prisma.personaVerification.findUnique({
-      where: { inquiryId },
+    const record = await this.prisma.identityVerification.findUnique({
+      where: { verificationSessionId },
     });
 
     if (!record) {
-      this.logger.warn(`[Persona] Webhook received for unknown inquiryId: ${inquiryId}`);
+      this.logger.warn(`[Identity] Webhook for unknown session: ${verificationSessionId}`);
       return;
     }
 
-    await this.prisma.personaVerification.update({
-      where: { inquiryId },
+    const terminal = status === 'verified' || status === 'canceled';
+    await this.prisma.identityVerification.update({
+      where: { verificationSessionId },
       data: {
         status,
-        completedAt: new Date(),
+        lastError: lastError ?? null,
+        completedAt: terminal ? new Date() : null,
       },
     });
 
-    this.logger.log(`[Persona] Inquiry ${inquiryId} → ${status} for user: ${record.userId}`);
+    this.logger.log(`[Identity] Session ${verificationSessionId} → ${status} for user: ${record.userId}`);
 
-    // Auto-approve identity when Persona approves (credential review still manual)
-    if (status === 'approved') {
+    // Move to IN_REVIEW when identity is verified (credential review still manual)
+    if (status === 'verified') {
       await this.prisma.guideProfile.updateMany({
         where: { userId: record.userId },
         data: { verificationStatus: 'IN_REVIEW' },

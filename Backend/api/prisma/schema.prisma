@@ -492,17 +492,18 @@ model CredentialVerification {
   @@map("credential_verifications")
 }
 
-model PersonaVerification {
-  id          String    @id @default(cuid())
-  userId      String    @unique
-  inquiryId   String    @unique
-  status      String
-  referenceId String?
-  completedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+model IdentityVerification {
+  id                    String    @id @default(cuid())
+  userId                String    @unique
+  verificationSessionId String    @unique // Stripe Identity "vs_..."
+  status                String // requires_input | processing | verified | canceled (+ stub)
+  referenceId           String? // guideId
+  lastError             String? // Stripe last_error.reason on requires_input
+  completedAt           DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  @@map("persona_verifications")
+  @@map("identity_verifications")
 }
 
 model InstitutionReference {

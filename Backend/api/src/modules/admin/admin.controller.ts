@@ -264,7 +264,7 @@ export class AdminController {
 
     const stripeKey = g<string>('STRIPE_SECRET_KEY') ?? '';
     const resendKey = g<string>('RESEND_API_KEY') ?? '';
-    const personaKey = g<string>('PERSONA_API_KEY') ?? '';
+    const identityWebhookSecret = g<string>('STRIPE_IDENTITY_WEBHOOK_SECRET') ?? '';
     const awsKey    = g<string>('AWS_ACCESS_KEY_ID') ?? '';
     const awsBucket = g<string>('AWS_S3_BUCKET') ?? '';
     const claudeKey = g<string>('ANTHROPIC_API_KEY') ?? '';
@@ -300,10 +300,14 @@ export class AdminController {
         status: isSet(resendKey) ? 'operational' : 'unconfigured',
       },
       {
-        name: 'Persona',
-        description: 'Identity verification',
-        detail: personaKey.startsWith('persona_sandbox') ? 'Sandbox mode' : isSet(personaKey) ? 'Live mode' : 'API key not set',
-        status: personaKey.startsWith('persona_sandbox') ? 'test' : isSet(personaKey) ? 'operational' : 'unconfigured',
+        name: 'Stripe Identity',
+        description: 'Identity verification (ID + selfie)',
+        detail: !isSet(identityWebhookSecret) || identityWebhookSecret.includes('placeholder')
+          ? 'Webhook not set — stub mode'
+          : stripeKey.startsWith('sk_live') ? 'Live mode' : 'Test mode',
+        status: !isSet(identityWebhookSecret) || identityWebhookSecret.includes('placeholder')
+          ? 'unconfigured'
+          : stripeKey.startsWith('sk_live') ? 'operational' : 'test',
       },
       {
         name: 'AWS S3 + CloudFront',

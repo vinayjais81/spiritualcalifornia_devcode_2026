@@ -82,7 +82,7 @@ export interface Step3Data {
 // Step 4: Identity verification
 export interface Step4Data {
   skipped: boolean;
-  inquiryId?: string;
+  verificationSessionId?: string;
 }
 
 // Step 5: Calendar & Pricing

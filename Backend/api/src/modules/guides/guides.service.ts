@@ -445,8 +445,8 @@ export class GuidesService {
 
     if (!guide) throw new NotFoundException('Guide profile not found — start onboarding first');
 
-    // Fetch Persona identity verification status
-    const personaVerification = await this.prisma.personaVerification.findUnique({
+    // Fetch Stripe Identity verification status
+    const identityVerification = await this.prisma.identityVerification.findUnique({
       where: { userId },
       select: { status: true, completedAt: true },
     });
@@ -486,8 +486,8 @@ export class GuidesService {
       lastName: guide.user.lastName,
       categories: guide.categories,
       credentials: guide.credentials,
-      identityVerification: personaVerification
-        ? { status: personaVerification.status, completedAt: personaVerification.completedAt }
+      identityVerification: identityVerification
+        ? { status: identityVerification.status, completedAt: identityVerification.completedAt }
         : null,
       completeness: this.computeProfileCompleteness({
         bio: guide.bio,
@@ -537,7 +537,7 @@ export class GuidesService {
    * Public guide profile by slug. Visibility is gated on TWO flags that BOTH
    * have to be true for the profile to render to the public:
    *
-   *   - isVerified  → set when the verification pipeline (Persona ID +
+   *   - isVerified  → set when the verification pipeline (Stripe Identity +
    *                   admin credential review) approves the guide.
    *   - isPublished → set by the admin during approval. Lets us un-publish
    *                   a verified guide (e.g. on report) without deleting
