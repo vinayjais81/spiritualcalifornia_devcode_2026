@@ -11,8 +11,10 @@ import { SanitizePipe } from './common/sanitize.pipe';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
 
-  // Increase body size limit — preserve raw body for Stripe webhook
+  // Increase body size limit — preserve raw body for Stripe webhooks
+  // (signature verification needs the exact bytes, before JSON parsing).
   app.use('/api/v1/payments/webhook', express.raw({ type: 'application/json' }));
+  app.use('/api/v1/verification/stripe-identity/webhook', express.raw({ type: 'application/json' }));
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
