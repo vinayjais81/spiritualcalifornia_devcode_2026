@@ -93,6 +93,24 @@ const envSchema = z.object({
   // to scprelaunch.test (RFC-reserved .test TLD, can't accidentally
   // route real mail).
   TEST_ACCOUNT_EMAIL_DOMAIN: z.string().optional(),
+
+  // ── Guide payouts (v2 / v2.1) flags + tunables ──────────────────────────
+  // These MUST be declared here. Zod's z.object() strips unknown keys, and
+  // @nestjs/config only exposes validated keys — so any env var missing from
+  // this schema resolves to undefined no matter what .env contains. That is
+  // why LEDGER_V2_ENABLED / AUTO_PAYOUT_ENABLED appeared to be ignored: the
+  // flag was stripped before the app could read it. Kept as strings because
+  // the consuming code does its own Number()/'true' parsing.
+  LEDGER_V2_ENABLED: z.string().optional(),
+  AUTO_PAYOUT_ENABLED: z.string().optional(),
+  AUTO_PAYOUT_CRON: z.string().optional(),
+  PAYOUTS_TASKS_ENABLED: z.string().optional(),
+  MIN_PAYOUT_USD: z.string().optional(),
+  STRIPE_PROCESSING_FEE_PERCENT: z.string().optional(),
+  STRIPE_PROCESSING_FEE_FLAT: z.string().optional(),
+  EVENT_BOOKING_FEE_PERCENT: z.string().optional(),
+  RETURN_WINDOW_DAYS: z.string().optional(),
+  SUPPORT_EMAIL: z.string().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
