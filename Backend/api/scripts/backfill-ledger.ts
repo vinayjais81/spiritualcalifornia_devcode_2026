@@ -19,8 +19,11 @@
  */
 
 import 'reflect-metadata';
+import 'dotenv/config'; // load .env when run standalone via ts-node (Nest's ConfigModule isn't booted here)
 import { ConfigService } from '@nestjs/config';
 import { PrismaClient, EarningCategory } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 
 type Mode = 'verify' | 'write';
 
@@ -28,7 +31,12 @@ const args = process.argv.slice(2);
 const modeArg = args.find((a) => a.startsWith('--mode='))?.split('=')[1];
 const mode: Mode = modeArg === 'write' ? 'write' : 'verify';
 
-const prisma = new PrismaClient();
+// Prisma 7 requires a driver adapter — match how PrismaService constructs the
+// client in the running app (PrismaPg over a pg Pool). A bare `new PrismaClient()`
+// throws PrismaClientInitializationError.
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 // Flat ConfigService stand-in for env reads — avoids spinning up the full Nest app.
 const config = {
   get(key: string, def?: string) {
@@ -331,4 +339,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });
