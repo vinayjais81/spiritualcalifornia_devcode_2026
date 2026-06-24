@@ -84,8 +84,8 @@ async function resolveCommissionPercent(category: EarningCategory, guideId: stri
 async function resolveClearanceDays(category: EarningCategory): Promise<number> {
   const rule = await prisma.clearanceRule.findUnique({ where: { category } });
   if (rule) return rule.days;
-  // Hardcoded defaults if the rules table is empty.
-  return category === 'PRODUCT' ? 7 : category === 'TOUR' ? 5 : 3;
+  // Hardcoded v2.1 defaults if the rules table is empty (PRODUCT 17, rest 3).
+  return category === 'PRODUCT' ? 17 : 3;
 }
 
 interface LineItem {
@@ -183,7 +183,10 @@ async function writeLineLedgerEntries(line: LineItem, dryRun: boolean): Promise<
   const commissionPct = await resolveCommissionPercent(line.category, line.guideId);
   const commission = round2(line.grossAmount * (commissionPct / 100));
   const stripeFee = round2(line.grossAmount * STRIPE_FEE_PCT + STRIPE_FEE_FLAT);
-  const net = round2(line.grossAmount - commission - stripeFee);
+  // v2.1: platform absorbs the Stripe fee — guide nets gross − commission only.
+  // The STRIPE_FEE entry is still written below (informational / platform P&L)
+  // but does NOT reduce NET_PAYABLE. Must match LedgerService.writeChargeEntries.
+  const net = round2(line.grossAmount - commission);
 
   const baseClearanceDays = await resolveClearanceDays(line.category);
   // No first-payout +7 bonus on backfill — historical txns predate the rule.
