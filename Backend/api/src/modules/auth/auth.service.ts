@@ -14,7 +14,7 @@ import { LoginDto } from './dto/login.dto';
 import { Role, VerificationStatus, Prisma } from '@prisma/client';
 import { checkPasswordPolicy } from '../../common/validators/is-strong-password.validator';
 import * as bcrypt from 'bcrypt';
-import { randomBytes } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
 import { Resend } from 'resend';
 
 @Injectable()
@@ -854,7 +854,11 @@ export class AuthService {
     // well-formed duration ('7d', '30m', '90s', etc.). Cast silences the
     // `ms.StringValue` template-literal type.
     const refreshToken = await this.jwtService.signAsync(
-      { sub: userId, email, roles },
+      // `jti` is a per-mint random nonce. Without it, two refresh tokens minted
+      // for the same user within the same second produce a byte-identical JWT
+      // (iat/exp are second-resolution), which collides on the unique `token`
+      // column. The nonce guarantees uniqueness regardless of timing.
+      { sub: userId, email, roles, jti: randomUUID() },
       {
         secret: this.configService.getOrThrow<string>('JWT_REFRESH_SECRET'),
         expiresIn: this.configService.get<string>(
