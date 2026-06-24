@@ -37,43 +37,6 @@ export class PaymentsService {
       String(this.config.get('AUTO_PAYOUT_ENABLED', 'false')).toLowerCase() === 'true';
   }
 
-  // ─── Resolve guide's Stripe Connect account from entity ────────────────────
-
-  private async resolveGuideStripeAccount(data: {
-    bookingId?: string;
-    orderId?: string;
-    ticketPurchaseId?: string;
-    tourBookingId?: string;
-  }): Promise<string | undefined> {
-    let guideId: string | undefined;
-
-    if (data.bookingId) {
-      const booking = await this.prisma.booking.findUnique({
-        where: { id: data.bookingId },
-        include: { service: { select: { guideId: true } } },
-      });
-      guideId = booking?.service.guideId;
-    } else if (data.tourBookingId) {
-      const tourBooking = await this.prisma.tourBooking.findUnique({
-        where: { id: data.tourBookingId },
-        include: { tour: { select: { guideId: true } } },
-      });
-      guideId = tourBooking?.tour.guideId;
-    }
-    // For orders/tickets, guide resolution is more complex (multi-seller) — skip for now
-
-    if (!guideId) return undefined;
-
-    const guide = await this.prisma.guideProfile.findUnique({
-      where: { id: guideId },
-      select: { stripeAccountId: true, stripeOnboardingDone: true },
-    });
-
-    return guide?.stripeAccountId && guide?.stripeOnboardingDone
-      ? guide.stripeAccountId
-      : undefined;
-  }
-
   // ─── Create Payment Intent (REAL Stripe) ───────────────────────────────────
 
   async createPaymentIntent(data: {
@@ -107,13 +70,16 @@ export class PaymentsService {
 
     const platformFeeRate = this.commissionPercent / 100;
     const guideAmount = data.amount * (1 - platformFeeRate);
-    const connectedAccountId = await this.resolveGuideStripeAccount(data);
 
-    // Create real Stripe PaymentIntent
+    // Separate charges & transfers: charge is PLATFORM-HELD (no transfer_data /
+    // destination). All funds land on the platform; the guide is paid exactly
+    // once, later, by the payout/auto-payout system via stripe transfers.create.
+    // Do NOT add a connected account here — a destination charge would pay the
+    // guide at checkout AND again at payout (double payment). See the v2 ledger
+    // model in docs/guide-payouts-v2.md and the v2.1 amendment.
     const { clientSecret, paymentIntentId } = await this.stripeService.createPaymentIntent({
       amount: data.amount,
       currency: data.currency ?? 'usd',
-      connectedAccountId,
       metadata: {
         bookingId: data.bookingId ?? '',
         orderId: data.orderId ?? '',

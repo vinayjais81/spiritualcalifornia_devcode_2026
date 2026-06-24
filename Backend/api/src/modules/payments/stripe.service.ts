@@ -6,13 +6,11 @@ import Stripe from 'stripe';
 export class StripeService {
   private readonly stripe: Stripe;
   private readonly logger = new Logger(StripeService.name);
-  private readonly commissionPercent: number;
 
   constructor(private readonly config: ConfigService) {
     this.stripe = new Stripe(this.config.get<string>('STRIPE_SECRET_KEY')!, {
       apiVersion: '2025-03-31.basil' as any,
     });
-    this.commissionPercent = Number(this.config.get('STRIPE_PLATFORM_COMMISSION_PERCENT', '15'));
   }
 
   // ─── Payment Intents (Direct charges with platform fee) ────────────────────
@@ -20,26 +18,20 @@ export class StripeService {
   async createPaymentIntent(params: {
     amount: number; // in dollars
     currency?: string;
-    connectedAccountId?: string; // Guide's Stripe Connect account
     metadata?: Record<string, string>;
   }): Promise<{ clientSecret: string; paymentIntentId: string }> {
     const amountCents = Math.round(params.amount * 100);
-    const platformFeeCents = Math.round(amountCents * (this.commissionPercent / 100));
 
+    // Separate charges & transfers model: the charge is PLATFORM-HELD. We do
+    // NOT attach transfer_data/destination — that would pay the guide at
+    // checkout, then the payout system would transfer again (double payment).
+    // The guide is paid exactly once via stripe.transfers.create at payout time.
     const piParams: Stripe.PaymentIntentCreateParams = {
       amount: amountCents,
       currency: params.currency ?? 'usd',
       automatic_payment_methods: { enabled: true },
       metadata: params.metadata ?? {},
     };
-
-    // If guide has a Connect account, use destination charge
-    if (params.connectedAccountId) {
-      piParams.transfer_data = {
-        destination: params.connectedAccountId,
-        amount: amountCents - platformFeeCents, // Guide receives total minus platform fee
-      };
-    }
 
     const paymentIntent = await this.stripe.paymentIntents.create(piParams);
     this.logger.log(`PaymentIntent created: ${paymentIntent.id} for $${params.amount}`);
@@ -57,11 +49,11 @@ export class StripeService {
     successUrl: string;
     cancelUrl: string;
     customerEmail?: string;
-    connectedAccountId?: string;
     metadata?: Record<string, string>;
   }): Promise<{ sessionId: string; url: string }> {
-    const platformFeeRate = this.commissionPercent / 100;
-
+    // Platform-held charge (separate charges & transfers). No application_fee /
+    // transfer_data here — guides are paid only through the payout system. See
+    // createPaymentIntent above.
     const session = await this.stripe.checkout.sessions.create({
       mode: 'payment',
       customer_email: params.customerEmail,
@@ -76,14 +68,6 @@ export class StripeService {
         },
         quantity: item.quantity,
       })),
-      payment_intent_data: params.connectedAccountId
-        ? {
-            application_fee_amount: Math.round(
-              params.lineItems.reduce((s, i) => s + i.amount * i.quantity, 0) * platformFeeRate * 100,
-            ),
-            transfer_data: { destination: params.connectedAccountId },
-          }
-        : undefined,
       success_url: params.successUrl,
       cancel_url: params.cancelUrl,
       metadata: params.metadata ?? {},
