@@ -730,6 +730,18 @@ export class AdminController {
     return this.paymentsService.processPayout(id);
   }
 
+  @Post('payouts/run-auto-sweep')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Run the auto-payout sweep on demand (same logic as the scheduled job). ' +
+      'Pays every eligible guide whose releasable balance >= MIN_PAYOUT_USD. ' +
+      'No-op unless AUTO_PAYOUT_ENABLED=true and LEDGER_V2_ENABLED=true.',
+  })
+  runAutoPayoutSweep() {
+    return this.paymentsService.runAutoPayoutSweep();
+  }
+
   @Post('orders/:id/mark-delivered')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
