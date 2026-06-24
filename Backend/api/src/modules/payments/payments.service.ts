@@ -15,6 +15,8 @@ const ORDER_DOWNLOAD_URL_TTL_SECONDS = 7 * 24 * 60 * 60;
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
   private readonly commissionPercent: number;
+  private readonly minPayoutUsd: number;
+  private readonly autoPayoutEnabled: boolean;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -25,6 +27,14 @@ export class PaymentsService {
     private readonly uploadService: UploadService,
   ) {
     this.commissionPercent = Number(this.config.get('STRIPE_PLATFORM_COMMISSION_PERCENT', '15'));
+    // v2.1: minimum payout threshold raised to $100 (was $50). Config-driven so
+    // the guide dashboard (via the config endpoint) and this gate stay in sync.
+    this.minPayoutUsd = Number(this.config.get('MIN_PAYOUT_USD', '100'));
+    // v2.1: automatic cycle-based payouts. Opt-in per environment (off by
+    // default) so it can be enabled only after manual-claim parity is verified,
+    // matching the LEDGER_V2_ENABLED rollout discipline.
+    this.autoPayoutEnabled =
+      String(this.config.get('AUTO_PAYOUT_ENABLED', 'false')).toLowerCase() === 'true';
   }
 
   // ─── Resolve guide's Stripe Connect account from entity ────────────────────
@@ -1228,8 +1238,11 @@ export class PaymentsService {
   // ─── Payout Request (Guide Cashout) ────────────────────────────────────────
 
   async requestPayout(userId: string, amount: number) {
-    // Locked decision #4: minimum payout = $50.
-    if (amount < 50) throw new BadRequestException('Minimum payout amount is $50');
+    // v2.1 policy: minimum payout = MIN_PAYOUT_USD (default $100).
+    if (amount < this.minPayoutUsd)
+      throw new BadRequestException(
+        `Minimum payout amount is $${this.minPayoutUsd}`,
+      );
 
     const guide = await this.prisma.guideProfile.findUnique({ where: { userId } });
     if (!guide) throw new NotFoundException('Guide profile not found');
@@ -1484,6 +1497,142 @@ export class PaymentsService {
 
       throw new BadRequestException(`Stripe transfer failed: ${err.message}`);
     }
+  }
+
+  // ─── v2.1 Product no-delivery fallback ─────────────────────────────────────
+
+  /**
+   * Physical products whose delivery is never confirmed would otherwise never
+   * clear — the charge-time fan-out is deferred until OrderItem.deliveredAt is
+   * set (carrier webhook / admin "mark delivered"). This sweep finds physical
+   * items on PAID orders older than 21 days with no deliveredAt and no existing
+   * NET_PAYABLE entry, and writes the fan-out anchored at the order's paid date
+   * with a forced 21-day clearance (policy fallback).
+   *
+   * Idempotent — items that already have a fan-out are skipped.
+   */
+  async sweepUndeliveredProductFallback(): Promise<{ written: number }> {
+    const cutoff = new Date(Date.now() - 21 * 24 * 60 * 60 * 1000);
+
+    const items = await this.prisma.orderItem.findMany({
+      where: {
+        deliveredAt: null,
+        product: { type: { not: 'DIGITAL' } },
+        order: {
+          paidAt: { not: null, lte: cutoff },
+          payment: { status: { in: ['SUCCEEDED', 'PARTIALLY_REFUNDED'] } },
+        },
+      },
+      include: {
+        product: { select: { guideId: true, name: true } },
+        order: {
+          select: {
+            id: true,
+            paidAt: true,
+            payment: { select: { id: true } },
+          },
+        },
+      },
+    });
+
+    let written = 0;
+    for (const item of items) {
+      const paymentId = item.order?.payment?.id;
+      const paidAt = item.order?.paidAt;
+      if (!paymentId || !paidAt) continue;
+
+      const existing = await this.prisma.ledgerEntry.findFirst({
+        where: { paymentId, orderItemId: item.id, entryType: 'NET_PAYABLE' },
+      });
+      if (existing) continue;
+
+      await this.ledgerService.writeChargeEntries({
+        guideId: item.product.guideId,
+        paymentId,
+        orderItemId: item.id,
+        grossAmount: Number(item.unitPrice) * item.quantity,
+        category: 'PRODUCT' as EarningCategory,
+        clearanceAnchor: paidAt,
+        clearanceDaysOverride: 21,
+        description: `Order ${item.order?.id} — ${item.product.name} ×${item.quantity} (no-delivery fallback)`,
+        metadata: { fallback: 'no-delivery-21d' },
+      });
+      written++;
+    }
+
+    if (written > 0) {
+      this.logger.log(
+        `[product-fallback] wrote ${written} no-delivery fan-outs (order paid + 21d clearance)`,
+      );
+    }
+    return { written };
+  }
+
+  // ─── v2.1 Automatic cycle-based payout sweep ───────────────────────────────
+
+  /**
+   * For every eligible payout account whose releasable available balance is at
+   * least MIN_PAYOUT_USD, create a payout for the FULL releasable balance and
+   * process the Stripe transfer end-to-end. Balances under the threshold are
+   * left untouched — they "roll over" to the next sweep.
+   *
+   * Gated behind AUTO_PAYOUT_ENABLED + LEDGER_V2_ENABLED. The manual claim
+   * endpoint remains available; this sweep is additive.
+   */
+  async runAutoPayoutSweep(): Promise<{
+    eligible: number;
+    paidOut: number;
+    rolledOver: number;
+    failed: number;
+  }> {
+    if (!this.autoPayoutEnabled || !this.ledgerService.isV2Live()) {
+      this.logger.log(
+        '[auto-payout] disabled (AUTO_PAYOUT_ENABLED or LEDGER_V2_ENABLED off) — skipping',
+      );
+      return { eligible: 0, paidOut: 0, rolledOver: 0, failed: 0 };
+    }
+
+    const accounts = await this.prisma.payoutAccount.findMany({
+      where: {
+        holdActive: false,
+        payoutsEnabled: true,
+        guide: { stripeOnboardingDone: true },
+      },
+      select: { id: true, guideId: true },
+    });
+
+    let eligible = 0;
+    let paidOut = 0;
+    let rolledOver = 0;
+    let failed = 0;
+
+    for (const acc of accounts) {
+      const available = await this.ledgerService.getAvailableBalance(acc.guideId);
+      if (available < this.minPayoutUsd) {
+        rolledOver++;
+        continue;
+      }
+      eligible++;
+      const amount = Math.round(available * 100) / 100;
+      try {
+        const payout = await this.requestPayoutV2(acc.guideId, acc.id, amount);
+        await this.processPayout(payout.id);
+        paidOut++;
+        this.logger.log(
+          `[auto-payout] paid $${amount} to guide ${acc.guideId} (payout ${payout.id})`,
+        );
+      } catch (err: any) {
+        failed++;
+        this.logger.error(
+          `[auto-payout] failed for guide ${acc.guideId}: ${err.message}`,
+        );
+      }
+    }
+
+    this.logger.log(
+      `[auto-payout] swept ${accounts.length} accounts — eligible=${eligible} paidOut=${paidOut} rolledOver=${rolledOver} failed=${failed}`,
+    );
+    return { eligible, paidOut, rolledOver, failed };
   }
 
   // ─── Get Guide Payout History ──────────────────────────────────────────────

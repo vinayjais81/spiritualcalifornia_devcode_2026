@@ -63,6 +63,14 @@ export class LedgerService {
     grossAmount: number;
     category: EarningCategory;
     clearanceAnchor: Date;
+    /**
+     * Forces the number of days from clearanceAnchor to clearanceAt, bypassing
+     * the per-category ClearanceRule lookup. Used by the product no-delivery
+     * fallback (v2.1): when delivery is never confirmed, funds clear at
+     * order-paid + 21 days. The first-payout +7d bonus is NOT added on top of
+     * an override (the override is already a long, deliberate window).
+     */
+    clearanceDaysOverride?: number;
     description?: string;
     metadata?: Prisma.InputJsonValue;
   }): Promise<{ entries: any[]; net: number; commission: number; stripeFee: number }> {
@@ -104,12 +112,16 @@ export class LedgerService {
     const stripeFee = round2(
       input.grossAmount * this.stripeFeePercent + this.stripeFeeFlat,
     );
-    const net = round2(input.grossAmount - commission - stripeFee);
+    // v2.1 (Practitioner Payout Policy, 2026-06-24): the Stripe processing fee
+    // is absorbed by the PLATFORM's share, not the guide's. The guide nets
+    // exactly gross × (1 − commission%). The STRIPE_FEE entry below is still
+    // written but is informational only (platform P&L / reconciliation) — it
+    // does NOT reduce NET_PAYABLE. See docs/guide-payouts-v2.1-amendment.md §5.
+    const net = round2(input.grossAmount - commission);
 
-    const clearanceDays = await this.resolveClearanceDays(
-      input.category,
-      input.guideId,
-    );
+    const clearanceDays =
+      input.clearanceDaysOverride ??
+      (await this.resolveClearanceDays(input.category, input.guideId));
     const clearanceAt = addDays(input.clearanceAnchor, clearanceDays);
 
     const baseFields = {
@@ -480,8 +492,10 @@ function addDays(d: Date, days: number): Date {
 
 /**
  * Hardcoded fallback if the clearance_rules row is somehow missing. Matches
- * locked decisions (2026-04-29) so behavior degrades safely rather than
+ * the v2.1 policy (2026-06-24) so behavior degrades safely rather than
  * crediting money instantly when the table is empty.
+ * SERVICE/EVENT = 3, TOUR = 3 (folded into Events), PRODUCT = 17 (14-day
+ * return window + 3-day dispute buffer).
  */
 function defaultClearanceDays(category: EarningCategory): number {
   switch (category) {
@@ -490,8 +504,8 @@ function defaultClearanceDays(category: EarningCategory): number {
     case 'EVENT':
       return 3;
     case 'TOUR':
-      return 5;
+      return 3;
     case 'PRODUCT':
-      return 7;
+      return 17;
   }
 }

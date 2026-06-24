@@ -6,6 +6,7 @@ import { Queue, Worker, Job } from 'bullmq';
 import { PrismaService } from '../../database/prisma.service';
 import { LedgerService } from './ledger.service';
 import { StripeService } from './stripe.service';
+import { PaymentsService } from './payments.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
 const QUEUE_NAME = 'payouts-tasks';
@@ -13,6 +14,7 @@ const QUEUE_NAME = 'payouts-tasks';
 const JOB_CLEARANCE = 'payout-clearance';
 const JOB_RECONCILIATION = 'payout-reconciliation';
 const JOB_INTEGRITY = 'payout-integrity-check';
+const JOB_AUTO_PAYOUT = 'payout-auto-sweep';
 
 // Every 15 minutes: flip PENDING_CLEARANCE entries past their clearanceAt
 // over to AVAILABLE, recompute the cached balance, and bump the guide's
@@ -27,6 +29,11 @@ const CRON_RECONCILIATION = '0 9 * * *'; // 09:00 UTC ≈ 02:00 PT (PDT)
 // Logs an error per drifted account; does not auto-correct.
 const CRON_INTEGRITY = '0 10 * * *'; // 10:00 UTC ≈ 03:00 PT (PDT)
 
+// v2.1: 04:00 PT daily (after reconciliation + integrity), sweep eligible
+// guides and auto-pay any whose releasable balance ≥ MIN_PAYOUT_USD. Cadence
+// is configurable via AUTO_PAYOUT_CRON. No-op unless AUTO_PAYOUT_ENABLED=true.
+const CRON_AUTO_PAYOUT_DEFAULT = '0 11 * * *'; // 11:00 UTC ≈ 04:00 PT (PDT)
+
 interface JobData { [key: string]: unknown; }
 
 @Injectable()
@@ -39,18 +46,21 @@ export class PayoutsTasksQueue implements OnModuleInit, OnModuleDestroy {
   private readonly redisPort: number;
   private readonly redisPassword: string | undefined;
   private readonly enabled: boolean;
+  private readonly autoPayoutCron: string;
 
   constructor(
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
     private readonly ledger: LedgerService,
     private readonly stripe: StripeService,
+    private readonly payments: PaymentsService,
     private readonly notifications: NotificationsService,
   ) {
     this.enabled = this.config.get<string>('PAYOUTS_TASKS_ENABLED', 'true') !== 'false';
     this.redisHost = this.config.get<string>('REDIS_HOST', 'localhost');
     this.redisPort = Number(this.config.get<string | number>('REDIS_PORT', 6379));
     this.redisPassword = this.config.get<string>('REDIS_PASSWORD');
+    this.autoPayoutCron = this.config.get<string>('AUTO_PAYOUT_CRON', CRON_AUTO_PAYOUT_DEFAULT);
   }
 
   async onModuleInit() {
@@ -80,6 +90,9 @@ export class PayoutsTasksQueue implements OnModuleInit, OnModuleDestroy {
           }
           if (job.name === JOB_INTEGRITY) {
             return this.runIntegrityCheck();
+          }
+          if (job.name === JOB_AUTO_PAYOUT) {
+            return this.payments.runAutoPayoutSweep();
           }
           this.logger.warn(`[Queue] unknown job name: ${job.name}`);
         },
@@ -120,9 +133,18 @@ export class PayoutsTasksQueue implements OnModuleInit, OnModuleDestroy {
           removeOnFail: { count: 30 },
         },
       );
+      await this.queue.add(
+        JOB_AUTO_PAYOUT,
+        {},
+        {
+          repeat: { pattern: this.autoPayoutCron },
+          removeOnComplete: { count: 30 },
+          removeOnFail: { count: 30 },
+        },
+      );
 
       this.logger.log(
-        `[Queue] payouts-tasks worker started — clearance(${CRON_CLEARANCE}), reconciliation(${CRON_RECONCILIATION}), integrity(${CRON_INTEGRITY})`,
+        `[Queue] payouts-tasks worker started — clearance(${CRON_CLEARANCE}), reconciliation(${CRON_RECONCILIATION}), integrity(${CRON_INTEGRITY}), auto-payout(${this.autoPayoutCron})`,
       );
     } catch (err: any) {
       this.logger.error(
@@ -156,7 +178,18 @@ export class PayoutsTasksQueue implements OnModuleInit, OnModuleDestroy {
   private async runClearance() {
     const now = new Date();
 
+    // 0. v2.1 product no-delivery fallback: write fan-outs for physical items
+    // never marked delivered (order paid + 21d). Runs first so those entries
+    // can clear in this same pass once their fallback window has elapsed.
+    try {
+      await this.payments.sweepUndeliveredProductFallback();
+    } catch (err: any) {
+      this.logger.error(`[clearance] product fallback sweep failed: ${err.message}`);
+    }
+
     // 1. Find candidate entries (PENDING_CLEARANCE, past clearance, not held).
+    // v2.1: also exclude any entry whose source payment has an open refund /
+    // dispute / chargeback — funds release only on a clean transaction.
     const candidates = await this.prisma.ledgerEntry.findMany({
       where: {
         status: 'PENDING_CLEARANCE',
@@ -164,6 +197,10 @@ export class PayoutsTasksQueue implements OnModuleInit, OnModuleDestroy {
         clearanceAt: { not: null, lte: now },
         guide: {
           payoutAccount: { holdActive: false },
+        },
+        payment: {
+          status: { notIn: ['REFUNDED', 'PARTIALLY_REFUNDED'] },
+          OR: [{ refundedAmount: null }, { refundedAmount: { lte: 0 } }],
         },
       },
       select: { id: true, guideId: true, amount: true, paymentId: true },
