@@ -61,6 +61,7 @@ export function HeroSection() {
     >
       {/* Botanical SVG backgrounds */}
       <svg
+        className="sc-hide-md"
         style={{ position: 'absolute', top: '-60px', right: '-80px', width: '460px', opacity: 0.07, pointerEvents: 'none' }}
         viewBox="0 0 400 500" fill="none"
         aria-hidden
@@ -72,6 +73,7 @@ export function HeroSection() {
         <circle cx="200" cy="40" r="18" stroke="#F07814" strokeWidth="1" fill="none"/>
       </svg>
       <svg
+        className="sc-hide-md"
         style={{ position: 'absolute', bottom: '40px', left: '-60px', width: '300px', opacity: 0.07, pointerEvents: 'none' }}
         viewBox="0 0 300 400" fill="none"
         aria-hidden

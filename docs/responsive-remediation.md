@@ -123,13 +123,22 @@ blocks didn't cover.
 - `Footer` padding `56px 60px 36px` → clamp side padding.
 - (Footer grid already collapsed via its own `@media`; Navbar hamburger already worked.)
 
+## Phase 2 — Home polish (DONE 2026-06-29)
+
+- HeroSection: hid the two decorative botanical background SVGs (460px / 300px,
+  negative offsets) ≤768 via `.sc-hide-md`. Section paddings are horizontal-0
+  (no overflow); HeroSection + SoulTravelsBanner already had their own `@media`.
+
 ## Remaining (TODO)
 
-- **Home sections** — mostly already responsive (HeroSection + SoulTravelsBanner
-  have their own `@media`; section paddings are horizontal-0 so no overflow).
-  Optional micro-polish: hide HeroSection decorative background SVGs ≤768
-  (`.sc-hide-md`). Low value.
-- **Phase 4 — QA:** verify at 375 / 768 / 1024 widths on the live QA box; fix stragglers.
+- **Phase 4 — QA:** verify at 375 / 768 / 1024 widths on the live QA box; fix
+  any stragglers (targeted one-offs, no longer systemic).
+
+## Status: code sweep COMPLETE pending visual device QA
+
+Every public surface — shell, shared components, commerce/checkout, detail,
+listing, home — now has fluid paddings/headings and grids that collapse at
+480/768/1024. `tsc --noEmit` clean throughout.
 
 ## Verification
 
