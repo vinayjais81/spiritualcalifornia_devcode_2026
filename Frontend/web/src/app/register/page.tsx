@@ -632,7 +632,11 @@ function RegisterContent() {
               <button
                 type="submit"
                 style={{ ...btnPrimary, marginTop: isGoogleUser ? 8 : 0 }}
-                disabled={loading || (!isGoogleUser && !pwdStrength.allPassed)}
+                // Only block on in-flight submit — NOT on password validity.
+                // Disabling on !allPassed silently swallowed the click when the
+                // password was empty/weak, so no error ever showed. Let the
+                // click through; handleRegister surfaces the password error.
+                disabled={loading}
               >
                 {isGoogleUser
                   ? <>Continue <span style={{ fontSize: 16 }}>→</span></>

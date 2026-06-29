@@ -252,15 +252,19 @@ export default function GuideRegisterPage() {
 
             <button
               type="submit"
-              disabled={loading || !pwdStrength.allPassed}
+              // Only block on in-flight submit — NOT on password validity.
+              // Disabling on !allPassed silently swallowed the click when the
+              // password was empty/weak, so no error ever showed. Let the
+              // click through; handleSubmit surfaces the password error.
+              disabled={loading}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
                 background: G.charcoal, color: G.white,
                 fontFamily: 'var(--font-inter), sans-serif', fontSize: 11, fontWeight: 500,
                 letterSpacing: '0.14em', textTransform: 'uppercase',
                 border: 'none', borderRadius: 4, padding: '16px 36px',
-                cursor: (loading || !pwdStrength.allPassed) ? 'not-allowed' : 'pointer',
-                opacity: (loading || !pwdStrength.allPassed) ? 0.6 : 1,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1,
                 marginTop: 4,
               }}
             >
