@@ -515,13 +515,13 @@ export default function GuideProfilePage() {
                               {formatPrice(tier.price)} / person
                             </div>
                           )}
-                          <a href="#" style={{
+                          <Link href={spotsLeft !== null && spotsLeft <= 0 ? `/events/${ev.id}` : `/events/${ev.id}/checkout`} style={{
                             padding: '8px 18px', background: C.gold, color: C.white,
                             fontFamily: font, fontSize: '11px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase',
                             borderRadius: '8px', textDecoration: 'none', transition: 'background 0.3s',
                           }}>
                             Register
-                          </a>
+                          </Link>
                         </div>
                       </div>
                     </div>
