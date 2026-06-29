@@ -11,7 +11,7 @@ interface SectionHeaderProps {
 export function SectionHeader({ title, linkLabel, linkHref = '#' }: SectionHeaderProps) {
   return (
     <div
-      style={{ padding: '0 60px', marginBottom: '36px' }}
+      style={{ padding: '0 clamp(16px, 5vw, 60px)', marginBottom: '36px' }}
       className="flex items-center gap-5"
     >
       {/* Left rule */}
@@ -22,7 +22,7 @@ export function SectionHeader({ title, linkLabel, linkHref = '#' }: SectionHeade
 
       <h2
         className="font-playfair whitespace-nowrap"
-        style={{ fontSize: '30px', fontWeight: 400, fontStyle: 'italic', color: '#3A3530' }}
+        style={{ fontSize: 'clamp(20px, 5vw, 30px)', fontWeight: 400, fontStyle: 'italic', color: '#3A3530' }}
       >
         {title}
       </h2>

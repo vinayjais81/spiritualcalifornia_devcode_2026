@@ -27,8 +27,8 @@ export function UpdateCard({
       href={href}
       style={{
         display: 'block',
-        width: '280px',
-        flex: '0 0 280px',
+        width: 'clamp(220px, 74vw, 280px)',
+        flex: '0 0 clamp(220px, 74vw, 280px)',
         background: '#F5F2EB',
         borderRadius: '4px',
         overflow: 'hidden',

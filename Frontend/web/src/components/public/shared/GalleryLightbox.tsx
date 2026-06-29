@@ -65,7 +65,7 @@ export function GalleryLightbox({
         background: 'rgba(20, 17, 14, 0.92)',
         display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        padding: '60px 80px 100px',
+        padding: 'clamp(48px, 8vw, 60px) clamp(12px, 6vw, 80px) clamp(72px, 12vw, 100px)',
       }}
     >
       {/* Top-right close */}
@@ -121,7 +121,7 @@ export function GalleryLightbox({
             onClick={(e) => { e.stopPropagation(); go(-1); }}
             aria-label="Previous image"
             style={{
-              position: 'absolute', left: 24, top: '50%', transform: 'translateY(-50%)',
+              position: 'absolute', left: 'clamp(8px, 3vw, 24px)', top: '50%', transform: 'translateY(-50%)',
               width: 48, height: 48, borderRadius: '50%',
               background: 'rgba(255,255,255,0.08)', border: 'none',
               color: '#fff', fontSize: 22, cursor: 'pointer',
@@ -135,7 +135,7 @@ export function GalleryLightbox({
             onClick={(e) => { e.stopPropagation(); go(1); }}
             aria-label="Next image"
             style={{
-              position: 'absolute', right: 24, top: '50%', transform: 'translateY(-50%)',
+              position: 'absolute', right: 'clamp(8px, 3vw, 24px)', top: '50%', transform: 'translateY(-50%)',
               width: 48, height: 48, borderRadius: '50%',
               background: 'rgba(255,255,255,0.08)', border: 'none',
               color: '#fff', fontSize: 22, cursor: 'pointer',

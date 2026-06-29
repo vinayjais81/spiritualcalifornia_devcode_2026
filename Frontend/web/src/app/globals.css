@@ -188,3 +188,56 @@
 .animate-sc-bounce {
   animation: sc-bounce 2s infinite;
 }
+
+/* ─── RESPONSIVE FOUNDATION (public site) ───────────────────
+   The public pages are heavily inline-styled. React inline `style={{}}`
+   CANNOT hold @media rules, so these class-based helpers cover what
+   inline styles can't: collapsing grid columns and toggling layout
+   direction at breakpoints. They use !important to beat the inline
+   longhands (an !important external longhand wins over a non-important
+   inline shorthand). Fixed paddings / font-sizes are made responsive
+   in place with clamp(), which IS valid inline — no class needed.
+
+   Breakpoints (locked 2026-06-29): mobile 480 / tablet 768 / desktop 1024. */
+
+/* Centered, width-capped container with fluid side padding.
+   Replaces ad-hoc `maxWidth + margin:0 auto + padding:0 48px` combos. */
+.sc-container {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: clamp(16px, 5vw, 48px);
+}
+
+/* Content + sidebar two-column layouts → single column.
+   Use -lg for wide (≈340–420px) sidebars that crowd content by 1024px;
+   use -md for narrower sidebars that are fine until 768px. */
+@media (max-width: 1024px) {
+  .sc-stack-lg { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 768px) {
+  .sc-stack-md { grid-template-columns: 1fr !important; }
+  .sc-flex-col-md { flex-direction: column !important; }
+}
+
+/* Card / field grids: ladder down 4→3→2→1 as width drops.
+   Add the class matching the DESKTOP column count. -form2 is for
+   two-up form fields (1fr 1fr) that should stack on mobile. */
+@media (max-width: 1024px) {
+  .sc-cards-4 { grid-template-columns: repeat(3, 1fr) !important; }
+}
+@media (max-width: 768px) {
+  .sc-cards-4,
+  .sc-cards-3 { grid-template-columns: repeat(2, 1fr) !important; }
+  .sc-form2  { grid-template-columns: 1fr !important; }
+}
+@media (max-width: 480px) {
+  .sc-cards-4,
+  .sc-cards-3,
+  .sc-cards-2 { grid-template-columns: 1fr !important; }
+}
+
+/* Hide purely-decorative elements (background SVGs, etc.) on small screens. */
+@media (max-width: 768px) {
+  .sc-hide-md { display: none !important; }
+}

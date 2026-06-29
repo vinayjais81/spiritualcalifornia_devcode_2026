@@ -45,8 +45,8 @@ export function FeedCard({
         // inside the Carousel, so the child link needs its own width for the
         // image container (with `fill`) to have something concrete to fill.
         display: 'block',
-        width: '300px',
-        flex: '0 0 300px',
+        width: 'clamp(240px, 78vw, 300px)',
+        flex: '0 0 clamp(240px, 78vw, 300px)',
         background: '#FFFFFF',
         borderRadius: '4px',
         overflow: 'hidden',

@@ -56,9 +56,10 @@ export function Carousel({ id, children, scrollAmount = 2 }: CarouselProps) {
   };
 
   return (
-    <div style={{ position: 'relative', padding: '0 60px' }}>
+    <div style={{ position: 'relative', padding: '0 clamp(12px, 5vw, 60px)' }}>
       <button
         aria-label="Previous"
+        className="sc-hide-md"
         style={{ ...btnStyle, left: '12px' }}
         onClick={() => scroll(-1)}
         onMouseEnter={e => {
@@ -90,6 +91,7 @@ export function Carousel({ id, children, scrollAmount = 2 }: CarouselProps) {
 
       <button
         aria-label="Next"
+        className="sc-hide-md"
         style={{ ...btnStyle, right: '12px' }}
         onClick={() => scroll(1)}
         onMouseEnter={e => {

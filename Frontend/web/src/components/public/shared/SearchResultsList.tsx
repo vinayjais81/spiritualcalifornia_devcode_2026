@@ -75,6 +75,7 @@ export function SearchResultsList({
           style={{ textDecoration: 'none', color: 'inherit' }}
         >
           <div
+            className="sc-stack-md"
             style={{
               display: 'grid',
               gridTemplateColumns: '160px 1fr auto',

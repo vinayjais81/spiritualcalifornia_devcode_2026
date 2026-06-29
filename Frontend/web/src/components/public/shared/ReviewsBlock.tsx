@@ -56,7 +56,7 @@ export function ReviewsBlock({
 
   if (loading && !data) {
     return (
-      <div style={{ maxWidth: 1300, margin: '0 auto', padding: '40px 60px', textAlign: 'center', color: '#8A8278', fontSize: 13 }}>
+      <div style={{ maxWidth: 1300, margin: '0 auto', padding: '40px clamp(16px, 5vw, 60px)', textAlign: 'center', color: '#8A8278', fontSize: 13 }}>
         Loading reviews…
       </div>
     );
@@ -65,7 +65,7 @@ export function ReviewsBlock({
   if (!data || data.totalReviews === 0) {
     if (!showEmptyState) return null;
     return (
-      <div style={{ maxWidth: 1300, margin: '0 auto', padding: '40px 60px 60px' }}>
+      <div style={{ maxWidth: 1300, margin: '0 auto', padding: '40px clamp(16px, 5vw, 60px) 60px' }}>
         <div style={{ fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: '#F07814', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
           Reviews
           <span style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.25)' }} />
@@ -81,15 +81,15 @@ export function ReviewsBlock({
   const totalBars = Math.max(totalReviews, 1);
 
   return (
-    <div style={{ maxWidth: 1300, margin: '0 auto', padding: '0 60px 80px' }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 32 }}>
+    <div style={{ maxWidth: 1300, margin: '0 auto', padding: '0 clamp(16px, 5vw, 60px) 80px' }}>
+      <div className="sc-flex-col-md" style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 20, marginBottom: 32 }}>
         <div>
           <div style={{ fontSize: 10, letterSpacing: '0.25em', textTransform: 'uppercase', color: '#F07814', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12 }}>
             Reviews
             <span style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.25)' }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 16 }}>
-            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 48, fontWeight: 300, color: '#3A3530' }}>
+            <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 'clamp(36px, 8vw, 48px)', fontWeight: 300, color: '#3A3530' }}>
               {averageRating.toFixed(1)}
             </span>
             <div>
@@ -120,7 +120,7 @@ export function ReviewsBlock({
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: columns === 2 ? 28 : 24 }}>
+      <div className={columns === 2 ? 'sc-cards-2' : 'sc-cards-3'} style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: columns === 2 ? 28 : 24 }}>
         {reviews.map((r) => (
           <div key={r.id} style={{ background: '#fff', border: '1px solid rgba(240,120,20,0.1)', borderRadius: 12, padding: 24 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
