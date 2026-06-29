@@ -89,11 +89,23 @@ All 9 flow pages: stacked the `1fr 320–420px` form+summary layouts with
 Deferred minor items: book Calendly embed height (660px, tall but usable);
 sticky-sidebar top offsets (acceptable once stacked).
 
+## Phase 2 — Detail pages (DONE 2026-06-29)
+
+| File | Changes |
+|------|---------|
+| `guides/[slug]` | main grid already had a working `@media(900px)` block — added: clamp header padding + name; `.sc-cards-2` on blog + testimonials grids; clamped event/tour card image widths |
+| `events/[id]` | clamp container + card paddings; title → clamp; info grid `minmax(200→150px)` |
+| `tours/[slug]` | hero `height:540` + paddings → clamp; title → clamp; main `1fr 380px` → `.sc-stack-lg`; highlights/included grids → `.sc-cards-2`; room card `1fr auto` → `.sc-stack-md` |
+| `shop/[id]` | gallery+info `1fr 1fr` (+ skeleton) → `.sc-stack-md`; clamp paddings + gap; feature badges → `.sc-cards-2` |
+| `journal/[guideSlug]/[postSlug]` | title/subtitle → clamp; hero image `height:520` → clamp; related posts `repeat(3)` → `.sc-cards-3` |
+
+Note: `guides/[slug]` proved its main two-col layout was ALREADY responsive via
+a styled-jsx `@media(max-width:900px)` block — only the secondary grids/headings
+needed work.
+
 ## Remaining phases (TODO)
 
 - **Phase 2 (cont.) — page sweeps:**
-  - **Detail** (guides/[slug], events/[id], tours/[slug], shop/[id], journal post)
-    — stack content+sidebar (`.sc-stack-lg`/`-md`), wrap card rows, clamp headings.
   - **Listing** (practitioners, events, journal, shop, travels) — card grids to
     `.sc-cards-4/3`, fix the too-late 860/960px breakpoints, clamp hero paddings.
   - **Home sections** — minor padding clamps.

@@ -209,7 +209,7 @@ export default function TourDetailPage() {
   return (
     <div style={{ background: C.offWhite, minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
       {/* ─── HERO ───────────────────────────────────────────────────────── */}
-      <section style={{ position: 'relative', height: 540, overflow: 'hidden', background: 'linear-gradient(135deg, #2C2420, #3A3530)' }}>
+      <section style={{ position: 'relative', height: 'clamp(360px, 60vh, 540px)', overflow: 'hidden', background: 'linear-gradient(135deg, #2C2420, #3A3530)' }}>
         {heroImage && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -225,7 +225,7 @@ export default function TourDetailPage() {
           background: 'linear-gradient(to bottom, rgba(44,36,32,0.4) 0%, rgba(44,36,32,0.85) 100%)',
         }} />
         <div style={{
-          position: 'relative', maxWidth: 1200, margin: '0 auto', padding: '48px 48px',
+          position: 'relative', maxWidth: 1200, margin: '0 auto', padding: 'clamp(24px, 5vw, 48px)',
           height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 16,
         }}>
           <Link href="/travels" style={{
@@ -260,7 +260,7 @@ export default function TourDetailPage() {
             )}
           </div>
           <h1 style={{
-            fontFamily: serif, fontSize: 56, fontWeight: 400,
+            fontFamily: serif, fontSize: 'clamp(32px, 7vw, 56px)', fontWeight: 400,
             color: C.white, lineHeight: 1.05, maxWidth: 900,
           }}>
             {tour.title}
@@ -281,8 +281,8 @@ export default function TourDetailPage() {
       </section>
 
       {/* ─── BODY ──────────────────────────────────────────────────────── */}
-      <section style={{
-        maxWidth: 1200, margin: '0 auto', padding: '64px 48px',
+      <section className="sc-stack-lg" style={{
+        maxWidth: 1200, margin: '0 auto', padding: 'clamp(32px, 5vw, 64px) clamp(16px, 5vw, 48px)',
         display: 'grid', gridTemplateColumns: '1fr 380px', gap: 56, alignItems: 'start',
       }}>
         {/* ─── LEFT: content ───────────────────────────────────────────── */}
@@ -337,7 +337,7 @@ export default function TourDetailPage() {
           {tour.highlights.length > 0 && (
             <div style={{ marginBottom: 56 }}>
               <SectionHeader>Highlights</SectionHeader>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div className="sc-cards-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 {tour.highlights.map((h, i) => (
                   <div
                     key={i}
@@ -436,7 +436,7 @@ export default function TourDetailPage() {
               <SectionHeader>Accommodation options</SectionHeader>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {tour.roomTypes.map((rt) => (
-                  <div key={rt.id} style={{
+                  <div key={rt.id} className="sc-stack-md" style={{
                     background: C.white, border: '1px solid rgba(240,120,20,0.15)', borderRadius: 12,
                     padding: 24, display: 'grid', gridTemplateColumns: '1fr auto', gap: 24, alignItems: 'center',
                   }}>
@@ -485,7 +485,7 @@ export default function TourDetailPage() {
           {(tour.included.length > 0 || tour.notIncluded.length > 0) && (
             <div style={{ marginBottom: 56 }}>
               <SectionHeader>What's included</SectionHeader>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+              <div className="sc-cards-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
                 {tour.included.length > 0 && (
                   <div>
                     <div style={{

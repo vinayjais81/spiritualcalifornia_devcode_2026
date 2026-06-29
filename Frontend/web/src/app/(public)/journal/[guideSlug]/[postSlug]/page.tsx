@@ -109,7 +109,7 @@ export default function SinglePostPage() {
         {/* Title */}
         <h1 style={{
           fontFamily: "'Playfair Display', serif",
-          fontSize: 52, fontWeight: 400, color: '#3A3530', lineHeight: 1.15, marginBottom: 12,
+          fontSize: 'clamp(30px, 6vw, 52px)', fontWeight: 400, color: '#3A3530', lineHeight: 1.15, marginBottom: 12,
         }}>
           {post.title}
         </h1>
@@ -118,7 +118,7 @@ export default function SinglePostPage() {
         {post.excerpt && (
           <p style={{
             fontFamily: "'Playfair Display', serif",
-            fontSize: 22, fontStyle: 'italic', color: '#8A8278',
+            fontSize: 'clamp(16px, 4vw, 22px)', fontStyle: 'italic', color: '#8A8278',
             lineHeight: 1.5, marginBottom: 32,
           }}>
             {post.excerpt}
@@ -167,7 +167,7 @@ export default function SinglePostPage() {
       {post.coverImageUrl && (
         <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 24px' }}>
           <img src={post.coverImageUrl} alt={post.title} style={{
-            width: '100%', height: 520, objectFit: 'cover', borderRadius: 12,
+            width: '100%', height: 'clamp(220px, 50vw, 520px)', objectFit: 'cover', borderRadius: 12,
           }} />
         </div>
       )}
@@ -278,7 +278,7 @@ export default function SinglePostPage() {
             You May Also Like
             <span style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.25)' }} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          <div className="sc-cards-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
             {related.map((rp) => (
               <PostCard
                 key={rp.id}

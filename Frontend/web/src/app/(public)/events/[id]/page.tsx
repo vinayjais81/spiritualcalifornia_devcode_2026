@@ -123,11 +123,11 @@ export default function EventDetailPage() {
         )}
       </div>
 
-      <div style={{ maxWidth: 980, margin: '-60px auto 0', padding: '0 48px 80px', position: 'relative', zIndex: 2 }}>
+      <div style={{ maxWidth: 980, margin: '-60px auto 0', padding: '0 clamp(16px, 5vw, 48px) 80px', position: 'relative', zIndex: 2 }}>
         <div style={{
           background: '#fff', borderRadius: 20,
           boxShadow: '0 8px 40px rgba(58,53,48,0.08)',
-          padding: '40px 48px',
+          padding: 'clamp(24px, 5vw, 40px) clamp(20px, 5vw, 48px)',
         }}>
           <div style={{
             fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase',
@@ -137,7 +137,7 @@ export default function EventDetailPage() {
           </div>
           <h1 style={{
             fontFamily: "'Playfair Display', serif",
-            fontSize: 40, fontWeight: 400, color: '#3A3530',
+            fontSize: 'clamp(28px, 5vw, 40px)', fontWeight: 400, color: '#3A3530',
             lineHeight: 1.2, marginBottom: 20,
           }}>
             {event.title}
@@ -185,7 +185,7 @@ export default function EventDetailPage() {
           </Link>
 
           <div style={{
-            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
             gap: 16, marginBottom: 32,
             padding: '20px 0',
             borderTop: '1px solid rgba(240,120,20,0.15)',

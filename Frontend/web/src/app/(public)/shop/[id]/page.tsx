@@ -143,8 +143,8 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div style={{ maxWidth: 1300, margin: '0 auto', padding: '100px 60px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80 }}>
+      <div style={{ maxWidth: 1300, margin: '0 auto', padding: '100px clamp(16px, 5vw, 60px)' }}>
+        <div className="sc-stack-md" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80 }}>
           <div style={{ aspectRatio: '1/1', background: '#FEF7F0', borderRadius: 16 }} />
           <div>
             <div style={{ height: 16, background: '#f0eeeb', borderRadius: 4, width: '30%', marginBottom: 16 }} />
@@ -193,10 +193,10 @@ export default function ProductDetailPage() {
       </div>
 
       {/* Product Layout */}
-      <div style={{
+      <div className="sc-stack-md" style={{
         maxWidth: 1300, margin: '0 auto',
-        padding: '40px 60px 80px',
-        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80,
+        padding: '40px clamp(16px, 5vw, 60px) 80px',
+        display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(32px, 5vw, 80px)',
       }}>
         {/* LEFT — Image / Gallery */}
         <div>
@@ -412,7 +412,7 @@ export default function ProductDetailPage() {
 
           {/* Feature badges (physical) */}
           {!isDigital && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 32 }}>
+            <div className="sc-cards-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 32 }}>
               {[
                 { icon: '💎', title: 'Sterling Silver', sub: '925 hallmarked' },
                 { icon: '✦', title: '18K Gold Accent', sub: 'Hand-applied' },

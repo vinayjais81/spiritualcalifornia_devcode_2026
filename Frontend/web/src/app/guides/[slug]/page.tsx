@@ -289,7 +289,7 @@ export default function GuideProfilePage() {
 
       {/* ── PROFILE HEADER ───────────────────────────────────────────── */}
       <div style={{ background: C.white, borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 48px', position: 'relative' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 clamp(16px, 5vw, 48px)', position: 'relative' }}>
           {/* Avatar */}
           <div style={{ position: 'absolute', top: '-80px', left: '48px' }}>
             <div style={{ position: 'relative', width: '160px', height: '160px' }}>
@@ -316,7 +316,7 @@ export default function GuideProfilePage() {
             <div style={{ flex: 1 }}>
               {/* Name row */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', marginBottom: '6px' }}>
-                <h1 style={{ fontFamily: serif, fontSize: '36px', fontWeight: 500, color: C.charcoal, margin: 0 }}>
+                <h1 style={{ fontFamily: serif, fontSize: 'clamp(26px, 6vw, 36px)', fontWeight: 500, color: C.charcoal, margin: 0 }}>
                   {guide.displayName}
                 </h1>
                 {guide.isVerified && (
@@ -482,7 +482,7 @@ export default function GuideProfilePage() {
                       transition: 'box-shadow 0.3s',
                     }}>
                       <div style={{
-                        width: '140px', flexShrink: 0,
+                        width: 'clamp(90px, 28vw, 140px)', flexShrink: 0,
                         background: 'linear-gradient(135deg, #4A3C30, #6B5240)',
                         position: 'relative', overflow: 'hidden',
                       }}>
@@ -547,7 +547,7 @@ export default function GuideProfilePage() {
                     }}
                   >
                     <div style={{
-                      width: '180px', flexShrink: 0,
+                      width: 'clamp(110px, 32vw, 180px)', flexShrink: 0,
                       background: t.coverImageUrl
                         ? `url(${t.coverImageUrl}) center/cover`
                         : 'linear-gradient(135deg, #2C2420, #3A3530)',
@@ -608,7 +608,7 @@ export default function GuideProfilePage() {
           {guide.blogPosts.length > 0 && (
             <div style={{ marginBottom: '40px' }}>
               <SectionTitle>From {guide.displayName.split(' ')[0]}&apos;s Journal</SectionTitle>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div className="sc-cards-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 {guide.blogPosts.slice(0, 4).map((post) => (
                   <Link key={post.id} href={`/journal/${guide.slug}/${post.slug}`} style={{
                     background: C.white, border: '1px solid rgba(240,120,20,0.12)',
@@ -742,7 +742,7 @@ export default function GuideProfilePage() {
               <h2 style={{ fontFamily: serif, fontSize: '32px', fontWeight: 400, color: C.charcoal, marginBottom: '24px' }}>
                 What Colleagues Say
               </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <div className="sc-cards-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 {guide.testimonials.map((t) => (
                   <div key={t.id} style={{
                     background: C.white, border: '1px solid rgba(240,120,20,0.12)',
