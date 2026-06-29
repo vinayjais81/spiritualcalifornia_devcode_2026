@@ -936,8 +936,14 @@ export class AdminService {
     const { page, limit } = params;
     const skip = (page - 1) * limit;
 
+    // Surface both PENDING (registered, not yet submitted) and IN_REVIEW
+    // (submitted for review) guides. approveGuide() already accepts both, so
+    // listing only PENDING stranded IN_REVIEW guides — they could never be
+    // approved, leaving their public profile permanently 404'd.
     const queueWhere = {
-      verificationStatus: VerificationStatus.PENDING,
+      verificationStatus: {
+        in: [VerificationStatus.PENDING, VerificationStatus.IN_REVIEW],
+      },
     };
 
     const [guides, total] = await Promise.all([
