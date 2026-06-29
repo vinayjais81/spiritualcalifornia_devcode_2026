@@ -155,7 +155,7 @@ export default function VerifyTicketPage() {
             Hosted by {ticket.event.guideName}
           </p>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px', fontSize: 13 }}>
+          <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px', fontSize: 13 }}>
             <Detail label="Date" value={formatDate(ticket.event.startTime)} />
             <Detail label="Time" value={`${formatTime(ticket.event.startTime)} - ${formatTime(ticket.event.endTime)}`} />
             <Detail label="Location" value={ticket.event.location || 'Online'} />
@@ -172,7 +172,7 @@ export default function VerifyTicketPage() {
         <h3 style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray, margin: '0 0 14px', fontWeight: 500 }}>
           Attendee Details
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px', fontSize: 13 }}>
+        <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px', fontSize: 13 }}>
           <Detail label="Name" value={ticket.attendee.name || '-'} />
           <Detail label="Email" value={ticket.attendee.email || '-'} />
           <Detail label="Ticket Tier" value={ticket.tier.name} />

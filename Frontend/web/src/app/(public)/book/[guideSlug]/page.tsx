@@ -468,8 +468,8 @@ export default function BookPractitionerPage() {
       </div>
 
       {/* ── Main Content Grid ────────────────────────────────────── */}
-      <div style={{
-        maxWidth: '1060px', margin: '32px auto', padding: '0 32px',
+      <div className="sc-stack-lg" style={{
+        maxWidth: '1060px', margin: '32px auto', padding: '0 clamp(16px, 5vw, 32px)',
         display: 'grid', gridTemplateColumns: '1fr 320px', gap: '48px', alignItems: 'start',
       }}>
 
@@ -579,7 +579,7 @@ export default function BookPractitionerPage() {
                     <p style={{ fontFamily: font, fontSize: '12px', color: C.warmGray, marginBottom: '14px', lineHeight: 1.5 }}>
                       After scheduling in Calendly above, enter the date and time you booked:
                     </p>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                    <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                         <label style={{ fontFamily: font, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase' as const, color: C.warmGray, fontWeight: 500 }}>Date *</label>
                         <input type="date" id="manual-date" min={new Date().toISOString().split('T')[0]} style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.offWhite, border: '1px solid rgba(240,120,20,0.25)', borderRadius: '6px', padding: '11px 14px', outline: 'none', width: '100%' }} />
@@ -628,7 +628,7 @@ export default function BookPractitionerPage() {
 
               <div style={{ marginBottom: '28px' }}>
                 <h3 style={{ fontFamily: font, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase' as const, color: C.warmGray, marginBottom: '14px', fontWeight: 500 }}>Contact Information</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <FormField label="First Name *" value={details.firstName} onChange={v => setDetails(d => ({ ...d, firstName: v }))} placeholder="Your first name" />
                   <FormField label="Last Name *" value={details.lastName} onChange={v => setDetails(d => ({ ...d, lastName: v }))} placeholder="Your last name" />
                   <FormField label="Email *" value={details.email} onChange={v => setDetails(d => ({ ...d, email: v }))} type="email" placeholder="you@example.com" />

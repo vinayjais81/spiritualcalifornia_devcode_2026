@@ -280,7 +280,7 @@ export default function CheckoutPage() {
         current={1}
       />
 
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '40px 48px 80px', display: 'grid', gridTemplateColumns: '1fr 420px', gap: 48 }}>
+      <div className="sc-stack-lg" style={{ maxWidth: 1200, margin: '0 auto', padding: '40px clamp(16px, 5vw, 48px) 80px', display: 'grid', gridTemplateColumns: '1fr 420px', gap: 48 }}>
         <div>
           {/* Instant-delivery banner — shown when cart has any digital item */}
           {hasDigital && (
@@ -309,7 +309,7 @@ export default function CheckoutPage() {
 
           {/* Contact — always required */}
           <SectionTitle>Contact Information</SectionTitle>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 28 }}>
+          <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 28 }}>
             <Input label="Email" full value={form.email} onChange={(v) => setForm({ ...form, email: v })} type="email" placeholder="you@example.com" />
             <Input label="First Name" value={form.firstName} onChange={(v) => setForm({ ...form, firstName: v })} />
             <Input label="Last Name" value={form.lastName} onChange={(v) => setForm({ ...form, lastName: v })} />
@@ -322,7 +322,7 @@ export default function CheckoutPage() {
           {hasPhysical && (
             <>
               <SectionTitle>Shipping Address</SectionTitle>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
+              <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 20 }}>
                 <Input label="Street Address" full value={form.street} onChange={(v) => setForm({ ...form, street: v })} />
                 <Input label="Apt / Suite (optional)" full value={form.apartment} onChange={(v) => setForm({ ...form, apartment: v })} />
                 <Input label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} />

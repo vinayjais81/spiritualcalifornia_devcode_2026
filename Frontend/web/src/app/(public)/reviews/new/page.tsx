@@ -79,7 +79,7 @@ function WriteReviewInner() {
 
   if (loading) {
     return (
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '80px 32px', textAlign: 'center' }}>
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: '80px clamp(16px, 5vw, 32px)', textAlign: 'center' }}>
         <div style={{ fontSize: 14, color: '#8A8278' }}>Checking eligibility…</div>
       </div>
     );
@@ -127,7 +127,7 @@ function WriteReviewInner() {
   const guideName = eligibility.guideName ?? 'your guide';
 
   return (
-    <div style={{ maxWidth: 640, margin: '0 auto', padding: '40px 32px 80px' }}>
+    <div style={{ maxWidth: 640, margin: '0 auto', padding: '40px clamp(16px, 5vw, 32px) 80px' }}>
       <div style={{ textAlign: 'center', marginBottom: 40 }}>
         <div style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#F07814', marginBottom: 10 }}>
           ✦ Share Your Experience

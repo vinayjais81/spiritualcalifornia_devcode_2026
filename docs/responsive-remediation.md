@@ -68,13 +68,30 @@ High leverage — these are reused across many pages, so one fix propagates wide
 Carousel card widths read `offsetWidth` dynamically, so responsive widths don't
 break the scroll math.
 
+## Phase 2 — Commerce / checkout (DONE 2026-06-29)
+
+All 9 flow pages: stacked the `1fr 320–420px` form+summary layouts with
+`.sc-stack-lg` (collapse ≤1024), single-column form fields with `.sc-form2`
+(≤768), and clamped the `32–48px` side paddings.
+
+| File | Changes |
+|------|---------|
+| `cart` | `.sc-stack-lg` on items+summary; clamp padding (both states) |
+| `checkout` | `.sc-stack-lg`; `.sc-form2` on contact + shipping grids; clamp padding |
+| `checkout/event` | `.sc-stack-lg`; `.sc-form2` on attendee grid; clamp padding |
+| `book/[guideSlug]` | `.sc-stack-lg`; `.sc-form2` on manual-time + contact grids; clamp padding |
+| `tours/[slug]/book` | `.sc-stack-lg`; `.sc-form2` ×5 (departures, traveler, health, deposit, included); clamp paddings |
+| `events/[id]/checkout` | `.sc-stack-lg` (conditional grid); `.sc-form2` on attendee; clamp padding |
+| `downloads` | clamp paddings (loading + main) |
+| `reviews/new` | clamp paddings (loading + main) |
+| `verify-ticket/[id]` | `.sc-form2` on both detail grids |
+
+Deferred minor items: book Calendly embed height (660px, tall but usable);
+sticky-sidebar top offsets (acceptable once stacked).
+
 ## Remaining phases (TODO)
 
-- **Phase 2 — Page sweeps, worst-first** (apply the same patterns + foundation classes):
-  - **Commerce/checkout** (worst: cart, checkout, checkout/event, book/[guideSlug],
-    tours/[slug]/book, events/[id]/checkout, downloads, reviews/new, verify-ticket)
-    — stack `1fr 360–420px` summaries (`.sc-stack-lg`), single-col forms (`.sc-form2`),
-    clamp paddings.
+- **Phase 2 (cont.) — page sweeps:**
   - **Detail** (guides/[slug], events/[id], tours/[slug], shop/[id], journal post)
     — stack content+sidebar (`.sc-stack-lg`/`-md`), wrap card rows, clamp headings.
   - **Listing** (practitioners, events, journal, shop, travels) — card grids to

@@ -47,7 +47,7 @@ export default function EventCheckoutPage() {
       </div>
       <CheckoutProgress steps={['Cart', 'Attendee Details', 'Payment', 'Your Tickets']} current={1} />
 
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 48px 80px', display: 'grid', gridTemplateColumns: '1fr 360px', gap: 48 }}>
+      <div className="sc-stack-lg" style={{ maxWidth: 1000, margin: '0 auto', padding: '40px clamp(16px, 5vw, 48px) 80px', display: 'grid', gridTemplateColumns: '1fr 360px', gap: 48 }}>
         <div>
           {/* Event card */}
           {eventItems[0] && (
@@ -77,7 +77,7 @@ export default function EventCheckoutPage() {
                 <span style={{ width: 28, height: 28, borderRadius: '50%', background: '#F07814', color: '#3A3530', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#3A3530' }}>Attendee {i + 1}</span>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                 {(['firstName', 'lastName', 'email', 'requirements'] as const).map((field, fi) => (
                   <div key={field} style={{ gridColumn: fi >= 2 ? '1 / -1' : undefined, display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <label style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#8A8278' }}>

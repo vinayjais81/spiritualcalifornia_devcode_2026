@@ -279,7 +279,7 @@ export default function CartPage() {
   // as the populated-cart return so spacing matches.
   if (items.length === 0) {
     return (
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 48px 80px' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px clamp(16px, 5vw, 48px) 80px' }}>
         <div style={{ maxWidth: 600, margin: '0 auto', padding: '60px 0', textAlign: 'center' }}>
           <span style={{ fontSize: 64, display: 'block', marginBottom: 24 }}>🛍️</span>
           <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 400, color: '#3A3530', marginBottom: 10 }}>
@@ -389,7 +389,7 @@ export default function CartPage() {
   }
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 48px 80px' }}>
+    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px clamp(16px, 5vw, 48px) 80px' }}>
       <h1 style={{
         fontFamily: "'Playfair Display', serif",
         fontSize: 32, fontWeight: 400, color: '#3A3530', marginBottom: 6,
@@ -447,7 +447,7 @@ export default function CartPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 48 }}>
+      <div className="sc-stack-lg" style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 48 }}>
         {/* Left: Cart items */}
         <div>
           {/* Group by type */}

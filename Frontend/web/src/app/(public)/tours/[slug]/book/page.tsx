@@ -500,7 +500,7 @@ export default function BookTourPage() {
         {/* Legal receipt — CST §17550.13 requires the receipt the
             customer sees on screen (not just emailed) to carry the
             full statutory disclosures. */}
-        <div style={{ maxWidth: 560, margin: '0 auto', padding: '0 32px 80px' }}>
+        <div style={{ maxWidth: 560, margin: '0 auto', padding: '0 clamp(16px, 5vw, 32px) 80px' }}>
           <LegalReceiptBlock />
         </div>
       </>
@@ -556,8 +556,8 @@ export default function BookTourPage() {
 
       <StepNav steps={STEPS} current={step} onChange={(s) => s < step && setStep(s)} />
 
-      <div style={{
-        maxWidth: 1060, margin: '0 auto', padding: '40px 32px 80px',
+      <div className="sc-stack-lg" style={{
+        maxWidth: 1060, margin: '0 auto', padding: '40px clamp(16px, 5vw, 32px) 80px',
         display: 'grid', gridTemplateColumns: '1fr 340px', gap: 48,
       }}>
         {/* ─── LEFT: step content ─────────────────────────────────────── */}
@@ -580,7 +580,7 @@ export default function BookTourPage() {
                   No upcoming departures available. Please check back soon or contact the guide for private group bookings.
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   {upcomingDepartures.map((d) => {
                     const isSelected = selectedDeparture === d.id;
                     const fewSpots = d.spotsRemaining <= 3 && d.spotsRemaining > 0;
@@ -812,7 +812,7 @@ export default function BookTourPage() {
                   <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 500, color: C.charcoal, marginBottom: 4, paddingBottom: 12, borderBottom: '1px solid rgba(240,120,20,0.15)' }}>
                     {i === 0 ? 'Primary Traveler' : `Traveler ${i + 1}`}
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 16 }}>
+                  <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginTop: 16 }}>
                     <FormField
                       label="First Name"
                       value={t.firstName}
@@ -866,7 +866,7 @@ export default function BookTourPage() {
                 <div style={{ fontFamily: serif, fontSize: 18, fontWeight: 500, color: C.charcoal, marginBottom: 16, paddingBottom: 12, borderBottom: '1px solid rgba(240,120,20,0.15)' }}>
                   Health &amp; Preferences
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <FieldLabel>Dietary Requirements</FieldLabel>
                     <select
@@ -991,7 +991,7 @@ export default function BookTourPage() {
                 <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 16 }}>
                   Minimum deposit ${minDepositTotal.toLocaleString()} (${minDepositPerPerson}/person × {travelersCount})
                 </p>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   {depositOptions.map((opt, i) => {
                     const isSelected = chosenDeposit === opt.amount;
                     return (
@@ -1193,7 +1193,7 @@ export default function BookTourPage() {
                 <div style={{ fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray, marginTop: 16, marginBottom: 10 }}>
                   What&apos;s Included
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
                   {tour.included.slice(0, 6).map((item, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: C.charcoal }}>
                       <span style={{ color: C.gold }}>✓</span> {item}

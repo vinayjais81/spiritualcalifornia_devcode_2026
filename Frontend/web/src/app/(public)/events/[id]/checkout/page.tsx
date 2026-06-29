@@ -267,7 +267,7 @@ export default function EventCheckoutPage() {
       </div>
 
       {/* Main content */}
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '40px 32px 80px', display: 'grid', gridTemplateColumns: step === 3 ? '1fr' : '1fr 360px', gap: 48, alignItems: 'start' }}>
+      <div className="sc-stack-lg" style={{ maxWidth: 1000, margin: '0 auto', padding: '40px clamp(16px, 4vw, 32px) 80px', display: 'grid', gridTemplateColumns: step === 3 ? '1fr' : '1fr 360px', gap: 48, alignItems: 'start' }}>
         <div>
           {/* Event card */}
           <div style={{ background: C.charcoal, borderRadius: 10, padding: 24, marginBottom: 28, display: 'flex', gap: 20, alignItems: 'center' }}>
@@ -362,7 +362,7 @@ export default function EventCheckoutPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+                  <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
                     <div><Label>First Name</Label><input style={inputStyle} type="text" placeholder="First name" value={a.firstName} onChange={(e) => updateAttendee(i, 'firstName', e.target.value)} /></div>
                     <div><Label>Last Name</Label><input style={inputStyle} type="text" placeholder="Last name" value={a.lastName} onChange={(e) => updateAttendee(i, 'lastName', e.target.value)} /></div>
                   </div>

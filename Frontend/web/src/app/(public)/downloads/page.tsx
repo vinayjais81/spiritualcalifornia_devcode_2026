@@ -56,7 +56,7 @@ export default function DownloadsPage() {
 
   if (loading) {
     return (
-      <div style={{ maxWidth: 900, margin: '0 auto', padding: '80px 48px' }}>
+      <div style={{ maxWidth: 900, margin: '0 auto', padding: '80px clamp(16px, 5vw, 48px)' }}>
         <div style={{ height: 32, background: '#f0eeeb', borderRadius: 4, width: '40%', marginBottom: 24 }} />
         {[1, 2, 3].map(i => (
           <div key={i} style={{ display: 'flex', gap: 16, marginBottom: 16, padding: 20, background: '#fff', borderRadius: 12, border: '1px solid rgba(240,120,20,0.1)' }}>
@@ -72,7 +72,7 @@ export default function DownloadsPage() {
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px 48px 80px' }}>
+    <div style={{ maxWidth: 900, margin: '0 auto', padding: '40px clamp(16px, 5vw, 48px) 80px' }}>
       <div style={{ marginBottom: 32 }}>
         <div style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#F07814', marginBottom: 8 }}>
           ✦ My Library
