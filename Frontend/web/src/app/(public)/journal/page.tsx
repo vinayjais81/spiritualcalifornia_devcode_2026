@@ -98,7 +98,7 @@ export default function JournalPage() {
     <>
       {/* Page Hero */}
       <div style={{
-        textAlign: 'center', padding: '72px 48px 48px',
+        textAlign: 'center', padding: '72px clamp(16px, 5vw, 48px) 48px',
         background: 'linear-gradient(180deg, #fff 0%, #F5F2EB 100%)',
       }}>
         <div style={{
@@ -109,7 +109,7 @@ export default function JournalPage() {
         </div>
         <h1 style={{
           fontFamily: "'Playfair Display', serif",
-          fontSize: 48, fontWeight: 400, color: '#3A3530', lineHeight: 1.15, marginBottom: 10,
+          fontSize: 'clamp(28px, 6vw, 48px)', fontWeight: 400, color: '#3A3530', lineHeight: 1.15, marginBottom: 10,
         }}>
           Stories, Practices &amp; Wisdom
         </h1>
@@ -224,7 +224,7 @@ export default function JournalPage() {
         </div>
 
         {loading ? (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28 }}>
+          <div className="sc-cards-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28 }}>
             {[...Array(6)].map((_, i) => (
               <div key={i} style={{ background: '#fff', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(240,120,20,0.1)' }}>
                 <div style={{ height: 190, background: '#FEF7F0' }} />
@@ -245,7 +245,7 @@ export default function JournalPage() {
             No articles yet. Check back soon — new stories land here from our verified practitioners.
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28 }}>
+          <div className="sc-cards-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28 }}>
             {remaining.map((post) => (
               <PostCard
                 key={post.id}

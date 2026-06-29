@@ -84,7 +84,7 @@ export function Navbar() {
           display: 'grid',
           gridTemplateColumns: '1fr auto 1fr',
           alignItems: 'center',
-          padding: '14px 48px',
+          padding: '14px clamp(16px, 4vw, 48px)',
           background: 'rgba(250,250,247,0.96)',
           backdropFilter: 'blur(14px)',
           borderBottom: '1px solid rgba(240,120,20,0.12)',

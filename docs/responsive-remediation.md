@@ -103,14 +103,33 @@ Note: `guides/[slug]` proved its main two-col layout was ALREADY responsive via
 a styled-jsx `@media(max-width:900px)` block — only the secondary grids/headings
 needed work.
 
-## Remaining phases (TODO)
+## Phase 2 — Listing pages (DONE 2026-06-29)
 
-- **Phase 2 (cont.) — page sweeps:**
-  - **Listing** (practitioners, events, journal, shop, travels) — card grids to
-    `.sc-cards-4/3`, fix the too-late 860/960px breakpoints, clamp hero paddings.
-  - **Home sections** — minor padding clamps.
-- **Phase 3 — Layout polish:** Navbar padding `14px 48px` → clamp; Footer padding.
-- **Phase 4 — QA:** verify at 375 / 768 / 1024 widths on the live QA box.
+| File | Changes |
+|------|---------|
+| `practitioners` | grids already responsive (existing `@media` 1100/900/768/560/480 block) — clamped AI-bar, header, filter-bar paddings + h1 |
+| `events` | grids already responsive (`.events-layout` 960px, `.event-card-grid` 700px) — clamped hero padding + h1 |
+| `journal` | both product grids `repeat(3)` (had NO media) → `.sc-cards-3`; clamp hero padding + h1 |
+| `shop` | both product grids `repeat(4)` (had NO media) → `.sc-cards-4`; clamp container padding |
+| `travels` | tour grid already collapses (`.tour-grid` @860px); clamped hero `minHeight:520`, padding, h1 `64px` |
+
+Several listing pages already had partial `@media` blocks — the work was a mix
+of adding `.sc-cards-*` (journal/shop) and clamping heros/headings the existing
+blocks didn't cover.
+
+## Phase 3 — Layout polish (DONE 2026-06-29)
+
+- `Navbar` padding `14px 48px` → `14px clamp(16px,4vw,48px)`.
+- `Footer` padding `56px 60px 36px` → clamp side padding.
+- (Footer grid already collapsed via its own `@media`; Navbar hamburger already worked.)
+
+## Remaining (TODO)
+
+- **Home sections** — mostly already responsive (HeroSection + SoulTravelsBanner
+  have their own `@media`; section paddings are horizontal-0 so no overflow).
+  Optional micro-polish: hide HeroSection decorative background SVGs ≤768
+  (`.sc-hide-md`). Low value.
+- **Phase 4 — QA:** verify at 375 / 768 / 1024 widths on the live QA box; fix stragglers.
 
 ## Verification
 

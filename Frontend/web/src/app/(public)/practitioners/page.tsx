@@ -194,7 +194,7 @@ function PractitionersPageInner() {
       <div style={{
         marginTop: 69,
         background: 'linear-gradient(135deg, #F5F2EB 0%, #FDE8D0 100%)',
-        padding: '32px 48px',
+        padding: '32px clamp(16px, 5vw, 48px)',
       }}>
         <div style={{ maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
           <div style={{
@@ -311,10 +311,10 @@ function PractitionersPageInner() {
       </div>
 
       {/* ── PAGE HEADER ───────────────────────────────────────────────── */}
-      <div style={{ padding: '48px 48px 0', maxWidth: 1280, margin: '0 auto' }}>
+      <div style={{ padding: '48px clamp(16px, 5vw, 48px) 0', maxWidth: 1280, margin: '0 auto' }}>
         <h1 style={{
           fontFamily: "'Playfair Display', serif",
-          fontSize: 42, fontWeight: 300, color: '#3A3530', marginBottom: 6,
+          fontSize: 'clamp(28px, 5vw, 42px)', fontWeight: 300, color: '#3A3530', marginBottom: 6,
         }}>
           Our Practitioners
         </h1>
@@ -330,7 +330,7 @@ function PractitionersPageInner() {
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
         borderBottom: '1px solid rgba(240,120,20,0.12)',
-        padding: '16px 48px',
+        padding: '16px clamp(16px, 5vw, 48px)',
         marginTop: 24,
       }}>
         <div style={{

@@ -77,7 +77,7 @@ const colTitleStyle: React.CSSProperties = {
 
 export function Footer() {
   return (
-    <footer style={{ background: '#3A3530', color: 'rgba(255,255,255,0.6)', padding: '56px 60px 36px' }}>
+    <footer style={{ background: '#3A3530', color: 'rgba(255,255,255,0.6)', padding: '56px clamp(16px, 5vw, 60px) 36px' }}>
       {/* Top grid */}
       <div
         style={{

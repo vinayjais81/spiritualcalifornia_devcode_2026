@@ -197,7 +197,7 @@ export default function TravelsPage() {
       {/* ── HERO ────────────────────────────────────────────────────── */}
       <div style={{
         marginTop: 69, position: 'relative', overflow: 'hidden',
-        minHeight: 520, display: 'flex', alignItems: 'flex-end',
+        minHeight: 'clamp(340px, 60vh, 520px)', display: 'flex', alignItems: 'flex-end',
       }}>
         <div style={{
           position: 'absolute', inset: 0,
@@ -214,7 +214,7 @@ export default function TravelsPage() {
         }} />
         <div style={{
           position: 'relative', zIndex: 2, width: '100%',
-          padding: '60px 48px 56px', maxWidth: 1280, margin: '0 auto',
+          padding: '60px clamp(16px, 5vw, 48px) 56px', maxWidth: 1280, margin: '0 auto',
         }}>
           <div style={{
             fontSize: 10, letterSpacing: '0.28em', textTransform: 'uppercase',
@@ -226,7 +226,7 @@ export default function TravelsPage() {
             <span style={{ flex: '0 0 40px', height: 1, background: 'rgba(240,120,20,0.4)' }} />
           </div>
           <h1 style={{
-            fontFamily: "'Playfair Display', serif", fontSize: 64, fontWeight: 300,
+            fontFamily: "'Playfair Display', serif", fontSize: 'clamp(34px, 8vw, 64px)', fontWeight: 300,
             color: '#3A3530', lineHeight: 1.05, marginBottom: 16,
           }}>
             Journey to the<br />

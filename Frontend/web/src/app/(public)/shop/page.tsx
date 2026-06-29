@@ -129,7 +129,7 @@ export default function ShopPage() {
       <CategoryStrip active={activeCategory} onChange={setActiveCategory} />
 
       {/* Store Body */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px 48px 80px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '48px clamp(16px, 5vw, 48px) 80px' }}>
 
         {/* Hero Banner — only shown once we have ≥3 real products */}
         {heroMain && <HeroBanner main={heroMain} side={heroSide} />}
@@ -174,7 +174,7 @@ export default function ShopPage() {
 
         {/* Product Grid */}
         {loading ? (
-          <div style={{
+          <div className="sc-cards-4" style={{
             display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24,
           }}>
             {[...Array(8)].map((_, i) => (
@@ -192,7 +192,7 @@ export default function ShopPage() {
             ))}
           </div>
         ) : (
-          <div style={{
+          <div className="sc-cards-4" style={{
             display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24,
           }}>
             {sortedProducts.map((product) => (

@@ -222,7 +222,7 @@ export default function EventsPage() {
       <div style={{
         marginTop: 69,
         background: 'linear-gradient(135deg, #F5F2EB 0%, #FDE8D0 100%)',
-        padding: '48px 48px 40px', textAlign: 'center',
+        padding: '48px clamp(16px, 5vw, 48px) 40px', textAlign: 'center',
       }}>
         <div style={{
           fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase',
@@ -232,7 +232,7 @@ export default function EventsPage() {
         </div>
         <h1 style={{
           fontFamily: "'Playfair Display', serif",
-          fontSize: 44, fontWeight: 300, color: '#3A3530', marginBottom: 8,
+          fontSize: 'clamp(28px, 5vw, 44px)', fontWeight: 300, color: '#3A3530', marginBottom: 8,
         }}>
           Events &amp; Experiences
         </h1>
