@@ -131,7 +131,7 @@ export default function ContactPage() {
     <div style={{ minHeight: '100vh', background: G.offWhite, display: 'flex', flexDirection: 'column' }}>
       <Navbar />
 
-      <main style={{ flex: 1, maxWidth: 1100, margin: '0 auto', width: '100%', padding: '120px 32px 80px' }}>
+      <main style={{ flex: 1, maxWidth: 1100, margin: '0 auto', width: '100%', padding: '120px clamp(16px, 5vw, 32px) 80px' }}>
 
         {/* Header */}
         <div style={{ marginBottom: 56 }}>
@@ -147,7 +147,7 @@ export default function ContactPage() {
         </div>
 
         {/* Two-column layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 64, alignItems: 'start' }}>
+        <div className="sc-stack-lg" style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: 'clamp(32px, 5vw, 64px)', alignItems: 'start' }}>
 
           {/* ── FORM COLUMN ─────────────────────────────────────────────── */}
           <div>
@@ -187,7 +187,7 @@ export default function ContactPage() {
                 )}
 
                 {/* Name + Email */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+                <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
                   <div>
                     <FieldLabel htmlFor="contact-name" required style={lbl}>Your Name</FieldLabel>
                     <input id="contact-name" style={iStyle('name')} type="text" placeholder="Maya Rosenberg" value={name} onChange={e => setName(e.target.value)} onFocus={() => setFocused('name')} onBlur={() => setFocused(null)} required aria-required="true" />
@@ -199,7 +199,7 @@ export default function ContactPage() {
                 </div>
 
                 {/* Phone + Type */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+                <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
                   <div>
                     <FieldLabel htmlFor="contact-phone" style={lbl}>Phone</FieldLabel>
                     <input id="contact-phone" style={iStyle('phone')} type="tel" placeholder="+1 (415) 000-0000" value={phone} onChange={e => setPhone(e.target.value)} onFocus={() => setFocused('phone')} onBlur={() => setFocused(null)} />
