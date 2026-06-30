@@ -59,6 +59,16 @@ export function Navbar() {
     return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
 
+  // Close the mobile menu on viewport resize (rotating a tablet, switching
+  // device modes, or crossing the desktop breakpoint). Without this, a menu
+  // opened at phone width lingers — with the body scroll-locked — and blanks
+  // the bar once the layout changes.
+  useEffect(() => {
+    const onResize = () => setMenuOpen(false);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
   const handleLogout = async () => {
     await logout();
     setUserMenuOpen(false);
