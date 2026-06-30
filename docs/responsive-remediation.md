@@ -134,6 +134,17 @@ blocks didn't cover.
 - **Phase 4 — QA:** verify at 375 / 768 / 1024 widths on the live QA box; fix
   any stragglers (targeted one-offs, no longer systemic).
 
+## Phase 4 — QA fixes (in progress)
+
+Mobile QA findings as they come in:
+
+- **Home Practitioners carousel** (2026-06-30): (1) arrows were hidden on mobile
+  via `.sc-hide-md` — restored (users want to navigate, not only swipe), moved to
+  `left/right: 4px`; (2) `Carousel.scroll()` now **loops** — Next at the end wraps
+  to the first card, Prev at the start wraps to the last; (3) `PractitionerCard`
+  Verified badge was pinned bottom-right and clipped by the avatar's circular
+  `overflow:hidden` (showed "Verifi…") — re-centered along the bottom arc.
+
 ## Status: code sweep COMPLETE pending visual device QA
 
 Every public surface — shell, shared components, commerce/checkout, detail,

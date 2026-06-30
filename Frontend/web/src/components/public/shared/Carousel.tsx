@@ -17,7 +17,16 @@ export function Carousel({ id, children, scrollAmount = 2 }: CarouselProps) {
     if (!track) return;
     const card = track.querySelector<HTMLElement>('[data-card]');
     const cardWidth = card ? card.offsetWidth + 24 : 300;
-    track.scrollBy({ left: dir * cardWidth * scrollAmount, behavior: 'smooth' });
+    const maxScroll = track.scrollWidth - track.clientWidth;
+    // Loop: when stepping past a boundary, wrap to the other end so the
+    // arrows cycle endlessly (last → first on Next, first → last on Prev).
+    if (dir === 1 && track.scrollLeft >= maxScroll - 4) {
+      track.scrollTo({ left: 0, behavior: 'smooth' });
+    } else if (dir === -1 && track.scrollLeft <= 4) {
+      track.scrollTo({ left: maxScroll, behavior: 'smooth' });
+    } else {
+      track.scrollBy({ left: dir * cardWidth * scrollAmount, behavior: 'smooth' });
+    }
   }
 
   function onTouchStart(e: React.TouchEvent) {
@@ -59,8 +68,7 @@ export function Carousel({ id, children, scrollAmount = 2 }: CarouselProps) {
     <div style={{ position: 'relative', padding: '0 clamp(12px, 5vw, 60px)' }}>
       <button
         aria-label="Previous"
-        className="sc-hide-md"
-        style={{ ...btnStyle, left: '12px' }}
+        style={{ ...btnStyle, left: '4px' }}
         onClick={() => scroll(-1)}
         onMouseEnter={e => {
           const el = e.currentTarget;
@@ -91,8 +99,7 @@ export function Carousel({ id, children, scrollAmount = 2 }: CarouselProps) {
 
       <button
         aria-label="Next"
-        className="sc-hide-md"
-        style={{ ...btnStyle, right: '12px' }}
+        style={{ ...btnStyle, right: '4px' }}
         onClick={() => scroll(1)}
         onMouseEnter={e => {
           const el = e.currentTarget;

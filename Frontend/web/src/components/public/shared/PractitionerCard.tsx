@@ -55,9 +55,13 @@ export function PractitionerCard({
           <div
             title="Verified: identity confirmed, credentials checked, ethics-interviewed, and reviewed on an ongoing basis. See /about#verified-meaning for details."
             style={{
+              // Centered along the bottom arc so the circular `overflow:
+              // hidden` on the avatar doesn't clip the pill's edge (it did
+              // when pinned bottom-right — showed "Verifi…").
               position: 'absolute',
-              bottom: '6px',
-              right: '6px',
+              bottom: '10px',
+              left: '50%',
+              transform: 'translateX(-50%)',
               background: '#FFFFFF',
               borderRadius: '50px',
               padding: '3px 7px',
