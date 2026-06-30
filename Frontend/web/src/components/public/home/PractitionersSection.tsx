@@ -89,13 +89,16 @@ export function PractitionersSection({ guides, blogPosts }: Props) {
       )}
 
       {hasBlogPosts && (
-        <Carousel id="practitioners-feed">
-          {feedCardData.map(card => (
-            <div key={card.title} data-card>
-              <FeedCard {...card} />
-            </div>
-          ))}
-        </Carousel>
+        <>
+          <SectionHeader title="From the Journal" linkLabel="View All" linkHref="/journal" />
+          <Carousel id="practitioners-feed">
+            {feedCardData.map(card => (
+              <div key={card.title} data-card>
+                <FeedCard {...card} />
+              </div>
+            ))}
+          </Carousel>
+        </>
       )}
     </section>
   );
