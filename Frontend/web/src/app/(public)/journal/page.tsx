@@ -122,19 +122,21 @@ export default function JournalPage() {
       <div style={{
         background: '#fff', borderBottom: '1px solid rgba(240,120,20,0.1)',
         position: 'sticky', top: 69, zIndex: 90,
-        padding: '0 48px',
+        padding: '0 clamp(12px, 4vw, 48px)',
       }}>
         <div style={{
           maxWidth: 1200, margin: '0 auto',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          flexWrap: 'wrap', gap: 8,
         }}>
-          <div style={{ display: 'flex', gap: 0 }}>
+          <div className="scrollbar-none" style={{ display: 'flex', gap: 0, overflowX: 'auto', maxWidth: '100%' }}>
             {filterTabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveFilter(tab)}
                 style={{
                   padding: '16px 24px', background: 'none', border: 'none', cursor: 'pointer',
+                  flexShrink: 0, whiteSpace: 'nowrap',
                   fontSize: 12, letterSpacing: '0.06em',
                   fontWeight: activeFilter === tab ? 600 : 400,
                   color: activeFilter === tab ? '#3A3530' : '#8A8278',
