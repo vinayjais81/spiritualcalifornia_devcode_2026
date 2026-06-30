@@ -7,7 +7,7 @@ export function TrustStrip() {
   ];
 
   return (
-    <div style={{
+    <div className="sc-cards-4" style={{
       display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
       gap: 1, background: 'rgba(240,120,20,0.1)',
       border: '1px solid rgba(240,120,20,0.1)',

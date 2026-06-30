@@ -19,7 +19,7 @@ interface HeroBannerProps {
 
 export function HeroBanner({ main, side }: HeroBannerProps) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20, marginBottom: 60 }}>
+    <div className="sc-stack-md" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 20, marginBottom: 60 }}>
       {/* Main hero */}
       <Link href={`/shop/${main.id}`} style={{
         position: 'relative', borderRadius: 16, overflow: 'hidden',

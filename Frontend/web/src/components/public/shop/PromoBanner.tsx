@@ -14,11 +14,12 @@ export function PromoBanner() {
   return (
     <div style={{
       background: 'linear-gradient(135deg, #2C2420 0%, #3A3530 100%)',
-      borderRadius: 16, padding: '40px 48px',
+      borderRadius: 16, padding: 'clamp(28px, 5vw, 40px) clamp(20px, 5vw, 48px)',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      flexWrap: 'wrap', gap: 28,
       marginBottom: 60,
     }}>
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: '1 1 300px' }}>
         <div style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#F07814', marginBottom: 8 }}>
           ✦ Limited Time Offer
         </div>
@@ -32,7 +33,7 @@ export function PromoBanner() {
           Start your spiritual journey with curated tools, crystals, and digital resources from verified practitioners.
         </p>
       </div>
-      <div style={{ flexShrink: 0, marginLeft: 40, textAlign: 'center' }}>
+      <div style={{ flexShrink: 0, textAlign: 'center' }}>
         <div style={{
           fontFamily: "'Playfair Display', serif",
           fontSize: 42, fontWeight: 600, color: '#F07814', letterSpacing: '0.08em', marginBottom: 8,
