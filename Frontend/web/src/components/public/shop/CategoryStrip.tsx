@@ -25,9 +25,14 @@ export function CategoryStrip({ active, onChange }: CategoryStripProps) {
       borderBottom: '1px solid rgba(240,120,20,0.1)',
       position: 'sticky', top: 69, zIndex: 90,
     }}>
-      <div style={{
-        maxWidth: 1400, margin: '0 auto', padding: '0 24px',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      <div className="scrollbar-none" style={{
+        maxWidth: 1400, margin: '0 auto', padding: '0 clamp(12px, 4vw, 24px)',
+        display: 'flex', alignItems: 'center',
+        // `safe center` keeps the strip centered when it fits but falls back to
+        // start-alignment when it overflows — without this (plain `center`) the
+        // leftmost categories get pushed off-screen and are unreachable by
+        // horizontal scroll on mobile.
+        justifyContent: 'safe center',
         overflowX: 'auto', scrollbarWidth: 'none' as const,
       }}>
         {categories.map((cat) => (

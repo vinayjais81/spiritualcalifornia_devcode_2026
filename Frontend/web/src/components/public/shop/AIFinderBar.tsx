@@ -82,7 +82,7 @@ export function AIFinderBar() {
   return (
     <div style={{
       background: 'linear-gradient(135deg, #F5F2EB 0%, #FDE8D0 100%)',
-      padding: '36px 48px',
+      padding: '36px clamp(16px, 5vw, 48px)',
     }}>
       <div style={{ maxWidth: 860, margin: '0 auto', textAlign: 'center' }}>
         <div style={{
