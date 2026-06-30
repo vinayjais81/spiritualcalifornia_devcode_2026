@@ -148,11 +148,12 @@ export default function JournalPage() {
               </button>
             ))}
           </div>
-          <div style={{ position: 'relative' }}>
+          <div className="sc-grow-md" style={{ position: 'relative' }}>
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search articles..."
+              className="sc-w-full-md"
               style={{
                 padding: '9px 16px 9px 36px', borderRadius: 24,
                 background: '#F5F2EB', border: '1px solid rgba(240,120,20,0.15)',
@@ -169,7 +170,7 @@ export default function JournalPage() {
       {/* Topics */}
       {topics.length > 0 && (
         <div style={{
-          maxWidth: 1200, margin: '0 auto', padding: '20px 48px',
+          maxWidth: 1200, margin: '0 auto', padding: '20px clamp(12px, 4vw, 48px)',
           display: 'flex', flexWrap: 'wrap', gap: 8,
         }}>
           <span style={{ fontSize: 11, color: '#8A8278', alignSelf: 'center', marginRight: 8 }}>Browse:</span>
@@ -187,7 +188,7 @@ export default function JournalPage() {
       )}
 
       {/* Main Body */}
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 48px 80px' }}>
+      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px clamp(12px, 4vw, 48px) 80px' }}>
 
         {/* Section Label */}
         <div style={{

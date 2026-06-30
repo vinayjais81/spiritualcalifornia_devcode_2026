@@ -218,6 +218,10 @@
 @media (max-width: 768px) {
   .sc-stack-md { grid-template-columns: 1fr !important; }
   .sc-flex-col-md { flex-direction: column !important; }
+  /* Make a flex child take the full row (e.g. a search box that wrapped
+     below a tab bar) and an input fill it. */
+  .sc-grow-md { flex: 1 1 100% !important; }
+  .sc-w-full-md { width: 100% !important; }
 }
 
 /* Card / field grids: ladder down 4→3→2→1 as width drops.
