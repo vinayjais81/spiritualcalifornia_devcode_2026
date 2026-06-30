@@ -367,7 +367,7 @@ function PractitionersPageInner() {
       </div>
 
       {/* ── MAIN ───────────────────────────────────────────────────────── */}
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '40px 48px 80px' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '40px clamp(16px, 5vw, 48px) 80px' }}>
         {/* Featured strip */}
         {featured.length > 0 && (
           <>
@@ -462,11 +462,11 @@ function FilterPill({ active, onClick, label }: { active: boolean; onClick: () =
 
 function SectionHead({ title, badge }: { title: string; badge?: string }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28 }}>
-      <div style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.25)' }} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28, flexWrap: 'wrap' }}>
+      <div style={{ flex: 1, height: 1, background: 'rgba(240,120,20,0.25)', minWidth: 20 }} />
       <h2 style={{
         fontFamily: "'Playfair Display', serif",
-        fontSize: 22, fontWeight: 400, color: '#3A3530', whiteSpace: 'nowrap',
+        fontSize: 22, fontWeight: 400, color: '#3A3530',
       }}>
         {title}
       </h2>
