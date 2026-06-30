@@ -92,7 +92,7 @@ export function Navbar() {
       >
         {/* Left — Desktop nav links */}
         <ul
-          className="hidden md:flex"
+          className="hidden lg:flex"
           style={{ gridColumn: 1, gap: '36px', listStyle: 'none', margin: 0, padding: 0 }}
         >
           {navLinks.map(({ label, href }) => (
@@ -155,7 +155,7 @@ export function Navbar() {
 
         {/* Right — Desktop CTAs */}
         <div
-          className="hidden md:flex"
+          className="hidden lg:flex"
           style={{ gridColumn: 3, justifySelf: 'end', alignItems: 'center', gap: '24px' }}
         >
           {/* Global search trigger — opens the cross-entity search modal */}
@@ -401,7 +401,7 @@ export function Navbar() {
 
         {/* Hamburger — visible on mobile, spans last column */}
         <button
-          className="flex md:hidden flex-col gap-[5px] cursor-pointer bg-transparent border-0 p-1"
+          className="flex lg:hidden flex-col gap-[5px] cursor-pointer bg-transparent border-0 p-1"
           style={{ gridColumn: 3, justifySelf: 'end', zIndex: 200 }}
           aria-label="Open menu"
           onClick={toggleMenu}
