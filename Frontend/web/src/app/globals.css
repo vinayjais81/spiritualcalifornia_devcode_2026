@@ -245,3 +245,25 @@
 @media (max-width: 768px) {
   .sc-hide-md { display: none !important; }
 }
+
+/* ─── DASHBOARD SHELL (authenticated seeker/guide areas) ─────
+   Below lg (1024px) the fixed 240px sidebar becomes an off-canvas drawer
+   toggled by a hamburger in the dashboard top bar. Above lg it's the normal
+   fixed sidebar with the main content offset by margin-left. */
+.sc-dash-overlay { display: none; }        /* hidden by default at every width */
+@media (max-width: 1023px) {
+  .sc-dash-sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.28s ease;
+    z-index: 190 !important;                /* above overlay (180), below top nav (200) */
+    box-shadow: 6px 0 30px rgba(58, 53, 48, 0.16);
+  }
+  .sc-dash-sidebar.sc-dash-open { transform: translateX(0); }
+  .sc-dash-main,
+  .sc-dash-footer { margin-left: 0 !important; max-width: 100% !important; }
+  .sc-dash-hamburger { display: inline-flex !important; }
+  .sc-dash-overlay.sc-dash-open { display: block; }
+}
+@media (min-width: 1024px) {
+  .sc-dash-hamburger { display: none !important; }   /* no hamburger on desktop */
+}

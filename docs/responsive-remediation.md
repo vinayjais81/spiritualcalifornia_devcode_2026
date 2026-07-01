@@ -167,7 +167,27 @@ Scanner over-flags confirmed already-handled and skipped: `guides/[slug]`
 an already-stacked column), `ReviewsBlock:85` (already `.sc-flex-col-md`). Legal/
 about/mission pages render via `StaticPageRenderer` (already responsive).
 
-## Status: code sweep COMPLETE pending visual device QA
+## Phase 5 — Authenticated dashboards (2026-07-01)
+
+The seeker + guide dashboards (~31 pages) were never made responsive. 3 parallel
+scanners (shell, guide pages, seeker pages) mapped it at mobile + tablet.
+
+### 5a — Shell mobile drawer (DONE)
+Both `app/{guide,seeker}/dashboard/layout.tsx` had a fixed 240px sidebar with
+`marginLeft:240px` content offset and no mobile handling. Added a class-based
+**off-canvas drawer** (globals.css `.sc-dash-*`): below lg (1024px) the sidebar
+translates off-canvas, a hamburger in the top bar toggles it, a scrim overlay
+closes it, and main/footer drop their `margin-left`. Drawer closes on nav-click,
+overlay-tap, and resize-to-desktop. Nav/main/footer paddings clamped.
+
+### 5b — Page batch (IN PROGRESS)
+~10 data tables need `overflow-x:auto` wrappers (guide: earnings ×2, bookings,
+services, availability ×2, calendar, products, tours/[id]/bookings; seeker:
+payments, tours/[id]); ~4 detail-page `1fr 3xx` sidebars → `.sc-stack-lg`
+(bookings/[id], tours/[id], pay-balance); ~25 stat/form grids → `.sc-cards-*` /
+`.sc-form2`. Tracked for the follow-up commit.
+
+## Status: public site COMPLETE; dashboards — shell done, page batch in progress
 
 Every public surface — shell, shared components, commerce/checkout, detail,
 listing, home — now has fluid paddings/headings and grids that collapse at

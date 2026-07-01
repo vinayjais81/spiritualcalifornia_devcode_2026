@@ -74,6 +74,7 @@ export default function GuideDashboardLayout({ children }: { children: React.Rea
   const hasHydrated = useAuthStore((s) => s._hasHydrated);
   const [checked, setChecked] = useState(false);
   const [guideSlug, setGuideSlug] = useState<string>('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     if (!hasHydrated) return; // Don't check auth until Zustand has rehydrated from localStorage
@@ -95,6 +96,14 @@ export default function GuideDashboardLayout({ children }: { children: React.Rea
       }).catch(() => {});
     });
   }, [hasHydrated, isAuthenticated, user, router]);
+
+  // Close the mobile sidebar drawer on navigation and when resizing to desktop.
+  useEffect(() => { setDrawerOpen(false); }, [pathname]);
+  useEffect(() => {
+    const onResize = () => { if (window.innerWidth >= 1024) setDrawerOpen(false); };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   if (!checked) {
     return (
@@ -119,9 +128,20 @@ export default function GuideDashboardLayout({ children }: { children: React.Rea
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 200,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '14px 48px', background: 'rgba(250,250,247,0.97)',
+        padding: '14px clamp(16px, 4vw, 48px)', background: 'rgba(250,250,247,0.97)',
         backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(240,120,20,0.15)',
       }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            className="sc-dash-hamburger"
+            aria-label="Open menu"
+            onClick={() => setDrawerOpen((o) => !o)}
+            style={{ display: 'none', flexDirection: 'column', gap: '5px', background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+          >
+            <span style={{ width: '22px', height: '2px', background: C.charcoal, borderRadius: '2px' }} />
+            <span style={{ width: '22px', height: '2px', background: C.charcoal, borderRadius: '2px' }} />
+            <span style={{ width: '22px', height: '2px', background: C.charcoal, borderRadius: '2px' }} />
+          </button>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
           <Image src="/images/logo.jpg" alt="Spiritual California" width={40} height={40} style={{ borderRadius: '50%', objectFit: 'cover' }} />
           <div>
@@ -129,6 +149,7 @@ export default function GuideDashboardLayout({ children }: { children: React.Rea
             <div style={{ fontFamily: font, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: C.warmGray, marginTop: '2px' }}>Find Your Guide. Begin Your Journey.</div>
           </div>
         </Link>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <NavAvatar src={avatar} name={displayName} size={36} />
@@ -144,7 +165,7 @@ export default function GuideDashboardLayout({ children }: { children: React.Rea
       <div style={{ display: 'flex', minHeight: '100vh', paddingTop: '69px' }}>
 
         {/* ── SIDEBAR ──────────────────────────────────────────── */}
-        <aside style={{
+        <aside className={`sc-dash-sidebar${drawerOpen ? ' sc-dash-open' : ''}`} style={{
           width: '240px', height: 'calc(100vh - 69px)', background: C.white,
           borderRight: '1px solid rgba(240,120,20,0.12)', position: 'fixed',
           top: '69px', left: 0, overflowY: 'auto', zIndex: 100,
@@ -157,6 +178,7 @@ export default function GuideDashboardLayout({ children }: { children: React.Rea
                   const active = isActive(item.href);
                   return (
                     <Link key={item.href} href={item.href}
+                      onClick={() => setDrawerOpen(false)}
                       onMouseEnter={(e) => {
                         if (!active) {
                           e.currentTarget.style.background = C.goldPale;
@@ -196,15 +218,23 @@ export default function GuideDashboardLayout({ children }: { children: React.Rea
         </aside>
 
         {/* ── MAIN CONTENT ─────────────────────────────────────── */}
-        <main style={{ marginLeft: '240px', flex: 1, padding: '40px 48px', maxWidth: 'calc(100% - 240px)' }}>
+        <main className="sc-dash-main" style={{ marginLeft: '240px', flex: 1, padding: '40px clamp(16px, 4vw, 48px)', maxWidth: 'calc(100% - 240px)' }}>
           {children}
         </main>
       </div>
 
       {/* ── FOOTER ───────────────────────────────────────────────── */}
-      <footer style={{ marginLeft: '240px', padding: '24px 48px', borderTop: '1px solid rgba(240,120,20,0.12)', fontFamily: font, fontSize: '11px', color: C.warmGray, letterSpacing: '0.08em', textAlign: 'center' }}>
+      <footer className="sc-dash-footer" style={{ marginLeft: '240px', padding: '24px clamp(16px, 4vw, 48px)', borderTop: '1px solid rgba(240,120,20,0.12)', fontFamily: font, fontSize: '11px', color: C.warmGray, letterSpacing: '0.08em', textAlign: 'center' }}>
         © {new Date().getFullYear()} Spiritual California LLC · All rights reserved
       </footer>
+
+      {/* Mobile drawer scrim — closes the sidebar on tap. Hidden ≥1024 and
+          when the drawer is shut (see .sc-dash-overlay in globals.css). */}
+      <div
+        className={`sc-dash-overlay${drawerOpen ? ' sc-dash-open' : ''}`}
+        onClick={() => setDrawerOpen(false)}
+        style={{ position: 'fixed', inset: 0, zIndex: 180, background: 'rgba(58,53,48,0.45)' }}
+      />
 
       {/* Payments Publish Gate modal — listens for the global event,
           renders when a publish action is blocked. Mounted once here so
