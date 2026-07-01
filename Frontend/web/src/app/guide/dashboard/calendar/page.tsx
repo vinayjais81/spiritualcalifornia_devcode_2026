@@ -199,7 +199,7 @@ export default function CalendarPage() {
         </div>
 
         {/* How it works */}
-        <div style={{
+        <div className="sc-form2" style={{
           marginTop: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px',
         }}>
           <div style={{
@@ -225,7 +225,7 @@ export default function CalendarPage() {
           ) : upcomingEvents.length === 0 ? (
             <EmptyState message="No upcoming sessions. When seekers book through your Calendly, they'll appear here." />
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+            <div style={{ overflowX: 'auto' }}><div style={{ minWidth: 480, display: 'flex', flexDirection: 'column', gap: '0' }}>
               {upcomingEvents.map((ev, i) => {
                 const start = new Date(ev.startTime);
                 const end = new Date(ev.endTime);
@@ -262,7 +262,7 @@ export default function CalendarPage() {
                   </div>
                 );
               })}
-            </div>
+            </div></div>
           )}
         </Panel>
       )}

@@ -35,7 +35,7 @@ export function PageHeader({ title, subtitle, children }: { title: string; subti
 // ─── Panel ───────────────────────────────────────────────────────────────────
 export function Panel({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
   return (
-    <div style={{ background: C.white, border: '1px solid rgba(240,120,20,0.12)', borderRadius: '12px', padding: '32px', marginBottom: '28px' }}>
+    <div style={{ background: C.white, border: '1px solid rgba(240,120,20,0.12)', borderRadius: '12px', padding: 'clamp(16px, 4vw, 32px)', marginBottom: '28px' }}>
       <div style={{ fontFamily: serif, fontSize: '22px', fontWeight: 500, color: C.charcoal, marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid rgba(240,120,20,0.15)', display: 'flex', alignItems: 'center', gap: '10px' }}>
         <span style={{ fontSize: '20px' }}>{icon}</span> {title}
       </div>
@@ -47,7 +47,7 @@ export function Panel({ title, icon, children }: { title: string; icon: string; 
 // ─── Stat Card ───────────────────────────────────────────────────────────────
 export function StatCard({ value, label, accent }: { value: string | number; label: string; accent?: boolean }) {
   return (
-    <div style={{ background: accent ? C.goldPale : C.white, border: `1px solid ${accent ? C.gold : 'rgba(240,120,20,0.15)'}`, borderRadius: '12px', padding: '24px', textAlign: 'center' }}>
+    <div style={{ background: accent ? C.goldPale : C.white, border: `1px solid ${accent ? C.gold : 'rgba(240,120,20,0.15)'}`, borderRadius: '12px', padding: 'clamp(16px, 3vw, 24px)', textAlign: 'center' }}>
       <div style={{ fontFamily: serif, fontSize: '36px', fontWeight: 500, color: accent ? C.gold : C.charcoal, marginBottom: '4px' }}>{value}</div>
       <div style={{ fontFamily: font, fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray }}>{label}</div>
     </div>

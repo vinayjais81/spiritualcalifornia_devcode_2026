@@ -420,7 +420,7 @@ export function TourForm({ initial, tourId }: Props) {
 
       {/* ─── BASICS ───────────────────────────────────────────────────────── */}
       <Panel title="Basics" icon="📝">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+        <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
           <FormGroup label="Tour Title" required full>
             <Input
               required
@@ -530,7 +530,7 @@ export function TourForm({ initial, tourId }: Props) {
 
       {/* ─── LOCATION & TIMING ──────────────────────────────────────────────── */}
       <Panel title="Location & Primary Dates" icon="📍">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+        <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
           <FormGroup label="Location (display name)">
             <Input value={form.location} onChange={(e) => set('location', e.target.value)} placeholder="Kathmandu · Pokhara · Lumbini" />
           </FormGroup>
@@ -577,7 +577,7 @@ export function TourForm({ initial, tourId }: Props) {
               </div>
               <Btn variant="danger" size="sm" onClick={() => removeDeparture(i)}>Remove</Btn>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
+            <div className="sc-cards-4" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 12 }}>
               <FormGroup label="Start" required>
                 <Input required aria-required="true" type="date" value={d.startDate} onChange={(e) => updateDeparture(i, { startDate: e.target.value })} />
               </FormGroup>
@@ -606,7 +606,7 @@ export function TourForm({ initial, tourId }: Props) {
 
       {/* ─── ROOM TYPES ──────────────────────────────────────────────────── */}
       <Panel title="Room Types & Pricing" icon="🛏️">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 18, marginBottom: 18 }}>
+        <div className="sc-cards-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 18, marginBottom: 18 }}>
           <FormGroup label="Base Price (per person, USD)" required>
             <Input required aria-required="true" type="number" min={0} value={form.basePrice} onChange={(e) => set('basePrice', e.target.value)} />
           </FormGroup>
@@ -629,7 +629,7 @@ export function TourForm({ initial, tourId }: Props) {
               </div>
               <Btn variant="danger" size="sm" onClick={() => removeRoomType(i)}>Remove</Btn>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
               <FormGroup label="Name" required>
                 <Input required aria-required="true" value={rt.name} onChange={(e) => updateRoomType(i, { name: e.target.value })} placeholder="e.g. Shared Double Room" />
               </FormGroup>
@@ -711,7 +711,7 @@ export function TourForm({ initial, tourId }: Props) {
 
       {/* ─── INCLUSIONS ──────────────────────────────────────────────────── */}
       <Panel title="Inclusions & Requirements" icon="✓">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+        <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
           <FormGroup label="Highlights (one per line)">
             <TextArea
               value={form.highlights}
@@ -753,7 +753,7 @@ export function TourForm({ initial, tourId }: Props) {
 
       {/* ─── METADATA & POLICY ────────────────────────────────────────────── */}
       <Panel title="Metadata & Cancellation Policy" icon="⚙️">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
+        <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
           <FormGroup label="Difficulty Level">
             <Select value={form.difficultyLevel} onChange={(e) => set('difficultyLevel', e.target.value)}>
               <option value="EASY">Easy</option>

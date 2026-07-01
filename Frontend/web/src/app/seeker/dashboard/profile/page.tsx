@@ -186,7 +186,7 @@ export default function SeekerProfilePage() {
       )}
 
       <Panel title="Account" icon="👤">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           {[
             {
               label: 'Name',
@@ -224,7 +224,7 @@ export default function SeekerProfilePage() {
       </Panel>
 
       <Panel title="About You" icon="✨">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           <FormGroup label="Location" full>
             <Input
               value={form.location}
@@ -258,7 +258,7 @@ export default function SeekerProfilePage() {
 
       <Panel title="Your Practice" icon="🌿">
         <FormGroup label="Experience level" full>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+          <div className="sc-cards-2" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
             {EXPERIENCE_LEVELS.map((opt) => {
               const selected = form.experienceLevel === opt.value;
               return (

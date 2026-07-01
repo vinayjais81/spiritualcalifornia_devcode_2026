@@ -104,7 +104,7 @@ export default function GuideToursPage() {
       </PageHeader>
 
       {/* ─── Stats row ──────────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
+      <div className="sc-cards-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, marginBottom: 36 }}>
         <StatCard value={totalTours} label="Total Tours" />
         <StatCard value={publishedCount} label="Published" accent />
         <StatCard value={upcomingDepartures} label="Upcoming Departures" />

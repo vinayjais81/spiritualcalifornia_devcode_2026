@@ -97,6 +97,7 @@ export function GuidePaymentsChip() {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
+        flexWrap: 'wrap',
         gap: 16,
         fontFamily: 'var(--font-inter), sans-serif',
       }}

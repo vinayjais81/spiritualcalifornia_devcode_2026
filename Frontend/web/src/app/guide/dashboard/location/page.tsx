@@ -88,7 +88,7 @@ export default function LocationPage() {
         <div style={{ marginBottom: '16px' }}>
           <FormLegend />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           <FormGroup label="Studio / Practice Name" full>
             <Input
               value={form.studioName}

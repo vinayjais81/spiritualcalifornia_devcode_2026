@@ -216,7 +216,7 @@ export default function MyEventsPage() {
                     </div>
 
                     {/* Price breakdown */}
-                    <div style={{ display: 'flex', gap: 24, marginBottom: 20, fontFamily: font, fontSize: 12 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, marginBottom: 20, fontFamily: font, fontSize: 12 }}>
                       <div><span style={{ color: C.warmGray }}>Tickets:</span> <span style={{ color: C.charcoal }}>{p.ticketCount} × {fmtMoney(p.tier.price)}</span></div>
                       <div><span style={{ color: C.warmGray }}>Subtotal:</span> <span style={{ color: C.charcoal }}>{fmtMoney(p.totalAmount)}</span></div>
                       <div><span style={{ color: C.warmGray }}>Booking fee:</span> <span style={{ color: C.charcoal }}>{fmtMoney(p.bookingFee)}</span></div>

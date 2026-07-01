@@ -267,7 +267,7 @@ export default function SeekerTourBookingDetailPage() {
       )}
 
       {/* ── Two-column layout ────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, alignItems: 'start' }}>
+      <div className="sc-stack-lg" style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: 24, alignItems: 'start' }}>
         {/* Left column */}
         <div>
           {/* Travelers */}
@@ -301,7 +301,7 @@ export default function SeekerTourBookingDetailPage() {
                       </span>
                     )}
                   </div>
-                  <div style={{
+                  <div className="sc-cards-2" style={{
                     display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8,
                     fontSize: 12, color: C.warmGray, fontFamily: font,
                   }}>
@@ -367,7 +367,7 @@ export default function SeekerTourBookingDetailPage() {
             {booking.payments.length === 0 ? (
               <p style={{ fontFamily: font, fontSize: 13, color: C.warmGray }}>No payments yet.</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <div style={{ overflowX: 'auto' }}><div style={{ minWidth: 560, display: 'flex', flexDirection: 'column' }}>
                 {booking.payments.map((p, i) => (
                   <div
                     key={p.id}
@@ -403,7 +403,7 @@ export default function SeekerTourBookingDetailPage() {
                     </div>
                   </div>
                 ))}
-              </div>
+              </div></div>
             )}
           </Panel>
         </div>

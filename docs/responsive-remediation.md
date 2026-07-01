@@ -180,14 +180,21 @@ translates off-canvas, a hamburger in the top bar toggles it, a scrim overlay
 closes it, and main/footer drop their `margin-left`. Drawer closes on nav-click,
 overlay-tap, and resize-to-desktop. Nav/main/footer paddings clamped.
 
-### 5b — Page batch (IN PROGRESS)
-~10 data tables need `overflow-x:auto` wrappers (guide: earnings ×2, bookings,
-services, availability ×2, calendar, products, tours/[id]/bookings; seeker:
-payments, tours/[id]); ~4 detail-page `1fr 3xx` sidebars → `.sc-stack-lg`
-(bookings/[id], tours/[id], pay-balance); ~25 stat/form grids → `.sc-cards-*` /
-`.sc-form2`. Tracked for the follow-up commit.
+### 5b — Page batch (DONE)
+Applied across 22 dashboard pages + guide components:
+- **11 data-table scroll wrappers** (`<div overflowX:auto><div minWidth:N>`):
+  guide bookings/services/availability×2/calendar/products/tours-manifest;
+  seeker payments/tour-history. (guide earnings were real `<table>`s already
+  wrapped — left as-is.)
+- **~29 grid class adds**: stat grids → `.sc-cards-4/3/2`, form rows →
+  `.sc-form2`, detail sidebars (`1fr 320–360px`) → `.sc-stack-lg`.
+- Heading clamps (seeker bookings/[id], pay-balance); flex-row `flexWrap`
+  (events price row, orders summary, widget headers); `TourForm` grids →
+  `.sc-form2`/`.sc-cards-*`; `dashboard-ui` Panel/StatCard paddings → clamp.
 
-## Status: public site COMPLETE; dashboards — shell done, page batch in progress
+`tsc --noEmit` clean across the whole frontend.
+
+## Status: public site + dashboards COMPLETE — pending visual device QA
 
 Every public surface — shell, shared components, commerce/checkout, detail,
 listing, home — now has fluid paddings/headings and grids that collapse at

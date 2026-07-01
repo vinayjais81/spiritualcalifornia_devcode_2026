@@ -84,7 +84,7 @@ export default function GuideBookingDetailPage() {
         </span>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '32px', alignItems: 'start' }}>
+      <div className="sc-stack-lg" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '32px', alignItems: 'start' }}>
         {/* Left — Details */}
         <div>
           {/* Client Info */}

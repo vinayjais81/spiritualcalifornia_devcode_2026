@@ -187,7 +187,7 @@ export default function TourBookingsPage() {
       </p>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
+      <div className="sc-cards-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
         <div style={{ background: C.white, border: `1px solid rgba(240,120,20,0.15)`, borderRadius: 12, padding: 20, textAlign: 'center' }}>
           <div style={{ fontFamily: serif, fontSize: 32, fontWeight: 500, color: C.charcoal }}>{stats.totalBookings}</div>
           <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray }}>Bookings</div>
@@ -281,6 +281,7 @@ export default function TourBookingsPage() {
 
               {/* Travelers table */}
               <div style={{ padding: 20 }}>
+                <div style={{ overflowX: 'auto' }}><div style={{ minWidth: 720 }}>
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: '40px 1.4fr 1fr 1fr 1.2fr 1fr',
@@ -324,6 +325,7 @@ export default function TourBookingsPage() {
                       <div style={{ color: C.warmGray }}>{t.phone || '—'}</div>
                     </div>
                 ))}
+                </div></div>
 
                 {/* Contact strip */}
                 <div style={{

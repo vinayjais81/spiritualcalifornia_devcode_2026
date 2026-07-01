@@ -80,6 +80,7 @@ export function GuideProfileCompletenessWidget({
           display: 'flex',
           alignItems: 'flex-start',
           justifyContent: 'space-between',
+          flexWrap: 'wrap',
           gap: 24,
           marginBottom: 14,
         }}

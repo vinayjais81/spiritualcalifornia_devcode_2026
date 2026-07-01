@@ -52,7 +52,7 @@ export default function DashboardOverview() {
           when fully connected. Spec: docs/payments-publish-gate.md §6.1. */}
       <GuidePaymentsChip />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '28px' }}>
+      <div className="sc-cards-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '28px' }}>
         <StatCard value="$0" label="Current Balance" accent />
         <StatCard value={services.length} label="Services" />
         <StatCard value={profile?.isVerified ? '✓' : '—'} label="Verified" />

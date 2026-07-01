@@ -452,7 +452,7 @@ export default function MyOrdersPage() {
                       <div style={{
                         marginTop: 8, paddingTop: 10,
                         borderTop: '1.5px solid rgba(240,120,20,0.25)',
-                        display: 'flex', justifyContent: 'space-between',
+                        display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap',
                         fontFamily: serif, fontSize: 16, fontWeight: 500,
                       }}>
                         <span style={{ color: C.charcoal }}>Total</span>
@@ -494,7 +494,7 @@ export default function MyOrdersPage() {
 
 function Row({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
       <span style={{ color: C.warmGray }}>{label}</span>
       <span style={{ color: color || C.charcoal }}>{value}</span>
     </div>

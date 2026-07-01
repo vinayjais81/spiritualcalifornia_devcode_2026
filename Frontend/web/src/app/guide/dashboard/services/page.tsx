@@ -128,7 +128,7 @@ export default function ServicesPage() {
         {services.length === 0 ? (
           <EmptyState message="No services yet. Add your first service offering to start accepting bookings." />
         ) : (
-          <div>
+          <div style={{ overflowX: 'auto' }}><div style={{ minWidth: 560 }}>
             {/* Header row */}
             <div style={{
               display: 'grid', gridTemplateColumns: '1fr 100px 80px 90px 70px',
@@ -194,7 +194,7 @@ export default function ServicesPage() {
                 </div>
               </div>
             ))}
-          </div>
+          </div></div>
         )}
       </Panel>
 
@@ -217,7 +217,7 @@ export default function ServicesPage() {
         <div style={{ marginBottom: '16px' }}>
           <FormLegend />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           <FormGroup label="Service Name" required full>
             <Input
               required

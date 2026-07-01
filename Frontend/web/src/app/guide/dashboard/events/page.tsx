@@ -207,7 +207,7 @@ export default function EventsPage() {
         <div style={{ marginBottom: '16px' }}>
           <FormLegend />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           <FormGroup label="Event Title" required full>
             <Input required aria-required="true" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Spring Equinox Meditation Retreat" />
           </FormGroup>

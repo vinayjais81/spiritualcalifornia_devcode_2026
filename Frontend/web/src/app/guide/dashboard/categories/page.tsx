@@ -174,7 +174,7 @@ export default function CategoriesPage() {
         <p style={{ fontFamily: font, fontSize: 13, color: C.warmGray, marginBottom: 20, lineHeight: 1.6 }}>
           Many practitioners work across body, mind, and soul. Pick all that apply.
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+        <div className="sc-cards-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
           {CATEGORY_CARDS.map(({ icon, name, desc }) => {
             const sel = selectedCatNames.includes(name);
             return (
@@ -302,7 +302,7 @@ export default function CategoriesPage() {
         <p style={{ fontFamily: font, fontSize: 13, color: C.warmGray, marginBottom: 16, lineHeight: 1.6 }}>
           Select all that apply — this helps the AI guide route the right seekers to you.
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+        <div className="sc-cards-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
           {ISSUES.map((issue) => {
             const sel = issues.includes(issue);
             return (

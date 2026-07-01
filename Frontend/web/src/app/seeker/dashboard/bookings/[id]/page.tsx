@@ -96,7 +96,7 @@ export default function BookingDetailPage() {
       {/* Header with status */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
         <div>
-          <h1 style={{ fontFamily: serif, fontSize: '32px', fontWeight: 400, color: C.charcoal, marginBottom: '6px' }}>
+          <h1 style={{ fontFamily: serif, fontSize: 'clamp(24px, 5vw, 32px)', fontWeight: 400, color: C.charcoal, marginBottom: '6px' }}>
             {booking.service?.name}
           </h1>
           <p style={{ fontFamily: font, fontSize: '13px', color: C.warmGray }}>
@@ -112,7 +112,7 @@ export default function BookingDetailPage() {
       </div>
 
       {/* Main content grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '32px', alignItems: 'start' }}>
+      <div className="sc-stack-lg" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '32px', alignItems: 'start' }}>
 
         {/* Left column — Booking Details */}
         <div>

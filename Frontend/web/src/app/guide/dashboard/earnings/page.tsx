@@ -117,7 +117,7 @@ export default function EarningsPage() {
         {/* Two large actionable figures up top: Available (claimable now) +
             Pending Clearance (in the holding window). Total Earned + Total
             Paid Out are historical context underneath. */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 20 }}>
+        <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 20 }}>
           <div>
             <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 8 }}>Available Balance</div>
             <div style={{ fontFamily: serif, fontSize: 48, fontWeight: 400, color: C.gold, lineHeight: 1 }}>
@@ -137,7 +137,7 @@ export default function EarningsPage() {
             </div>
           </div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 24, paddingTop: 20, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           <div>
             <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>Total Earned</div>
             <div style={{ fontFamily: serif, fontSize: 24, fontWeight: 400, color: 'rgba(255,255,255,0.7)', lineHeight: 1 }}>

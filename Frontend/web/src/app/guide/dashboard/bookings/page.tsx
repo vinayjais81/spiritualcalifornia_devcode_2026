@@ -121,7 +121,7 @@ export default function GuideBookingsPage() {
         {filtered.length === 0 ? (
           <EmptyState message="No bookings found for this filter." />
         ) : (
-          <>
+          <div style={{ overflowX: 'auto' }}><div style={{ minWidth: 700 }}>
             {/* Header */}
             <div style={{
               display: 'grid', gridTemplateColumns: '1fr 140px 120px 90px 130px',
@@ -214,7 +214,7 @@ export default function GuideBookingsPage() {
                 </a>
               );
             })}
-          </>
+          </div></div>
         )}
       </Panel>
 

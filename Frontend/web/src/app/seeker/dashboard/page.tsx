@@ -37,7 +37,7 @@ export default function SeekerDashboardPage() {
       <PendingReviewsWidget />
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
+      <div className="sc-cards-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
         <StatCard value={stats.upcomingBookings} label="Upcoming Sessions" accent />
         <StatCard value={stats.completedBookings} label="Completed" />
         <StatCard value={`$${stats.totalSpent.toFixed(0)}`} label="Total Spent" />

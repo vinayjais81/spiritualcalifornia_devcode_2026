@@ -117,7 +117,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Connection Status */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
+          <div className="sc-cards-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginBottom: 20 }}>
             <StatusBadge label="Connected" value={connectStatus?.connected} loading={connectLoading} />
             <StatusBadge label="Charges Enabled" value={connectStatus?.chargesEnabled} loading={connectLoading} />
             <StatusBadge label="Payouts Enabled" value={connectStatus?.payoutsEnabled} loading={connectLoading} />
@@ -129,7 +129,7 @@ export default function SettingsPage() {
             <div style={{
               background: C.offWhite, border: '1px solid rgba(240,120,20,0.15)', borderRadius: 8,
               padding: 20, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 20,
-            }}>
+            }} className="sc-cards-4">
               <BalanceItem label="Available Balance" value={fmtMoney(earnings.balance.available)} highlight />
               <BalanceItem label="Pending" value={fmtMoney(earnings.balance.pending)} />
               <BalanceItem label="Total Earned" value={fmtMoney(earnings.balance.totalEarned)} />
@@ -175,7 +175,7 @@ export default function SettingsPage() {
         {/* How payouts work */}
         <div style={{ borderTop: '1px solid rgba(240,120,20,0.15)', paddingTop: 20 }}>
           <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray, marginBottom: 12 }}>How Payouts Work</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
+          <div className="sc-cards-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
             {[
               { step: '1', title: 'Seeker Pays', desc: `Payment processed via Stripe. ${commissionPercent}% platform fee deducted.` },
               { step: '2', title: 'Balance Credited', desc: `Your ${guideShare}% earnings are added to your available balance instantly.` },
@@ -198,7 +198,7 @@ export default function SettingsPage() {
 
       {/* ── ACCOUNT SECURITY ─────────────────────────────────── */}
       <Panel title="Account Security" icon="🔒">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+        <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
           {/* Account info */}
           <div>
             <SectionLabel>Account Information</SectionLabel>

@@ -160,14 +160,14 @@ export default function PayBalancePage() {
         </Link>
       </div>
 
-      <h1 style={{ fontFamily: serif, fontSize: 36, fontWeight: 400, color: C.charcoal, marginBottom: 6 }}>
+      <h1 style={{ fontFamily: serif, fontSize: 'clamp(28px, 6vw, 36px)', fontWeight: 400, color: C.charcoal, marginBottom: 6 }}>
         Pay Remaining Balance
       </h1>
       <p style={{ fontFamily: font, fontSize: 13, color: C.warmGray, marginBottom: 32 }}>
         {info.tourTitle}
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 24, alignItems: 'start' }}>
+      <div className="sc-stack-lg" style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 24, alignItems: 'start' }}>
         {/* Left — Payment */}
         <div>
           <Panel title="Payment" icon="💳">

@@ -114,7 +114,7 @@ export default function MyToursPage() {
 
       {/* Stats row */}
       {bookings.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 36 }}>
+        <div className="sc-cards-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 36 }}>
           <div style={{ background: C.white, border: `1px solid rgba(240,120,20,0.15)`, borderRadius: 12, padding: 24, textAlign: 'center' }}>
             <div style={{ fontFamily: serif, fontSize: 36, fontWeight: 500, color: C.charcoal }}>{bookings.length}</div>
             <div style={{ fontFamily: font, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.warmGray }}>Total Bookings</div>

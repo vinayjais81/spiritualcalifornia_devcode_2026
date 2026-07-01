@@ -43,7 +43,7 @@ export default function PaymentHistoryPage() {
         {payments.length === 0 ? (
           <EmptyState message="No payments yet. Your transactions will appear here after your first booking." />
         ) : (
-          <>
+          <div style={{ overflowX: 'auto' }}><div style={{ minWidth: 620 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 100px 100px 100px', gap: '10px', padding: '0 0 10px', borderBottom: '1px solid rgba(240,120,20,0.15)' }}>
               {['Description', 'Type', 'Date', 'Amount', 'Status'].map(h => (
                 <div key={h} style={{ fontFamily: font, fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase', color: C.warmGray, fontWeight: 500 }}>{h}</div>
@@ -69,7 +69,7 @@ export default function PaymentHistoryPage() {
                 </div>
               );
             })}
-          </>
+          </div></div>
         )}
       </Panel>
     </div>

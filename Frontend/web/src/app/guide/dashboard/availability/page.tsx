@@ -87,7 +87,7 @@ export default function AvailabilityPage() {
             {eventTypes.length === 0 ? (
               <EmptyState message="No event types found in your Calendly account." />
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+              <div style={{ overflowX: 'auto' }}><div style={{ minWidth: 560, display: 'flex', flexDirection: 'column', gap: '0' }}>
                 {eventTypes.map((et, i) => (
                   <div key={et.slug || i} style={{
                     display: 'grid', gridTemplateColumns: '1fr 100px 100px 120px',
@@ -114,7 +114,7 @@ export default function AvailabilityPage() {
                     </a>
                   </div>
                 ))}
-              </div>
+              </div></div>
             )}
           </Panel>
 
@@ -123,7 +123,7 @@ export default function AvailabilityPage() {
             {upcomingEvents.length === 0 ? (
               <EmptyState message="No upcoming sessions. When seekers book through Calendly, they'll appear here." />
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+              <div style={{ overflowX: 'auto' }}><div style={{ minWidth: 460, display: 'flex', flexDirection: 'column', gap: '0' }}>
                 {upcomingEvents.map((ev, i) => {
                   const start = new Date(ev.startTime);
                   const end = new Date(ev.endTime);
@@ -153,7 +153,7 @@ export default function AvailabilityPage() {
                     </div>
                   );
                 })}
-              </div>
+              </div></div>
             )}
           </Panel>
 

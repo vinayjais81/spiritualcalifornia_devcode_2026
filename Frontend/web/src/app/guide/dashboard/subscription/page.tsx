@@ -16,7 +16,7 @@ export default function SubscriptionPage() {
       </div>
 
       <Panel title="After Your Free Period" icon="⭐">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           <div style={{ padding: '24px', border: `2px solid ${C.gold}`, borderRadius: '12px', background: C.goldPale }}>
             <div style={{ fontFamily: serif, fontSize: '22px', fontWeight: 500, color: C.charcoal, marginBottom: '6px' }}>Standard Listing</div>
             <div style={{ fontFamily: serif, fontSize: '36px', fontWeight: 400, color: C.gold, marginBottom: '12px' }}>$50<span style={{ fontSize: '16px', color: C.warmGray }}>/month</span></div>

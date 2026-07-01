@@ -285,7 +285,9 @@ export default function ProductsPage() {
         <Btn onClick={openCreate}>+ Add Product</Btn>
       </PageHeader>
       <Panel title="Your Products" icon="🛍️">
-        {products.length === 0 ? <EmptyState message="No products yet." /> : products.map(p => (
+        {products.length === 0 ? <EmptyState message="No products yet." /> : (
+        <div style={{ overflowX: 'auto' }}><div style={{ minWidth: 560 }}>
+        {products.map(p => (
           <div key={p.id} style={{ display: 'grid', gridTemplateColumns: '60px 1fr 100px auto 36px', gap: '12px', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
             <ProductThumb imageUrls={p.imageUrls} type={p.type} />
             <div>
@@ -312,6 +314,8 @@ export default function ProductsPage() {
             <button onClick={() => remove(p.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.warmGray, fontSize: '18px' }}>×</button>
           </div>
         ))}
+        </div></div>
+        )}
       </Panel>
 
       {/* Create / Edit Modal */}
@@ -363,7 +367,7 @@ export default function ProductsPage() {
         <div style={{ marginBottom: '16px' }}>
           <FormLegend />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           <FormGroup label="Product Name" required full>
             <Input required aria-required="true" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Himalayan Singing Bowl Set" />
           </FormGroup>
