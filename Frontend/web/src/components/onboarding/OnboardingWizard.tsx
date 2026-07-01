@@ -131,7 +131,7 @@ export function OnboardingWizard() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '14px 48px',
+          padding: '14px clamp(16px, 4vw, 48px)',
           background: 'rgba(250,250,247,0.95)',
           backdropFilter: 'blur(14px)',
           borderBottom: '1px solid rgba(240,120,20,0.15)',

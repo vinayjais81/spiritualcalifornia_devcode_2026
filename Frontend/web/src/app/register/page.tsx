@@ -276,7 +276,7 @@ function RegisterContent() {
     <nav style={{
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      padding: '14px 48px',
+      padding: '14px clamp(16px, 4vw, 48px)',
       background: 'rgba(250,250,247,0.94)', backdropFilter: 'blur(14px)',
       borderBottom: 'rgba(240,120,20,0.15) 1px solid',
     }}>
@@ -341,7 +341,7 @@ function RegisterContent() {
     color: G.gold, marginBottom: 10, fontFamily: 'var(--font-inter), sans-serif',
   };
   const titleStyle: React.CSSProperties = {
-    fontFamily: 'var(--font-playfair-display), serif', fontSize: 42, fontWeight: 400,
+    fontFamily: 'var(--font-playfair-display), serif', fontSize: 'clamp(30px, 5vw, 42px)', fontWeight: 400,
     lineHeight: 1.15, color: G.charcoal, marginBottom: 8,
   };
   const subtitleStyle: React.CSSProperties = {
@@ -494,7 +494,7 @@ function RegisterContent() {
               )}
 
               {/* Name row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
+              <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 20 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <FieldLabel htmlFor="reg-first-name" required={!isGoogleUser} style={labelStyle}>First Name</FieldLabel>
                   <input

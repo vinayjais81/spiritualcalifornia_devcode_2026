@@ -19,7 +19,7 @@ export function PromoBanner() {
       flexWrap: 'wrap', gap: 28,
       marginBottom: 60,
     }}>
-      <div style={{ flex: '1 1 300px' }}>
+      <div style={{ flex: '1 1 clamp(240px, 90vw, 300px)' }}>
         <div style={{ fontSize: 10, letterSpacing: '0.22em', textTransform: 'uppercase', color: '#F07814', marginBottom: 8 }}>
           ✦ Limited Time Offer
         </div>

@@ -144,7 +144,7 @@ export default function ProductDetailPage() {
   if (loading) {
     return (
       <div style={{ maxWidth: 1300, margin: '0 auto', padding: '100px clamp(16px, 5vw, 60px)' }}>
-        <div className="sc-stack-md" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80 }}>
+        <div className="sc-stack-lg" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 80 }}>
           <div style={{ aspectRatio: '1/1', background: '#FEF7F0', borderRadius: 16 }} />
           <div>
             <div style={{ height: 16, background: '#f0eeeb', borderRadius: 4, width: '30%', marginBottom: 16 }} />
@@ -193,7 +193,7 @@ export default function ProductDetailPage() {
       </div>
 
       {/* Product Layout */}
-      <div className="sc-stack-md" style={{
+      <div className="sc-stack-lg" style={{
         maxWidth: 1300, margin: '0 auto',
         padding: '40px clamp(16px, 5vw, 60px) 80px',
         display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(32px, 5vw, 80px)',

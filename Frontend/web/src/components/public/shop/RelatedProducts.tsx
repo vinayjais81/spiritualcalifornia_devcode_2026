@@ -19,7 +19,7 @@ export function RelatedProducts({ title, subtitle, products }: RelatedProductsPr
   if (!products || products.length === 0) return null;
 
   return (
-    <div style={{ maxWidth: 1300, margin: '0 auto', padding: '0 60px 80px' }}>
+    <div style={{ maxWidth: 1300, margin: '0 auto', padding: '0 clamp(16px, 5vw, 60px) 80px' }}>
       <div style={{ marginBottom: 24 }}>
         <h3 style={{
           fontFamily: "'Playfair Display', serif",
@@ -29,7 +29,7 @@ export function RelatedProducts({ title, subtitle, products }: RelatedProductsPr
         </h3>
         {subtitle && <p style={{ fontSize: 12, color: '#8A8278' }}>{subtitle}</p>}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
+      <div className="sc-cards-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24 }}>
         {products.slice(0, 4).map((p) => (
           <Link key={p.id} href={`/shop/${p.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
             <div style={{

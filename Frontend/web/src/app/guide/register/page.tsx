@@ -100,7 +100,7 @@ export default function GuideRegisterPage() {
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '14px 48px',
+        padding: '14px clamp(16px, 4vw, 48px)',
         background: 'rgba(250,250,247,0.95)', backdropFilter: 'blur(14px)',
         borderBottom: '1px solid rgba(240,120,20,0.15)',
       }}>
@@ -140,7 +140,7 @@ export default function GuideRegisterPage() {
             Become a Guide
           </p>
           <h1 style={{
-            fontFamily: 'var(--font-playfair-display), serif', fontSize: 42,
+            fontFamily: 'var(--font-playfair-display), serif', fontSize: 'clamp(30px, 5vw, 42px)',
             fontWeight: 400, lineHeight: 1.15, color: G.charcoal, marginBottom: 8,
           }}>
             Share your <em style={{ fontStyle: 'italic', color: G.gold }}>practice</em>
@@ -190,7 +190,7 @@ export default function GuideRegisterPage() {
               </div>
             )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <FieldLabel htmlFor="guide-first-name" required style={labelStyle}>First Name</FieldLabel>
                 <input id="guide-first-name" style={inputStyle} type="text" placeholder="Maya" value={firstName}

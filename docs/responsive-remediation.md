@@ -145,6 +145,28 @@ Mobile QA findings as they come in:
   Verified badge was pinned bottom-right and clipped by the avatar's circular
   `overflow:hidden` (showed "Verifi…") — re-centered along the bottom arc.
 
+## Phase 4 — Automated comprehensive scan (2026-07-01)
+
+Ran 3 parallel scanners over the WHOLE public surface (child components,
+standalone non-`(public)` pages, and a tablet-specific re-scan of `(public)`
+pages) at mobile (360–430) AND tablet (768–1024) widths, to stop finding issues
+one screenshot at a time. Outstanding items found + fixed:
+
+- **Auth/onboarding nav bars** (`register`, `guide/register`, `signin`,
+  `OnboardingWizard`): fixed `14px 48px` → `14px clamp(16px,4vw,48px)`.
+- **Form grids**: `register`, `guide/register` name/email rows → `.sc-form2`.
+- **Headings**: `register`, `guide/register` `42` → `clamp(30px,5vw,42px)`.
+- **shop `RelatedProducts`** (missed earlier): `repeat(4,1fr)` → `.sc-cards-4`;
+  `0 60px` → clamp.
+- **shop `PromoBanner`**: `flex 1 1 300px` → clamp basis (very-narrow safety).
+- **shop `[id]` detail** (tablet): `.sc-stack-md` → `.sc-stack-lg` on the
+  gallery+info grid so it stacks through the whole 768–1024 band, not just ≤768.
+
+Scanner over-flags confirmed already-handled and skipped: `guides/[slug]`
+(existing `@media 900`), `tours/[slug]` room card (`.sc-stack-md` correct inside
+an already-stacked column), `ReviewsBlock:85` (already `.sc-flex-col-md`). Legal/
+about/mission pages render via `StaticPageRenderer` (already responsive).
+
 ## Status: code sweep COMPLETE pending visual device QA
 
 Every public surface — shell, shared components, commerce/checkout, detail,
