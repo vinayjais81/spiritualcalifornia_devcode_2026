@@ -533,22 +533,42 @@ export function Navbar() {
           </Link>
 
           {isAuthenticated ? (
-            <button
-              onClick={() => { closeMenu(); handleLogout(); }}
-              style={{
-                fontFamily: 'var(--font-inter), sans-serif',
-                fontSize: '12px',
-                fontWeight: 500,
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase',
-                color: '#8A8278',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              Sign Out
-            </button>
+            <>
+              {/* Authenticated users need a way to reach their dashboard/profile
+                  from the mobile menu — the desktop user dropdown is hidden here,
+                  so without this the only option was Sign Out. */}
+              <Link
+                href={(user?.roles ?? []).includes('GUIDE') ? '/guide/dashboard' : '/seeker/dashboard'}
+                onClick={closeMenu}
+                className="font-playfair"
+                style={{
+                  fontSize: '32px',
+                  fontWeight: 400,
+                  fontStyle: 'italic',
+                  color: '#3A3530',
+                  textDecoration: 'none',
+                  letterSpacing: '0.02em',
+                }}
+              >
+                My Dashboard
+              </Link>
+              <button
+                onClick={() => { closeMenu(); handleLogout(); }}
+                style={{
+                  fontFamily: 'var(--font-inter), sans-serif',
+                  fontSize: '12px',
+                  fontWeight: 500,
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  color: '#8A8278',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                Sign Out
+              </button>
+            </>
           ) : (
             <Link
               href="/signin"
