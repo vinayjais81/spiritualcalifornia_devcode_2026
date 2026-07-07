@@ -456,6 +456,36 @@ export function Navbar() {
             gap: '36px',
           }}
         >
+          {/* Explicit close control. The hamburger-turned-X lives inside <nav>
+              (position:fixed, zIndex:100), which caps its stacking rank below
+              this overlay (zIndex:150) — so it's buried and un-tappable while
+              the menu is open. This button shares the overlay's stacking
+              context, guaranteeing a visible, tappable close on mobile. */}
+          <button
+            type="button"
+            onClick={closeMenu}
+            aria-label="Close menu"
+            style={{
+              position: 'absolute',
+              top: '18px',
+              right: 'clamp(16px, 4vw, 48px)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '44px',
+              height: '44px',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#3A3530',
+            }}
+          >
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+
           {navLinks.map(({ label, href }) => (
             <Link
               key={href}
