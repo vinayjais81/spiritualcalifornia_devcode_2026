@@ -195,7 +195,7 @@ export default function MyToursPage() {
                 href={`/seeker/dashboard/tours/${b.id}`}
                 style={{ textDecoration: 'none', color: 'inherit' }}
               >
-                <div style={{
+                <div className="sc-tour-card" style={{
                   background: C.white, border: '1px solid rgba(240,120,20,0.15)',
                   borderRadius: 12, overflow: 'hidden',
                   display: 'grid', gridTemplateColumns: '180px 1fr auto',
@@ -206,6 +206,7 @@ export default function MyToursPage() {
                 >
                   {/* Cover */}
                   <div
+                    className="sc-tour-cover"
                     style={{
                       background: b.tour.coverImageUrl
                         ? `url(${b.tour.coverImageUrl}) center/cover`
@@ -254,7 +255,7 @@ export default function MyToursPage() {
                   </div>
 
                   {/* Right column */}
-                  <div style={{
+                  <div className="sc-tour-aside" style={{
                     padding: 24, display: 'flex', flexDirection: 'column', gap: 8,
                     alignItems: 'flex-end', justifyContent: 'center',
                     borderLeft: '1px solid rgba(240,120,20,0.1)',

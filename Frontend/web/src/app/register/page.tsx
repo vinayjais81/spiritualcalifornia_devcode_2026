@@ -70,7 +70,7 @@ function ProgressBar({ step }: { step: number }) {
     <div style={{
       position: 'fixed', top: 73, left: 0, right: 0, zIndex: 99,
       background: G.white, borderBottom: `1px solid rgba(240,120,20,0.15)`,
-      padding: '12px 48px', display: 'flex', alignItems: 'center',
+      padding: '12px clamp(16px, 4vw, 48px)', display: 'flex', alignItems: 'center',
     }}>
       {STEPS.map((label, i) => {
         const num = i + 1;
@@ -90,7 +90,7 @@ function ProgressBar({ step }: { step: number }) {
               }}>
                 {done ? '✓' : i === STEPS.length - 1 ? '✦' : num}
               </div>
-              <span style={{
+              <span className="sc-step-label" style={{
                 fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
                 color: active ? G.charcoal : G.warmGray, fontWeight: active ? 500 : 400,
                 whiteSpace: 'nowrap', fontFamily: `var(--font-inter), sans-serif`,
@@ -292,7 +292,7 @@ function RegisterContent() {
           </span>
         </div>
       </Link>
-      <ul style={{ display: 'flex', gap: 36, listStyle: 'none' }}>
+      <ul className="hidden lg:flex" style={{ gap: 36, listStyle: 'none' }}>
         {['Practitioners','Shop','Soul Travels','Events'].map((l) => (
           <li key={l}>
             <Link href="/" style={{ fontSize: 12, letterSpacing: '0.12em', textTransform: 'uppercase', color: G.warmGray, textDecoration: 'none' }}>

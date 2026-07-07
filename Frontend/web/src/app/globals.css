@@ -267,3 +267,29 @@
 @media (min-width: 1024px) {
   .sc-dash-hamburger { display: none !important; }   /* no hamburger on desktop */
 }
+
+/* Dashboard list rows / cards built as fixed multi-column grids. Inline
+   style={{}} can't hold @media, so collapse them to a single column on
+   phones. Without this the fixed columns (e.g. 160/100/80px, or a 180px
+   cover + 180px price rail) crowd the flexible column to a sliver — the
+   title wraps one word per line, or the card overflows the viewport. */
+@media (max-width: 768px) {
+  /* Seeker "My Bookings" session rows: 1fr 160px 100px 80px → stacked. */
+  .sc-booking-row {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    justify-items: start !important;   /* keep pills/buttons natural width */
+  }
+  /* Seeker "My Soul Tours" cards: 180px 1fr auto → stacked. */
+  .sc-tour-card { grid-template-columns: 1fr !important; }
+  .sc-tour-cover { min-height: 180px !important; }   /* cover has no fixed height; give it one once full-width */
+  .sc-tour-aside {
+    border-left: none !important;
+    border-top: 1px solid rgba(240,120,20,0.1) !important;
+    min-width: 0 !important;
+    align-items: flex-start !important;
+  }
+  /* Onboarding stepper: hide the nowrap text labels so the 5 numbered
+     circles fit; the active step is still obvious from the fill colour. */
+  .sc-step-label { display: none !important; }
+}

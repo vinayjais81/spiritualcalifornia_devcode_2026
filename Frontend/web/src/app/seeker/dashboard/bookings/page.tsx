@@ -76,7 +76,7 @@ export default function MyBookingsPage() {
             const s = statusStyles[b.status as BookingStatus] || statusStyles.PENDING;
             const canCancel = ['PENDING', 'CONFIRMED'].includes(b.status) && start && start > now;
             return (
-              <a key={b.id} href={`/seeker/dashboard/bookings/${b.id}`} style={{
+              <a key={b.id} href={`/seeker/dashboard/bookings/${b.id}`} className="sc-booking-row" style={{
                 display: 'grid', gridTemplateColumns: '1fr 160px 100px 80px',
                 gap: '12px', alignItems: 'center', padding: '16px 0',
                 borderBottom: '1px solid rgba(240,120,20,0.08)',
