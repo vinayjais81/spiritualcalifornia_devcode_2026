@@ -500,6 +500,8 @@ export function Navbar() {
           {/* Cart icon */}
           <Link
             href="/cart"
+            onClick={closeMenu}
+            aria-label={`Cart${cartItemCount > 0 ? ` (${cartItemCount} item${cartItemCount !== 1 ? 's' : ''})` : ''}`}
             style={{
               position: 'relative',
               fontSize: '20px',
