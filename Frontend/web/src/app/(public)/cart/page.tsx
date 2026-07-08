@@ -448,8 +448,10 @@ export default function CartPage() {
       )}
 
       <div className="sc-stack-lg" style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 48 }}>
-        {/* Left: Cart items */}
-        <div>
+        {/* Left: Cart items. minWidth:0 lets this grid column shrink below its
+            content's intrinsic width once the grid stacks to one column on
+            mobile — without it the flex rows overflow the viewport. */}
+        <div style={{ minWidth: 0 }}>
           {/* Group by type */}
           {[
             { label: 'Physical Items', filter: (i: typeof items[0]) => i.productType === 'PHYSICAL', note: 'Ships within 3-5 business days' },
@@ -461,17 +463,17 @@ export default function CartPage() {
             if (sectionItems.length === 0) return null;
             return (
               <div key={section.label} style={{ marginBottom: 32 }}>
-                <div style={{
+                <div className="sc-cart-section-head" style={{
                   background: '#3A3530', color: '#F07814', padding: '10px 18px', borderRadius: '8px 8px 0 0',
                   fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase',
-                  display: 'flex', justifyContent: 'space-between',
+                  display: 'flex', justifyContent: 'space-between', gap: 8,
                 }}>
                   <span>{section.label} ({sectionItems.length})</span>
                   <span style={{ fontWeight: 400, color: 'rgba(255,255,255,0.5)' }}>{section.note}</span>
                 </div>
                 <div style={{ border: '1px solid rgba(240,120,20,0.1)', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
                   {sectionItems.map((item, i) => (
-                    <div key={item.id} style={{
+                    <div key={item.id} className="sc-cart-item" style={{
                       display: 'flex', alignItems: 'center', gap: 16, padding: '16px 18px',
                       borderBottom: i < sectionItems.length - 1 ? '1px solid rgba(240,120,20,0.08)' : 'none',
                     }}>
@@ -493,18 +495,22 @@ export default function CartPage() {
                         {item.variantName && <div style={{ fontSize: 12, color: '#8A8278', marginBottom: 2 }}>Size: {item.variantName}</div>}
                         {item.guideName && <div style={{ fontSize: 11, color: '#8A8278' }}>by {item.guideName}</div>}
                       </div>
-                      {/* Qty controls */}
-                      <div style={{ display: 'flex', alignItems: 'center', border: '1px solid rgba(240,120,20,0.2)', borderRadius: 6 }}>
-                        <button onClick={() => updateQuantity(item.id, item.quantity - 1)} style={{ padding: '6px 10px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#3A3530' }}>−</button>
-                        <span style={{ padding: '6px 12px', fontSize: 13, fontWeight: 500, minWidth: 30, textAlign: 'center' }}>{item.quantity}</span>
-                        <button onClick={() => updateQuantity(item.id, item.quantity + 1)} style={{ padding: '6px 10px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#3A3530' }}>+</button>
+                      {/* Actions — qty, line price, remove. Grouped so they wrap
+                          together onto a second full-width row on mobile. */}
+                      <div className="sc-cart-item-actions" style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        {/* Qty controls */}
+                        <div style={{ display: 'flex', alignItems: 'center', border: '1px solid rgba(240,120,20,0.2)', borderRadius: 6 }}>
+                          <button onClick={() => updateQuantity(item.id, item.quantity - 1)} style={{ padding: '6px 10px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#3A3530' }}>−</button>
+                          <span style={{ padding: '6px 12px', fontSize: 13, fontWeight: 500, minWidth: 30, textAlign: 'center' }}>{item.quantity}</span>
+                          <button onClick={() => updateQuantity(item.id, item.quantity + 1)} style={{ padding: '6px 10px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#3A3530' }}>+</button>
+                        </div>
+                        <div style={{ fontSize: 16, fontWeight: 600, color: '#3A3530', minWidth: 70, textAlign: 'right' }}>
+                          ${(item.price * item.quantity).toFixed(2)}
+                        </div>
+                        <button onClick={() => removeItem(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#8A8278', padding: 4 }}>
+                          ✕
+                        </button>
                       </div>
-                      <div style={{ fontSize: 16, fontWeight: 600, color: '#3A3530', minWidth: 70, textAlign: 'right' }}>
-                        ${(item.price * item.quantity).toFixed(2)}
-                      </div>
-                      <button onClick={() => removeItem(item.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#8A8278', padding: 4 }}>
-                        ✕
-                      </button>
                     </div>
                   ))}
                 </div>

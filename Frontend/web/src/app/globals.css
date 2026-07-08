@@ -292,4 +292,20 @@
   /* Onboarding stepper: hide the nowrap text labels so the 5 numbered
      circles fit; the active step is still obvious from the fill colour. */
   .sc-step-label { display: none !important; }
+
+  /* Cart item rows: image + title + [qty/price/remove] in one flex row
+     overflow the phone viewport. Wrap the grouped actions onto a second
+     full-width row so nothing clips. */
+  .sc-cart-item { flex-wrap: wrap !important; }
+  .sc-cart-item-actions {
+    width: 100% !important;
+    justify-content: space-between !important;
+    margin-top: 4px !important;
+  }
+  /* Cart section header: label + delivery note stack instead of colliding. */
+  .sc-cart-section-head {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 2px !important;
+  }
 }
