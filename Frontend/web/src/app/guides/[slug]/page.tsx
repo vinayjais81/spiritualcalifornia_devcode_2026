@@ -377,14 +377,10 @@ export default function GuideProfilePage() {
               }}>
                 📅 Book a Session
               </a>
-              <button style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                padding: '12px 28px', background: 'transparent', color: C.charcoal,
-                fontFamily: font, fontSize: '12px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase',
-                border: '1.5px solid rgba(240,120,20,0.5)', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.3s',
-              }}>
-                ✉️ Send Message
-              </button>
+              {/* Send Message intentionally hidden until seeker↔guide direct
+                  messaging is built (no backend for it yet). "Book a Session"
+                  above covers reaching this guide. A dead button read as broken
+                  (client-reported), so we hide rather than stub it. */}
               {guide.location && (
                 <div style={{ fontFamily: font, fontSize: '12px', color: C.warmGray, display: 'flex', alignItems: 'center', gap: '6px' }}>
                   📍 {guide.location}

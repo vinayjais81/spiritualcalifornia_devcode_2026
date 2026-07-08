@@ -162,6 +162,29 @@ export class BlogService {
     return post;
   }
 
+  // ─── Applaud (clap) a Post (Public) ─────────────────────────────────────────
+  // Simple running total. The client dedupes per-device via localStorage, so
+  // we don't track individual applause rows — a single increment per call.
+
+  async applaud(postId: string) {
+    const post = await this.prisma.blogPost.findFirst({
+      where: { id: postId, isPublished: true },
+      select: { id: true },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Blog post not found');
+    }
+
+    const updated = await this.prisma.blogPost.update({
+      where: { id: postId },
+      data: { applauseCount: { increment: 1 } },
+      select: { applauseCount: true },
+    });
+
+    return { applauseCount: updated.applauseCount };
+  }
+
   // ─── Update Post ────────────────────────────────────────────────────────────
 
   async update(userId: string, postId: string, dto: UpdatePostDto) {

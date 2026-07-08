@@ -239,6 +239,7 @@ model User {
   testimonialsGiven Testimonial[]  @relation("TestimonialAuthor")
   notifications     Notification[]
   auditLogs         AuditLog[]
+  guideFollows      GuideFollow[]
 
   @@map("users")
 }
@@ -383,10 +384,28 @@ model GuideProfile {
   subscription    GuideSubscription?
   ledgerEntries   LedgerEntry[]
   commissionRates CommissionRate[]
+  followers       GuideFollow[]
 
   @@index([slug])
   @@index([isPublished, isVerified])
   @@map("guide_profiles")
+}
+
+// Seeker → Guide follow. A signed-in user can follow a guide to keep tabs on
+// their journal / offerings. followerCount is derived (count of rows), not
+// denormalised. Unique(userId, guideId) makes follow idempotent.
+model GuideFollow {
+  id        String   @id @default(cuid())
+  userId    String
+  guideId   String
+  createdAt DateTime @default(now())
+
+  user  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  guide GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, guideId])
+  @@index([guideId])
+  @@map("guide_follows")
 }
 
 model GuideMedia {
@@ -1027,6 +1046,10 @@ model BlogPost {
   tags            String[]
   isPublished     Boolean   @default(false)
   publishedAt     DateTime?
+  // Reader "applause" (clap) tally. Incremented via POST /blog/:id/applaud;
+  // dedupe is per-device (localStorage) on the client, so this is a simple
+  // running total rather than a per-user join.
+  applauseCount   Int       @default(0)
   algoliaObjectId String?
   // Admin-managed display order on /journal. Lower sortOrder = appears
   // earlier. Default 0 → unsorted rows tie, broken by publishedAt DESC.

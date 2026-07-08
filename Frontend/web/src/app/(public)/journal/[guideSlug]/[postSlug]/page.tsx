@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { useAuthStore } from '@/store/auth.store';
 import { ReadingProgressBar } from '@/components/public/journal/ReadingProgressBar';
 import { AuthorBioCard } from '@/components/public/journal/AuthorBioCard';
 import { PostCard } from '@/components/public/journal/PostCard';
@@ -18,7 +19,9 @@ interface BlogPost {
   coverImageUrl: string | null;
   tags: string[];
   publishedAt: string | null;
+  applauseCount: number;
   guide: {
+    id: string;
     slug: string;
     displayName: string;
     tagline: string | null;
@@ -49,6 +52,15 @@ export default function SinglePostPage() {
   const [loading, setLoading] = useState(true);
   const [related, setRelated] = useState<RelatedPostApi[]>([]);
 
+  const router = useRouter();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  // Applause (clap) — count + per-device dedupe via localStorage.
+  const [applause, setApplause] = useState(0);
+  const [hasApplauded, setHasApplauded] = useState(false);
+  // Follow state for the post's author.
+  const [following, setFollowing] = useState(false);
+  const [followBusy, setFollowBusy] = useState(false);
+
   useEffect(() => {
     const fetchPost = async () => {
       try {
@@ -76,6 +88,63 @@ export default function SinglePostPage() {
       }
     })();
   }, [post]);
+
+  // Seed applause count + per-device "already applauded" flag when the post loads.
+  useEffect(() => {
+    if (!post) return;
+    setApplause(post.applauseCount ?? 0);
+    try {
+      setHasApplauded(localStorage.getItem(`sc-applauded-${post.id}`) === '1');
+    } catch { /* localStorage unavailable — treat as not applauded */ }
+  }, [post]);
+
+  // Load the current user's follow state for this guide (signed-in only).
+  useEffect(() => {
+    if (!post || !isAuthenticated) { setFollowing(false); return; }
+    api.get(`/guides/${post.guide.id}/follow-status`)
+      .then((r) => setFollowing(!!r.data?.isFollowing))
+      .catch(() => { /* non-critical */ });
+  }, [post, isAuthenticated]);
+
+  const handleApplaud = async () => {
+    if (!post || hasApplauded) return;
+    // Optimistic: bump immediately, persist the dedupe flag, reconcile with
+    // the server's authoritative count on success; revert on failure.
+    setApplause((c) => c + 1);
+    setHasApplauded(true);
+    try { localStorage.setItem(`sc-applauded-${post.id}`, '1'); } catch { /* ignore */ }
+    try {
+      const r = await api.post(`/blog/${post.id}/applaud`);
+      if (typeof r.data?.applauseCount === 'number') setApplause(r.data.applauseCount);
+    } catch {
+      setApplause((c) => Math.max(0, c - 1));
+      setHasApplauded(false);
+      try { localStorage.removeItem(`sc-applauded-${post.id}`); } catch { /* ignore */ }
+      toast.error('Could not applaud — please try again.');
+    }
+  };
+
+  const handleFollow = async () => {
+    if (!post) return;
+    if (!isAuthenticated) {
+      toast.error('Sign in to follow this practitioner.');
+      router.push(`/signin?redirect=${encodeURIComponent(`/journal/${guideSlug}/${postSlug}`)}`);
+      return;
+    }
+    if (followBusy) return;
+    setFollowBusy(true);
+    const next = !following;
+    setFollowing(next); // optimistic
+    try {
+      if (next) await api.post(`/guides/${post.guide.id}/follow`);
+      else await api.delete(`/guides/${post.guide.id}/follow`);
+    } catch {
+      setFollowing(!next); // revert
+      toast.error('Could not update follow — please try again.');
+    } finally {
+      setFollowBusy(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -176,12 +245,18 @@ export default function SinglePostPage() {
               {post.publishedAt && formatDate(post.publishedAt)} · {readTime}
             </div>
           </div>
-          <button style={{
-            padding: '7px 18px', borderRadius: 6,
-            background: 'transparent', border: '1.5px solid rgba(240,120,20,0.3)',
-            fontSize: 11, fontWeight: 500, color: '#3A3530', cursor: 'pointer',
-          }}>
-            Follow
+          <button
+            onClick={handleFollow}
+            disabled={followBusy}
+            style={{
+              padding: '7px 18px', borderRadius: 6,
+              background: following ? '#F07814' : 'transparent',
+              border: `1.5px solid ${following ? '#F07814' : 'rgba(240,120,20,0.3)'}`,
+              fontSize: 11, fontWeight: 500, color: following ? '#fff' : '#3A3530',
+              cursor: followBusy ? 'default' : 'pointer',
+            }}
+          >
+            {following ? 'Following' : 'Follow'}
           </button>
         </div>
       </div>
@@ -269,15 +344,20 @@ export default function SinglePostPage() {
             </button>
           ))}
         </div>
-        {/* Applaud count is derived from the backend once that API lands.
-            Until then, render a functional button without a fake count. */}
-        <button style={{
-          padding: '10px 20px', borderRadius: 24,
-          background: 'transparent', border: '1.5px solid #F07814',
-          fontSize: 12, color: '#3A3530', cursor: 'pointer',
-          display: 'flex', alignItems: 'center', gap: 6,
-        }}>
-          Applaud
+        {/* Applaud — clap tally from POST /blog/:id/applaud, deduped per device. */}
+        <button
+          onClick={handleApplaud}
+          disabled={hasApplauded}
+          title={hasApplauded ? 'You already applauded this post' : 'Applaud this post'}
+          style={{
+            padding: '10px 20px', borderRadius: 24,
+            background: hasApplauded ? '#FEF7F0' : 'transparent',
+            border: '1.5px solid #F07814',
+            fontSize: 12, color: '#3A3530', cursor: hasApplauded ? 'default' : 'pointer',
+            display: 'flex', alignItems: 'center', gap: 6,
+          }}
+        >
+          👏 Applaud{applause > 0 ? ` · ${applause}` : ''}
         </button>
       </div>
 

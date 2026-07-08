@@ -988,4 +988,42 @@ export class GuidesService {
 
     return slots;
   }
+
+  // ─── Follow / Unfollow (any signed-in user → guide) ─────────────────────────
+  // guideId is the GuideProfile.id. followerCount is derived (count of rows).
+  // upsert / deleteMany keep follow + unfollow idempotent.
+
+  async followGuide(userId: string, guideId: string) {
+    const guide = await this.prisma.guideProfile.findUnique({
+      where: { id: guideId },
+      select: { id: true },
+    });
+    if (!guide) throw new NotFoundException('Guide not found');
+
+    await this.prisma.guideFollow.upsert({
+      where: { userId_guideId: { userId, guideId } },
+      create: { userId, guideId },
+      update: {},
+    });
+
+    const followerCount = await this.prisma.guideFollow.count({ where: { guideId } });
+    return { isFollowing: true, followerCount };
+  }
+
+  async unfollowGuide(userId: string, guideId: string) {
+    await this.prisma.guideFollow.deleteMany({ where: { userId, guideId } });
+    const followerCount = await this.prisma.guideFollow.count({ where: { guideId } });
+    return { isFollowing: false, followerCount };
+  }
+
+  async getFollowStatus(userId: string, guideId: string) {
+    const [existing, followerCount] = await Promise.all([
+      this.prisma.guideFollow.findUnique({
+        where: { userId_guideId: { userId, guideId } },
+        select: { id: true },
+      }),
+      this.prisma.guideFollow.count({ where: { guideId } }),
+    ]);
+    return { isFollowing: !!existing, followerCount };
+  }
 }

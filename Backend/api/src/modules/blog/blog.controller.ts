@@ -82,6 +82,17 @@ export class BlogController {
     return this.blogService.findBySlug(guideSlug, postSlug);
   }
 
+  // ─── Applaud a Post (Public) ──────────────────────────────────────────────
+
+  @Public()
+  @Post(':id/applaud')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Applaud (clap for) a published blog post' })
+  @ApiResponse({ status: 200, description: 'New applause count' })
+  applaud(@Param('id') id: string) {
+    return this.blogService.applaud(id);
+  }
+
   // ─── Update Post (Guide only) ─────────────────────────────────────────────
 
   @Put(':id')

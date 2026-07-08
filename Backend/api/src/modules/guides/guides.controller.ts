@@ -200,4 +200,28 @@ export class GuidesController {
   getGuideServices(@Param('slug') slug: string) {
     return this.guidesService.getPublicServices(slug);
   }
+
+  // ─── Follow / Unfollow (any signed-in user) ─────────────────────────────────
+  // :id is the GuideProfile.id. Auth-required (no @Public) but no @Roles, so any
+  // authenticated user (seeker or otherwise) may follow.
+
+  @Post(':id/follow')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Follow a guide' })
+  followGuide(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
+    return this.guidesService.followGuide(user.id, id);
+  }
+
+  @Delete(':id/follow')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unfollow a guide' })
+  unfollowGuide(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
+    return this.guidesService.unfollowGuide(user.id, id);
+  }
+
+  @Get(':id/follow-status')
+  @ApiOperation({ summary: "Current user's follow state + follower count for a guide" })
+  getFollowStatus(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
+    return this.guidesService.getFollowStatus(user.id, id);
+  }
 }
