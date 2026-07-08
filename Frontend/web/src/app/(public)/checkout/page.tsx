@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cart.store';
 import { useAuthStore } from '@/store/auth.store';
 import { CheckoutProgress } from '@/components/public/checkout/CheckoutProgress';
@@ -56,7 +57,8 @@ interface OrderResponse {
 
 export default function CheckoutPage() {
   const { items, getSubtotal, hasPhysicalItems, hasDigitalItems, clearCart } = useCartStore();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
+  const router = useRouter();
   const subtotal = getSubtotal();
   const hasPhysical = hasPhysicalItems();
   const hasDigital = hasDigitalItems();
@@ -167,6 +169,17 @@ export default function CheckoutPage() {
   // "Continue to Payment" CTA for real Stripe Elements using the returned
   // client secret. The order sits in PENDING until Stripe confirms the PI.
   const handleContinueToPayment = async () => {
+    // Shop orders require an account (the order + its downloads are tied to a
+    // user). Guard here so we never let the request 401 and get silently
+    // bounced to /signin by the global interceptor — which would discard the
+    // form. The render-time gate below normally prevents reaching this, but
+    // keep it defensive (e.g. session expiring while the form is open).
+    if (!isAuthenticated) {
+      toast.error('Please sign in to complete your purchase — your cart is saved.');
+      router.push('/signin?redirect=/checkout');
+      return;
+    }
+
     const err = validate();
     if (err) { toast.error(err); return; }
 
@@ -259,6 +272,43 @@ export default function CheckoutPage() {
           Your cart is empty
         </h1>
         <Link href="/shop" style={ctaStyle}>Browse the Shop</Link>
+      </div>
+    );
+  }
+
+  // Account gate. Shop orders are tied to a user account (order history +
+  // the lifetime Downloads library), so checkout requires sign-in. Show this
+  // BEFORE the contact/shipping form so guests aren't invited to fill fields
+  // that can't be submitted — the previous behaviour let them complete the
+  // form, then a 401 silently bounced them to /signin, discarding everything.
+  // Gate only after auth state has hydrated so signed-in users never see a flash.
+  if (_hasHydrated && !isAuthenticated) {
+    return (
+      <div style={{ maxWidth: 520, margin: '0 auto', padding: '80px 32px', textAlign: 'center' }}>
+        <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>🔒</span>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 400, color: '#3A3530', marginBottom: 12 }}>
+          Sign in to complete your purchase
+        </h1>
+        <p style={{ fontSize: 14, color: '#8A8278', lineHeight: 1.6, marginBottom: 32 }}>
+          Shop orders are linked to your account so your receipts, order history,
+          and digital downloads stay in one place — available for lifetime
+          re-download. It only takes a moment, and your cart is saved.
+        </p>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link href="/signin?redirect=/checkout" style={ctaStyle}>Sign In</Link>
+          <Link
+            href="/register?redirect=/checkout"
+            style={{ ...ctaStyle, background: 'transparent', color: '#3A3530', border: '1.5px solid #F07814' }}
+          >
+            Create Account
+          </Link>
+        </div>
+        <Link
+          href="/cart"
+          style={{ display: 'inline-block', marginTop: 24, fontSize: 12, color: '#8A8278', textDecoration: 'none' }}
+        >
+          ← Back to cart
+        </Link>
       </div>
     );
   }
