@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, ChangeEvent, useState, useEffect, useMemo } from 'react';
+import { toast } from 'sonner';
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
@@ -98,10 +99,20 @@ export function Step1Profile() {
     setStep1({ languages: langs.includes(lang) ? langs.filter((l) => l !== lang) : [...langs, lang] });
   };
 
+  // Surface a validation error both inline (top of form) and as a toast.
+  // The inline banner sits above a long form, so a user who clicks the
+  // submit button at the bottom (e.g. with Terms unchecked) never sees it
+  // scroll into view — the toast guarantees visible feedback, matching the
+  // Sign In / Shop checkout behaviour.
+  const failValidation = (msg: string) => {
+    setError(msg);
+    toast.error(msg);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!step1.bio || step1.bio.length < 30) { setError('Bio must be at least 30 characters.'); return; }
-    if (!isAuthenticated && !terms) { setError('Please accept the Terms of Service and Privacy Policy to continue.'); return; }
+    if (!step1.bio || step1.bio.length < 30) { failValidation('Bio must be at least 30 characters.'); return; }
+    if (!isAuthenticated && !terms) { failValidation('Please accept the Terms of Service and Privacy Policy to continue.'); return; }
     setLoading(true); setError(null);
     try {
       // ── Unauthenticated path: register only, then ask the user to
@@ -112,10 +123,10 @@ export function Step1Profile() {
       //    avatar / etc. fields stay in the Zustand store so the form
       //    is pre-filled when the user comes back from the verify link.
       if (!isAuthenticated) {
-        if (!email || !password) { setError('Email and password are required.'); setLoading(false); return; }
+        if (!email || !password) { failValidation('Email and password are required.'); setLoading(false); return; }
         if (!pwdStrength.allPassed) {
           const firstFailing = pwdStrength.rules.find((r) => !r.passed);
-          setError(firstFailing ? `Password: ${firstFailing.label}` : 'Password does not meet the requirements.');
+          failValidation(firstFailing ? `Password: ${firstFailing.label}` : 'Password does not meet the requirements.');
           setLoading(false);
           return;
         }
@@ -201,7 +212,9 @@ export function Step1Profile() {
       nextStep();
     } catch (err: any) {
       const msg = err.response?.data?.message ?? 'Failed to save profile.';
-      setError(Array.isArray(msg) ? msg.join(', ') : msg);
+      const text = Array.isArray(msg) ? msg.join(', ') : msg;
+      setError(text);
+      toast.error(text);
     } finally { setLoading(false); }
   };
 
@@ -420,7 +433,11 @@ export function Step1Profile() {
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px', paddingTop: '28px', borderTop: '1px solid rgba(240,120,20,0.15)' }}>
         {(() => {
-          const submitDisabled = isLoading || (!isAuthenticated && !pwdStrength.allPassed);
+          // Only block on in-flight submission — NOT on field validity. Gating
+          // the button on password strength / terms makes a click do nothing,
+          // which reads as "broken"; handleSubmit validates and surfaces a
+          // toast instead. (See register password-error convention.)
+          const submitDisabled = isLoading;
           return (
             <button
               type="submit"
