@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useCartStore } from '@/store/cart.store';
+import { useAuthStore } from '@/store/auth.store';
 import { CheckoutProgress } from '@/components/public/checkout/CheckoutProgress';
 import { OrderSummary } from '@/components/public/checkout/OrderSummary';
 import { PaymentForm } from '@/components/public/booking/PaymentForm';
@@ -12,6 +13,7 @@ interface Attendee { firstName: string; lastName: string; email: string; require
 
 export default function EventCheckoutPage() {
   const { items, getSubtotal, clearCart } = useCartStore();
+  const { isAuthenticated, _hasHydrated } = useAuthStore();
   const siteConfig = useSiteConfigOrFallback();
   const bookingFeeRate = siteConfig.fees.eventBookingFeePercent / 100;
   const eventItems = items.filter(i => i.itemType === 'EVENT_TICKET');
@@ -35,6 +37,31 @@ export default function EventCheckoutPage() {
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 36, fontWeight: 400, color: '#3A3530', marginBottom: 10 }}>Your Tickets Are Confirmed!</h1>
         <p style={{ fontSize: 14, color: '#8A8278', marginBottom: 32 }}>E-tickets with QR codes have been sent to each attendee&apos;s email.</p>
         <Link href="/events" style={{ padding: '14px 32px', borderRadius: 8, background: '#F07814', color: '#3A3530', fontSize: 12, fontWeight: 600, textDecoration: 'none', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Browse More Events</Link>
+      </div>
+    );
+  }
+
+  // Account gate — mirror the Shop checkout. Event tickets (e-tickets, QR
+  // codes, order history) are account-tied, so require sign-in before the
+  // attendee-details form. Gated on _hasHydrated so signed-in users don't
+  // see a flash. Redirect returns here after auth.
+  if (_hasHydrated && !isAuthenticated) {
+    return (
+      <div style={{ maxWidth: 520, margin: '0 auto', padding: '80px 32px', textAlign: 'center' }}>
+        <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>🔒</span>
+        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 400, color: '#3A3530', marginBottom: 12 }}>
+          Sign in to complete your purchase
+        </h1>
+        <p style={{ fontSize: 14, color: '#8A8278', lineHeight: 1.6, marginBottom: 32 }}>
+          Event orders are linked to your account so your tickets, QR codes,
+          and order history stay in one place. It only takes a moment, and your
+          cart is saved.
+        </p>
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link href="/signin?redirect=/checkout/event" style={{ padding: '14px 32px', borderRadius: 8, background: '#F07814', color: '#3A3530', fontSize: 12, fontWeight: 600, textDecoration: 'none', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Sign In</Link>
+          <Link href="/register?redirect=/checkout/event" style={{ padding: '14px 32px', borderRadius: 8, background: 'transparent', color: '#3A3530', border: '1.5px solid #F07814', fontSize: 12, fontWeight: 600, textDecoration: 'none', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Create Account</Link>
+        </div>
+        <Link href="/cart" style={{ display: 'inline-block', marginTop: 24, fontSize: 12, color: '#8A8278', textDecoration: 'none' }}>← Back to cart</Link>
       </div>
     );
   }
