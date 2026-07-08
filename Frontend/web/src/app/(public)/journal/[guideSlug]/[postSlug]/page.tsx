@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { ReadingProgressBar } from '@/components/public/journal/ReadingProgressBar';
 import { AuthorBioCard } from '@/components/public/journal/AuthorBioCard';
@@ -90,6 +91,28 @@ export default function SinglePostPage() {
   if (!post) return <div style={{ padding: 100, textAlign: 'center' }}>Post not found</div>;
 
   const readTime = `${Math.max(1, Math.ceil(post.content.replace(/<[^>]+>/g, '').split(' ').length / 200))} min read`;
+
+  // Share handlers — pure client-side, no backend needed. Twitter/LinkedIn
+  // open the network's share-intent in a new tab; Copy Link writes the
+  // current URL to the clipboard with toast feedback.
+  const handleShare = (network: string) => {
+    const url = window.location.href;
+    if (network === 'Twitter') {
+      window.open(
+        `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(post.title)}`,
+        '_blank', 'noopener,noreferrer',
+      );
+    } else if (network === 'LinkedIn') {
+      window.open(
+        `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+        '_blank', 'noopener,noreferrer',
+      );
+    } else if (network === 'Copy Link') {
+      navigator.clipboard?.writeText(url)
+        .then(() => toast.success('Link copied to clipboard'))
+        .catch(() => toast.error('Could not copy link — please copy it from the address bar.'));
+    }
+  };
 
   return (
     <>
@@ -237,7 +260,7 @@ export default function SinglePostPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 12, color: '#8A8278', letterSpacing: '0.08em', textTransform: 'uppercase' }}>Share</span>
           {['Twitter', 'LinkedIn', 'Copy Link'].map((s) => (
-            <button key={s} style={{
+            <button key={s} onClick={() => handleShare(s)} style={{
               padding: '8px 16px', borderRadius: 6,
               background: 'transparent', border: '1.5px solid rgba(240,120,20,0.2)',
               fontSize: 11, color: '#3A3530', cursor: 'pointer',
