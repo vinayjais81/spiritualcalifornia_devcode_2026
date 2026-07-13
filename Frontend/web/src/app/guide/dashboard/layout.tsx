@@ -144,8 +144,8 @@ export default function GuideDashboardLayout({ children }: { children: React.Rea
           </button>
         <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '12px', textDecoration: 'none' }}>
           <Image src="/images/logo.jpg" alt="Spiritual California" width={40} height={40} style={{ borderRadius: '50%', objectFit: 'cover' }} />
-          <div>
-            <div style={{ fontFamily: serif, fontSize: '18px', fontWeight: 500, color: C.charcoal }}>Spiritual California</div>
+          <div className="dash-nav-brandtext">
+            <div style={{ fontFamily: serif, fontSize: '18px', fontWeight: 500, color: C.charcoal, whiteSpace: 'nowrap' }}>Spiritual California</div>
             <div style={{ fontFamily: font, fontSize: '9px', letterSpacing: '0.22em', textTransform: 'uppercase', color: C.warmGray, marginTop: '2px' }}>Find Your Guide. Begin Your Journey.</div>
           </div>
         </Link>

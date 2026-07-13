@@ -283,6 +283,15 @@
 @media (min-width: 1024px) {
   .sc-dash-hamburger { display: none !important; }   /* no hamburger on desktop */
 }
+/* Keep the fixed dashboard top-nav to a single ~69px line on phones so it
+   matches the content's paddingTop offset. Otherwise the crowded row (with
+   the hamburger) wraps the brand title + tagline to multiple lines, and the
+   taller nav overlaps the first content row (e.g. the Back / View Bookings
+   links on Edit Tour). Drop the brand text on phones — the logo mark alone
+   carries branding — which keeps the nav a single line. */
+@media (max-width: 768px) {
+  .dash-nav-brandtext { display: none !important; }
+}
 
 /* Dashboard list rows / cards built as fixed multi-column grids. Inline
    style={{}} can't hold @media, so collapse them to a single column on
