@@ -65,7 +65,7 @@ export default function ReviewsPage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid rgba(240,120,20,0.15)' }}>
+      <div className="scrollbar-none" style={{ display: 'flex', gap: 4, marginBottom: 24, borderBottom: '1px solid rgba(240,120,20,0.15)', flexWrap: 'nowrap', overflowX: 'auto' }}>
         {TABS.map((t) => {
           const active = filter === t.key;
           return (
@@ -80,6 +80,7 @@ export default function ReviewsPage() {
                 background: 'transparent', border: 'none',
                 borderBottom: active ? `2px solid ${C.gold}` : '2px solid transparent',
                 cursor: 'pointer', marginBottom: -1,
+                flexShrink: 0, whiteSpace: 'nowrap',
               }}
             >
               {t.label} <span style={{ color: C.warmGray, fontWeight: 400, marginLeft: 4 }}>({counts[t.key]})</span>
