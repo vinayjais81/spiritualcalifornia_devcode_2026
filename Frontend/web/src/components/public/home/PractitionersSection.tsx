@@ -67,7 +67,7 @@ export function PractitionersSection({ guides, blogPosts }: Props) {
     : [];
 
   return (
-    <section id="practitioners" style={{ padding: '60px 0 72px' }}>
+    <section id="practitioners" className="home-section">
       <SectionHeader title="Practitioners" linkLabel="View All" linkHref="/practitioners" />
 
       {hasGuides && (

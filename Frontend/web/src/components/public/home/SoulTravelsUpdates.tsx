@@ -42,7 +42,7 @@ export function SoulTravelsUpdates({ soulTravels }: Props) {
   }));
 
   return (
-    <section style={{ padding: '64px 0 72px', background: '#FFFFFF' }}>
+    <section className="home-section" style={{ background: '#FFFFFF' }}>
       <SectionHeader title="Soul Travels" linkLabel="All Retreats" linkHref="/travels" />
 
       <Carousel id="travels-feed">

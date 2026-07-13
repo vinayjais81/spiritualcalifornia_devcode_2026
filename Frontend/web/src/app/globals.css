@@ -189,6 +189,22 @@
   animation: sc-bounce 2s infinite;
 }
 
+/* Home page vertical rhythm — one shared spacing token so every stacked
+   section boundary is identical. Sections previously hardcoded slightly
+   different asymmetric padding (60/64 top, 72 bottom), which made the
+   gaps between widgets look uneven, especially on mobile. Symmetric
+   padding keeps the top-to-bottom rhythm even. */
+.home-section {
+  padding-top: 72px;
+  padding-bottom: 72px;
+}
+@media (max-width: 768px) {
+  .home-section {
+    padding-top: 48px;
+    padding-bottom: 48px;
+  }
+}
+
 /* ─── RESPONSIVE FOUNDATION (public site) ───────────────────
    The public pages are heavily inline-styled. React inline `style={{}}`
    CANNOT hold @media rules, so these class-based helpers cover what

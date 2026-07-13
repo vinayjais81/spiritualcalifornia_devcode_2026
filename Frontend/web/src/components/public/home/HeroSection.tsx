@@ -321,7 +321,7 @@ export function HeroSection() {
           section { padding: 100px 40px 70px !important; }
         }
         @media (max-width: 768px) {
-          section { padding: 88px 24px 60px !important; min-height: auto !important; }
+          section { padding: 88px 24px 40px !important; min-height: auto !important; }
           .hero-headline { font-size: clamp(36px, 10vw, 56px) !important; margin-bottom: 32px !important; }
           .hero-sub { font-size: 11px !important; margin-bottom: 12px !important; }
           .poppy-nav {
@@ -331,7 +331,7 @@ export function HeroSection() {
             align-items: end !important;
             width: 100% !important;
             max-width: 340px !important;
-            margin-bottom: 40px !important;
+            margin-bottom: 8px !important;
           }
           .poppy-circle { width: 120px !important; height: 120px !important; }
           .scroll-hint { display: none !important; }

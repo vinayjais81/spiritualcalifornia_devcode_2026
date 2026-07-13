@@ -47,7 +47,7 @@ export function EventsSection({ events }: Props) {
   }));
 
   return (
-    <section id="events" style={{ padding: '60px 0 72px' }}>
+    <section id="events" className="home-section">
       <SectionHeader title="Upcoming Events" linkLabel="All Events" linkHref="/events" />
 
       <Carousel id="events-feed">
