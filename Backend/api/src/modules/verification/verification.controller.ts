@@ -52,8 +52,11 @@ export class VerificationController {
     @Req() req: RawBodyRequest<Request>,
     @Headers('stripe-signature') signature: string,
   ) {
-    const rawBody = req.rawBody;
-    if (!rawBody || !signature) {
+    // express.raw() (main.ts) puts the raw bytes on req.body and bypasses
+    // Nest's rawBody capture, so req.rawBody is undefined — fall back to
+    // req.body so signature verification receives the exact bytes.
+    const rawBody = req.rawBody ?? (req.body as Buffer);
+    if (!rawBody || !Buffer.isBuffer(rawBody) || !signature) {
       throw new BadRequestException('Missing raw body or Stripe signature');
     }
 

@@ -33,8 +33,13 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Stripe webhook endpoint (raw body required)' })
   handleWebhook(@Req() req: RawBodyRequest<Request>) {
     const signature = req.headers['stripe-signature'] as string;
-    const rawBody = req.rawBody;
-    if (!rawBody || !signature) {
+    // main.ts registers express.raw() for this path, which places the raw
+    // bytes on req.body. That bypasses Nest's rawBody capture, so req.rawBody
+    // is undefined here — fall back to req.body so signature verification gets
+    // the exact bytes. (Reading only req.rawBody made every webhook silently
+    // no-op with "Missing body or signature".)
+    const rawBody = req.rawBody ?? (req.body as Buffer);
+    if (!rawBody || !Buffer.isBuffer(rawBody) || !signature) {
       return { received: false, error: 'Missing body or signature' };
     }
     return this.paymentsService.handleStripeWebhook(rawBody, signature);
