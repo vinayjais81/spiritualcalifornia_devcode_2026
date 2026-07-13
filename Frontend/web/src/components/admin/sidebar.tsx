@@ -22,6 +22,7 @@ import {
   Package,
   Calendar,
   Mountain,
+  CreditCard,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { useRouter } from 'next/navigation';
@@ -45,6 +46,7 @@ const navItems = [
   { href: '/admin/tour-bookings', label: 'Tour Bookings', icon: Plane },
   { href: '/admin/service-bookings', label: 'Service Bookings', icon: Briefcase },
   { href: '/admin/payouts', label: 'Payouts', icon: Wallet },
+  { href: '/admin/subscriptions', label: 'Subscriptions', icon: CreditCard },
   { href: '/admin/commission-rates', label: 'Commission Rates', icon: Percent },
   { href: '/admin/reconciliation', label: 'Reconciliation', icon: ShieldCheck },
   { href: '/admin/financials', label: 'Financials', icon: BarChart3 },

@@ -10,7 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
 import { CacheService } from '../../database/cache.service';
-import { Role, VerificationStatus, PaymentStatus, BookingStatus, TourBookingStatus, PayoutStatus } from '@prisma/client';
+import { Role, VerificationStatus, PaymentStatus, BookingStatus, TourBookingStatus, PayoutStatus, SubscriptionStatus } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EmailService } from '../notifications/email.service';
 import { LedgerService } from '../payments/ledger.service';
@@ -1423,6 +1423,83 @@ export class AdminService {
   }
 
   // ─── Payout Management ────────────────────────────────────────────────────
+
+  async getSubscriptions(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    status?: SubscriptionStatus;
+  }) {
+    const { page, limit, search, status } = params;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (status) where.status = status;
+    if (search) {
+      where.guide = {
+        OR: [
+          { displayName: { contains: search, mode: 'insensitive' } },
+          { user: { email: { contains: search, mode: 'insensitive' } } },
+          { user: { firstName: { contains: search, mode: 'insensitive' } } },
+          { user: { lastName: { contains: search, mode: 'insensitive' } } },
+        ],
+      };
+    }
+
+    const [subs, total, statusCounts] = await Promise.all([
+      this.prisma.guideSubscription.findMany({
+        where,
+        skip,
+        take: limit,
+        include: {
+          guide: {
+            select: {
+              id: true,
+              slug: true,
+              displayName: true,
+              user: {
+                select: { firstName: true, lastName: true, email: true, avatarUrl: true },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.guideSubscription.count({ where }),
+      this.prisma.guideSubscription.groupBy({ by: ['status'], _count: true }),
+    ]);
+
+    const counts: Record<string, number> = {};
+    statusCounts.forEach((s) => { counts[s.status] = s._count; });
+
+    return {
+      subscriptions: subs.map((s) => ({
+        id: s.id,
+        status: s.status,
+        // A subscription set to cancel at period end still reports ACTIVE/TRIALING
+        // until the period closes; surface the pending-cancel flag separately.
+        cancelAtPeriodEnd: !!s.cancelledAt && s.status !== SubscriptionStatus.CANCELLED,
+        currentPeriodStart: s.currentPeriodStart,
+        currentPeriodEnd: s.currentPeriodEnd,
+        cancelledAt: s.cancelledAt,
+        createdAt: s.createdAt,
+        stripeSubscriptionId: s.stripeSubscriptionId,
+        guide: {
+          id: s.guide.id,
+          slug: s.guide.slug,
+          displayName: s.guide.displayName,
+          name: `${s.guide.user.firstName} ${s.guide.user.lastName}`.trim(),
+          email: s.guide.user.email,
+          avatarUrl: s.guide.user.avatarUrl,
+        },
+      })),
+      total,
+      page,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+      statusCounts: counts,
+    };
+  }
 
   async getPayoutRequests(params: { page: number; limit: number; status?: PayoutStatus }) {
     const { page, limit, status } = params;

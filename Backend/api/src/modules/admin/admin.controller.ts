@@ -29,7 +29,7 @@ import { RejectGuideDto } from './dto/reject-guide.dto';
 import { AdminCreatePostDto, AdminUpdatePostDto } from './dto/admin-blog.dto';
 import { SetUserPasswordDto } from './dto/set-user-password.dto';
 import { ConvertTestAccountDto, SetTestAccountFlagDto } from './dto/convert-test-account.dto';
-import { VerificationStatus, TourBookingStatus, BookingStatus, PayoutStatus, EarningCategory } from '@prisma/client';
+import { VerificationStatus, TourBookingStatus, BookingStatus, PayoutStatus, EarningCategory, SubscriptionStatus } from '@prisma/client';
 import { PaymentsService } from '../payments/payments.service';
 import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.decorator';
 import { IsOptional, IsEnum, IsString, IsNumber, IsArray, Min, Max, IsDateString, ValidateNested, ArrayMinSize } from 'class-validator';
@@ -170,6 +170,13 @@ class PayoutRequestsQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsEnum(PayoutStatus)
   status?: PayoutStatus;
+}
+
+class SubscriptionsQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional({ enum: SubscriptionStatus })
+  @IsOptional()
+  @IsEnum(SubscriptionStatus)
+  status?: SubscriptionStatus;
 }
 
 class ServiceBookingsQueryDto extends PaginationQueryDto {
@@ -702,6 +709,17 @@ export class AdminController {
   }
 
   // ─── Payout Management ────────────────────────────────────────────────────
+
+  @Get('subscriptions')
+  @ApiOperation({ summary: 'List guide subscriptions ($50/mo Standard listing) with filters' })
+  getSubscriptions(@Query() query: SubscriptionsQueryDto) {
+    return this.adminService.getSubscriptions({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+      status: query.status,
+    });
+  }
 
   @Get('payout-requests')
   @ApiOperation({ summary: 'List all guide payout requests with filters' })

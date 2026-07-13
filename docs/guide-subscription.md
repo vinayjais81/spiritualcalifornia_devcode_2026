@@ -83,6 +83,19 @@ resolves the customer from the live subscription object at call time.
 - Handles the `?subscription=success|cancelled` return params with a toast +
   status refresh.
 
+## Admin view
+
+`/admin/subscriptions` (nav: **Subscriptions**) lists every guide subscription
+from the `GuideSubscription` table — guide, plan status (Active / Free trial /
+Payment due / Cancelled), current billing period, subscribe date, and Stripe
+subscription id. Filter by status, search by guide name/email. Backed by
+`GET /admin/subscriptions` (`admin.service.getSubscriptions`).
+
+Because this reads OUR table, a subscription only appears here **after the
+Stripe webhook delivers `customer.subscription.created`**. If a paid Stripe
+subscription is missing from this list, the webhook events are not reaching the
+`/payments/webhook/stripe` endpoint (see setup below).
+
 ## Config / env
 
 ```
