@@ -7,7 +7,7 @@ export function SoulTravelsBanner() {
   return (
     <section
       id="travels"
-      style={{ position: 'relative', height: '440px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      style={{ position: 'relative', minHeight: '440px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '64px 0' }}
     >
       {/* Background image */}
       <Image
@@ -100,10 +100,10 @@ export function SoulTravelsBanner() {
 
       <style>{`
         @media (max-width: 768px) {
-          #travels { height: 320px !important; }
+          #travels { min-height: 320px !important; padding: 56px 0 !important; }
         }
         @media (max-width: 480px) {
-          #travels { height: 280px !important; }
+          #travels { min-height: 280px !important; padding: 48px 0 !important; }
         }
       `}</style>
     </section>
