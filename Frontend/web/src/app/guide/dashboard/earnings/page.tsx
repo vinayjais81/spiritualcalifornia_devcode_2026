@@ -247,7 +247,7 @@ export default function EarningsPage() {
 
       {/* Stripe Connect Status */}
       {connectStatus && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 28 }}>
+        <div className="sc-cards-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 28 }}>
           <StatusCard label="Stripe Connected" value={connectStatus.connected ? 'Yes' : 'No'} ok={connectStatus.connected} />
           <StatusCard label="Charges Enabled" value={connectStatus.chargesEnabled ? 'Yes' : 'No'} ok={connectStatus.chargesEnabled} />
           <StatusCard label="Payouts Enabled" value={connectStatus.payoutsEnabled ? 'Yes' : 'No'} ok={connectStatus.payoutsEnabled} />
