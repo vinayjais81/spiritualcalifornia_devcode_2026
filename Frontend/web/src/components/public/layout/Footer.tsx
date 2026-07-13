@@ -20,7 +20,7 @@ const guidesLinks = [
 const companyLinks = [
   { label: 'About', href: '/about' },
   { label: 'Our Mission', href: '/mission' },
-  { label: 'Blog', href: '/blog' },
+  { label: 'Blog', href: '/journal' },
   { label: 'Contact', href: '/contact' },
 ];
 
