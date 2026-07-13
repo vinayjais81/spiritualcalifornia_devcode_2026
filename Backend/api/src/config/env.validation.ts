@@ -36,6 +36,16 @@ const envSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
   STRIPE_PLATFORM_COMMISSION_PERCENT: z.coerce.number().default(15),
 
+  // Guide subscription ($50/mo Standard listing). Price IDs are optional: when
+  // unset the payments service lazily creates recurring Prices in Stripe keyed
+  // by lookup_key so the flow works out-of-the-box in the sandbox; set these in
+  // production to pin to Prices you manage in the Stripe dashboard.
+  STRIPE_SUBSCRIPTION_PRICE_MONTHLY: z.string().optional(),
+  STRIPE_SUBSCRIPTION_PRICE_ANNUAL: z.string().optional(),
+  // Length of the free listing period, in days, honored as a Stripe trial when
+  // a guide subscribes (kept as a string; consuming code does its own Number()).
+  GUIDE_FREE_PERIOD_DAYS: z.string().optional(),
+
   // Resend (Email)
   RESEND_API_KEY: z.string().min(1),
   EMAIL_FROM: z.string().min(1).default('noreply@spiritualcalifornia.com'),

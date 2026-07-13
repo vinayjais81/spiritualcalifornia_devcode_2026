@@ -56,6 +56,33 @@ export class PaymentsController {
     return this.paymentsService.getConnectStatus(user.id);
   }
 
+  // ─── Guide Subscription ($50/mo Standard listing) ──────────────────────────
+  // Literal routes — MUST stay above the `@Get(':id')` wildcard below.
+
+  @Get('subscription/status')
+  @Roles(Role.GUIDE)
+  @ApiOperation({ summary: "Get guide's subscription + free-period status" })
+  subscriptionStatus(@CurrentUser() user: CurrentUserData) {
+    return this.paymentsService.getSubscriptionStatus(user.id);
+  }
+
+  @Post('subscription/checkout')
+  @Roles(Role.GUIDE)
+  @ApiOperation({ summary: 'Start a Stripe Checkout for the Standard listing plan' })
+  subscriptionCheckout(
+    @CurrentUser() user: CurrentUserData,
+    @Body('plan') plan: 'monthly' | 'annual',
+  ) {
+    return this.paymentsService.createSubscriptionCheckout(user.id, plan ?? 'monthly');
+  }
+
+  @Post('subscription/portal')
+  @Roles(Role.GUIDE)
+  @ApiOperation({ summary: 'Get a Stripe billing-portal link to manage/cancel' })
+  subscriptionPortal(@CurrentUser() user: CurrentUserData) {
+    return this.paymentsService.createSubscriptionPortal(user.id);
+  }
+
   // ─── Earnings & Payouts (Guide) ────────────────────────────────────────────
 
   @Get('earnings')

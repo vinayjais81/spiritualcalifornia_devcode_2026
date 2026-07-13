@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException, Logger } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException, ConflictException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { EarningCategory } from '@prisma/client';
+import { EarningCategory, SubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { StripeService } from './stripe.service';
 import { LedgerService } from './ledger.service';
@@ -949,8 +949,42 @@ export class PaymentsService {
       }
       case 'checkout.session.completed': {
         const session = event.data.object as any;
+        // Subscription checkouts carry no session-level PaymentIntent; the
+        // GuideSubscription row is written from the customer.subscription.*
+        // events below (source of truth for status + billing period).
+        if (session.mode === 'subscription') {
+          this.logger.log(`Subscription checkout completed: session ${session.id}`);
+          break;
+        }
         if (session.payment_intent) {
           await this.confirmPayment(session.payment_intent);
+        }
+        break;
+      }
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated': {
+        await this.upsertGuideSubscriptionFromStripe(event.data.object as any);
+        break;
+      }
+      case 'customer.subscription.deleted': {
+        const sub = event.data.object as any;
+        const guideId: string | undefined = sub.metadata?.guideId;
+        if (guideId) {
+          // Only cancel our row if it still tracks THIS subscription — guards
+          // against a stale delete clobbering a newer re-subscription.
+          const existing = await this.prisma.guideSubscription.findUnique({
+            where: { guideId },
+          });
+          if (existing && existing.stripeSubscriptionId === sub.id) {
+            await this.prisma.guideSubscription.update({
+              where: { guideId },
+              data: {
+                status: SubscriptionStatus.CANCELLED,
+                cancelledAt: new Date(),
+              },
+            });
+            this.logger.log(`GuideSubscription cancelled for guide ${guideId}`);
+          }
         }
         break;
       }
@@ -1199,6 +1233,168 @@ export class PaymentsService {
     }
 
     return { connected: true, ...status };
+  }
+
+  // ─── Guide Subscription ($50/mo Standard listing) ──────────────────────────
+
+  /** Days remaining in the guide's free listing period (0 once elapsed). */
+  private freePeriodDaysLeft(createdAt: Date): number {
+    const freeDays = Number(this.config.get('GUIDE_FREE_PERIOD_DAYS', '90'));
+    const freeEnd = createdAt.getTime() + freeDays * 86_400_000;
+    const remainingMs = freeEnd - Date.now();
+    return remainingMs > 0 ? Math.floor(remainingMs / 86_400_000) : 0;
+  }
+
+  /** Absolute end of the guide's free listing period. */
+  private freePeriodEndsAt(createdAt: Date): Date {
+    const freeDays = Number(this.config.get('GUIDE_FREE_PERIOD_DAYS', '90'));
+    return new Date(createdAt.getTime() + freeDays * 86_400_000);
+  }
+
+  private mapStripeSubStatus(s: string): SubscriptionStatus {
+    switch (s) {
+      case 'active':
+        return SubscriptionStatus.ACTIVE;
+      case 'trialing':
+        return SubscriptionStatus.TRIALING;
+      case 'canceled':
+      case 'incomplete_expired':
+        return SubscriptionStatus.CANCELLED;
+      default:
+        // past_due | unpaid | incomplete | paused → treat as needs-attention
+        return SubscriptionStatus.PAST_DUE;
+    }
+  }
+
+  /**
+   * Mirror a Stripe Subscription onto our GuideSubscription row. Called from
+   * the customer.subscription.created/updated webhooks. guideId comes from the
+   * subscription metadata we stamped at checkout.
+   */
+  private async upsertGuideSubscriptionFromStripe(sub: any) {
+    const guideId: string | undefined = sub.metadata?.guideId;
+    if (!guideId) {
+      this.logger.warn(`Subscription ${sub.id} missing guideId metadata — skip`);
+      return;
+    }
+    // Billing period lives on the subscription (older API) or the first item
+    // (newer API). Fall back defensively so the non-null DateTime columns are
+    // always populated.
+    const item = sub.items?.data?.[0];
+    const startUnix = sub.current_period_start ?? item?.current_period_start;
+    const endUnix = sub.current_period_end ?? item?.current_period_end;
+    const now = Date.now();
+    const data = {
+      stripeSubscriptionId: sub.id,
+      status: this.mapStripeSubStatus(sub.status),
+      currentPeriodStart: startUnix ? new Date(startUnix * 1000) : new Date(now),
+      currentPeriodEnd: endUnix
+        ? new Date(endUnix * 1000)
+        : new Date(now + 30 * 86_400_000),
+      cancelledAt: sub.canceled_at ? new Date(sub.canceled_at * 1000) : null,
+    };
+    await this.prisma.guideSubscription.upsert({
+      where: { guideId },
+      create: { guideId, ...data },
+      update: data,
+    });
+    this.logger.log(
+      `GuideSubscription upsert guide=${guideId} status=${data.status}`,
+    );
+  }
+
+  /**
+   * Start a subscription checkout for the Standard listing plan. The remaining
+   * free-listing days are passed as a Stripe trial so guides mid-free-period
+   * aren't charged until it ends. Blocks if an active/trialing sub exists.
+   */
+  async createSubscriptionCheckout(userId: string, plan: 'monthly' | 'annual') {
+    const guide = await this.prisma.guideProfile.findUnique({
+      where: { userId },
+      include: { user: { select: { email: true } }, subscription: true },
+    });
+    if (!guide) throw new NotFoundException('Guide profile not found');
+
+    if (
+      guide.subscription &&
+      (guide.subscription.status === SubscriptionStatus.ACTIVE ||
+        guide.subscription.status === SubscriptionStatus.TRIALING)
+    ) {
+      throw new ConflictException('You already have an active subscription.');
+    }
+
+    const interval = plan === 'annual' ? 'year' : 'month';
+    const priceId = await this.stripeService.getSubscriptionPriceId(interval);
+    const trialPeriodDays = this.freePeriodDaysLeft(guide.createdAt);
+    const frontend = this.config.get('FRONTEND_URL');
+
+    return this.stripeService.createSubscriptionCheckout({
+      priceId,
+      customerEmail: guide.user.email,
+      successUrl: `${frontend}/guide/dashboard/subscription?subscription=success`,
+      cancelUrl: `${frontend}/guide/dashboard/subscription?subscription=cancelled`,
+      trialPeriodDays,
+      metadata: { guideId: guide.id, plan },
+    });
+  }
+
+  /** Current subscription + free-period state for the guide dashboard. */
+  async getSubscriptionStatus(userId: string) {
+    const guide = await this.prisma.guideProfile.findUnique({
+      where: { userId },
+      include: { subscription: true },
+    });
+    if (!guide) throw new NotFoundException('Guide profile not found');
+
+    const sub = guide.subscription;
+    const hasPaidPlan =
+      !!sub &&
+      (sub.status === SubscriptionStatus.ACTIVE ||
+        sub.status === SubscriptionStatus.TRIALING ||
+        sub.status === SubscriptionStatus.PAST_DUE);
+    const freeEnd = this.freePeriodEndsAt(guide.createdAt);
+    const freePeriodActive = !hasPaidPlan && Date.now() < freeEnd.getTime();
+
+    return {
+      plans: {
+        monthly: { amount: 50, interval: 'month' },
+        annual: { amount: 480, interval: 'year', savingsVsMonthly: 120 },
+      },
+      freePeriodActive,
+      freePeriodEndsAt: freeEnd.toISOString(),
+      freePeriodDaysLeft: this.freePeriodDaysLeft(guide.createdAt),
+      subscription: sub
+        ? {
+            status: sub.status,
+            currentPeriodEnd: sub.currentPeriodEnd,
+            cancelledAt: sub.cancelledAt,
+          }
+        : null,
+    };
+  }
+
+  /** Stripe billing-portal link so the guide can update card / cancel. */
+  async createSubscriptionPortal(userId: string) {
+    const guide = await this.prisma.guideProfile.findUnique({
+      where: { userId },
+      include: { subscription: true },
+    });
+    if (!guide?.subscription) {
+      throw new NotFoundException('No subscription found');
+    }
+    // Resolve the Stripe customer from the live subscription so we don't need
+    // to persist a customer id column of our own.
+    const stripeSub = await this.stripeService.retrieveSubscription(
+      guide.subscription.stripeSubscriptionId,
+    );
+    const customerId =
+      typeof stripeSub.customer === 'string'
+        ? stripeSub.customer
+        : (stripeSub.customer as any).id;
+    return this.stripeService.createBillingPortalSession(
+      customerId,
+      `${this.config.get('FRONTEND_URL')}/guide/dashboard/subscription`,
+    );
   }
 
   // ─── Payout Request (Guide Cashout) ────────────────────────────────────────

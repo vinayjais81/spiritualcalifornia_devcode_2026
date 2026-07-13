@@ -77,6 +77,99 @@ export class StripeService {
     return { sessionId: session.id, url: session.url! };
   }
 
+  // ─── Guide Subscriptions (recurring $50/mo Standard listing) ───────────────
+
+  /**
+   * Resolve the recurring Price ID for a billing interval. Prefers an explicit
+   * env-configured Price (production), otherwise looks one up by lookup_key and
+   * lazily creates a Product + recurring Price the first time so the flow works
+   * out-of-the-box in the sandbox without manual dashboard setup.
+   */
+  async getSubscriptionPriceId(interval: 'month' | 'year'): Promise<string> {
+    const envPrice =
+      interval === 'month'
+        ? this.config.get<string>('STRIPE_SUBSCRIPTION_PRICE_MONTHLY')
+        : this.config.get<string>('STRIPE_SUBSCRIPTION_PRICE_ANNUAL');
+    // Only honor a genuine Stripe Price ID ("price_..."). A bare amount like
+    // "50" is a common misconfiguration — ignore it and fall through to the
+    // lookup/lazy-create path rather than sending Stripe an invalid id.
+    if (envPrice && envPrice.startsWith('price_')) return envPrice;
+
+    const lookupKey =
+      interval === 'month' ? 'guide_standard_monthly' : 'guide_standard_annual';
+    const existing = await this.stripe.prices.list({
+      lookup_keys: [lookupKey],
+      active: true,
+      limit: 1,
+    });
+    if (existing.data[0]) return existing.data[0].id;
+
+    const unitAmount = interval === 'month' ? 5000 : 48000; // $50/mo, $480/yr
+    const price = await this.stripe.prices.create({
+      currency: 'usd',
+      unit_amount: unitAmount,
+      recurring: { interval },
+      lookup_key: lookupKey,
+      product_data: {
+        name:
+          interval === 'month'
+            ? 'Standard Listing — Monthly'
+            : 'Standard Listing — Annual',
+      },
+    });
+    this.logger.log(`Created subscription price ${price.id} (${lookupKey})`);
+    return price.id;
+  }
+
+  /**
+   * Hosted Checkout in subscription mode. Stripe creates the Customer from
+   * `customerEmail`. `metadata` is stamped on BOTH the session and the
+   * subscription so the webhook can map the subscription back to our guide
+   * without a DB round-trip.
+   */
+  async createSubscriptionCheckout(params: {
+    priceId: string;
+    customerEmail: string;
+    successUrl: string;
+    cancelUrl: string;
+    trialPeriodDays?: number;
+    metadata: Record<string, string>;
+  }): Promise<{ url: string }> {
+    const session = await this.stripe.checkout.sessions.create({
+      mode: 'subscription',
+      customer_email: params.customerEmail,
+      line_items: [{ price: params.priceId, quantity: 1 }],
+      subscription_data: {
+        metadata: params.metadata,
+        ...(params.trialPeriodDays && params.trialPeriodDays > 0
+          ? { trial_period_days: params.trialPeriodDays }
+          : {}),
+      },
+      success_url: params.successUrl,
+      cancel_url: params.cancelUrl,
+      metadata: params.metadata,
+      allow_promotion_codes: true,
+    });
+    this.logger.log(`Subscription checkout session created: ${session.id}`);
+    return { url: session.url! };
+  }
+
+  /** Stripe-hosted billing portal so guides can update card / cancel. */
+  async createBillingPortalSession(
+    customerId: string,
+    returnUrl: string,
+  ): Promise<{ url: string }> {
+    const portal = await this.stripe.billingPortal.sessions.create({
+      customer: customerId,
+      return_url: returnUrl,
+    });
+    return { url: portal.url };
+  }
+
+  async retrieveSubscription(id: string): Promise<Stripe.Subscription> {
+    return this.stripe.subscriptions.retrieve(id);
+  }
+
   // ─── Stripe Connect (Guide Onboarding) ─────────────────────────────────────
 
   async createConnectAccount(params: {
