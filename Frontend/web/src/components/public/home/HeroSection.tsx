@@ -110,10 +110,11 @@ export function HeroSection() {
           style={{
             display: 'flex',
             alignItems: 'center',
+            gap: '10px',
             background: '#FFFFFF',
             border: '1.5px solid rgba(240,120,20,0.5)',
             borderRadius: '50px',
-            padding: '12px 18px 12px 26px',
+            padding: '12px 12px 12px 26px',
             boxShadow: '0 4px 30px rgba(240,120,20,0.1)',
             transition: 'box-shadow 0.3s, border-color 0.3s',
           }}
@@ -135,6 +136,8 @@ export function HeroSection() {
             onKeyDown={(e) => { if (e.key === 'Enter') submitQuery(); }}
             style={{
               flex: 1,
+              minWidth: 0,
+              textOverflow: 'ellipsis',
               border: 'none',
               outline: 'none',
               fontFamily: 'var(--font-inter), sans-serif',
