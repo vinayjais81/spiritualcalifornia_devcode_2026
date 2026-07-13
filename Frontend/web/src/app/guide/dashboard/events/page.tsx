@@ -172,7 +172,7 @@ export default function EventsPage() {
       </PageHeader>
       <Panel title="Your Events" icon="📅">
         {events.length === 0 ? <EmptyState message="No events yet." /> : events.map(ev => (
-          <div key={ev.id} style={{ display: 'grid', gridTemplateColumns: '80px 1fr auto auto auto 36px', gap: '12px', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
+          <div key={ev.id} className="sc-event-row" style={{ display: 'grid', gridTemplateColumns: '80px 1fr auto', gap: '12px', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid rgba(240,120,20,0.1)' }}>
             <EventDateBox startTime={ev.startTime} />
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -187,17 +187,19 @@ export default function EventsPage() {
                 {ev.location || 'Location TBD'} · {ev.ticketTiers?.[0] ? `${formatPrice(ev.ticketTiers[0].price)}/person` : 'Free'}
               </div>
             </div>
-            <StatusBadge published={ev.isPublished && !ev.isCancelled} />
-            <Btn
-              variant={ev.isPublished ? 'secondary' : 'green'}
-              size="sm"
-              onClick={() => togglePublish(ev)}
-              disabled={ev.isCancelled}
-            >
-              {ev.isPublished ? '⏸ Unpublish' : '▶ Publish'}
-            </Btn>
-            <Btn variant="secondary" size="sm" onClick={() => openEdit(ev)}>Edit</Btn>
-            <button onClick={() => remove(ev.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.warmGray, fontSize: '18px' }}>×</button>
+            <div className="sc-event-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <StatusBadge published={ev.isPublished && !ev.isCancelled} />
+              <Btn
+                variant={ev.isPublished ? 'secondary' : 'green'}
+                size="sm"
+                onClick={() => togglePublish(ev)}
+                disabled={ev.isCancelled}
+              >
+                {ev.isPublished ? '⏸ Unpublish' : '▶ Publish'}
+              </Btn>
+              <Btn variant="secondary" size="sm" onClick={() => openEdit(ev)}>Edit</Btn>
+              <button onClick={() => remove(ev.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.warmGray, fontSize: '18px' }}>×</button>
+            </div>
           </div>
         ))}
       </Panel>

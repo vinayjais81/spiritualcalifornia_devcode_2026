@@ -318,6 +318,16 @@
      circles fit; the active step is still obvious from the fill colour. */
   .sc-step-label { display: none !important; }
 
+  /* Guide "Your Events" rows: date + info + [badge/publish/edit/delete] in
+     one grid row overflows the phone viewport (Edit/× pushed off-screen).
+     Keep date + info on top, drop the grouped actions to a full-width
+     second row that wraps. */
+  .sc-event-row { grid-template-columns: 64px 1fr !important; }
+  .sc-event-actions {
+    grid-column: 1 / -1 !important;
+    flex-wrap: wrap !important;
+  }
+
   /* Cart item rows: image + title + [qty/price/remove] in one flex row
      overflow the phone viewport. Wrap the grouped actions onto a second
      full-width row so nothing clips. */
