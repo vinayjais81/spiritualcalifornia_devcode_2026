@@ -305,7 +305,8 @@
     gap: 8px !important;
     justify-items: start !important;   /* keep pills/buttons natural width */
   }
-  /* Seeker "My Soul Tours" cards: 180px 1fr auto → stacked. */
+  /* Soul Tours cards (seeker "My Soul Tours" + guide dashboard tours list):
+     180px cover + 1fr body + auto actions → stacked full-width. */
   .sc-tour-card { grid-template-columns: 1fr !important; }
   .sc-tour-cover { min-height: 180px !important; }   /* cover has no fixed height; give it one once full-width */
   .sc-tour-aside {

@@ -139,6 +139,7 @@ export default function GuideToursPage() {
             return (
               <div
                 key={t.id}
+                className="sc-tour-card"
                 style={{
                   background: C.white, border: '1px solid rgba(240,120,20,0.15)',
                   borderRadius: 12, overflow: 'hidden',
@@ -147,6 +148,7 @@ export default function GuideToursPage() {
               >
                 {/* Cover image */}
                 <div
+                  className="sc-tour-cover"
                   style={{
                     background: t.coverImageUrl
                       ? `url(${t.coverImageUrl}) center/cover`
@@ -176,7 +178,7 @@ export default function GuideToursPage() {
                       {t.shortDesc}
                     </p>
                   )}
-                  <div style={{ display: 'flex', gap: 24, fontSize: 12, color: C.charcoal, fontFamily: font }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 20px', fontSize: 12, color: C.charcoal, fontFamily: font }}>
                     <span>📍 {t.location || [t.city, t.country].filter(Boolean).join(', ') || '—'}</span>
                     <span>💰 From ${Number(t.basePrice).toLocaleString()}</span>
                     <span>👥 {t.capacity} max</span>
@@ -206,7 +208,7 @@ export default function GuideToursPage() {
                 </div>
 
                 {/* Actions */}
-                <div style={{
+                <div className="sc-tour-aside" style={{
                   padding: 20, display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end',
                   borderLeft: '1px solid rgba(240,120,20,0.1)',
                 }}>
