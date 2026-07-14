@@ -33,6 +33,7 @@ export default function VerificationPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [credForm, setCredForm] = useState({ title: '', institution: '', issuedYear: '' });
   const [certFile, setCertFile] = useState<File | null>(null);
+  const [savingCred, setSavingCred] = useState(false);
 
   // Identity verification loading
   const [startingIdentity, setStartingIdentity] = useState(false);
@@ -73,12 +74,36 @@ export default function VerificationPage() {
 
   // Add new credential
   const addCredential = async () => {
+    if (!credForm.title.trim()) {
+      toast.error('Enter a certification title');
+      return;
+    }
+    setSavingCred(true);
     try {
+      // Upload the certificate document to S3 first (direct browser → S3 via a
+      // pre-signed PUT), then attach its key so the admin/public can view it.
+      // Without this the credential was saved with documentUrl = null and no
+      // document link ever appeared.
+      let documentS3Key: string | undefined;
+      if (certFile) {
+        const { data: presigned } = await api.get<{ uploadUrl: string; key: string }>(
+          '/upload/presigned-url',
+          { params: { folder: 'credentials', fileName: certFile.name, contentType: certFile.type } },
+        );
+        const putRes = await fetch(presigned.uploadUrl, {
+          method: 'PUT',
+          body: certFile,
+          headers: { 'Content-Type': certFile.type },
+        });
+        if (!putRes.ok) throw new Error(`Document upload failed (${putRes.status})`);
+        documentS3Key = presigned.key;
+      }
+
       await api.post('/guides/onboarding/credentials', {
         title: credForm.title,
         institution: credForm.institution || undefined,
         issuedYear: credForm.issuedYear ? parseInt(credForm.issuedYear) : undefined,
-        // documentS3Key would be set after S3 upload
+        documentS3Key,
       });
       toast.success('Certification added');
       setShowAddModal(false);
@@ -88,7 +113,9 @@ export default function VerificationPage() {
       const res = await api.get('/guides/me');
       setCredentials(res.data.credentials || []);
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || 'Failed to add certification');
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to add certification');
+    } finally {
+      setSavingCred(false);
     }
   };
 
@@ -290,7 +317,9 @@ export default function VerificationPage() {
         </div>
         <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '24px' }}>
           <Btn variant="secondary" onClick={() => { setShowAddModal(false); setCertFile(null); }}>Cancel</Btn>
-          <Btn onClick={addCredential}>Add Certification</Btn>
+          <Btn onClick={addCredential} style={savingCred ? { opacity: 0.6, pointerEvents: 'none' as const } : {}}>
+            {savingCred ? 'Uploading…' : 'Add Certification'}
+          </Btn>
         </div>
       </Modal>
     </div>
