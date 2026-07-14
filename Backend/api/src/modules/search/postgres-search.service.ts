@@ -135,6 +135,8 @@ export class PostgresSearchService {
       JOIN guide_profiles g ON g.id = p."guideId"
       JOIN users u ON u.id = g."userId"
       WHERE p."isActive" = true
+        AND g."isVerified" = true
+        AND g."isPublished" = true
         AND u."isActive" = true
         AND (
           p."searchVector" @@ websearch_to_tsquery('english', ${q})
@@ -149,6 +151,8 @@ export class PostgresSearchService {
       JOIN guide_profiles g ON g.id = p."guideId"
       JOIN users u ON u.id = g."userId"
       WHERE p."isActive" = true
+        AND g."isVerified" = true
+        AND g."isPublished" = true
         AND u."isActive" = true
         AND (
           p."searchVector" @@ websearch_to_tsquery('english', ${q})
@@ -188,6 +192,8 @@ export class PostgresSearchService {
       JOIN users u ON u.id = g."userId"
       WHERE e."isPublished" = true
         AND e."isCancelled" = false
+        AND g."isVerified" = true
+        AND g."isPublished" = true
         AND u."isActive" = true
         AND (
           e."searchVector" @@ websearch_to_tsquery('english', ${q})
@@ -203,6 +209,8 @@ export class PostgresSearchService {
       JOIN users u ON u.id = g."userId"
       WHERE e."isPublished" = true
         AND e."isCancelled" = false
+        AND g."isVerified" = true
+        AND g."isPublished" = true
         AND u."isActive" = true
         AND (
           e."searchVector" @@ websearch_to_tsquery('english', ${q})
@@ -247,6 +255,8 @@ export class PostgresSearchService {
       JOIN users u ON u.id = g."userId"
       WHERE t."isPublished" = true
         AND t."isCancelled" = false
+        AND g."isVerified" = true
+        AND g."isPublished" = true
         AND u."isActive" = true
         AND (
           t."searchVector" @@ websearch_to_tsquery('english', ${q})
@@ -263,6 +273,8 @@ export class PostgresSearchService {
       JOIN users u ON u.id = g."userId"
       WHERE t."isPublished" = true
         AND t."isCancelled" = false
+        AND g."isVerified" = true
+        AND g."isPublished" = true
         AND u."isActive" = true
         AND (
           t."searchVector" @@ websearch_to_tsquery('english', ${q})
@@ -303,6 +315,8 @@ export class PostgresSearchService {
       JOIN guide_profiles g ON g.id = b."guideId"
       JOIN users u ON u.id = g."userId"
       WHERE b."isPublished" = true
+        AND g."isVerified" = true
+        AND g."isPublished" = true
         AND u."isActive" = true
         AND (
           b."searchVector" @@ websearch_to_tsquery('english', ${q})
@@ -317,6 +331,8 @@ export class PostgresSearchService {
       JOIN guide_profiles g ON g.id = b."guideId"
       JOIN users u ON u.id = g."userId"
       WHERE b."isPublished" = true
+        AND g."isVerified" = true
+        AND g."isPublished" = true
         AND u."isActive" = true
         AND (
           b."searchVector" @@ websearch_to_tsquery('english', ${q})

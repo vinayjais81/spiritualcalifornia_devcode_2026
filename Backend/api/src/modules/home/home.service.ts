@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CacheService } from '../../database/cache.service';
+import { PUBLIC_GUIDE_WHERE } from '../../common/public-visibility';
 
 @Injectable()
 export class HomeService {
@@ -163,7 +164,7 @@ export class HomeService {
         // drop this clause — but expect overlap with the SoulTravels strip.
         type: { not: 'SOUL_TRAVEL' },
         // Hide events whose guide has been deactivated.
-        guide: { user: { isActive: true } },
+        guide: PUBLIC_GUIDE_WHERE,
       },
       orderBy: { startTime: 'asc' },
       take: 8,
@@ -210,7 +211,7 @@ export class HomeService {
         departures: {
           some: { status: 'SCHEDULED', startDate: { gte: new Date() } },
         },
-        guide: { user: { isActive: true } },
+        guide: PUBLIC_GUIDE_WHERE,
       },
       orderBy: { startDate: 'asc' },
       take: 6,

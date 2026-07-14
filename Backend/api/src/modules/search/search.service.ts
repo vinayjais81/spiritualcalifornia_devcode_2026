@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { PUBLIC_GUIDE_WHERE } from '../../common/public-visibility';
 import { AlgoliaService, GuideSearchRecord, ProductSearchRecord, EventSearchRecord } from './algolia.service';
 import { PostgresSearchService } from './postgres-search.service';
 
@@ -63,7 +64,7 @@ export class SearchService {
     // Skip guides whose User account is deactivated — their public profile
     // 404s, so indexing them would surface dead links in search results.
     const guides = await this.prisma.guideProfile.findMany({
-      where: { isPublished: true, user: { isActive: true } },
+      where: PUBLIC_GUIDE_WHERE,
       include: {
         user: { select: { avatarUrl: true } },
         categories: { include: { category: true, subcategory: true } },
@@ -102,7 +103,7 @@ export class SearchService {
 
   async reindexProducts(): Promise<number> {
     const products = await this.prisma.product.findMany({
-      where: { isActive: true, guide: { user: { isActive: true } } },
+      where: { isActive: true, guide: PUBLIC_GUIDE_WHERE },
       include: { guide: { select: { displayName: true, slug: true } } },
     });
 
@@ -124,7 +125,7 @@ export class SearchService {
 
   async reindexEvents(): Promise<number> {
     const events = await this.prisma.event.findMany({
-      where: { isPublished: true, isCancelled: false, guide: { user: { isActive: true } } },
+      where: { isPublished: true, isCancelled: false, guide: PUBLIC_GUIDE_WHERE },
       include: {
         guide: { select: { displayName: true, slug: true } },
         ticketTiers: { where: { isActive: true } },

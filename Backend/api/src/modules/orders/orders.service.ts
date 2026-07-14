@@ -3,6 +3,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { PaymentsService } from '../payments/payments.service';
 import { CheckoutService } from '../checkout/checkout.service';
+import { PUBLIC_GUIDE_WHERE } from '../../common/public-visibility';
 
 @Injectable()
 export class OrdersService {
@@ -21,8 +22,12 @@ export class OrdersService {
     // Resolve products (fresh read outside the transaction for validation + price calc)
     const itemDetails = await Promise.all(
       dto.items.map(async (item) => {
-        const product = await this.prisma.product.findUnique({ where: { id: item.productId } });
-        if (!product || !product.isActive) throw new NotFoundException(`Product ${item.productId} not found`);
+        // Gate on product active + guide visibility so a buyer can't order
+        // from an unverified/unpublished/deactivated guide via a direct productId.
+        const product = await this.prisma.product.findFirst({
+          where: { id: item.productId, isActive: true, guide: PUBLIC_GUIDE_WHERE },
+        });
+        if (!product) throw new NotFoundException(`Product ${item.productId} not found`);
 
         let unitPrice = Number(product.price);
 

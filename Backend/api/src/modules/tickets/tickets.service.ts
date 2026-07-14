@@ -3,6 +3,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { PaymentsService } from '../payments/payments.service';
+import { PUBLIC_GUIDE_WHERE } from '../../common/public-visibility';
 import { EventCheckoutDto } from './dto/event-checkout.dto';
 import { randomBytes } from 'crypto';
 import * as QRCode from 'qrcode';
@@ -26,9 +27,10 @@ export class TicketsService {
       throw new BadRequestException(`Expected ${dto.quantity} attendees, got ${dto.attendees.length}`);
     }
 
-    // Load event + tier
-    const event = await this.prisma.event.findUnique({
-      where: { id: dto.eventId },
+    // Load event + tier. Gate on guide visibility so tickets can't be sold for
+    // an event whose guide is unverified, unpublished, or deactivated.
+    const event = await this.prisma.event.findFirst({
+      where: { id: dto.eventId, guide: PUBLIC_GUIDE_WHERE },
       include: {
         guide: {
           select: { id: true, displayName: true, stripeAccountId: true, user: { select: { firstName: true, lastName: true } } },

@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { PaymentsService } from '../payments/payments.service';
+import { PUBLIC_GUIDE_WHERE } from '../../common/public-visibility';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 
@@ -74,8 +75,10 @@ export class ServicesService {
   // ─── Get Single Service (Public) ─────────────────────────────────────────────
 
   async findOne(serviceId: string) {
-    const service = await this.prisma.service.findUnique({
-      where: { id: serviceId },
+    // Public surface — 404 unless the service is active and its guide is
+    // publicly visible (verified, published, account active).
+    const service = await this.prisma.service.findFirst({
+      where: { id: serviceId, isActive: true, guide: PUBLIC_GUIDE_WHERE },
       include: {
         guide: {
           select: {

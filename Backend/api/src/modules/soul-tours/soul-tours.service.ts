@@ -4,6 +4,7 @@ import {
 import { Prisma } from '@prisma/client';
 import * as crypto from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
+import { PUBLIC_GUIDE_WHERE } from '../../common/public-visibility';
 import { CacheService } from '../../database/cache.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
@@ -178,8 +179,9 @@ export class SoulToursService {
         OR: [{ slug: slugOrId }, { id: slugOrId }],
         isPublished: true,
         isCancelled: false,
-        // Hide tours owned by deactivated guides.
-        guide: { user: { isActive: true } },
+        // Hide tours whose guide is not publicly visible (unverified,
+        // unpublished, or deactivated) — matches the guide-profile gate.
+        guide: PUBLIC_GUIDE_WHERE,
       },
       include: {
         roomTypes: { orderBy: { sortOrder: 'asc' } },
@@ -212,8 +214,8 @@ export class SoulToursService {
       isPublished: true,
       isCancelled: false,
       departures: { some: { status: 'SCHEDULED', startDate: { gte: new Date() } } },
-      // Hide tours from deactivated guides.
-      guide: { user: { isActive: true } },
+      // Only surface tours whose guide is publicly visible.
+      guide: PUBLIC_GUIDE_WHERE,
     };
 
     if (filters.track && ['ADVENTURE', 'HEALING'].includes(filters.track)) {
@@ -257,7 +259,7 @@ export class SoulToursService {
       isPublished: true,
       isCancelled: false,
       departures: { some: { status: 'SCHEDULED', startDate: { gte: now } } },
-      guide: { user: { isActive: true } },
+      guide: PUBLIC_GUIDE_WHERE,
     };
 
     const [totalJourneys, countryRows, travelerRows] = await Promise.all([
@@ -433,9 +435,11 @@ export class SoulToursService {
       throw new BadRequestException('Exactly one traveler must be marked as primary');
     }
 
-    // Load tour + departure + room
-    const tour = await this.prisma.soulTour.findUnique({
-      where: { id: dto.tourId },
+    // Load tour + departure + room. Gate on publish + guide visibility so a
+    // draft tour, or one from an unverified/unpublished/deactivated guide,
+    // can't be booked via a direct tourId.
+    const tour = await this.prisma.soulTour.findFirst({
+      where: { id: dto.tourId, isPublished: true, guide: PUBLIC_GUIDE_WHERE },
       include: { roomTypes: true },
     });
     if (!tour || tour.isCancelled) throw new NotFoundException('Tour not found');

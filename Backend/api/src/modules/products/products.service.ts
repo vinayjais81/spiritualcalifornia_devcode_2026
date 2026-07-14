@@ -1,5 +1,6 @@
 import { Injectable, ForbiddenException, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
+import { PUBLIC_GUIDE_WHERE } from '../../common/public-visibility';
 import { CacheService } from '../../database/cache.service';
 import { PaymentsService } from '../payments/payments.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -95,9 +96,10 @@ export class ProductsService {
 
   async findPublic(limit = 50, page = 1, type?: string, category?: string) {
     const skip = (page - 1) * limit;
-    // isActive on Product = "guide has not unlisted it". user.isActive = "the
-    // guide's account itself is not deactivated by an admin". Both must hold.
-    const where: any = { isActive: true, guide: { user: { isActive: true } } };
+    // isActive on Product = "guide has not unlisted it". The guide must also be
+    // publicly visible (verified, published, account active) — same gate as the
+    // guide profile, so a product can't outlive its guide's visibility.
+    const where: any = { isActive: true, guide: PUBLIC_GUIDE_WHERE };
     if (type === 'DIGITAL' || type === 'PHYSICAL') where.type = type;
 
     const VALID_CATEGORIES = [
@@ -133,7 +135,7 @@ export class ProductsService {
 
   async findOne(productId: string) {
     const product = await this.prisma.product.findFirst({
-      where: { id: productId, guide: { user: { isActive: true } } },
+      where: { id: productId, isActive: true, guide: PUBLIC_GUIDE_WHERE },
       include: {
         guide: {
           select: {

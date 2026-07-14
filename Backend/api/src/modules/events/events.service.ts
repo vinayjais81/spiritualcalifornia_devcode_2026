@@ -2,6 +2,7 @@ import { Injectable, ForbiddenException, NotFoundException, Logger } from '@nest
 import { PrismaService } from '../../database/prisma.service';
 import { CacheService } from '../../database/cache.service';
 import { PaymentsService } from '../payments/payments.service';
+import { PUBLIC_GUIDE_WHERE } from '../../common/public-visibility';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 
@@ -117,7 +118,7 @@ export class EventsService {
       isPublished: true,
       isCancelled: false,
       startTime: { gte: new Date() },
-      guide: { user: { isActive: true } },
+      guide: PUBLIC_GUIDE_WHERE,
     } as const;
     const [events, total] = await Promise.all([
       this.prisma.event.findMany({
@@ -138,9 +139,10 @@ export class EventsService {
   // ─── Get Single Event (Public) ─────────────────────────────────────────────
 
   async findOne(eventId: string) {
-    // Public surface — 404 if the guide has been deactivated.
+    // Public surface — 404 unless the event is published and its guide is
+    // publicly visible (verified, published, account active).
     const event = await this.prisma.event.findFirst({
-      where: { id: eventId, guide: { user: { isActive: true } } },
+      where: { id: eventId, isPublished: true, guide: PUBLIC_GUIDE_WHERE },
       include: {
         ticketTiers: true,
         guide: {
