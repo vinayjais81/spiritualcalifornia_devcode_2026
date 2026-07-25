@@ -368,6 +368,9 @@ export default function SinglePostPage() {
         tagline={post.guide.tagline || undefined}
         bio={post.guide.bio || undefined}
         avatarUrl={post.guide.user.avatarUrl || undefined}
+        isFollowing={following}
+        followBusy={followBusy}
+        onFollow={handleFollow}
       />
 
       {/* Related Posts — only render if the /blog feed returned neighbours */}

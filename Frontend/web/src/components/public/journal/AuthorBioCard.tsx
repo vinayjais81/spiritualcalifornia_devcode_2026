@@ -6,9 +6,17 @@ interface AuthorBioCardProps {
   tagline?: string;
   bio?: string;
   avatarUrl?: string;
+  /** Follow state + handler, owned by the page so this card stays in sync
+   *  with the Follow button in the article header. Omit to hide the button. */
+  isFollowing?: boolean;
+  followBusy?: boolean;
+  onFollow?: () => void;
 }
 
-export function AuthorBioCard({ slug, name, tagline, bio, avatarUrl }: AuthorBioCardProps) {
+export function AuthorBioCard({
+  slug, name, tagline, bio, avatarUrl,
+  isFollowing = false, followBusy = false, onFollow,
+}: AuthorBioCardProps) {
   return (
     <div style={{
       maxWidth: 680, margin: '48px auto', padding: 32,
@@ -55,14 +63,22 @@ export function AuthorBioCard({ slug, name, tagline, bio, avatarUrl }: AuthorBio
           }}>
             View Profile
           </Link>
-          <button style={{
-            padding: '7px 18px', borderRadius: 6,
-            background: 'transparent', color: '#3A3530',
-            fontSize: 11, fontWeight: 500, letterSpacing: '0.08em',
-            border: '1.5px solid rgba(240,120,20,0.3)', cursor: 'pointer',
-          }}>
-            Follow
-          </button>
+          {onFollow && (
+            <button
+              onClick={onFollow}
+              disabled={followBusy}
+              style={{
+                padding: '7px 18px', borderRadius: 6,
+                background: isFollowing ? '#F07814' : 'transparent',
+                color: isFollowing ? '#fff' : '#3A3530',
+                fontSize: 11, fontWeight: 500, letterSpacing: '0.08em',
+                border: `1.5px solid ${isFollowing ? '#F07814' : 'rgba(240,120,20,0.3)'}`,
+                cursor: followBusy ? 'default' : 'pointer',
+              }}
+            >
+              {isFollowing ? 'Following' : 'Follow'}
+            </button>
+          )}
         </div>
       </div>
     </div>

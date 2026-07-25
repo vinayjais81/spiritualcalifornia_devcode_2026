@@ -21,7 +21,7 @@ Simple running tally, deduped per-device (not per-user).
 - `findBySlug` already returns the post's scalars, so the initial count needs
   no extra query.
 
-## Follow — blog page (author bar)
+## Follow — blog page (author bar **and** author bio card)
 Seeker → guide follow. Any signed-in user may follow; anonymous users are
 prompted to sign in (redirect back to the post).
 - Schema: `GuideFollow { userId, guideId, @@unique([userId, guideId]) }`;
@@ -34,6 +34,18 @@ prompted to sign in (redirect back to the post).
   - `:id` is the **GuideProfile.id** (blog `findBySlug` now returns `guide.id`).
 - Client: loads follow-status on mount (signed-in only), optimistic toggle,
   reverts on error. Not-signed-in click → toast + `/signin?redirect=…`.
+
+### Follow-up fix (2026-07-25)
+The post page renders **two** Follow buttons: one in the author bar under the
+title, one in the `AuthorBioCard` at the foot of the article. Only the first
+was wired — the bio-card button shipped as styled markup with no `onClick`, so
+clicking it did nothing (client-reported).
+
+`AuthorBioCard` now takes optional `isFollowing` / `followBusy` / `onFollow`
+props and the page passes the same state and `handleFollow` it gives the top
+button, so both toggle together and share the optimistic update. The button
+only renders when `onFollow` is supplied, keeping the card safe to reuse in a
+context that has no follow handler.
 
 ## Send Message — guide profile page
 **Hidden**, not wired. There is no seeker↔guide direct-messaging subsystem
