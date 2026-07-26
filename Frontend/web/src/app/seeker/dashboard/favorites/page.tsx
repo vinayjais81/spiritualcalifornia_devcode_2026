@@ -57,8 +57,12 @@ export default function FavoritesPage() {
                       {guide.totalReviews > 0 && <span style={{ fontFamily: font, fontSize: '10px', color: C.warmGray }}>★ {guide.averageRating?.toFixed(1)} ({guide.totalReviews})</span>}
                     </div>
                     <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                      {/* Book removed: /book/<slug> 404s for any guide that
+                          isn't currently published, and this list isn't gated
+                          on public visibility — so a saved guide can go
+                          unpublished and leave a dead link. Book from the
+                          guide's profile via View instead. */}
                       <a href={`/guides/${guide.slug}`} style={{ padding: '5px 12px', borderRadius: '4px', fontFamily: font, fontSize: '11px', background: C.gold, color: C.white, textDecoration: 'none' }}>View</a>
-                      <a href={`/book/${guide.slug}`} style={{ padding: '5px 12px', borderRadius: '4px', fontFamily: font, fontSize: '11px', background: C.charcoal, color: C.gold, textDecoration: 'none' }}>Book</a>
                       <button onClick={() => removeFavorite(fav.guideId)} style={{ padding: '5px 12px', borderRadius: '4px', fontFamily: font, fontSize: '11px', background: 'transparent', color: C.red, border: '1px solid rgba(192,57,43,0.3)', cursor: 'pointer' }}>Remove</button>
                     </div>
                   </div>
