@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { api } from '@/lib/api';
 import { AINonAdviceFooter } from '@/components/public/ai/AINonAdviceFooter';
 import { CrisisResourcesCard } from '@/components/public/ai/CrisisResourcesCard';
+import { FavoriteGuideButton } from '@/components/public/guides/FavoriteGuideButton';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -607,6 +608,11 @@ function PractitionerCard({ guide }: { guide: Guide }) {
     >
       <div style={{ position: 'relative' }}>
         <img src={img} alt="" style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />
+        {/* Quick-save. The card is a Link, so the button stops the click from
+            navigating (handled inside FavoriteGuideButton). */}
+        <div style={{ position: 'absolute', top: 12, right: 12 }}>
+          <FavoriteGuideButton guideId={guide.id} variant="icon" />
+        </div>
         <div style={{ position: 'absolute', bottom: -22, left: 16 }}>
           <div style={{
             width: 48, height: 48, borderRadius: '50%',

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Navbar } from '@/components/public/layout/Navbar';
 import { Footer } from '@/components/public/layout/Footer';
+import { FavoriteGuideButton } from '@/components/public/guides/FavoriteGuideButton';
 
 // ─── Types matching the expanded backend API ─────────────────────────────────
 
@@ -377,6 +378,10 @@ export default function GuideProfilePage() {
               }}>
                 📅 Book a Session
               </a>
+              {/* Save to Favorites — the only entry point into the seeker's
+                  Favorite Guides page. The API existed from the start but
+                  nothing ever called POST, so that page could never fill. */}
+              <FavoriteGuideButton guideId={guide.id} />
               {/* Send Message intentionally hidden until seeker↔guide direct
                   messaging is built (no backend for it yet). "Book a Session"
                   above covers reaching this guide. A dead button read as broken
