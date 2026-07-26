@@ -1000,14 +1000,7 @@ async function main() {
       title: '5 Meditation Techniques That Actually Work for Busy Tech Professionals',
       slug: '5-meditation-techniques-for-tech-professionals',
       excerpt: 'You have heard that meditation is good for you. But with a full sprint backlog, back-to-back standups, and a Slack that never sleeps, how do you actually make it work?',
-      content: JSON.stringify({
-        type: 'doc',
-        content: [
-          { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Why Most Tech Workers Give Up on Meditation' }] },
-          { type: 'paragraph', content: [{ type: 'text', text: 'In my 8 years of teaching in Silicon Valley, I have seen the same pattern repeat: a brilliant engineer or product manager starts a meditation app, practices for 3-5 days, then stops because they "don\'t have time" or "can\'t quiet their mind." The problem isn\'t them — it\'s that most meditation advice was not designed for people whose brains are wired for rapid context-switching and problem-solving.' }] },
-          { type: 'paragraph', content: [{ type: 'text', text: 'These 5 techniques are specifically chosen because they work with the tech-trained mind, not against it.' }] },
-        ],
-      }),
+      content: '<h2>Why Most Tech Workers Give Up on Meditation</h2><p>In my 8 years of teaching in Silicon Valley, I have seen the same pattern repeat: a brilliant engineer or product manager starts a meditation app, practices for 3-5 days, then stops because they &quot;don\'t have time&quot; or &quot;can\'t quiet their mind.&quot; The problem isn\'t them — it\'s that most meditation advice was not designed for people whose brains are wired for rapid context-switching and problem-solving.</p><p>These 5 techniques are specifically chosen because they work with the tech-trained mind, not against it.</p>',
       tags: ['Meditation', 'Tech Wellness', 'Mindfulness', 'Silicon Valley', 'Stress'],
       coverImageUrl: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=800&h=400&fit=crop',
     },
@@ -1016,13 +1009,7 @@ async function main() {
       title: 'The Hidden Cost of Hustle Culture: A Coach\'s View from Silicon Valley',
       slug: 'hidden-cost-of-hustle-culture-silicon-valley',
       excerpt: 'After coaching over 300 tech executives and founders, I\'ve noticed a pattern that nobody talks about at TechCrunch or in Slack channels. This is what I see behind closed doors.',
-      content: JSON.stringify({
-        type: 'doc',
-        content: [
-          { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'What Success Looks Like Up Close' }] },
-          { type: 'paragraph', content: [{ type: 'text', text: 'When I meet with clients for the first time, they typically present a resume that would make most people envious: Staff Engineer at a FAANG company, or founder of a Series B startup, or VP of Product at a unicorn. They are objectively successful by every conventional metric. And they are often quietly miserable.' }] },
-        ],
-      }),
+      content: '<h2>What Success Looks Like Up Close</h2><p>When I meet with clients for the first time, they typically present a resume that would make most people envious: Staff Engineer at a FAANG company, or founder of a Series B startup, or VP of Product at a unicorn. They are objectively successful by every conventional metric. And they are often quietly miserable.</p>',
       tags: ['Life Coaching', 'Burnout', 'Silicon Valley', 'Purpose', 'Mental Health'],
       coverImageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=400&fit=crop',
     },
@@ -1031,13 +1018,7 @@ async function main() {
       title: 'Sound Healing 101: What the Science Actually Says',
       slug: 'sound-healing-101-what-science-says',
       excerpt: 'As a music-school-trained practitioner who spent years studying with Tibetan masters, I get asked all the time: is sound healing real? Here is what the research shows.',
-      content: JSON.stringify({
-        type: 'doc',
-        content: [
-          { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'The Physics of Sound and the Body' }] },
-          { type: 'paragraph', content: [{ type: 'text', text: 'The human body is approximately 60% water. Sound travels through water roughly 4.3 times faster than through air. When you lie in a sound bath, you are not just hearing the bowls — you are feeling them move through every cell of your body. This is not metaphor. This is physics.' }] },
-        ],
-      }),
+      content: '<h2>The Physics of Sound and the Body</h2><p>The human body is approximately 60% water. Sound travels through water roughly 4.3 times faster than through air. When you lie in a sound bath, you are not just hearing the bowls — you are feeling them move through every cell of your body. This is not metaphor. This is physics.</p>',
       tags: ['Sound Healing', 'Science', 'Meditation', 'Wellness Research', 'San Jose'],
       coverImageUrl: 'https://images.unsplash.com/photo-1514533212735-5df27d970db0?w=800&h=400&fit=crop',
     },

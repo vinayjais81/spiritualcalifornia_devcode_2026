@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { api } from '@/lib/api';
+import { normalizePostContent } from '@/lib/postContent';
 import { toast } from 'sonner';
 import { C, font, formatDate, PageHeader, Panel, Btn, EmptyState, StatusBadge, Modal, FormGroup, Input } from '@/components/guide/dashboard-ui';
 import { RichTextEditor } from '@/components/guide/RichTextEditor';
@@ -36,31 +37,13 @@ export default function BlogPage() {
     setShowModal(true);
   };
 
-  // Convert Tiptap JSON content to HTML if needed
-  const normalizeContent = (raw: string): string => {
-    if (!raw) return '';
-    // If content is JSON (Tiptap format from seed), convert to basic HTML
-    if (raw.startsWith('{') || raw.startsWith('[')) {
-      try {
-        const doc = JSON.parse(raw);
-        if (doc.type === 'doc' && Array.isArray(doc.content)) {
-          return doc.content.map((node: any) => {
-            const text = node.content?.map((c: any) => c.text || '').join('') || '';
-            if (node.type === 'heading') return `<h2>${text}</h2>`;
-            if (node.type === 'paragraph') return `<p>${text}</p>`;
-            return `<p>${text}</p>`;
-          }).join('');
-        }
-      } catch { /* not valid JSON, use as-is */ }
-    }
-    return raw;
-  };
-
   const openEdit = async (post: BlogPost) => {
     setEditingId(post.id);
     setForm({
       title: post.title,
-      content: normalizeContent(post.content || ''),
+      // Legacy seeded posts hold Tiptap JSON — convert so the editor loads
+      // markup instead of raw JSON text. Shared with the public post page.
+      content: normalizePostContent(post.content),
       excerpt: post.excerpt || '',
     });
     setCoverPreview(post.coverImageUrl || null);

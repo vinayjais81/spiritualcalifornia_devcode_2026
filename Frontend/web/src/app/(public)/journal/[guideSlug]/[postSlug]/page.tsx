@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
+import { normalizePostContent } from '@/lib/postContent';
 import { useAuthStore } from '@/store/auth.store';
 import { ReadingProgressBar } from '@/components/public/journal/ReadingProgressBar';
 import { AuthorBioCard } from '@/components/public/journal/AuthorBioCard';
@@ -159,7 +160,11 @@ export default function SinglePostPage() {
 
   if (!post) return <div style={{ padding: 100, textAlign: 'center' }}>Post not found</div>;
 
-  const readTime = `${Math.max(1, Math.ceil(post.content.replace(/<[^>]+>/g, '').split(' ').length / 200))} min read`;
+  // Legacy seeded posts stored Tiptap JSON in `content`; normalise to HTML so
+  // the body renders as markup rather than raw JSON, and so the read-time
+  // estimate counts prose instead of JSON syntax.
+  const bodyHtml = normalizePostContent(post.content);
+  const readTime = `${Math.max(1, Math.ceil(bodyHtml.replace(/<[^>]+>/g, '').split(/\s+/).filter(Boolean).length / 200))} min read`;
 
   // Share handlers — pure client-side, no backend needed. Twitter/LinkedIn
   // open the network's share-intent in a new tab; Copy Link writes the
@@ -304,7 +309,7 @@ export default function SinglePostPage() {
             width: 100%; border-radius: 8px; margin: 32px 0;
           }
         `}</style>
-        <div dangerouslySetInnerHTML={{ __html: post.content }} />
+        <div dangerouslySetInnerHTML={{ __html: bodyHtml }} />
       </div>
 
       {/* Tags */}
