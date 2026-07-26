@@ -40,6 +40,13 @@ export class TicketsService {
     });
     if (!event || !event.isPublished) throw new NotFoundException('Event not found or not published');
     if (event.isCancelled) throw new BadRequestException('This event has been cancelled');
+    // Registration closes when the event starts. The public listing already
+    // hides past events, but the detail page and this endpoint are reachable
+    // by direct link — and an event can start while a seeker sits on the
+    // checkout form. Matches the cart's past-event rule (cart.service.ts).
+    if (event.startTime && new Date(event.startTime) < new Date()) {
+      throw new BadRequestException('Registration has closed — this event has already started');
+    }
 
     const tier = event.ticketTiers.find((t) => t.id === dto.tierId);
     if (!tier || !tier.isActive) throw new NotFoundException('Ticket tier not found or inactive');

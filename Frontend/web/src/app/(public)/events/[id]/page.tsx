@@ -96,6 +96,10 @@ export default function EventDetailPage() {
   const tierPrices = event.ticketTiers.map((t) => Number(t.price));
   const lowestPrice = tierPrices.length > 0 ? Math.min(...tierPrices) : 0;
   const spotsLeft = event.ticketTiers.reduce((sum, t) => sum + (t.capacity - t.sold), 0);
+  // Registration closes once the event starts. The listing hides past events,
+  // but this page is reachable by direct link and can be left open until the
+  // event begins. The server enforces the same rule in eventCheckout.
+  const hasStarted = !!event.startTime && new Date(event.startTime) < new Date();
 
   const typeLabel =
     event.type === 'VIRTUAL' ? 'Online Event'
@@ -201,7 +205,9 @@ export default function EventDetailPage() {
               <InfoBlock icon="📍" label="Where">{event.location}</InfoBlock>
             ) : null}
             <InfoBlock icon="👥" label="Availability">
-              {spotsLeft > 0 ? `${spotsLeft} spots available` : 'Sold out'}
+              {hasStarted
+                ? 'Registration closed'
+                : spotsLeft > 0 ? `${spotsLeft} spots available` : 'Sold out'}
             </InfoBlock>
           </div>
 
@@ -265,19 +271,31 @@ export default function EventDetailPage() {
           )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-            <Link
-              href={`/events/${event.id}/checkout`}
-              style={{
-                padding: '14px 36px', background: '#F07814', color: '#3A3530',
-                fontSize: 13, fontWeight: 600, letterSpacing: '0.08em',
-                textTransform: 'uppercase', borderRadius: 8, textDecoration: 'none',
-                transition: 'background 0.2s',
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = '#FDE8D0'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#F07814'; }}
-            >
-              {isFree ? 'Register Free' : `Buy Tickets · From $${lowestPrice}`}
-            </Link>
+            {hasStarted ? (
+              <span
+                style={{
+                  padding: '14px 36px', background: '#F0EEEB', color: '#8A8278',
+                  fontSize: 13, fontWeight: 600, letterSpacing: '0.08em',
+                  textTransform: 'uppercase', borderRadius: 8,
+                }}
+              >
+                Registration Closed
+              </span>
+            ) : (
+              <Link
+                href={`/events/${event.id}/checkout`}
+                style={{
+                  padding: '14px 36px', background: '#F07814', color: '#3A3530',
+                  fontSize: 13, fontWeight: 600, letterSpacing: '0.08em',
+                  textTransform: 'uppercase', borderRadius: 8, textDecoration: 'none',
+                  transition: 'background 0.2s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#FDE8D0'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#F07814'; }}
+              >
+                {isFree ? 'Register Free' : `Buy Tickets · From $${lowestPrice}`}
+              </Link>
+            )}
             <Link
               href="/events"
               style={{

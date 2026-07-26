@@ -242,6 +242,19 @@ export default function EventCheckoutPage() {
 
   if (!event) return null;
 
+  // Registration closes at start time. This page is reachable by direct link
+  // and can be left open until the event begins, so show a clear message
+  // instead of a form the server will reject (tickets.service eventCheckout).
+  if (event.startTime && new Date(event.startTime) < new Date()) return (
+    <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 24, textAlign: 'center' }}>
+      <div style={{ fontFamily: serif, fontSize: 24, color: C.charcoal }}>Registration closed</div>
+      <div style={{ fontSize: 14, color: C.warmGray, fontFamily: sans, maxWidth: 420 }}>
+        “{event.title}” has already started, so tickets are no longer available.
+      </div>
+      <Link href="/events" style={{ fontSize: 13, color: C.gold, fontFamily: sans }}>← Browse upcoming events</Link>
+    </div>
+  );
+
   // ─── Layout ────────────────────────────────────────────────────────────
 
   return (
