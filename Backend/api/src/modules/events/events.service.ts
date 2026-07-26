@@ -144,7 +144,11 @@ export class EventsService {
     const event = await this.prisma.event.findFirst({
       where: { id: eventId, isPublished: true, guide: PUBLIC_GUIDE_WHERE },
       include: {
-        ticketTiers: true,
+        // Active tiers only, matching findPublished. An inactive tier can't be
+        // bought (eventCheckout rejects it), so listing it publicly just
+        // advertises a ticket nobody can get — and it inflated the
+        // availability count the detail page derives from these rows.
+        ticketTiers: { where: { isActive: true } },
         guide: {
           select: {
             id: true,

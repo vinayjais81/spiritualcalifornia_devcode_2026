@@ -100,6 +100,14 @@ export default function EventDetailPage() {
   // but this page is reachable by direct link and can be left open until the
   // event begins. The server enforces the same rule in eventCheckout.
   const hasStarted = !!event.startTime && new Date(event.startTime) < new Date();
+  // An event with no tiers has nothing to sell — eventCheckout requires a
+  // tierId, so "Register Free" would always have failed on such an event.
+  const hasTiers = event.ticketTiers.length > 0;
+  const isSoldOut = hasTiers && spotsLeft <= 0;
+  const canRegister = !hasStarted && hasTiers && !isSoldOut;
+  const closedLabel = hasStarted ? 'Registration Closed'
+    : !hasTiers ? 'Registration Unavailable'
+    : 'Sold Out';
 
   const typeLabel =
     event.type === 'VIRTUAL' ? 'Online Event'
@@ -205,9 +213,7 @@ export default function EventDetailPage() {
               <InfoBlock icon="📍" label="Where">{event.location}</InfoBlock>
             ) : null}
             <InfoBlock icon="👥" label="Availability">
-              {hasStarted
-                ? 'Registration closed'
-                : spotsLeft > 0 ? `${spotsLeft} spots available` : 'Sold out'}
+              {canRegister ? `${spotsLeft} spots available` : closedLabel}
             </InfoBlock>
           </div>
 
@@ -271,7 +277,7 @@ export default function EventDetailPage() {
           )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-            {hasStarted ? (
+            {!canRegister ? (
               <span
                 style={{
                   padding: '14px 36px', background: '#F0EEEB', color: '#8A8278',
@@ -279,7 +285,7 @@ export default function EventDetailPage() {
                   textTransform: 'uppercase', borderRadius: 8,
                 }}
               >
-                Registration Closed
+                {closedLabel}
               </span>
             ) : (
               <Link

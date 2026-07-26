@@ -54,12 +54,45 @@ the server will reject.
 cart already used, so a seeker can't add to cart and check out under different
 definitions of "past". An event in progress is closed to new registrations.
 
+## Sold-out and tier-less events (follow-up, same day)
+
+The same CTA problem applied to two more states, so registration entry points
+now resolve one of three closed labels instead of rendering a live button:
+
+| State | Label |
+|---|---|
+| `startTime < now` | Registration Closed |
+| no active ticket tiers | Registration Unavailable / "No tickets on sale" |
+| all tiers at capacity | Sold Out |
+
+Neither of these was *unsafe* — `eventCheckout` already rejects on remaining
+capacity and on a missing/inactive tier — but both advertised a purchase that
+could not complete. The tier-less case was the worse of the two: with no tiers,
+`ticketTiers.every(...)` is vacuously true, so the CTA read **"Register Free"**
+on an event that had nothing to sell.
+
+Gated in three places, because there are two distinct routes into checkout:
+
+- **Events listing** (`/events`) — cards link **straight to `/checkout`**,
+  skipping the detail page, so the card CTA needed its own gate. Its
+  availability line also claimed "Open to all" for a sold-out virtual event.
+- **Event detail** — CTA + Availability block.
+- **Checkout page** — reachable by direct link and can be left open while the
+  event starts or sells out.
+
+### `findOne` now filters inactive tiers
+
+`findPublished` included `ticketTiers: { where: { isActive: true } }` but
+`findOne` included **all** tiers. So the same event exposed different tiers
+depending on which page you were on, and an inactive tier's spare capacity
+inflated the availability figure the detail page derives — an event could look
+available while every purchasable ticket was gone. `findOne` now filters to
+active tiers, matching `findPublished`. An inactive tier can't be bought
+(`eventCheckout` rejects it), so listing it publicly only advertised a ticket
+nobody could get.
+
 ## Not changed
 
 - `GET /events/:id` still returns past events. The detail page stays viewable
   (attendees may want to look one up); only registration is closed. If past
   events should 404 outright, that's a separate product call.
-- **Sold-out events**: the detail page shows "Sold out" in Availability while
-  still rendering the Buy CTA. That path is *safe* — `eventCheckout` rejects on
-  remaining capacity, so it fails cleanly — but the CTA is misleading and could
-  get the same treatment.

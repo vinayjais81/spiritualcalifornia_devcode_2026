@@ -242,14 +242,23 @@ export default function EventCheckoutPage() {
 
   if (!event) return null;
 
-  // Registration closes at start time. This page is reachable by direct link
-  // and can be left open until the event begins, so show a clear message
-  // instead of a form the server will reject (tickets.service eventCheckout).
-  if (event.startTime && new Date(event.startTime) < new Date()) return (
+  // This page is reachable by direct link and can be left open while the event
+  // starts or sells out, so show a clear message rather than a form the server
+  // will reject (tickets.service eventCheckout enforces both rules).
+  const started = !!event.startTime && new Date(event.startTime) < new Date();
+  const seatsLeft = event.ticketTiers.reduce((sum, t) => sum + (t.capacity - t.sold), 0);
+  const noTiers = event.ticketTiers.length === 0;
+  if (started || noTiers || seatsLeft <= 0) return (
     <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 16, padding: 24, textAlign: 'center' }}>
-      <div style={{ fontFamily: serif, fontSize: 24, color: C.charcoal }}>Registration closed</div>
+      <div style={{ fontFamily: serif, fontSize: 24, color: C.charcoal }}>
+        {started ? 'Registration closed' : noTiers ? 'Registration unavailable' : 'Sold out'}
+      </div>
       <div style={{ fontSize: 14, color: C.warmGray, fontFamily: sans, maxWidth: 420 }}>
-        “{event.title}” has already started, so tickets are no longer available.
+        {started
+          ? `“${event.title}” has already started, so tickets are no longer available.`
+          : noTiers
+            ? `“${event.title}” has no tickets on sale right now.`
+            : `“${event.title}” is fully booked — every ticket has been claimed.`}
       </div>
       <Link href="/events" style={{ fontSize: 13, color: C.gold, fontFamily: sans }}>← Browse upcoming events</Link>
     </div>

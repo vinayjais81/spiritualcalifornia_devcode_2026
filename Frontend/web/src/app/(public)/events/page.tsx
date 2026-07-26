@@ -407,6 +407,10 @@ function EventCard({ event }: { event: EventItem }) {
   const tierPrices = event.ticketTiers.map((t) => Number(t.price));
   const lowestPrice = tierPrices.length > 0 ? Math.min(...tierPrices) : 0;
   const spotsLeft = event.ticketTiers.reduce((sum, t) => sum + (t.capacity - t.sold), 0);
+  // This card links straight to checkout, skipping the detail page — so it
+  // needs the same gate. The listing already excludes started events
+  // (findPublished filters startTime >= now), but not sold-out ones.
+  const canRegister = event.ticketTiers.length > 0 && spotsLeft > 0;
   const img = event.coverImageUrl || pickFallbackImage(event.id);
   const badge = eventTypeBadge(event.type, isFree);
 
@@ -517,7 +521,9 @@ function EventCard({ event }: { event: EventItem }) {
           ) : event.location ? (
             <Detail icon="📍" text={event.location} />
           ) : null}
-          {spotsLeft > 0 && spotsLeft <= 10 ? (
+          {!canRegister ? (
+            <Detail icon="👥" text={event.ticketTiers.length === 0 ? 'No tickets on sale' : 'Sold out'} />
+          ) : spotsLeft <= 10 ? (
             <Detail icon="👥" text={`${spotsLeft} spots remaining`} highlight />
           ) : event.type === 'VIRTUAL' ? (
             <Detail icon="👥" text="Open to all" />
@@ -527,19 +533,29 @@ function EventCard({ event }: { event: EventItem }) {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 'auto' }}>
-          <Link
-            href={`/events/${event.id}/checkout`}
-            style={{
-              padding: '12px 28px', background: '#F07814', color: '#3A3530',
+          {canRegister ? (
+            <Link
+              href={`/events/${event.id}/checkout`}
+              style={{
+                padding: '12px 28px', background: '#F07814', color: '#3A3530',
+                fontSize: 12, fontWeight: 600, letterSpacing: '0.08em',
+                textTransform: 'uppercase', borderRadius: 8, textDecoration: 'none',
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = '#FDE8D0'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#F07814'; }}
+            >
+              {isFree ? 'Register Free' : 'Buy Ticket'}
+            </Link>
+          ) : (
+            <span style={{
+              padding: '12px 28px', background: '#F0EEEB', color: '#8A8278',
               fontSize: 12, fontWeight: 600, letterSpacing: '0.08em',
-              textTransform: 'uppercase', borderRadius: 8, textDecoration: 'none',
-              transition: 'background 0.2s',
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = '#FDE8D0'; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = '#F07814'; }}
-          >
-            {isFree ? 'Register Free' : 'Buy Ticket'}
-          </Link>
+              textTransform: 'uppercase', borderRadius: 8,
+            }}>
+              {event.ticketTiers.length === 0 ? 'Unavailable' : 'Sold Out'}
+            </span>
+          )}
           <Link
             href={`/events/${event.id}`}
             style={{
