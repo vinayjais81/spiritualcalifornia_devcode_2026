@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/cart.store';
@@ -9,7 +9,9 @@ import { CheckoutProgress } from '@/components/public/checkout/CheckoutProgress'
 import { OrderSummary } from '@/components/public/checkout/OrderSummary';
 import { StripeProvider } from '@/components/public/checkout/StripeProvider';
 import { StripePaymentForm } from '@/components/public/checkout/StripePaymentForm';
+import { CheckoutAccountGate, useCheckoutAccountGate } from '@/components/public/checkout/CheckoutAccountGate';
 import { api } from '@/lib/api';
+import { saveCheckoutDraft, loadCheckoutDraft, clearCheckoutDraft } from '@/lib/checkoutDraft';
 import { toast } from 'sonner';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -51,13 +53,37 @@ interface OrderResponse {
   items: OrderItemResponse[];
 }
 
+interface ContactForm {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  street: string;
+  apartment: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  country: string;
+}
+
+interface ShopCheckoutDraft {
+  form: ContactForm;
+  selectedShippingId: string;
+  promoApplied: { code: string; discount: number } | null;
+}
+
+// Draft survives an auth round-trip or a mid-form session expiry. Scoped per
+// tab via sessionStorage — see lib/checkoutDraft.ts.
+const DRAFT_KEY = 'shop';
+
 // ═══════════════════════════════════════════════════════════════════════════
 // PAGE
 // ═══════════════════════════════════════════════════════════════════════════
 
 export default function CheckoutPage() {
   const { items, getSubtotal, hasPhysicalItems, hasDigitalItems, clearCart } = useCartStore();
-  const { user, isAuthenticated, _hasHydrated } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
+  const showAccountGate = useCheckoutAccountGate();
   const router = useRouter();
   const subtotal = getSubtotal();
   const hasPhysical = hasPhysicalItems();
@@ -66,7 +92,7 @@ export default function CheckoutPage() {
   const productItems = useMemo(() => items.filter((i) => i.itemType === 'PRODUCT'), [items]);
 
   // Form state
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ContactForm>({
     email: '',
     firstName: '',
     lastName: '',
@@ -90,6 +116,27 @@ export default function CheckoutPage() {
   // Set once the order is created + Stripe PaymentIntent minted. Swapping this
   // value in replaces the "Continue to Payment" CTA with real Stripe Elements.
   const [pendingPayment, setPendingPayment] = useState<{ orderId: string; clientSecret: string } | null>(null);
+
+  // ─── Draft persistence ───────────────────────────────────────────────────
+  // Restore anything typed before an auth detour or a session expiry. Runs
+  // before the prefill effect below, which only fills fields that are still
+  // empty — so a restored draft always wins over account/last-order defaults.
+  useEffect(() => {
+    const draft = loadCheckoutDraft<ShopCheckoutDraft>(DRAFT_KEY);
+    if (!draft) return;
+    if (draft.form) setForm((prev) => ({ ...prev, ...draft.form }));
+    if (draft.selectedShippingId) setSelectedShippingId(draft.selectedShippingId);
+    if (draft.promoApplied) setPromoApplied(draft.promoApplied);
+  }, []);
+
+  // Persist on every change. `skipFirstSave` stops the initial (empty) render
+  // from clobbering a stored draft before the restore effect above has been
+  // applied — the restore triggers a re-render, and that pass does the write.
+  const skipFirstSave = useRef(true);
+  useEffect(() => {
+    if (skipFirstSave.current) { skipFirstSave.current = false; return; }
+    saveCheckoutDraft(DRAFT_KEY, { form, selectedShippingId, promoApplied } satisfies ShopCheckoutDraft);
+  }, [form, selectedShippingId, promoApplied]);
 
   // Pre-fill the form for signed-in seekers. Two sources, in priority order:
   //   1. auth store (email + name are always available) — synchronous
@@ -243,6 +290,9 @@ export default function CheckoutPage() {
       // will still return the PAID order if that's the case.
     }
     clearCart();
+    // Purchase is done — the draft has served its purpose and holds contact +
+    // address details, so drop it rather than leaving it in sessionStorage.
+    clearCheckoutDraft(DRAFT_KEY);
     const finalOrder = await pollOrderPaid(pendingPayment.orderId, 6);
     setConfirmedOrder(finalOrder);
   };
@@ -281,35 +331,18 @@ export default function CheckoutPage() {
   // BEFORE the contact/shipping form so guests aren't invited to fill fields
   // that can't be submitted — the previous behaviour let them complete the
   // form, then a 401 silently bounced them to /signin, discarding everything.
-  // Gate only after auth state has hydrated so signed-in users never see a flash.
-  if (_hasHydrated && !isAuthenticated) {
+  if (showAccountGate) {
     return (
-      <div style={{ maxWidth: 520, margin: '0 auto', padding: '80px 32px', textAlign: 'center' }}>
-        <span style={{ fontSize: 48, display: 'block', marginBottom: 16 }}>🔒</span>
-        <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 30, fontWeight: 400, color: '#3A3530', marginBottom: 12 }}>
-          Sign in to complete your purchase
-        </h1>
-        <p style={{ fontSize: 14, color: '#8A8278', lineHeight: 1.6, marginBottom: 32 }}>
-          Shop orders are linked to your account so your receipts, order history,
-          and digital downloads stay in one place — available for lifetime
-          re-download. It only takes a moment, and your cart is saved.
-        </p>
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link href="/signin?redirect=/checkout" style={ctaStyle}>Sign In</Link>
-          <Link
-            href="/register?redirect=/checkout"
-            style={{ ...ctaStyle, background: 'transparent', color: '#3A3530', border: '1.5px solid #F07814' }}
-          >
-            Create Account
-          </Link>
-        </div>
-        <Link
-          href="/cart"
-          style={{ display: 'inline-block', marginTop: 24, fontSize: 12, color: '#8A8278', textDecoration: 'none' }}
-        >
-          ← Back to cart
-        </Link>
-      </div>
+      <CheckoutAccountGate
+        redirect="/checkout"
+        body={
+          <>
+            Shop orders are linked to your account so your receipts, order history,
+            and digital downloads stay in one place — available for lifetime
+            re-download. It only takes a moment, and your cart is saved.
+          </>
+        }
+      />
     );
   }
 

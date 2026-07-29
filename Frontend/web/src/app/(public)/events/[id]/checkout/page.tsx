@@ -1,12 +1,15 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { StripeProvider } from '@/components/public/checkout/StripeProvider';
 import { StripePaymentForm } from '@/components/public/checkout/StripePaymentForm';
+import { CheckoutAccountGate, useCheckoutAccountGate } from '@/components/public/checkout/CheckoutAccountGate';
+import { saveCheckoutDraft, loadCheckoutDraft, clearCheckoutDraft } from '@/lib/checkoutDraft';
 import { useSiteConfigOrFallback } from '@/lib/siteConfig';
 
 // ─── Design tokens (match site palette) ─────────────────────────────────────
@@ -64,6 +67,15 @@ interface ConfirmedTicket {
   status: string;
 }
 
+// Ticket selection + attendee details, kept alive across an auth round-trip
+// or a mid-form session expiry. See lib/checkoutDraft.ts.
+interface EventCheckoutDraft {
+  step: number;
+  selectedTierId: string;
+  quantity: number;
+  attendees: AttendeeForm[];
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function fmtDate(d: string) {
@@ -84,8 +96,10 @@ export default function EventCheckoutPage() {
   const { id: eventId } = useParams<{ id: string }>();
   const router = useRouter();
   const { isAuthenticated, user } = useAuthStore();
+  const showAccountGate = useCheckoutAccountGate();
   const siteConfig = useSiteConfigOrFallback();
   const bookingFeeRate = siteConfig.fees.eventBookingFeePercent / 100;
+  const draftKey = `event:${eventId}`;
 
   // State
   const [event, setEvent] = useState<EventDetail | null>(null);
@@ -122,6 +136,40 @@ export default function EventCheckoutPage() {
       .catch(() => setError('Event not found'))
       .finally(() => setLoading(false));
   }, [eventId]);
+
+  // ─── Draft persistence ──────────────────────────────────────────────────
+  // Restore once the event has loaded, so a stored tier id can be validated
+  // against the tiers that are actually still on sale.
+  const draftRestored = useRef(false);
+  useEffect(() => {
+    if (!event || draftRestored.current) return;
+    draftRestored.current = true;
+
+    const draft = loadCheckoutDraft<EventCheckoutDraft>(draftKey);
+    if (!draft) return;
+
+    const tierStillOnSale = event.ticketTiers.some(
+      (t) => t.id === draft.selectedTierId && t.isActive,
+    );
+    if (tierStillOnSale) setSelectedTierId(draft.selectedTierId);
+    if (draft.quantity > 0) setQuantity(draft.quantity);
+    if (Array.isArray(draft.attendees) && draft.attendees.length > 0) {
+      setAttendees(draft.attendees);
+      // Only ever resume into Attendee Details. Payment and Confirmation are
+      // backed by a Stripe client secret that we deliberately never persist,
+      // so those steps cannot be rehydrated from a draft.
+      if (draft.step === 1) setStep(1);
+    }
+  }, [event, draftKey]);
+
+  useEffect(() => {
+    // Nothing worth saving until the restore pass has run, and never once
+    // payment is under way — step >= 2 state isn't restorable anyway.
+    if (!draftRestored.current || step >= 2) return;
+    saveCheckoutDraft(draftKey, {
+      step, selectedTierId, quantity, attendees,
+    } satisfies EventCheckoutDraft);
+  }, [step, selectedTierId, quantity, attendees, draftKey]);
 
   // ─── Computed ───────────────────────────────────────────────────────────
 
@@ -163,8 +211,16 @@ export default function EventCheckoutPage() {
   };
 
   const goToPayment = async () => {
+    // Defensive only — the render-time gate below normally stops a signed-out
+    // visitor long before this. This catches a session expiring while the
+    // attendee form is open, where the store still reports authenticated.
+    // Say why, and keep the typed details, instead of a silent bounce.
     if (!isAuthenticated) {
-      router.push(`/signin?redirect=/events/${eventId}/checkout`);
+      toast.error('Please sign in to complete your purchase — your ticket details are saved.');
+      saveCheckoutDraft(draftKey, {
+        step, selectedTierId, quantity, attendees,
+      } satisfies EventCheckoutDraft);
+      router.push(`/signin?redirect=${encodeURIComponent(`/events/${eventId}/checkout`)}`);
       return;
     }
     const err = validateAttendees();
@@ -199,6 +255,9 @@ export default function EventCheckoutPage() {
   };
 
   const handlePaymentSuccess = useCallback(async (paymentIntentId: string) => {
+    // Paid — the draft has served its purpose and holds attendee names and
+    // emails, so drop it rather than leaving it in sessionStorage.
+    clearCheckoutDraft(draftKey);
     // Tell backend to confirm (idempotent — webhook also does this)
     api.post('/payments/confirm-payment', { paymentIntentId }).catch(() => {});
     // Fetch confirmed tickets with QR codes (with retry for QR generation)
@@ -219,7 +278,7 @@ export default function EventCheckoutPage() {
       }
     };
     setTimeout(fetchTickets, 2000);
-  }, [purchaseGroupId]);
+  }, [purchaseGroupId, draftKey]);
 
   // ─── Render helpers ────────────────────────────────────────────────────
 
@@ -263,6 +322,32 @@ export default function EventCheckoutPage() {
       <Link href="/events" style={{ fontSize: 13, color: C.gold, fontFamily: sans }}>← Browse upcoming events</Link>
     </div>
   );
+
+  // Account gate. Event orders are account-tied (e-tickets, QR codes, refunds,
+  // order history) and POST /tickets/event-checkout is @Roles(SEEKER), so a
+  // guest can never submit this form. Say so BEFORE the attendee fields rather
+  // than after — filling in names and emails for every attendee and then being
+  // bounced to /signin with no explanation was the reported bug.
+  //
+  // Deliberately placed after the sold-out / registration-closed checks above:
+  // there's no point sending someone to sign in for a purchase that can't be
+  // completed anyway.
+  if (showAccountGate) {
+    return (
+      <CheckoutAccountGate
+        redirect={`/events/${eventId}/checkout`}
+        body={
+          <>
+            Tickets are linked to your account so your QR codes, order history,
+            and any refunds stay in one place — and so we can re-send an e-ticket
+            if you lose it. It only takes a moment, and your selection is saved.
+          </>
+        }
+        backHref={`/events/${eventId}`}
+        backLabel="← Back to event"
+      />
+    );
+  }
 
   // ─── Layout ────────────────────────────────────────────────────────────
 

@@ -97,6 +97,33 @@ function isAuthEndpoint(config: { url?: string } | undefined): boolean {
   return AUTH_ENDPOINTS.some((p) => url.includes(p));
 }
 
+/**
+ * Where to send a user whose session expired mid-request.
+ *
+ * NEVER a bare `/signin`. That drops the user on a login form with no
+ * explanation and no route back to what they were doing — which is exactly
+ * how an expired token silently destroyed in-progress checkout forms
+ * (see docs/checkout-account-gate.md). We always carry:
+ *   - `redirect` — the page they were on, so sign-in returns them there
+ *   - `reason`   — turned into a visible message by the sign-in page
+ */
+function buildSessionExpiredUrl(): string {
+  const { pathname, search } = window.location;
+
+  // Guide onboarding is a multi-step wizard whose URL doesn't encode the step;
+  // its entry point resumes from server-side status, so send them there.
+  const target = pathname.startsWith('/onboarding')
+    ? '/onboarding/guide'
+    : `${pathname}${search}`;
+
+  // Never redirect back into an auth page — that would loop on itself.
+  const safe = /^\/(signin|register|forgot-password|reset-password)/.test(target)
+    ? '/'
+    : target;
+
+  return `/signin?redirect=${encodeURIComponent(safe)}&reason=session-expired`;
+}
+
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
@@ -156,10 +183,7 @@ api.interceptors.response.use(
         // CORS hiccups — none of those should dump the user onto /signin.
         if (refreshError?.isUnauthorized) {
           localStorage.removeItem('access_token');
-          const isOnboarding = window.location.pathname.startsWith('/onboarding');
-          window.location.href = isOnboarding
-            ? '/signin?redirect=/onboarding/guide'
-            : '/signin';
+          window.location.href = buildSessionExpiredUrl();
         }
         return Promise.reject(refreshError);
       } finally {

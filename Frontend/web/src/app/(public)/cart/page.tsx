@@ -206,6 +206,9 @@ export default function CartPage() {
   const hasDigital = items.some(i => i.productType === 'DIGITAL');
 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  // Gate the "account required" notice on hydration so signed-in seekers
+  // never see it flash on first paint.
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   // Pending items from prior reservations (tour deposits, service bookings,
   // event ticket holds). Each has its own dedicated checkout flow — we
@@ -568,6 +571,22 @@ export default function CartPage() {
                 Proceed to Checkout
               </Link>
             )}
+            {/* Account-required notice. There is no guest checkout anywhere on
+                the platform — every purchase entity requires a seeker account.
+                Surfacing that here, before the buyer opens a checkout form,
+                is the whole point: the original bug report was about learning
+                it only AFTER filling one in. */}
+            {hasHydrated && !isAuthenticated && (
+              <div style={{
+                background: '#FEF7F0', border: '1px solid rgba(240,120,20,0.25)',
+                borderRadius: 6, padding: '10px 14px', marginTop: 12,
+                fontSize: 11, color: '#3A3530', lineHeight: 1.6,
+              }}>
+                🔒 You&apos;ll need an account to check out — it keeps your receipts,
+                downloads and tickets in one place. Your cart is saved.
+              </div>
+            )}
+
             <Link href="/shop" style={{
               display: 'block', width: '100%', padding: 14, borderRadius: 8, marginTop: 10,
               border: '1.5px solid rgba(240,120,20,0.3)', color: '#3A3530', textAlign: 'center',

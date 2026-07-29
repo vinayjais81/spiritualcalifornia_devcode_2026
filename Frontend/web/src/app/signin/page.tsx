@@ -183,6 +183,18 @@ function SignInContent() {
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <FormLegend />
 
+            {/* Session-expiry notice. The api.ts 401 interceptor appends
+                `reason=session-expired` when a refresh fails mid-request, so
+                the user learns WHY they landed here instead of assuming the
+                app threw their work away. Suppressed once a real sign-in
+                error exists — that message is the more useful one. */}
+            {searchParams.get('reason') === 'session-expired' && !error && (
+              <div style={{ background: G.goldPale, border: `1px solid rgba(240,120,20,0.35)`, borderRadius: 8, padding: '12px 16px', fontFamily: 'var(--font-inter), sans-serif', fontSize: 13, color: G.charcoal, lineHeight: 1.6 }}>
+                Your session timed out, so please sign in again — we&apos;ll take
+                you straight back to where you left off.
+              </div>
+            )}
+
             {error && (
               <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '12px 16px', fontFamily: 'var(--font-inter), sans-serif', fontSize: 13, color: '#DC2626' }}>
                 {error}
