@@ -6,8 +6,9 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
 import type { Request } from 'express';
 import { SoulToursService } from './soul-tours.service';
 import {
-  CreateTourDto, CreateDepartureDto, CreateItineraryDayDto,
+  CreateTourDto, CreateDepartureDto,
 } from './dto/create-tour.dto';
+import { ReplaceItineraryDto } from './dto/replace-itinerary.dto';
 import { UpdateTourDto } from './dto/update-tour.dto';
 import { BookTourDto, CancelBookingDto } from './dto/book-tour.dto';
 import { RecordConsentDto } from './dto/record-consent.dto';
@@ -89,7 +90,7 @@ export class SoulToursController {
   replaceItinerary(
     @CurrentUser() user: CurrentUserData,
     @Param('id') tourId: string,
-    @Body() body: { days: CreateItineraryDayDto[] },
+    @Body() body: ReplaceItineraryDto,
   ) {
     return this.soulToursService.replaceItinerary(user.id, tourId, body.days);
   }

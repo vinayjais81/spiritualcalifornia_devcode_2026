@@ -7,6 +7,7 @@ import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.de
 import { Role } from '@prisma/client';
 import { SeekersService } from './seekers.service';
 import { UpdateSeekerProfileDto } from './dto/update-seeker-profile.dto';
+import { UpdateOnboardingStepDto } from './dto/update-onboarding-step.dto';
 
 @ApiTags('Seekers')
 @Controller('seekers')
@@ -27,7 +28,7 @@ export class SeekersController {
   @ApiOperation({ summary: 'Save seeker onboarding progress' })
   updateStep(
     @CurrentUser() user: CurrentUserData,
-    @Body() body: { step: number; completed?: boolean },
+    @Body() body: UpdateOnboardingStepDto,
   ) {
     return this.seekersService.updateOnboardingStep(user.id, body.step, body.completed ?? false);
   }

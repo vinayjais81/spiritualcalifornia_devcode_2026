@@ -11,6 +11,13 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.decorator';
 import { Role } from '@prisma/client';
+import {
+  CreatePaymentIntentDto,
+  ConfirmPaymentDto,
+  RequestPayoutDto,
+  RefundPaymentDto,
+  SubscriptionCheckoutDto,
+} from './dto/payment-intent.dto';
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -76,9 +83,9 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Start a Stripe Checkout for the Standard listing plan' })
   subscriptionCheckout(
     @CurrentUser() user: CurrentUserData,
-    @Body('plan') plan: 'monthly' | 'annual',
+    @Body() body: SubscriptionCheckoutDto,
   ) {
-    return this.paymentsService.createSubscriptionCheckout(user.id, plan ?? 'monthly');
+    return this.paymentsService.createSubscriptionCheckout(user.id, body.plan ?? 'monthly');
   }
 
   @Post('subscription/portal')
@@ -100,8 +107,11 @@ export class PaymentsController {
   @Post('payout')
   @Roles(Role.GUIDE)
   @ApiOperation({ summary: 'Request a payout (guide cashout)' })
-  requestPayout(@CurrentUser() user: CurrentUserData, @Body('amount') amount: number) {
-    return this.paymentsService.requestPayout(user.id, amount);
+  // `@Body('amount') amount: number` was equally unvalidated — ValidationPipe
+  // skips primitive metatypes, so a negative or non-numeric payout amount got
+  // through. Take the whole body as a DTO instead.
+  requestPayout(@CurrentUser() user: CurrentUserData, @Body() body: RequestPayoutDto) {
+    return this.paymentsService.requestPayout(user.id, body.amount);
   }
 
   @Get('payout-history')
@@ -115,14 +125,7 @@ export class PaymentsController {
 
   @Post('create-intent')
   @ApiOperation({ summary: 'Create a payment intent and return client secret for Stripe Elements' })
-  createIntent(@Body() data: {
-    amount: number;
-    bookingId?: string;
-    orderId?: string;
-    ticketPurchaseId?: string;
-    tourBookingId?: string;
-    paymentType?: 'FULL' | 'DEPOSIT' | 'BALANCE';
-  }) {
+  createIntent(@Body() data: CreatePaymentIntentDto) {
     return this.paymentsService.createPaymentIntent(data);
   }
 
@@ -130,7 +133,7 @@ export class PaymentsController {
 
   @Post('confirm-payment')
   @ApiOperation({ summary: 'Confirm payment after successful Stripe charge (fallback for webhook)' })
-  confirmPayment(@Body() data: { paymentIntentId: string }) {
+  confirmPayment(@Body() data: ConfirmPaymentDto) {
     return this.paymentsService.confirmPayment(data.paymentIntentId);
   }
 
@@ -149,7 +152,7 @@ export class PaymentsController {
   @Post(':id/refund')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Refund a payment (full or partial)' })
-  refund(@Param('id') id: string, @Body('amount') amount?: number) {
+  refund(@Param('id') id: string, @Body() { amount }: RefundPaymentDto) {
     return this.paymentsService.refund(id, amount);
   }
 }

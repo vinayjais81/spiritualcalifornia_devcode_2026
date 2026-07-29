@@ -29,6 +29,7 @@ import { RejectGuideDto } from './dto/reject-guide.dto';
 import { AdminCreatePostDto, AdminUpdatePostDto } from './dto/admin-blog.dto';
 import { SetUserPasswordDto } from './dto/set-user-password.dto';
 import { ConvertTestAccountDto, SetTestAccountFlagDto } from './dto/convert-test-account.dto';
+import { SetActiveDto, SetPublishedDto, SetFeaturedDto } from './dto/toggle-flag.dto';
 import { VerificationStatus, TourBookingStatus, BookingStatus, PayoutStatus, EarningCategory, SubscriptionStatus } from '@prisma/client';
 import { PaymentsService } from '../payments/payments.service';
 import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.decorator';
@@ -534,7 +535,7 @@ export class AdminController {
   })
   setProductActive(
     @Param('id') id: string,
-    @Body() body: { isActive: boolean },
+    @Body() body: SetActiveDto,
   ) {
     return this.adminService.setProductActive(id, !!body.isActive);
   }
@@ -570,7 +571,7 @@ export class AdminController {
   @ApiOperation({ summary: 'Admin override to publish or unpublish an event. Skips the payments publish-gate.' })
   setEventPublished(
     @Param('id') id: string,
-    @Body() body: { isPublished: boolean },
+    @Body() body: SetPublishedDto,
   ) {
     return this.adminService.setEventPublished(id, !!body.isPublished);
   }
@@ -606,7 +607,7 @@ export class AdminController {
   @ApiOperation({ summary: 'Admin override to publish or unpublish a tour. Skips the payments publish-gate.' })
   setTourPublished(
     @Param('id') id: string,
-    @Body() body: { isPublished: boolean },
+    @Body() body: SetPublishedDto,
   ) {
     return this.adminService.setTourPublished(id, !!body.isPublished);
   }
@@ -616,7 +617,7 @@ export class AdminController {
   @ApiOperation({ summary: 'Toggle a guide as featured on the public practitioners page' })
   setFeatured(
     @Param('guideId') guideId: string,
-    @Body() body: { isFeatured: boolean },
+    @Body() body: SetFeaturedDto,
   ) {
     return this.adminService.setFeatured(guideId, !!body.isFeatured);
   }

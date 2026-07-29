@@ -92,8 +92,11 @@ interests, per-entry and array-size caps, `null` for the clearable
 wizard-deferred fields, and rejection of `onboardingCompleted` / `onboardingStep`
 / `userId`.
 
-## Not covered
+## Follow-ups (both since done)
 
-The guide profile's Bio has server-side limits already
-(`UpdateGuideProfileDto`, 2000) but no on-screen counter on the guide dashboard
-profile page. Same treatment would apply there; out of scope for this fix.
+- The guide dashboard profile page had server caps (`UpdateGuideProfileDto`)
+  but no on-screen counter — an over-long bio was a save-time 400 with no
+  warning while typing. It now uses the same `CharCount` on Bio and Tagline,
+  with `maxLength` on Display Name and Phone.
+- The root-cause pattern turned out to be API-wide. See
+  [inline-body-validation-sweep.md](inline-body-validation-sweep.md).

@@ -24,6 +24,7 @@ import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ClaimAccountDto } from './dto/claim-account.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtRefreshGuard } from './guards/jwt-refresh.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Public } from './decorators/public.decorator';
@@ -175,7 +176,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Change password (authenticated user)' })
   changePassword(
     @CurrentUser() user: CurrentUserData,
-    @Body() body: { currentPassword: string; newPassword: string },
+    @Body() body: ChangePasswordDto,
   ) {
     return this.authService.changePassword(user.id, body.currentPassword, body.newPassword);
   }

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards, BadRequest
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { ReviewsService } from './reviews.service';
 import { CreateReviewDto, ReviewTargetType } from './dto/create-review.dto';
+import { FlagReviewDto, ModerateReviewDto } from './dto/moderate-review.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -138,14 +139,14 @@ export class ReviewsController {
   @Patch(':id/flag')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Flag or unflag a review' })
-  flag(@Param('id') id: string, @Body('flag') flag: boolean) {
-    return this.reviewsService.flagReview(id, flag);
+  flag(@Param('id') id: string, @Body() body: FlagReviewDto) {
+    return this.reviewsService.flagReview(id, body.flag);
   }
 
   @Patch(':id/moderate')
   @Roles(Role.ADMIN, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Approve or reject a review' })
-  moderate(@Param('id') id: string, @Body('approved') approved: boolean) {
-    return this.reviewsService.moderateReview(id, approved);
+  moderate(@Param('id') id: string, @Body() body: ModerateReviewDto) {
+    return this.reviewsService.moderateReview(id, body.approved);
   }
 }

@@ -94,6 +94,11 @@ export class CalendlyController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Receive Calendly webhook events' })
   handleWebhook(
+    // `any` is deliberate here, and the one @Body() in this API that should
+    // stay unvalidated: the payload is Calendly's, its shape is theirs to
+    // change, and authenticity comes from the signature header verified in
+    // handleWebhookEvent — not from the body matching a DTO we guessed.
+    // Rejecting an unrecognised field would drop events we should process.
     @Body() body: any,
     @Headers('calendly-webhook-signature') signature: string,
   ) {

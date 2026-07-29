@@ -3,6 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagg
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { CreateServiceBookingDto } from './dto/create-service-booking.dto';
+import { CancelBookingReasonDto } from './dto/cancel-booking-reason.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -61,9 +62,9 @@ export class BookingsController {
   cancel(
     @CurrentUser() user: CurrentUserData,
     @Param('id') id: string,
-    @Body('reason') reason?: string,
+    @Body() body: CancelBookingReasonDto,
   ) {
-    return this.bookingsService.cancel(user.id, id, reason);
+    return this.bookingsService.cancel(user.id, id, body.reason);
   }
 
   @Patch(':id/confirm')

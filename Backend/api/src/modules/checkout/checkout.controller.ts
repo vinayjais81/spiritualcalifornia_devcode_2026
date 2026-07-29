@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CheckoutService } from './checkout.service';
 import { ValidatePromoDto } from './dto/validate-promo.dto';
+import { OrderSummaryDto } from './dto/order-summary.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Public } from '../auth/decorators/public.decorator';
 
@@ -35,7 +36,7 @@ export class CheckoutController {
 
   @Post('summary')
   @ApiOperation({ summary: 'Calculate order summary (subtotal, tax, shipping, discount, total)' })
-  calculateSummary(@Body() data: any) {
+  calculateSummary(@Body() data: OrderSummaryDto) {
     return this.checkoutService.calculateOrderSummary(data);
   }
 }

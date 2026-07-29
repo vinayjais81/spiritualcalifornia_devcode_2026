@@ -4,7 +4,19 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
-import { C, font, PageHeader, Panel, Btn, FormGroup, Input, TextArea, FormActions } from '@/components/guide/dashboard-ui';
+import { C, font, PageHeader, Panel, Btn, FormGroup, Input, TextArea, CharCount, FormActions } from '@/components/guide/dashboard-ui';
+
+// Mirrors UpdateGuideProfileDto on the API
+// (Backend/api/src/modules/guides/dto/update-profile.dto.ts). The server has
+// always enforced these; the dashboard just never showed them, so an over-long
+// bio was a save-time 400 with no warning while typing. Note the onboarding
+// wizard caps bio at 800 — deliberately stricter than the 2000 the API allows.
+const LIMITS = {
+  displayName: 80,
+  tagline: 160,
+  bio: 2000,
+  phone: 30,
+} as const;
 
 export default function ProfilePage() {
   const [avatar, setAvatar] = useState('/images/hero1.jpg');
@@ -155,16 +167,18 @@ export default function ProfilePage() {
       <Panel title="Basic Information" icon="📝">
         <div className="sc-form2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
           <FormGroup label="Display Name">
-            <Input value={form.displayName} onChange={e => setForm(f => ({ ...f, displayName: e.target.value }))} placeholder="Your display name" />
+            <Input value={form.displayName} onChange={e => setForm(f => ({ ...f, displayName: e.target.value }))} placeholder="Your display name" maxLength={LIMITS.displayName} />
           </FormGroup>
           <FormGroup label="Phone">
-            <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="+1 (415) 000-0000" />
+            <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="+1 (415) 000-0000" maxLength={LIMITS.phone} />
           </FormGroup>
           <FormGroup label="Tagline" full>
-            <Input value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))} placeholder="Sound Healer · Reiki Master · Breathwork Guide" />
+            <Input value={form.tagline} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))} placeholder="Sound Healer · Reiki Master · Breathwork Guide" maxLength={LIMITS.tagline} />
+            <CharCount value={form.tagline} max={LIMITS.tagline} />
           </FormGroup>
           <FormGroup label="Bio" full>
-            <TextArea value={form.bio} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} placeholder="Tell seekers about your practice, training, and approach..." rows={5} />
+            <TextArea value={form.bio} onChange={e => setForm(f => ({ ...f, bio: e.target.value }))} placeholder="Tell seekers about your practice, training, and approach..." rows={5} maxLength={LIMITS.bio} />
+            <CharCount value={form.bio} max={LIMITS.bio} />
           </FormGroup>
         </div>
 

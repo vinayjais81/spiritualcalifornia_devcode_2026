@@ -18,6 +18,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
+import { ReviewNotesDto } from './dto/review-notes.dto';
 import { VerificationService } from './verification.service';
 import { StripeService } from '../payments/stripe.service';
 import { PrismaService } from '../../database/prisma.service';
@@ -135,7 +136,7 @@ export class VerificationController {
   @ApiResponse({ status: 200, description: 'Guide approved and published' })
   async approveGuide(
     @Param('guideId') guideId: string,
-    @Body() body: { notes?: string },
+    @Body() body: ReviewNotesDto,
   ) {
     await this.verificationService.reviewGuide(guideId, 'approve', body?.notes);
     return { message: 'Guide approved and published' };
@@ -152,7 +153,7 @@ export class VerificationController {
   @ApiOperation({ summary: 'Reject a guide verification request' })
   async rejectGuide(
     @Param('guideId') guideId: string,
-    @Body() body: { notes?: string },
+    @Body() body: ReviewNotesDto,
   ) {
     await this.verificationService.reviewGuide(guideId, 'reject', body?.notes);
     return { message: 'Guide verification rejected' };

@@ -6,6 +6,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
 import { ContactService } from './contact.service';
+import { UpdateLeadStatusDto } from './dto/update-lead-status.dto';
 
 class SubmitContactDto {
   @IsString() @IsNotEmpty() @MaxLength(100) name: string;
@@ -61,7 +62,7 @@ export class ContactController {
   @ApiOperation({ summary: 'Admin — update contact lead status' })
   updateStatus(
     @Param('id') id: string,
-    @Body() body: { status: string },
+    @Body() body: UpdateLeadStatusDto,
   ) {
     return this.contactService.updateLeadStatus(id, body.status);
   }
