@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, FormEvent, Suspense } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { LocationAutocomplete } from '@/components/shared/LocationAutocomplete';
 import { useAuthStore } from '@/store/auth.store';
@@ -208,11 +209,16 @@ function RegisterContent() {
   // /seeker/dashboard.
   const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
-    if (!terms) { setError('Please accept the Terms of Service to continue.'); return; }
+    // Toast as well as the inline banner: the banner sits at the top of a
+    // long form, so a user clicking submit at the bottom never sees it.
+    // Same convention as List Your Practice / Sign In / Shop checkout.
+    const failValidation = (msg: string) => { setError(msg); toast.error(msg); };
+
+    if (!terms) { failValidation('Please accept the Terms of Service to continue.'); return; }
     const pwdResult = evaluatePassword(password, { email, firstName, lastName });
     if (!pwdResult.allPassed) {
       const firstFailing = pwdResult.rules.find((r) => !r.passed);
-      setError(firstFailing ? `Password: ${firstFailing.label}` : 'Password does not meet the requirements.');
+      failValidation(firstFailing ? `Password: ${firstFailing.label}` : 'Password does not meet the requirements.');
       return;
     }
     setLoading(true);
@@ -620,8 +626,13 @@ function RegisterContent() {
                     </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 32, cursor: 'pointer' }}>
+                    {/* Deliberately NOT `required`: native validation would
+                        block submit with a browser bubble and handleRegister
+                        would never run, so our own toast + inline banner
+                        never appeared. handleRegister owns this check. */}
                     <input type="checkbox" checked={terms} onChange={(e) => setTerms(e.target.checked)}
-                      style={{ width: 18, height: 18, flexShrink: 0, marginTop: 2, accentColor: G.gold }} required />
+                      aria-required="true"
+                      style={{ width: 18, height: 18, flexShrink: 0, marginTop: 2, accentColor: G.gold }} />
                     <span style={{ fontSize: 13, color: G.warmGray, lineHeight: 1.5, fontFamily: 'var(--font-inter), sans-serif' }}>
                       I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: G.gold, textDecoration: 'none' }}>Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: G.gold, textDecoration: 'none' }}>Privacy Policy</a>.
                     </span>

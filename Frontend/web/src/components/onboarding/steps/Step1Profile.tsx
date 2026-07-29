@@ -52,6 +52,9 @@ export function Step1Profile() {
   const [showPass, setShowPass] = useState(false);
   const [awaitingVerification, setAwaitingVerification] = useState<string | null>(null);
   const [terms, setTerms] = useState(false);
+  // id of the control that failed validation, so we can mark it inline and
+  // with aria-invalid rather than only showing a banner far up the page.
+  const [invalidField, setInvalidField] = useState<string | null>(null);
 
   // Live password policy evaluation — drives submit gate, aria signaling,
   // and the strength meter UI. Only meaningful for unauthenticated users
@@ -99,20 +102,48 @@ export function Step1Profile() {
     setStep1({ languages: langs.includes(lang) ? langs.filter((l) => l !== lang) : [...langs, lang] });
   };
 
-  // Surface a validation error both inline (top of form) and as a toast.
-  // The inline banner sits above a long form, so a user who clicks the
-  // submit button at the bottom (e.g. with Terms unchecked) never sees it
-  // scroll into view — the toast guarantees visible feedback, matching the
-  // Sign In / Shop checkout behaviour.
-  const failValidation = (msg: string) => {
+  // Surface a validation error three ways, because this form is far taller
+  // than the viewport: the inline banner at the top, a toast (guaranteed
+  // visible wherever the user is scrolled — matches Sign In / Shop checkout),
+  // and by moving focus to the offending control so it is marked inline too.
+  const failValidation = (msg: string, fieldId?: string) => {
     setError(msg);
     toast.error(msg);
+    setInvalidField(fieldId ?? null);
+    if (!fieldId) return;
+    const el = document.getElementById(fieldId);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Focus once the smooth scroll has settled, and without re-scrolling —
+    // focusing immediately would fight the animation.
+    setTimeout(() => el.focus({ preventScroll: true }), 300);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!step1.bio || step1.bio.length < 30) { failValidation('Bio must be at least 30 characters.'); return; }
-    if (!isAuthenticated && !terms) { failValidation('Please accept the Terms of Service and Privacy Policy to continue.'); return; }
+    // The <form> is noValidate: we own every check so feedback is always a
+    // toast + banner + focused control. Native validation was inconsistent
+    // here — the browser bubble differs per engine, and Chrome suppresses it
+    // entirely (doing literally nothing) when the invalid control isn't
+    // focusable, which is exactly the "button looks broken" report.
+    if (!step1.firstName?.trim()) { failValidation('Please enter your first name.', 'step1-first-name'); return; }
+    if (!step1.lastName?.trim()) { failValidation('Please enter your last name.', 'step1-last-name'); return; }
+    if (!step1.bio || step1.bio.trim().length < 30) { failValidation('Bio must be at least 30 characters.', 'step1-bio'); return; }
+    if (!isAuthenticated) {
+      if (!email.trim()) { failValidation('Please enter your email address.', 'step1-email'); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { failValidation('Please enter a valid email address.', 'step1-email'); return; }
+      if (!password) { failValidation('Please choose a password.', 'onboarding-guide-password'); return; }
+      if (!pwdStrength.allPassed) {
+        const firstFailing = pwdStrength.rules.find((r) => !r.passed);
+        failValidation(
+          firstFailing ? `Password: ${firstFailing.label}` : 'Password does not meet the requirements.',
+          'onboarding-guide-password',
+        );
+        return;
+      }
+      if (!terms) { failValidation('Please accept the Terms of Service and Privacy Policy to continue.', 'guide-terms'); return; }
+    }
+    setInvalidField(null);
     setLoading(true); setError(null);
     try {
       // ── Unauthenticated path: register only, then ask the user to
@@ -123,13 +154,8 @@ export function Step1Profile() {
       //    avatar / etc. fields stay in the Zustand store so the form
       //    is pre-filled when the user comes back from the verify link.
       if (!isAuthenticated) {
-        if (!email || !password) { failValidation('Email and password are required.'); setLoading(false); return; }
-        if (!pwdStrength.allPassed) {
-          const firstFailing = pwdStrength.rules.find((r) => !r.passed);
-          failValidation(firstFailing ? `Password: ${firstFailing.label}` : 'Password does not meet the requirements.');
-          setLoading(false);
-          return;
-        }
+        // Email / password / terms are already validated up-front by the
+        // guard block at the top of handleSubmit.
         // Pass the wizard's profile fields along with register so they
         // survive the email-verification round-trip. Backend stashes them
         // on the user row and applies to GuideProfile in /auth/verify-email.
@@ -271,7 +297,9 @@ export function Step1Profile() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    // noValidate: handleSubmit owns all validation so every failure produces
+    // the same visible toast + banner + focus treatment. See failValidation.
+    <form onSubmit={handleSubmit} noValidate>
       <div style={{ marginBottom: '44px' }}>
         <div style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#F07814', marginBottom: '10px', fontFamily: 'var(--font-inter), sans-serif' }}>Step 1 of 6</div>
         <h1 className="font-playfair" style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, lineHeight: 1.1, color: '#3A3530', marginBottom: '10px' }}>
@@ -412,24 +440,61 @@ export function Step1Profile() {
         <input id="step1-website" style={iStyle('web')} type="url" placeholder="https://your-website.com or instagram.com/yourhandle" value={step1.websiteUrl} onChange={(e) => setStep1({ websiteUrl: e.target.value })} onFocus={() => setFocused('web')} onBlur={() => setFocused(null)} />
       </div>
 
-      {/* Terms — only shown for new (unauthenticated) users */}
-      {!isAuthenticated && (
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginTop: 24 }}>
-          <input
-            type="checkbox"
-            id="guide-terms"
-            checked={terms}
-            onChange={(e) => setTerms(e.target.checked)}
-            style={{ width: 18, height: 18, flexShrink: 0, marginTop: 2, accentColor: '#F07814', cursor: 'pointer' }}
-          />
-          <label htmlFor="guide-terms" style={{ fontSize: 13, color: '#8A8278', lineHeight: 1.5, fontFamily: 'var(--font-inter), sans-serif', cursor: 'pointer' }}>
-            I agree to the{' '}
-            <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#F07814', textDecoration: 'none' }}>Terms of Service</a>
-            {' '}and{' '}
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#F07814', textDecoration: 'none' }}>Privacy Policy</a>.
-          </label>
-        </div>
-      )}
+      {/* Terms — only shown for new (unauthenticated) users.
+          Unchecking this is the single most likely reason a submit is
+          refused, and the button sits directly below it, so the failure is
+          called out inline here as well as via the toast + top banner. */}
+      {!isAuthenticated && (() => {
+        const termsInvalid = invalidField === 'guide-terms';
+        return (
+          <div
+            style={{
+              marginTop: 24,
+              padding: termsInvalid ? '12px 14px' : 0,
+              borderRadius: 8,
+              background: termsInvalid ? '#FEF2F2' : 'transparent',
+              border: termsInvalid ? '1px solid #FECACA' : '1px solid transparent',
+              transition: 'background 0.2s, border-color 0.2s',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+              <input
+                type="checkbox"
+                id="guide-terms"
+                checked={terms}
+                onChange={(e) => {
+                  setTerms(e.target.checked);
+                  // Clear the error as soon as the user resolves it.
+                  if (e.target.checked && termsInvalid) { setInvalidField(null); setError(null); }
+                }}
+                aria-invalid={termsInvalid}
+                aria-describedby={termsInvalid ? 'guide-terms-error' : undefined}
+                style={{
+                  width: 18, height: 18, flexShrink: 0, marginTop: 2,
+                  accentColor: '#F07814', cursor: 'pointer',
+                  outline: termsInvalid ? '2px solid #DC2626' : 'none',
+                  outlineOffset: 2,
+                }}
+              />
+              <label htmlFor="guide-terms" style={{ fontSize: 13, color: '#8A8278', lineHeight: 1.5, fontFamily: 'var(--font-inter), sans-serif', cursor: 'pointer' }}>
+                I agree to the{' '}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: '#F07814', textDecoration: 'none' }}>Terms of Service</a>
+                {' '}and{' '}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" style={{ color: '#F07814', textDecoration: 'none' }}>Privacy Policy</a>.
+              </label>
+            </div>
+            {termsInvalid && (
+              <div
+                id="guide-terms-error"
+                role="alert"
+                style={{ marginTop: 8, marginLeft: 30, fontSize: 12, color: '#DC2626', fontFamily: 'var(--font-inter), sans-serif' }}
+              >
+                You need to accept these before continuing.
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '40px', paddingTop: '28px', borderTop: '1px solid rgba(240,120,20,0.15)' }}>
         {(() => {
