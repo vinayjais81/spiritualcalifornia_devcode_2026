@@ -10,11 +10,20 @@ const exploreLinks = [
   { label: 'Events', href: '/events' },
 ];
 
+// Only routes that actually exist. Three links were removed on 2026-07-29
+// because they had no destination:
+//   Community        → /community, never built
+//   Guide Dashboard  → /dashboard, never built (the real one is
+//                      /guide/dashboard, but it's auth-gated and this column
+//                      is aimed at logged-out visitors)
+//   Verification     → /guides/verification, never built. This one didn't
+//                      even 404 — it fell through to the guides/[slug]
+//                      dynamic route and rendered a client-side "not found"
+//                      at HTTP 200, so status-code checks missed it.
+// Re-add any of them alongside the page, not before it.
+// See docs/footer-dead-links.md.
 const guidesLinks = [
   { label: 'List Your Practice', href: '/onboarding/guide' },
-  { label: 'Verification', href: '/guides/verification' },
-  { label: 'Guide Dashboard', href: '/dashboard' },
-  { label: 'Community', href: '/community' },
 ];
 
 const companyLinks = [
