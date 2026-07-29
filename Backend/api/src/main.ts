@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import * as express from 'express';
 import { AppModule } from './app.module';
 import { SanitizePipe } from './common/sanitize.pipe';
+import { PaginationQueryPipe } from './common/pipes/pagination-query.pipe';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
@@ -48,7 +49,13 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
 
-  // Global pipes: sanitize inputs + validate DTOs
+  // Global pipes: sanitize inputs + validate DTOs + clamp pagination params.
+  //
+  // PaginationQueryPipe runs last so it sees the final value of `page` /
+  // `limit`. It only affects endpoints that read those as raw named query
+  // params; DTO-based endpoints (admin) are already validated by
+  // ValidationPipe above and keep returning 400 on a bad page.
+  // See docs/pagination-hardening.md.
   app.useGlobalPipes(
     new SanitizePipe(),
     new ValidationPipe({
@@ -57,6 +64,7 @@ async function bootstrap() {
       transform: true,
       transformOptions: { enableImplicitConversion: true },
     }),
+    new PaginationQueryPipe(),
   );
 
   // Swagger (non-production only)
