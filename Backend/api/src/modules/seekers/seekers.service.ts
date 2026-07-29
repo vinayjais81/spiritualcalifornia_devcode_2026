@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CartService } from '../cart/cart.service';
+import { UpdateSeekerProfileDto } from './dto/update-seeker-profile.dto';
 
 @Injectable()
 export class SeekersService {
@@ -105,23 +106,25 @@ export class SeekersService {
     };
   }
 
-  async updateProfile(
-    userId: string,
-    dto: {
-      bio?: string;
-      location?: string;
-      timezone?: string;
-      interests?: string[];
-      experienceLevel?: string | null;
-      practices?: string[];
-      journeyText?: string | null;
-    },
-  ) {
+  async updateProfile(userId: string, dto: UpdateSeekerProfileDto) {
     const profile = await this.prisma.seekerProfile.findUnique({ where: { userId } });
     if (!profile) throw new NotFoundException('Seeker profile not found');
+    // Map each column explicitly rather than spreading the body. The DTO plus
+    // forbidNonWhitelisted already rejects unknown keys, but this keeps the
+    // write surface pinned to the seven editable fields so a future DTO
+    // addition can never silently become a writable column (`onboardingStep`,
+    // `onboardingCompleted` and `userId` are deliberately not settable here).
     return this.prisma.seekerProfile.update({
       where: { userId },
-      data: dto,
+      data: {
+        bio: dto.bio,
+        location: dto.location,
+        timezone: dto.timezone,
+        interests: dto.interests,
+        experienceLevel: dto.experienceLevel,
+        practices: dto.practices,
+        journeyText: dto.journeyText,
+      },
     });
   }
 

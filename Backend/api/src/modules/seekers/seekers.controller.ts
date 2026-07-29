@@ -6,6 +6,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.decorator';
 import { Role } from '@prisma/client';
 import { SeekersService } from './seekers.service';
+import { UpdateSeekerProfileDto } from './dto/update-seeker-profile.dto';
 
 @ApiTags('Seekers')
 @Controller('seekers')
@@ -45,17 +46,10 @@ export class SeekersController {
   @ApiOperation({ summary: 'Update seeker profile' })
   updateProfile(
     @CurrentUser() user: CurrentUserData,
-    @Body()
-    dto: {
-      bio?: string;
-      location?: string;
-      timezone?: string;
-      interests?: string[];
-      // The wizard's deferred fields, now editable from the dashboard.
-      experienceLevel?: string | null;
-      practices?: string[];
-      journeyText?: string | null;
-    },
+    // Must be a class, not an inline type literal — ValidationPipe skips body
+    // params whose metatype is plain Object, which is how this endpoint ended
+    // up with no length limits at all. See UpdateSeekerProfileDto.
+    @Body() dto: UpdateSeekerProfileDto,
   ) {
     return this.seekersService.updateProfile(user.id, dto);
   }

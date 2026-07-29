@@ -3,7 +3,32 @@
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
-import { C, font, PageHeader, Panel, Btn, FormGroup, Input, TextArea, FormActions } from '@/components/guide/dashboard-ui';
+import { C, font, PageHeader, Panel, Btn, FormGroup, Input, TextArea, CharCount, FormActions } from '@/components/guide/dashboard-ui';
+
+// Field caps. These MUST stay in sync with UpdateSeekerProfileDto on the API
+// (Backend/api/src/modules/seekers/dto/update-seeker-profile.dto.ts). The
+// numbers match, but the units differ: maxLength and the counter below count
+// UTF-16 code units, while the API's @MaxLength counts code points. That makes
+// this side the stricter one, so a value the form accepts always saves.
+// See docs/seeker-profile-field-limits.md.
+const LIMITS = {
+  bio: 1000,
+  journeyText: 1000,
+  location: 100,
+  timezone: 60,
+  // The Interests input is one comma-separated string on screen but a
+  // string[] on the wire, so it needs both a raw cap (typing backstop) and
+  // the per-item rules the API actually enforces.
+  interestsRaw: 600,
+  interestCount: 20,
+  interestLength: 40,
+} as const;
+
+const parseInterests = (raw: string) =>
+  raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
 
 // Mirrors the wizard's experience step. Stored as plain strings on the
 // SeekerProfile so admins can extend without a schema change.
@@ -97,18 +122,29 @@ export default function SeekerProfilePage() {
   };
 
   const handleSave = async () => {
+    const interests = parseInterests(form.interests);
+
+    // Validate before the request, and always say why on refusal — a silent
+    // no-op submit is the bug pattern we keep having to fix. maxLength stops
+    // typing past the cap but a paste is truncated silently, and the Interests
+    // per-item rules have no native equivalent at all.
+    if (interests.length > LIMITS.interestCount) {
+      toast.error(`Please list at most ${LIMITS.interestCount} interests (you have ${interests.length}).`);
+      return;
+    }
+    const tooLong = interests.find((i) => i.length > LIMITS.interestLength);
+    if (tooLong) {
+      toast.error(`Each interest must be ${LIMITS.interestLength} characters or fewer — "${tooLong.slice(0, 20)}…" is too long.`);
+      return;
+    }
+
     setSaving(true);
     try {
       await api.patch('/seekers/me', {
         bio: form.bio.trim() || undefined,
         location: form.location.trim() || undefined,
         timezone: form.timezone.trim() || undefined,
-        interests: form.interests
-          ? form.interests
-              .split(',')
-              .map((s) => s.trim())
-              .filter(Boolean)
-          : undefined,
+        interests: form.interests ? interests : undefined,
         // Three deferred-from-wizard fields. `null` clears them server-side
         // when the user empties the input; `undefined` would skip the column.
         experienceLevel: form.experienceLevel || null,
@@ -119,8 +155,14 @@ export default function SeekerProfilePage() {
       // Refresh so the completeness widget on the dashboard updates next nav.
       const { data } = await api.get('/seekers/me');
       setProfile(data);
-    } catch {
-      toast.error('Failed to update profile');
+    } catch (err) {
+      // Surface the API's own validation text (e.g. "Bio must be 1000
+      // characters or fewer.") instead of a generic failure, so a rejected
+      // save tells the user which field to fix. class-validator returns
+      // `message` as an array of strings.
+      const raw = (err as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
+      const detail = Array.isArray(raw) ? raw[0] : raw;
+      toast.error(detail || 'Failed to update profile');
     } finally {
       setSaving(false);
     }
@@ -135,6 +177,7 @@ export default function SeekerProfilePage() {
   }
 
   const pct = profile?.completeness?.percent ?? 0;
+  const interestCount = parseInterests(form.interests).length;
 
   return (
     <div>
@@ -230,6 +273,7 @@ export default function SeekerProfilePage() {
               value={form.location}
               onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
               placeholder="e.g. San Francisco, CA"
+              maxLength={LIMITS.location}
             />
           </FormGroup>
           <FormGroup label="Timezone" full>
@@ -237,6 +281,7 @@ export default function SeekerProfilePage() {
               value={form.timezone}
               onChange={(e) => setForm((f) => ({ ...f, timezone: e.target.value }))}
               placeholder="e.g. America/Los_Angeles"
+              maxLength={LIMITS.timezone}
             />
           </FormGroup>
           <FormGroup label="Interests (comma-separated)" full>
@@ -244,14 +289,35 @@ export default function SeekerProfilePage() {
               value={form.interests}
               onChange={(e) => setForm((f) => ({ ...f, interests: e.target.value }))}
               placeholder="e.g. Meditation, Yoga, Breathwork, Energy Healing"
+              maxLength={LIMITS.interestsRaw}
             />
+            {/* Counts entries, not characters — that's the limit the user can
+                actually trip here. The raw maxLength is just a backstop. */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', marginTop: '-2px' }}>
+              <span style={{ fontFamily: font, fontSize: '11px', color: C.warmGray }}>
+                Up to {LIMITS.interestCount} interests, {LIMITS.interestLength} characters each.
+              </span>
+              <span
+                aria-live="polite"
+                style={{
+                  fontFamily: font,
+                  fontSize: '11px',
+                  whiteSpace: 'nowrap',
+                  color: interestCount > LIMITS.interestCount ? C.red : C.warmGray,
+                }}
+              >
+                {interestCount}/{LIMITS.interestCount}
+              </span>
+            </div>
           </FormGroup>
           <FormGroup label="Bio" full>
             <TextArea
               value={form.bio}
               onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
               placeholder="Tell practitioners a bit about yourself and your wellness journey..."
+              maxLength={LIMITS.bio}
             />
+            <CharCount value={form.bio} max={LIMITS.bio} />
           </FormGroup>
         </div>
       </Panel>
@@ -323,7 +389,9 @@ export default function SeekerProfilePage() {
             value={form.journeyText}
             onChange={(e) => setForm((f) => ({ ...f, journeyText: e.target.value }))}
             placeholder="A short note about what you're seeking — burnout recovery, creative block, life transition. Helps the AI guide match you to the right practitioners."
+            maxLength={LIMITS.journeyText}
           />
+          <CharCount value={form.journeyText} max={LIMITS.journeyText} />
         </FormGroup>
       </Panel>
 

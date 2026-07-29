@@ -86,6 +86,29 @@ export function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement
   return <textarea {...props} style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.offWhite, border: '1.5px solid rgba(240,120,20,0.3)', borderRadius: '8px', padding: '10px 14px', outline: 'none', width: '100%', resize: 'vertical', minHeight: '100px', ...props.style }} />;
 }
 
+/**
+ * Live "123/1000" counter that sits under an Input/TextArea, matching the
+ * onboarding wizard's counter styling. Turns red once the value is at or over
+ * the cap so a truncated paste is visible rather than silent.
+ *
+ * Counts UTF-16 code units, the same unit the browser's `maxLength` enforces,
+ * so the number stops climbing exactly when typing stops.
+ */
+export function CharCount({ value, max, hint }: { value: string; max: number; hint?: string }) {
+  const atLimit = value.length >= max;
+  return (
+    <div style={{ display: 'flex', justifyContent: hint ? 'space-between' : 'flex-end', gap: '12px', marginTop: '-2px' }}>
+      {hint && <span style={{ fontFamily: font, fontSize: '11px', color: C.warmGray }}>{hint}</span>}
+      <span
+        aria-live="polite"
+        style={{ fontFamily: font, fontSize: '11px', color: atLimit ? C.red : C.warmGray, whiteSpace: 'nowrap' }}
+      >
+        {value.length}/{max}
+      </span>
+    </div>
+  );
+}
+
 export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement> & { children: React.ReactNode }) {
   return <select {...props} style={{ fontFamily: font, fontSize: '13px', color: C.charcoal, background: C.offWhite, border: '1.5px solid rgba(240,120,20,0.3)', borderRadius: '8px', padding: '10px 14px', outline: 'none', width: '100%', ...props.style }}>{props.children}</select>;
 }
