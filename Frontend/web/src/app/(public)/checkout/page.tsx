@@ -297,11 +297,31 @@ export default function CheckoutPage() {
     setConfirmedOrder(finalOrder);
   };
 
-  const applyPromo = async () => {
-    if (!promoCode.trim()) return;
+  /**
+   * Validate and apply a promo code.
+   *
+   * Takes the code as an argument rather than reading `promoCode` state. The
+   * caller used to do `setPromoCode(code); setTimeout(() => applyPromo(), 0)`,
+   * which made the Apply button dead on every first click: `setTimeout`
+   * defers *when* the call happens but the `applyPromo` reference it captured
+   * still belongs to the current render, so it read the pre-update
+   * `promoCode` (''), hit the empty guard and returned — no request, no error,
+   * no UI change. The second click worked only because the component had
+   * re-rendered by then with the value in state.
+   *
+   * Passing the value in removes the render-timing dependency entirely.
+   * See docs/promo-apply-dead-first-click.md.
+   */
+  const applyPromo = async (codeArg?: string) => {
+    const code = (codeArg ?? promoCode).trim();
+    // Never refuse silently — see docs/form-validation-feedback.md.
+    if (!code) {
+      toast.error('Enter a promo code first.');
+      return;
+    }
     try {
-      const { data } = await api.post('/checkout/validate-promo', { code: promoCode.trim(), subtotal });
-      setPromoApplied({ code: promoCode.trim(), discount: Number(data.discountAmount) || 0 });
+      const { data } = await api.post('/checkout/validate-promo', { code, subtotal });
+      setPromoApplied({ code, discount: Number(data.discountAmount) || 0 });
       toast.success('Promo applied');
     } catch (e: any) {
       toast.error(e?.response?.data?.message || 'Invalid promo code');
@@ -550,7 +570,13 @@ export default function CheckoutPage() {
           discount={discount}
           total={total}
           promoApplied={promoApplied?.code}
-          onApplyPromo={async (code) => { setPromoCode(code); setTimeout(() => applyPromo(), 0); }}
+          // Pass the code straight through. Do NOT reintroduce
+          // `setPromoCode(code)` + setTimeout here — that is what made the
+          // first click a no-op.
+          onApplyPromo={async (code) => {
+            setPromoCode(code);
+            await applyPromo(code);
+          }}
         />
       </div>
     </>

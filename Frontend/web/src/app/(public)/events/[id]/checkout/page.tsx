@@ -183,7 +183,11 @@ export default function EventCheckoutPage() {
   // ─── Step transitions ──────────────────────────────────────────────────
 
   const goToAttendees = () => {
-    if (!selectedTier) return;
+    // Was a bare `return` — a dead CTA click with no feedback, the same defect
+    // class as the checkout promo button. Note the next line already surfaced
+    // an error for the quantity case, so the two refusals behaved differently
+    // for no reason. Never refuse silently: docs/form-validation-feedback.md.
+    if (!selectedTier) { setError('Select a ticket type to continue'); return; }
     if (quantity > remaining) { setError(`Only ${remaining} tickets remaining`); return; }
     // Initialize attendee forms
     const forms: AttendeeForm[] = Array.from({ length: quantity }, (_, i) => ({
