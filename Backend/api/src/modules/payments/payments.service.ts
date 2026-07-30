@@ -120,6 +120,33 @@ export class PaymentsService {
 
   // ─── Confirm Payment (called by webhook) ───────────────────────────────────
 
+  /**
+   * Confirm a payment and run its fulfillment side-effects.
+   *
+   * SECURITY (DEFECT-003 / PAY-SEC-002, fixed 2026-07-30): this used to trust
+   * the caller completely. It looked up the local Payment row by
+   * `stripePaymentIntentId`, marked it SUCCEEDED and its order PAID, and
+   * never asked Stripe whether the charge had actually happened. Since
+   * `POST /orders` hands the client its own `clientSecret` — and the
+   * PaymentIntent id is just the prefix before `_secret_` — any authenticated
+   * seeker could call `POST /payments/confirm-payment` with their own intent
+   * id and receive free goods, including generated download URLs and a receipt
+   * email. Proven live on QA.
+   *
+   * Now: nothing is applied until Stripe confirms the intent actually
+   * succeeded AND the captured amount covers what the linked entity says is
+   * owed. Verification happens on this single entry point, so the webhook path
+   * is verified too — there is deliberately no "trusted caller" bypass flag to
+   * pass by mistake. The extra `retrievePaymentIntent` call on the webhook path
+   * is a cheap price for having exactly one door.
+   *
+   * Returns `undefined` when no local Payment row matches, which is normal for
+   * Stripe Checkout sessions that never created one — the webhook must not
+   * throw there or Stripe retries forever. The client-facing endpoint goes
+   * through `confirmPaymentFromClient`, which turns that into a 404.
+   *
+   * See docs/payment-confirm-verification.md.
+   */
   async confirmPayment(paymentIntentId: string, paymentMethodType?: string) {
     const payment = await this.prisma.payment.findUnique({
       where: { stripePaymentIntentId: paymentIntentId },
@@ -129,6 +156,39 @@ export class PaymentsService {
       return;
     }
     if (payment.status === 'SUCCEEDED') return payment; // Idempotent
+
+    // ── Verify with Stripe before touching anything ────────────────────────
+    let intent: { status: string; amount_received?: number | null; amount?: number | null; payment_method_types?: string[] };
+    try {
+      intent = await this.stripeService.retrievePaymentIntent(paymentIntentId);
+    } catch (err: any) {
+      this.logger.error(
+        `Refusing to confirm ${paymentIntentId}: could not retrieve it from Stripe (${err?.message})`,
+      );
+      throw new BadRequestException('Could not verify this payment with Stripe.');
+    }
+
+    if (intent.status !== 'succeeded') {
+      this.logger.warn(
+        `Refusing to confirm payment ${payment.id}: PaymentIntent ${paymentIntentId} status is "${intent.status}", not "succeeded".`,
+      );
+      throw new BadRequestException(
+        `This payment has not completed (status: ${intent.status}). Nothing has been charged.`,
+      );
+    }
+
+    // Cross-check the captured amount against what the linked order/booking/
+    // ticket/tour actually says is owed — NOT against payment.amount, which is
+    // derived from the client-supplied amount on create-intent and so proves
+    // nothing on its own. This is what also closes the underpayment variant.
+    const expectedCents = await this.amountOwedCents(payment);
+    const capturedCents = intent.amount_received ?? 0;
+    if (expectedCents !== null && capturedCents < expectedCents) {
+      this.logger.warn(
+        `Refusing to confirm payment ${payment.id}: captured ${capturedCents} cents but ${expectedCents} owed.`,
+      );
+      throw new BadRequestException('The amount paid does not cover the amount due.');
+    }
 
     const updated = await this.prisma.payment.update({
       where: { id: payment.id },
@@ -207,6 +267,95 @@ export class PaymentsService {
 
     this.logger.log(`Payment confirmed: ${payment.id}`);
     return updated;
+  }
+
+  /**
+   * Client-facing entry point for `POST /payments/confirm-payment`.
+   *
+   * Same verification as `confirmPayment`, but a PaymentIntent id with no local
+   * Payment row is an error rather than a silent no-op. The old handler
+   * returned 201 for `pi_invalid_123`, which read as success.
+   */
+  async confirmPaymentFromClient(paymentIntentId: string) {
+    const confirmed = await this.confirmPayment(paymentIntentId);
+    if (!confirmed) {
+      throw new NotFoundException('No payment found for this PaymentIntent.');
+    }
+    return confirmed;
+  }
+
+  /**
+   * What the entity behind this payment actually says is owed, in cents.
+   *
+   * Deliberately reads the linked order/booking/ticket/tour rather than
+   * `payment.amount`: that column is written from the client-supplied `amount`
+   * on create-intent, so checking the charge against it would only confirm the
+   * client agreed with itself. Reading the entity total is what makes an
+   * underpaid intent fail.
+   *
+   * Returns `null` when there is no linked entity to compare against (e.g. a
+   * subscription charge). Callers treat null as "no cross-check available" and
+   * fall back to the succeeded-status check alone.
+   */
+  private async amountOwedCents(payment: {
+    orderId?: string | null;
+    bookingId?: string | null;
+    ticketPurchaseId?: string | null;
+    tourBookingId?: string | null;
+    paymentType?: string | null;
+  }): Promise<number | null> {
+    const cents = (v: unknown) =>
+      v === null || v === undefined ? null : Math.round(Number(v) * 100);
+
+    if (payment.orderId) {
+      const order = await this.prisma.order.findUnique({
+        where: { id: payment.orderId },
+        select: { totalAmount: true },
+      });
+      return order ? cents(order.totalAmount) : null;
+    }
+    if (payment.bookingId) {
+      const booking = await this.prisma.booking.findUnique({
+        where: { id: payment.bookingId },
+        select: { totalAmount: true },
+      });
+      return booking ? cents(booking.totalAmount) : null;
+    }
+    if (payment.ticketPurchaseId) {
+      const ticket = await this.prisma.ticketPurchase.findUnique({
+        where: { id: payment.ticketPurchaseId },
+        select: { totalAmount: true },
+      });
+      return ticket ? cents(ticket.totalAmount) : null;
+    }
+    if (payment.tourBookingId) {
+      const tour = await this.prisma.tourBooking.findUnique({
+        where: { id: payment.tourBookingId },
+        select: {
+          totalAmount: true,
+          depositAmount: true,
+          chosenDepositAmount: true,
+          balanceAmount: true,
+        },
+      });
+      if (!tour) return null;
+      // A tour is paid in up to two instalments, so "owed" depends on which
+      // one this is. chosenDepositAmount is what the seeker actually picked.
+      if (payment.paymentType === 'DEPOSIT') {
+        return cents(tour.chosenDepositAmount ?? tour.depositAmount ?? tour.totalAmount);
+      }
+      if (payment.paymentType === 'BALANCE') {
+        const paid = tour.chosenDepositAmount ?? tour.depositAmount;
+        return (
+          cents(tour.balanceAmount) ??
+          (paid !== null && paid !== undefined
+            ? cents(Number(tour.totalAmount) - Number(paid))
+            : cents(tour.totalAmount))
+        );
+      }
+      return cents(tour.totalAmount);
+    }
+    return null;
   }
 
   // ─── Payments publish gate ─────────────────────────────────────────────────
@@ -939,7 +1088,20 @@ export class PaymentsService {
       case 'payment_intent.succeeded': {
         const pi = event.data.object as any;
         const methodType = pi.payment_method_types?.[0] ?? 'card';
-        await this.confirmPayment(pi.id, methodType);
+        // confirmPayment now throws when verification fails. Let that abort the
+        // confirmation but NOT the webhook: an exception here returns 5xx and
+        // Stripe redelivers the same event indefinitely. If a genuinely
+        // succeeded intent fails our own amount cross-check, the right outcome
+        // is a loud log and an unconfirmed payment for manual review — not a
+        // retry storm.
+        try {
+          await this.confirmPayment(pi.id, methodType);
+        } catch (err: any) {
+          this.logger.error(
+            `Webhook ${event.id}: payment_intent.succeeded for ${pi.id} failed verification — left unconfirmed for review: ${err?.message}`,
+            err?.stack,
+          );
+        }
         break;
       }
       case 'payment_intent.payment_failed': {
@@ -957,7 +1119,16 @@ export class PaymentsService {
           break;
         }
         if (session.payment_intent) {
-          await this.confirmPayment(session.payment_intent);
+          // Same reasoning as payment_intent.succeeded above — never let a
+          // verification failure turn into an endless Stripe redelivery.
+          try {
+            await this.confirmPayment(session.payment_intent);
+          } catch (err: any) {
+            this.logger.error(
+              `Webhook ${event.id}: checkout.session.completed for ${session.payment_intent} failed verification — left unconfirmed for review: ${err?.message}`,
+              err?.stack,
+            );
+          }
         }
         break;
       }

@@ -133,8 +133,12 @@ export class PaymentsController {
 
   @Post('confirm-payment')
   @ApiOperation({ summary: 'Confirm payment after successful Stripe charge (fallback for webhook)' })
+  // Goes through confirmPaymentFromClient, which verifies the charge with
+  // Stripe and 404s an unknown PaymentIntent instead of returning 201 for it.
+  // This endpoint was an authenticated payment bypass until 2026-07-30 —
+  // see docs/payment-confirm-verification.md.
   confirmPayment(@Body() data: ConfirmPaymentDto) {
-    return this.paymentsService.confirmPayment(data.paymentIntentId);
+    return this.paymentsService.confirmPaymentFromClient(data.paymentIntentId);
   }
 
   // ─── Get Payment Details ───────────────────────────────────────────────────
