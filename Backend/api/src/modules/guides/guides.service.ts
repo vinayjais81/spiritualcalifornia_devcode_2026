@@ -26,6 +26,37 @@ function slugify(text: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
+/**
+ * Present `modalities` as the union of the stored free-text array and the
+ * guide's subcategory names, deduped case-insensitively.
+ *
+ * The public listing filter matches on both sources (see listPublic), so the
+ * displayed tags must come from both too — otherwise a guide surfaces under
+ * the "Reiki" filter with no Reiki tag on their card, which reads as the
+ * filter being wrong. Stored modalities come first so a guide's own wording
+ * wins the primary-modality slot the cards show.
+ */
+function withDisplayModalities<
+  T extends {
+    modalities?: string[];
+    categories?: { subcategory?: { name: string } | null }[];
+  },
+>(guide: T): T & { modalities: string[] } {
+  const seen = new Set<string>();
+  const merged: string[] = [];
+  const push = (value?: string | null) => {
+    const name = value?.trim();
+    if (!name) return;
+    const key = name.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    merged.push(name);
+  };
+  (guide.modalities ?? []).forEach(push);
+  (guide.categories ?? []).forEach((c) => push(c.subcategory?.name));
+  return { ...guide, modalities: merged };
+}
+
 @Injectable()
 export class GuidesService {
   private readonly logger = new Logger(GuidesService.name);
@@ -702,6 +733,7 @@ export class GuidesService {
 
   // ─── Public: Guide Listing (for /practitioners page) ───────────────────────
 
+
   async listPublic(filters: {
     modality?: string;
     minRating?: number;
@@ -721,12 +753,53 @@ export class GuidesService {
       user: { isActive: true },
     };
 
+    // Modality filter matches EITHER source of truth, because the data is
+    // split across two:
+    //
+    //   - `modalities` — a free-text String[] only ever written by the guide
+    //     via onboarding/dashboard. Seeded and category-onboarded practitioners
+    //     have `[]` here, and hand-typed values are unconstrained
+    //     ("keywords1", "Running", "Aerodance").
+    //   - `categories` → `subcategory` — what the seed and the category
+    //     picker populate, at exactly the granularity this filter wants
+    //     (Maya Williams: reiki, energy-healing, sound-healing).
+    //
+    // Matching only `modalities` (the old behaviour) hid every practitioner
+    // whose modalities were expressed as subcategories — filtering by Reiki
+    // returned 1 guide and excluded the Reiki Master. See
+    // docs/practitioner-modality-filter.md.
     if (filters.modality && filters.modality !== 'all') {
-      where.modalities = { has: filters.modality };
+      const modality = filters.modality.trim();
+      // 'Sound Healing' → 'sound-healing', matching the seeded subcategory slug.
+      const modalitySlug = slugify(modality);
+      where.OR = [
+        // Scalar-list `has` is exact and case-sensitive, and Prisma offers no
+        // insensitive or substring operator for scalar lists. This is the best
+        // available match against the free-text column; the subcategory
+        // clauses below absorb the variants.
+        { modalities: { has: modality } },
+        // `contains`, not `equals`, because several filter chips are family
+        // names rather than leaf subcategories. Exact matching left two of the
+        // eight chips permanently empty: "Ayurveda" (the subcategory is
+        // 'Ayurvedic Nutrition') and "Coaching" (only Career/Relationship/
+        // Executive/Purpose Coaching exist). Insensitive also covers the
+        // 'Qigong' chip vs the 'QiGong' subcategory. As a bonus, "Meditation"
+        // now picks up Tibetan/Walking Meditation, which is what a seeker
+        // choosing that chip means.
+        { categories: { some: { subcategory: { name: { contains: modality, mode: 'insensitive' } } } } },
+        { categories: { some: { subcategory: { slug: modalitySlug } } } },
+      ];
     }
     if (filters.minRating && filters.minRating > 0) {
       where.averageRating = { gte: filters.minRating };
     }
+
+    // Featured must honour the active filter — a "Featured Practitioners"
+    // strip showing Acupuncture/Yoga guides while the Reiki filter is on
+    // reads as the filter being broken.
+    const hasActiveFilter =
+      !!(filters.modality && filters.modality !== 'all') ||
+      !!(filters.minRating && filters.minRating > 0);
 
     // Public ordering follows the admin-managed sortOrder (lower = earlier),
     // then the requested sort breaks ties. Explicit sortBy=reviews/newest
@@ -757,8 +830,15 @@ export class GuidesService {
           totalReviews: true,
           user: { select: { avatarUrl: true } },
           categories: {
-            select: { category: { select: { name: true } } },
-            take: 3,
+            // subcategory.name is what carries the actual modality ("Reiki").
+            // Selecting only category.name is why a card for a guide with
+            // reiki/energy-healing/sound-healing rendered "Body Healing" three
+            // times and no usable tag.
+            select: {
+              category: { select: { name: true } },
+              subcategory: { select: { name: true } },
+            },
+            take: 6,
           },
           blogPosts: {
             where: { isPublished: true },
@@ -782,10 +862,12 @@ export class GuidesService {
         },
       }),
       this.prisma.guideProfile.count({ where }),
-      // Always fetch featured separately — the featured strip shows the top 3
-      // admin-flagged guides (auto-filled with top-rated if fewer than 3).
+      // Featured strip: the admin-flagged guides that also match the caller's
+      // filter. Spreading `where` is the whole point — this query used to
+      // hardcode its own conditions and so ignored modality/minRating
+      // entirely.
       this.prisma.guideProfile.findMany({
-        where: { isPublished: true, isVerified: true, isFeatured: true, user: { isActive: true } },
+        where: { ...where, isFeatured: true },
         orderBy: [{ averageRating: 'desc' }, { totalReviews: 'desc' }],
         take: 3,
         select: {
@@ -799,6 +881,10 @@ export class GuidesService {
           averageRating: true,
           totalReviews: true,
           user: { select: { avatarUrl: true } },
+          categories: {
+            select: { subcategory: { select: { name: true } } },
+            take: 6,
+          },
           blogPosts: {
             where: { isPublished: true },
             orderBy: { publishedAt: 'desc' },
@@ -815,15 +901,17 @@ export class GuidesService {
       }),
     ]);
 
-    // If fewer than 3 featured are flagged, auto-fill with top-rated verified guides
+    // Auto-fill to 3 with top-rated guides — but only on the unfiltered view.
+    // Under an active filter the padding would either duplicate the results
+    // list or (worse, the old behaviour) present non-matching guides under a
+    // "Featured" heading. An empty strip is the honest answer; the frontend
+    // hides the section when the list is empty.
     let featuredList = featured;
-    if (featuredList.length < 3) {
+    if (!hasActiveFilter && featuredList.length < 3) {
       const filler = await this.prisma.guideProfile.findMany({
         where: {
-          isPublished: true,
-          isVerified: true,
+          ...where,
           isFeatured: false,
-          user: { isActive: true },
           id: { notIn: featuredList.map((g) => g.id) },
         },
         orderBy: [{ averageRating: 'desc' }, { totalReviews: 'desc' }],
@@ -839,6 +927,10 @@ export class GuidesService {
           averageRating: true,
           totalReviews: true,
           user: { select: { avatarUrl: true } },
+          categories: {
+            select: { subcategory: { select: { name: true } } },
+            take: 6,
+          },
           blogPosts: {
             where: { isPublished: true },
             orderBy: { publishedAt: 'desc' },
@@ -857,8 +949,8 @@ export class GuidesService {
     }
 
     return {
-      guides,
-      featured: featuredList,
+      guides: guides.map(withDisplayModalities),
+      featured: featuredList.map(withDisplayModalities),
       total,
       page,
       totalPages: Math.ceil(total / limit),
