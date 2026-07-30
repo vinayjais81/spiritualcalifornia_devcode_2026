@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent, Suspense } from 'react';
+import { useState, useEffect, FormEvent, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -19,16 +19,85 @@ const G = {
   red:       '#C0392B',
 };
 
+/**
+ * `?redirect=` arrives from untrusted places (links, the 401 interceptor), and
+ * we hand it straight to router.push — so an absolute URL like
+ * `https://evil.example` would walk the user off-site. Only ever honour a
+ * same-origin path, and never one pointing back at an auth page (that loops).
+ */
+function safeRedirect(raw: string | null): string | null {
+  if (!raw || !raw.startsWith('/') || raw.startsWith('//')) return null;
+  if (/^\/(signin|register|forgot-password|reset-password)/.test(raw)) return null;
+  return raw;
+}
+
+/**
+ * Where an already-signed-in visitor to /signin belongs. Kept next to the
+ * post-login routing in handleSubmit so the two can't drift: admin always goes
+ * to the admin panel, everyone else honours an explicit redirect first, then
+ * falls back to their own dashboard.
+ */
+function signedInDestination(roles: string[], redirect: string | null): string {
+  if (roles.includes('ADMIN') || roles.includes('SUPER_ADMIN')) return '/admin/dashboard';
+  if (redirect) return redirect;
+  if (roles.includes('GUIDE')) return '/guide/dashboard';
+  if (roles.includes('SEEKER')) return '/seeker/dashboard';
+  return '/';
+}
+
 function SignInContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setAuth } = useAuthStore();
+  const { setAuth, clearAuth, user, isAuthenticated } = useAuthStore();
+  const hasHydrated = useAuthStore((s) => s._hasHydrated);
 
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState<string | null>(null);
+  // Gate the form on the auth check so a signed-in user never sees a flash of
+  // it before being bounced. /register does the same via its own mount effect.
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // ─── Already signed in? Bounce, don't show the form ────────────────────────
+  // Wait for the zustand persist rehydration first: before it lands
+  // isAuthenticated is still false and we'd render the form for a signed-in
+  // user. Same guard shape as the seeker/guide dashboard layouts.
+  useEffect(() => {
+    if (!hasHydrated) return;
+
+    // Session-expired arrivals are the one case where the store lies to us:
+    // the 401 interceptor drops the access token but leaves the persisted
+    // `isAuthenticated: true` behind. Trusting it here would fling the user
+    // back at the page that just 401'd, which bounces them straight back —
+    // an infinite loop. Clear the stale session and show the form instead.
+    if (searchParams.get('reason') === 'session-expired') {
+      if (isAuthenticated) clearAuth();
+      setAuthChecked(true);
+      return;
+    }
+
+    if (isAuthenticated && user) {
+      router.replace(
+        signedInDestination(
+          (user.roles ?? []) as string[],
+          safeRedirect(searchParams.get('redirect')),
+        ),
+      );
+      return;
+    }
+    setAuthChecked(true);
+  }, [hasHydrated, isAuthenticated, user, clearAuth, router, searchParams]);
+
+  // Safety net: /signin is the recovery path for every auth failure on the
+  // site, so it must never be able to sit on the loading state forever if the
+  // rehydration flag never reports in. Worst case we fall back to the old
+  // behaviour (show the form) rather than stranding the user on a blank page.
+  useEffect(() => {
+    const t = setTimeout(() => setAuthChecked(true), 3000);
+    return () => clearTimeout(t);
+  }, []);
 
   const inputStyle: React.CSSProperties = {
     background: G.white,
@@ -54,7 +123,7 @@ function SignInContent() {
       const isAdmin = roles.some((r) => r === 'ADMIN' || r === 'SUPER_ADMIN');
       const isGuide = roles.some((r) => r === 'GUIDE');
       const isSeeker = roles.some((r) => r === 'SEEKER');
-      const redirectTo = searchParams.get('redirect');
+      const redirectTo = safeRedirect(searchParams.get('redirect'));
       if (isAdmin) {
         router.push('/admin/dashboard');
       } else if (redirectTo) {
@@ -94,6 +163,16 @@ function SignInContent() {
       setLoading(false);
     }
   };
+
+  // Auth check pending, or a signed-in user on their way out — either way the
+  // sign-in form is the wrong thing to paint.
+  if (!authChecked) {
+    return (
+      <div style={{ minHeight: '100vh', background: G.offWhite, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-inter), sans-serif', fontSize: 13, color: G.warmGray }}>
+        Loading…
+      </div>
+    );
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: G.offWhite, display: 'flex', flexDirection: 'column' }}>
@@ -156,7 +235,7 @@ function SignInContent() {
             href={`${process.env.NEXT_PUBLIC_API_URL}/auth/google`}
             onClick={() => {
               // Save redirect target so Google OAuth success page can return here
-              const redirectTo = searchParams.get('redirect');
+              const redirectTo = safeRedirect(searchParams.get('redirect'));
               if (redirectTo) {
                 try { sessionStorage.setItem('sc-auth-redirect', redirectTo); } catch {}
               }
