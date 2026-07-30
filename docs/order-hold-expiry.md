@@ -55,6 +55,9 @@ New on `Order` (migration `20260730120000_order_hold_expiry`):
 
 `ORDER_HOLD_MINUTES` (default **30**) sets the window — long enough to type a
 card and clear 3DS, short enough that a scarce product isn't held hostage.
+It and `ORDER_TASKS_ENABLED` are declared in `src/config/env.validation.ts`;
+without that they'd be stripped before the app could read them and the value in
+`.env` would do nothing (the trap already documented above the payouts flags).
 `confirmPayment` clears `holdExpiresAt` when the order goes PAID, so a paid
 order is invisible to the reaper.
 
