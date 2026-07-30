@@ -119,6 +119,12 @@ const envSchema = z.object({
   STRIPE_PROCESSING_FEE_PERCENT: z.string().optional(),
   STRIPE_PROCESSING_FEE_FLAT: z.string().optional(),
   EVENT_BOOKING_FEE_PERCENT: z.string().optional(),
+
+  // ── Shop order stock holds ──────────────────────────────────────────────
+  // Same rule as the flags above: declared here or the app never sees them.
+  // See docs/order-hold-expiry.md.
+  ORDER_HOLD_MINUTES: z.string().optional(),
+  ORDER_TASKS_ENABLED: z.string().optional(),
   RETURN_WINDOW_DAYS: z.string().optional(),
   SUPPORT_EMAIL: z.string().optional(),
 });
