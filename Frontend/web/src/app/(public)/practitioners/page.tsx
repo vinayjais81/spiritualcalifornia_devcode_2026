@@ -588,12 +588,24 @@ function PractitionerCard({ guide }: { guide: Guide }) {
     || 'A trusted, verified practitioner on Spiritual California.';
 
   return (
-    <Link
-      href={`/guides/${guide.slug}`}
+    // Stretched-link pattern. The whole card used to BE the <Link>, with the
+    // favorite <button> and the Book control nested inside it — a <button>
+    // inside an <a> is invalid HTML (an anchor may not contain interactive
+    // content) and browsers expose it inconsistently in the accessibility
+    // tree, which is what accessibility-tree queries like Playwright's
+    // getByRole read. That is why an exhaustive getByRole/aria-label scan
+    // reported no favorite control on these cards even though one rendered.
+    //
+    // Now: the container is a plain div, the card-wide link is an absolutely
+    // positioned overlay, and the real controls sit above it on z-index. No
+    // nesting, and both controls are genuine focusable elements.
+    // See docs/practitioner-card-nested-controls.md.
+    <div
       style={{
+        position: 'relative',
         background: '#fff', borderRadius: 14, overflow: 'hidden',
         boxShadow: '0 2px 14px rgba(58,53,48,0.06)',
-        textDecoration: 'none', color: 'inherit',
+        color: 'inherit',
         transition: 'transform 0.3s, box-shadow 0.3s',
         display: 'flex', flexDirection: 'column',
       }}
@@ -606,11 +618,17 @@ function PractitionerCard({ guide }: { guide: Guide }) {
         e.currentTarget.style.boxShadow = '0 2px 14px rgba(58,53,48,0.06)';
       }}
     >
+      {/* Card-wide click target. Sits under the controls, covers everything
+          else. Carries the accessible name for the card. */}
+      <Link
+        href={`/guides/${guide.slug}`}
+        aria-label={`View ${guide.displayName}'s profile`}
+        style={{ position: 'absolute', inset: 0, zIndex: 1, textDecoration: 'none' }}
+      />
       <div style={{ position: 'relative' }}>
         <img src={img} alt="" style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />
-        {/* Quick-save. The card is a Link, so the button stops the click from
-            navigating (handled inside FavoriteGuideButton). */}
-        <div style={{ position: 'absolute', top: 12, right: 12 }}>
+        {/* Quick-save. Above the overlay link so the click lands here. */}
+        <div style={{ position: 'absolute', top: 12, right: 12, zIndex: 2 }}>
           <FavoriteGuideButton guideId={guide.id} variant="icon" />
         </div>
         <div style={{ position: 'absolute', bottom: -22, left: 16 }}>
@@ -679,23 +697,24 @@ function PractitionerCard({ guide }: { guide: Guide }) {
               <span style={{ color: '#8A8278' }}> · {guide.totalReviews} review{guide.totalReviews !== 1 ? 's' : ''}</span>
             )}
           </div>
-          <span
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              window.location.href = `/book/${guide.slug}`;
-            }}
+          {/* Was a <span onClick> doing window.location.href from inside the
+              card anchor: not focusable, no role, invisible to keyboard users
+              and to any control scan. Now a real link above the overlay. */}
+          <Link
+            href={`/book/${guide.slug}`}
+            aria-label={`Book a session with ${guide.displayName}`}
             style={{
+              position: 'relative', zIndex: 2,
               fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase',
               color: '#3A3530', background: '#F07814',
               padding: '6px 14px', borderRadius: 6,
-              fontWeight: 600, cursor: 'pointer',
+              fontWeight: 600, cursor: 'pointer', textDecoration: 'none',
             }}
           >
             Book
-          </span>
+          </Link>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
