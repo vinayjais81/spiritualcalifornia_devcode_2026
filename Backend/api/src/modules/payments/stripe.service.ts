@@ -328,6 +328,33 @@ export class StripeService {
     return this.stripe.charges.retrieve(chargeId);
   }
 
+  /**
+   * Cancel a PaymentIntent that will never be paid — used when a PENDING order
+   * is released (customer cancelled, or its stock hold expired).
+   *
+   * This is what makes releasing the hold safe: a canceled intent cannot later
+   * be confirmed, so the client secret the browser is still holding can't turn
+   * into a charge against stock we've already given back.
+   *
+   * Callers must check the intent's status first: Stripe rejects cancel on a
+   * succeeded intent, and cancelling one mid-3DS (`requires_action`) would kill
+   * a payment the customer is actively completing. An already-canceled intent
+   * is treated as success so the caller can stay idempotent.
+   */
+  async cancelPaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
+    try {
+      const intent = await this.stripe.paymentIntents.cancel(paymentIntentId);
+      this.logger.log(`PaymentIntent canceled: ${paymentIntentId}`);
+      return intent;
+    } catch (err: any) {
+      if (err?.code === 'payment_intent_unexpected_state') {
+        const current = await this.stripe.paymentIntents.retrieve(paymentIntentId);
+        if (current.status === 'canceled') return current;
+      }
+      throw err;
+    }
+  }
+
   // ─── Reconciliation: balance transactions ──────────────────────────────────
 
   async listBalanceTransactions(params: {

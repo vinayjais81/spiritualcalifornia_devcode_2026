@@ -118,6 +118,76 @@ export class PaymentsService {
     };
   }
 
+  // ─── Release an unpaid PaymentIntent ───────────────────────────────────────
+
+  /**
+   * Cancel the PaymentIntent behind a record we're about to release (a PENDING
+   * order whose stock hold expired, or one the customer cancelled), but only if
+   * Stripe agrees nobody is paying it.
+   *
+   * The verdict, not the cancel, is the point: the caller uses it to decide
+   * whether it may give reserved stock back. Releasing stock while a charge is
+   * still live is how you oversell and then have to refund a real customer, so
+   * anything other than `released` must mean "leave the hold alone".
+   *
+   * Fail-safe by construction — every uncertain path returns a non-released
+   * verdict, including a Stripe outage. The reaper simply tries again next run.
+   *
+   * `allowRequiresAction` exists for one case: a customer who opened 3DS and
+   * walked away leaves the intent parked in `requires_action` forever, so the
+   * reaper passes it once the hold is well past due (see ordersService).
+   */
+  async releaseUnpaidPaymentIntent(
+    paymentIntentId: string,
+    opts: { allowRequiresAction?: boolean } = {},
+  ): Promise<'released' | 'paid' | 'in_flight' | 'unknown'> {
+    let intent: { status: string };
+    try {
+      intent = await this.stripeService.retrievePaymentIntent(paymentIntentId);
+    } catch (err: any) {
+      // Can't verify → must not assume it's safe to release the stock.
+      this.logger.warn(
+        `Cannot release ${paymentIntentId}: Stripe lookup failed (${err?.message}). Leaving the hold in place.`,
+      );
+      return 'unknown';
+    }
+
+    if (intent.status === 'succeeded' || intent.status === 'requires_capture') {
+      return 'paid';
+    }
+
+    const releasable =
+      intent.status === 'requires_payment_method' ||
+      intent.status === 'requires_confirmation' ||
+      intent.status === 'canceled' ||
+      (intent.status === 'requires_action' && opts.allowRequiresAction === true);
+
+    if (!releasable) {
+      // `processing`, or a live 3DS the caller didn't authorise us to kill.
+      return 'in_flight';
+    }
+
+    if (intent.status !== 'canceled') {
+      try {
+        await this.stripeService.cancelPaymentIntent(paymentIntentId);
+      } catch (err: any) {
+        this.logger.warn(
+          `Cannot release ${paymentIntentId}: Stripe cancel failed (${err?.message}). Leaving the hold in place.`,
+        );
+        return 'unknown';
+      }
+    }
+
+    // The intent can never be confirmed now, so the local row is terminal too.
+    // Guarded on PENDING so a webhook that raced us can't be overwritten.
+    await this.prisma.payment.updateMany({
+      where: { stripePaymentIntentId: paymentIntentId, status: 'PENDING' },
+      data: { status: 'FAILED' },
+    });
+
+    return 'released';
+  }
+
   // ─── Confirm Payment (called by webhook) ───────────────────────────────────
 
   /**
@@ -206,9 +276,34 @@ export class PaymentsService {
       });
     }
     if (payment.orderId) {
+      // A charge landed on an order we'd already released is the one race the
+      // hold reaper can't fully design away (Stripe said "not paying" a moment
+      // before the customer paid). The money is captured, so honour the order
+      // rather than dropping it — but the stock it reserved has been given
+      // back, so take it again. Deliberately unguarded: letting stock go
+      // negative surfaces a real backorder to the guide, whereas refusing the
+      // decrement would silently ship inventory we no longer have.
+      const previous = await this.prisma.order.findUnique({
+        where: { id: payment.orderId },
+        select: { status: true },
+      });
+      if (previous?.status === 'CANCELLED') {
+        this.logger.error(
+          `Payment ${payment.id} succeeded on CANCELLED order ${payment.orderId} — reinstating it and re-reserving stock. Check inventory for this order.`,
+        );
+        await this.reReserveStockForOrder(payment.orderId);
+      }
+
       await this.prisma.order.update({
         where: { id: payment.orderId },
-        data: { status: 'PAID' },
+        data: {
+          status: 'PAID',
+          // Clear the hold so the reaper never looks at a paid order again,
+          // and drop the cancellation trail if we just reinstated it.
+          holdExpiresAt: null,
+          cancelledAt: null,
+          cancellationReason: null,
+        },
       });
       // Fire-and-forget: generate 7-day download URLs for digital items + send receipt.
       // Any failure here is logged but doesn't fail the webhook — seeker can always
@@ -831,6 +926,45 @@ export class PaymentsService {
         guideName: booking.tour.guide.displayName,
         isPaidInFull,
       });
+    }
+  }
+
+  // ─── Order: re-reserve stock for a reinstated order ───────────────────────
+
+  /**
+   * Take back the stock a released order had reserved, because payment
+   * succeeded after we'd already given it back.
+   *
+   * Mirrors the decrement in OrdersService.create, minus the `gte` guard: the
+   * sale is already paid for, so a shortfall must show up as negative stock for
+   * the guide to resolve rather than being quietly dropped. Kept here rather
+   * than in OrdersService because PaymentsModule is imported *by* OrdersModule
+   * — calling back the other way would need a forwardRef cycle for ten lines.
+   */
+  private async reReserveStockForOrder(orderId: string) {
+    const items = await this.prisma.orderItem.findMany({
+      where: { orderId },
+      select: { productId: true, variantId: true, quantity: true, product: { select: { type: true, stockQuantity: true } } },
+    });
+
+    for (const item of items) {
+      try {
+        if (item.variantId) {
+          await this.prisma.productVariant.update({
+            where: { id: item.variantId },
+            data: { stockQuantity: { decrement: item.quantity } },
+          });
+        } else if (item.product.type === 'PHYSICAL' && item.product.stockQuantity !== null) {
+          await this.prisma.product.update({
+            where: { id: item.productId },
+            data: { stockQuantity: { decrement: item.quantity } },
+          });
+        }
+      } catch (err: any) {
+        this.logger.error(
+          `Failed to re-reserve stock for product ${item.productId} on reinstated order ${orderId}: ${err?.message}`,
+        );
+      }
     }
   }
 

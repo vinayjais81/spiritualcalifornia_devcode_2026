@@ -141,7 +141,12 @@ describe('PaymentsService.confirmPayment — Stripe verification', () => {
     expect(paymentUpdate).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ status: 'SUCCEEDED' }) }),
     );
-    expect(orderUpdate).toHaveBeenCalledWith({ where: { id: 'ord_1' }, data: { status: 'PAID' } });
+    // Paying also ends the stock hold the PENDING order was carrying, so the
+    // reaper can never look at it again (docs/order-hold-expiry.md).
+    expect(orderUpdate).toHaveBeenCalledWith({
+      where: { id: 'ord_1' },
+      data: expect.objectContaining({ status: 'PAID', holdExpiresAt: null }),
+    });
   });
 
   it('tolerates overpayment — only underpayment is a threat', async () => {

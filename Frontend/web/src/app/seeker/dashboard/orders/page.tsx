@@ -47,6 +47,11 @@ interface Order {
   contactLastName: string;
   contactPhone: string | null;
   createdAt: string;
+  // Deadline for the stock a PENDING order is holding. Past it, the hold reaper
+  // cancels the order and returns the inventory — see docs/order-hold-expiry.md.
+  holdExpiresAt: string | null;
+  cancelledAt: string | null;
+  cancellationReason: string | null;
   items: OrderItem[];
   payment?: { status: string; paymentMethod: string | null } | null;
 }
@@ -66,6 +71,12 @@ function fmtMoney(v: number | string) {
 
 function shortId(id: string) {
   return id.slice(-8).toUpperCase();
+}
+
+function fmtTime(d: string) {
+  return new Date(d).toLocaleString('en-US', {
+    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+  });
 }
 
 // One row per status. Each status needs to tell the user what they can do next.
@@ -100,6 +111,7 @@ export default function MyOrdersPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [filter, setFilter] = useState<FilterKey>('all');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   const { data: orders, isLoading, refetch } = useQuery<Order[]>({
     queryKey: ['seeker', 'my-orders'],
@@ -158,6 +170,25 @@ export default function MyOrdersPage() {
       toast.error(e?.response?.data?.message || 'Could not start download. Please try again.');
     } finally {
       setDownloadingId(null);
+    }
+  };
+
+  // Cancel an unpaid order. This is the exit that was missing: reaching the
+  // payment step created the order (and reserved its stock) but there was no
+  // way to undo it from here, so an abandoned checkout stayed on the account
+  // as an "Awaiting Payment" row forever.
+  const handleCancel = async (order: Order) => {
+    if (order.status !== 'PENDING') return;
+    if (!window.confirm('Cancel this unpaid order? The items go back on sale and nothing is charged.')) return;
+    try {
+      setCancellingId(order.id);
+      await api.post(`/orders/${order.id}/cancel`);
+      toast.success('Order cancelled — nothing was charged.');
+      refetch();
+    } catch (e: any) {
+      toast.error(e?.response?.data?.message || 'Could not cancel this order. Please try again.');
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -293,6 +324,17 @@ export default function MyOrdersPage() {
                     <div style={{ fontFamily: font, fontSize: 12, color: C.warmGray }}>
                       Placed {fmtDate(order.createdAt)} · {itemCount} item{itemCount !== 1 ? 's' : ''}
                     </div>
+                    {/* An unpaid order is a reservation with a deadline, not a
+                        purchase. Say so on the row rather than leaving
+                        "Awaiting Payment" to be interpreted. */}
+                    {order.status === 'PENDING' && order.holdExpiresAt && (
+                      <div style={{ fontFamily: font, fontSize: 12, color: '#F57F17', marginTop: 4 }}>
+                        Nothing has been charged. Items are reserved until {fmtTime(order.holdExpiresAt)}
+                        {new Date(order.holdExpiresAt).getTime() > Date.now()
+                          ? ', then this order is cancelled automatically.'
+                          : ' — this order is being released.'}
+                      </div>
+                    )}
                   </div>
 
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -467,8 +509,30 @@ export default function MyOrdersPage() {
                       gap: 12, flexWrap: 'wrap',
                     }}>
                       <div style={{ fontFamily: font, fontSize: 12, color: C.warmGray }}>
-                        Receipt emailed to <strong style={{ color: C.charcoal }}>{order.contactEmail}</strong>
+                        {isPaid ? (
+                          <>Receipt emailed to <strong style={{ color: C.charcoal }}>{order.contactEmail}</strong></>
+                        ) : order.status === 'CANCELLED' && order.cancellationReason ? (
+                          <>Cancelled{order.cancelledAt ? ` ${fmtTime(order.cancelledAt)}` : ''} · {order.cancellationReason}</>
+                        ) : (
+                          <>Confirmation goes to <strong style={{ color: C.charcoal }}>{order.contactEmail}</strong> once payment completes</>
+                        )}
                       </div>
+                      {order.status === 'PENDING' && (
+                        <button
+                          onClick={() => handleCancel(order)}
+                          disabled={cancellingId === order.id}
+                          style={{
+                            padding: '8px 18px', borderRadius: 6,
+                            background: 'transparent', color: '#C62828',
+                            border: '1px solid #EF9A9A',
+                            fontFamily: font, fontSize: 11, fontWeight: 600,
+                            letterSpacing: '0.08em', textTransform: 'uppercase',
+                            cursor: cancellingId === order.id ? 'wait' : 'pointer',
+                          }}
+                        >
+                          {cancellingId === order.id ? 'Cancelling…' : 'Cancel order'}
+                        </button>
+                      )}
                       {digitalCount > 0 && (
                         <Link
                           href="/downloads"

@@ -115,7 +115,13 @@ export default function CheckoutPage() {
   const [confirmedOrder, setConfirmedOrder] = useState<OrderResponse | null>(null);
   // Set once the order is created + Stripe PaymentIntent minted. Swapping this
   // value in replaces the "Continue to Payment" CTA with real Stripe Elements.
-  const [pendingPayment, setPendingPayment] = useState<{ orderId: string; clientSecret: string } | null>(null);
+  // `holdExpiresAt` is the server's deadline for the stock this order reserved
+  // (see docs/order-hold-expiry.md) — shown to the user so the reservation
+  // isn't a silent one.
+  const [pendingPayment, setPendingPayment] = useState<
+    { orderId: string; clientSecret: string; holdExpiresAt: string | null } | null
+  >(null);
+  const [cancelling, setCancelling] = useState(false);
 
   // ─── Draft persistence ───────────────────────────────────────────────────
   // Restore anything typed before an auth detour or a session expiry. Runs
@@ -262,7 +268,7 @@ export default function CheckoutPage() {
       if (!orderId || !clientSecret) {
         throw new Error('Checkout failed: server did not return a payment intent.');
       }
-      setPendingPayment({ orderId, clientSecret });
+      setPendingPayment({ orderId, clientSecret, holdExpiresAt: data?.order?.holdExpiresAt ?? null });
       // Scroll the payment section into view so the user sees the card field appear
       setTimeout(() => {
         document.getElementById('checkout-payment-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -272,6 +278,27 @@ export default function CheckoutPage() {
       toast.error(Array.isArray(msg) ? msg.join(', ') : msg);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Step 2 → Step 1. Going back to edit details abandons the order that was
+  // just created, so release it rather than leaving it holding stock and a
+  // promo redemption until the reaper picks it up 30 minutes later. Clicking
+  // Continue again creates a fresh order (the server also supersedes any live
+  // pending order, so a failure here can't stack duplicates).
+  const handleEditDetails = async () => {
+    const orderId = pendingPayment?.orderId;
+    setPendingPayment(null);
+    if (!orderId) return;
+    setCancelling(true);
+    try {
+      await api.post(`/orders/${orderId}/cancel`);
+    } catch {
+      // Non-blocking: the user has already been returned to the form. If the
+      // order genuinely can't be cancelled (payment in flight), the next
+      // Continue leaves it alone and the reaper handles it.
+    } finally {
+      setCancelling(false);
     }
   };
 
@@ -482,14 +509,29 @@ export default function CheckoutPage() {
                   fontSize: 11, color: '#5A8A6A', marginBottom: 14,
                   display: 'flex', alignItems: 'center', gap: 8,
                 }}>
-                  <span>✓</span> Order created. Complete payment to finalise your purchase.
+                  <span>✓</span>
+                  <span>
+                    Order created. Complete payment to finalise your purchase.
+                    {pendingPayment.holdExpiresAt && (
+                      <>
+                        {' '}Your items are reserved until{' '}
+                        <strong style={{ color: '#3A3530' }}>
+                          {new Date(pendingPayment.holdExpiresAt).toLocaleTimeString('en-US', {
+                            hour: 'numeric', minute: '2-digit',
+                          })}
+                        </strong>.
+                      </>
+                    )}
+                  </span>
                   <button
                     type="button"
-                    onClick={() => setPendingPayment(null)}
+                    onClick={handleEditDetails}
+                    disabled={cancelling}
                     style={{
                       marginLeft: 'auto', background: 'none', border: 'none',
-                      color: '#8A8278', fontSize: 11, cursor: 'pointer',
-                      textDecoration: 'underline',
+                      color: '#8A8278', fontSize: 11,
+                      cursor: cancelling ? 'wait' : 'pointer',
+                      textDecoration: 'underline', whiteSpace: 'nowrap',
                     }}
                   >
                     Edit details

@@ -40,6 +40,17 @@ export class OrdersController {
     return this.downloadsService.getMyDownloads(user.id);
   }
 
+  // Declared above the `:id` wildcard GET below, per the route-ordering rule a
+  // wildcard `@Get(':id')` in PaymentsController taught us the hard way.
+  @Post(':id/cancel')
+  @Roles(Role.SEEKER)
+  @ApiOperation({
+    summary: 'Cancel an unpaid order and release the stock it was holding',
+  })
+  cancel(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
+    return this.ordersService.cancelMyOrder(user.id, id);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get order details' })
   findOne(@CurrentUser() user: CurrentUserData, @Param('id') id: string) {
