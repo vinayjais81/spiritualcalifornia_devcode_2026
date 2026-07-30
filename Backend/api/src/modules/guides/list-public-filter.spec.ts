@@ -66,15 +66,42 @@ describe('GuidesService.listPublic — modality filter and featured', () => {
     });
 
     it('uses contains so family-level chips are not permanently empty', async () => {
-      // 'Ayurveda' must reach 'Ayurvedic Nutrition'; 'Coaching' must reach
-      // 'Career Coaching' etc. `equals` left both chips returning nothing.
-      for (const chip of ['Ayurveda', 'Coaching']) {
+      // 'Coaching' must reach 'Career Coaching' etc; `equals` returned nothing.
+      for (const chip of ['Coaching', 'Ayurvedic']) {
         findMany.mockClear();
         await service.listPublic({ modality: chip });
         expect(wheres()[0].OR[1]).toEqual({
           categories: { some: { subcategory: { name: { contains: chip, mode: 'insensitive' } } } },
         });
       }
+    });
+
+    // `contains` is necessary but not sufficient: the chip value has to be a
+    // real substring of the subcategory name. 'Ayurveda' is NOT a substring of
+    // 'Ayurvedic Nutrition' (they diverge at the 8th character), which is why
+    // that chip still returned 0 after the filter fix and why the frontend now
+    // sends 'Ayurvedic'. This pins the reasoning so the chip list isn't
+    // "tidied" back to the prettier word.
+    it('documents which chip values actually match the seeded taxonomy', () => {
+      const SUBCATEGORIES = [
+        'Meditation', 'Hypnotherapy', 'NLP', 'Mindfulness Coaching', 'Breathwork',
+        'Yoga', 'Reiki', 'QiGong', 'Acupuncture', 'Sound Healing', 'Energy Healing',
+        'Career Coaching', 'Relationship Coaching', 'Executive Coaching',
+        'Purpose Coaching', 'Ayurvedic Nutrition',
+      ];
+      const matches = (chip: string) =>
+        SUBCATEGORIES.some((s) => s.toLowerCase().includes(chip.toLowerCase()));
+
+      // Values the practitioners page actually sends.
+      for (const chip of [
+        'Sound Healing', 'Reiki', 'Breathwork', 'Qigong',
+        'Meditation', 'Ayurvedic', 'Yoga', 'Coaching',
+      ]) {
+        expect({ chip, matches: matches(chip) }).toEqual({ chip, matches: true });
+      }
+
+      // The old value, kept as a guard against regressing the label to the value.
+      expect(matches('Ayurveda')).toBe(false);
     });
 
     it('applies no modality constraint for "all" or absent', async () => {

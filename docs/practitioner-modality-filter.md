@@ -51,19 +51,52 @@ where.OR = [
 ];
 ```
 
-**`contains`, not `equals`** — because two of the eight filter chips are family
-names, not leaf subcategories. Exact matching would have left them permanently
-empty even after the fix:
+**`contains`, not `equals`** — because some chips are family names rather than
+leaf subcategories, and exact matching leaves those permanently empty:
 
-| Chip | Actual subcategory | Exact | Contains |
+| Chip (value sent) | Actual subcategory | Exact | Contains |
 | --- | --- | --- | --- |
-| Ayurveda | `Ayurvedic Nutrition` | ✗ | ✓ |
 | Coaching | `Career` / `Relationship` / `Executive` / `Purpose Coaching` | ✗ | ✓ |
 | Qigong | `QiGong` | ✗ (case) | ✓ |
 | Reiki, Breathwork, Meditation, Yoga, Sound Healing | exact names exist | ✓ | ✓ |
+| ~~Ayurveda~~ → `Ayurvedic` | `Ayurvedic Nutrition` | ✗ | ✗ → ✓ after relabel |
 
 It also means the "Meditation" chip now picks up Tibetan and Walking
 Meditation, which is what choosing that chip means.
+
+### Correction: `contains` alone did not fix the Ayurveda chip
+
+An earlier revision of this document claimed `contains` rescued
+Ayurveda → `Ayurvedic Nutrition`. It does not. The two strings diverge at the
+eighth character — `Ayurved**a**` vs `Ayurved**ic**` — so `'Ayurveda'` is not a
+substring of `'Ayurvedic Nutrition'`. Post-deploy verification against the live
+API showed that chip still returning 0 while every other chip returned results.
+
+Fixed by changing the value the chip sends from `Ayurveda` to `Ayurvedic`
+(a genuine substring), keeping `Ayurveda` as the display label. The `MODALITIES`
+list in `practitioners/page.tsx` now documents that its `slug` is a *matching
+token*, not decoration.
+
+**This chip still returns 0 results today**, because no guide on QA currently
+has any Nutrition-category subcategory. The code is now correct; the data is
+simply empty. It will populate as soon as a practitioner is tagged.
+
+### Post-deploy verification (live QA API)
+
+| Chip | total | featured |
+| --- | --- | --- |
+| Reiki | 2 (was 1, now includes Maya Williams) | 0 |
+| Breathwork | 4 | 1 |
+| Sound Healing | 3 | 0 |
+| Yoga | 2 | 1 |
+| Meditation | 2 | 0 |
+| Coaching | 2 | 0 |
+| Qigong | 1 | 0 |
+| Ayurvedic | 0 (no guide tagged — see above) | 0 |
+| *(unfiltered)* | 21 | 3 (auto-fill intact) |
+
+Featured is now empty or filter-consistent on every chip, and still fills to 3
+on the unfiltered view.
 
 **Known limitation:** Prisma has no case-insensitive or substring operator for
 scalar lists, so the `modalities` clause stays an exact, case-sensitive `has`.

@@ -50,6 +50,18 @@ interface MatchedPractitioner {
 
 // ─── Filter configuration (slugs are the values stored on guide.modalities) ─
 
+// `slug` is the value sent as ?modality= and matched server-side against both
+// GuideProfile.modalities and subcategory name/slug (see listPublic). It must
+// therefore be a substring of the real subcategory names, not just a
+// nice-looking word:
+//   'Coaching'  ⊂ 'Career Coaching'      ✓
+//   'Qigong'    ~ 'QiGong'               ✓ (matched case-insensitively)
+//   'Ayurveda'  ⊄ 'Ayurvedic Nutrition'  ✗ — diverges at the 8th character,
+//                                          so the chip could never match.
+//                                          Value is 'Ayurvedic'; label stays
+//                                          'Ayurveda' for the UI.
+// This list is hardcoded and drifts from the taxonomy. Deriving it from the
+// categories API is the real fix — see docs/practitioner-modality-filter.md.
 const MODALITIES = [
   { slug: 'all', label: 'All' },
   { slug: 'Sound Healing', label: 'Sound Healing' },
@@ -57,7 +69,7 @@ const MODALITIES = [
   { slug: 'Breathwork', label: 'Breathwork' },
   { slug: 'Qigong', label: 'Qigong' },
   { slug: 'Meditation', label: 'Meditation' },
-  { slug: 'Ayurveda', label: 'Ayurveda' },
+  { slug: 'Ayurvedic', label: 'Ayurveda' },
   { slug: 'Yoga', label: 'Yoga' },
   { slug: 'Coaching', label: 'Coaching' },
 ];
