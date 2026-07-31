@@ -25,6 +25,11 @@ const MODALITIES = [
   'Hypnotherapy', 'EFT / Tapping', 'NLP', 'Trauma-Informed Therapy',
   'Grief Support', 'Life Coaching', 'Relationship Coaching', 'Art Therapy',
   'Music Therapy', 'Dance / Movement', 'Naturopathy', 'Homeopathy',
+  // Added 2026-07-31 alongside the matching subcategories, so a practitioner
+  // imported from the Bay Area list can pick the modality they were listed
+  // under. Keep in sync with the copy in guide/dashboard/categories.
+  'Massage & Bodywork', 'Birth Doula', 'End-of-Life Doula',
+  'Plant Medicine Integration',
 ];
 
 const ISSUES = [

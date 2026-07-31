@@ -630,17 +630,21 @@ home:
 | Alternative Medicine | Integrative Health → Naturopathy | ✅ |
 | Yoga & Meditation Teachers | Body Healing → Yoga **and** Mind Healing → Meditation | ⚠️ one sheet, two homes |
 | Sound Healing & Breathwork | Body Healing → Sound Healing **and** Mind Healing → Breathwork | ⚠️ one sheet, two homes |
-| **Somatic Healers (108 rows)** | — | ❌ **no subcategory exists** |
-| **Massage & Bodywork** | — | ❌ none |
-| **Doulas (Birth & Death)** | — | ❌ none |
-| **Plant Medicine & Integration** | — | ❌ none |
-| **Tibetan Medicine** | — | ❌ none |
+| Somatic Healers (108 rows) | Body Healing → **Somatic Therapy** | ✅ added |
+| Massage & Bodywork | Body Healing → **Massage & Bodywork** | ✅ added |
+| Doulas (Birth & Death) | Family & Children → **Birth Doula** *and* Soul & Spirit → **End-of-Life Doula** | ✅ added — routed by the sheet's Type column |
+| Plant Medicine & Integration | Soul & Spirit → **Plant Medicine Integration** | ✅ added |
+| Tibetan Medicine | Integrative Health → **Tibetan Medicine** | ✅ added |
 
-The largest sheet in the file has nowhere to go. **Five subcategories need
-adding before import** — Somatic Therapy, Massage & Bodywork, Doula Support,
-Plant Medicine Integration, Tibetan Medicine — added to `prisma/seed.ts` the
-same way the four missing categories were, and applied through the admin
-categories screen. Cheap to do now; doing it after the import means
+**Done 2026-07-31** (Phase 0). Six subcategories added — the Doulas sheet
+splits into two, since end-of-life doulas do not belong under Family &
+Children. Applied by migration `20260731120000_practitioner_import_taxonomy`
+rather than a seed edit alone: the deploy runs `seed:pages` only, so a seed-only
+change would never have reached QA. `seed.ts` carries the same rows for fresh
+databases, and the duplicated frontend `MODALITIES` lists were extended to
+match so a claiming practitioner can select what they were listed under.
+
+Doing this first was the point — after an import, the same change means
 re-categorising 130+ profiles by hand.
 
 ---
@@ -666,7 +670,7 @@ the safety work is done.
 
 | Phase | Scope | Est. |
 | --- | --- | --- |
-| **0 — Taxonomy** | Add the 5 missing subcategories; agree the sheet→category map | 0.5 d |
+| ~~**0 — Taxonomy**~~ | ✅ **Done 2026-07-31** — 6 subcategories added by migration + seed + frontend lists; sheet→category map agreed (§6) | 0.5 d |
 | **1 — Import (no email at all)** | Schema + parser + normaliser + dedupe + preview + commit; `/admin/practitioner-import`; the skipped list with inline "add email", mark-as-worked, export and exclude | 4–5 d |
 | **1.5 — Enrichment crawl** *(optional, §4.3)* | Tier 1 only: crawl the 29 own-site rows, confidence scoring, approve-per-row in preview | 1.5–2 d |
 | **2 — Claim + unsubscribe** | Widen `claimAccount`; 30-day invite token; unsubscribe/delete page + endpoint; suppression | 2–3 d |

@@ -156,6 +156,22 @@ async function main() {
     { categoryId: familyCat.id, name: 'Parenting Guidance', slug: 'parenting-guidance', isApproved: true },
     { categoryId: familyCat.id, name: "Children's Wellness", slug: 'childrens-wellness', isApproved: true },
     { categoryId: familyCat.id, name: 'Family Healing', slug: 'family-healing', isApproved: true },
+    // Subcategories added 2026-07-31 for the Bay Area practitioner import —
+    // five of the client's 15 modality sheets had nowhere to map, including the
+    // largest (Somatic Healers, 108 rows). Also applied to existing
+    // environments by migration 20260731120000_practitioner_import_taxonomy,
+    // because the deploy runs `seed:pages` only, never the full seed.
+    // See docs/practitioner-import-invite-strategy.md §6.
+    { categoryId: bodyCat.id, name: 'Somatic Therapy', slug: 'somatic-therapy', isApproved: true },
+    { categoryId: bodyCat.id, name: 'Massage & Bodywork', slug: 'massage-bodywork', isApproved: true },
+    // The Doulas sheet splits: birth doulas sit with Family & Children,
+    // end-of-life doulas do not. The sheet's Type column drives the routing.
+    { categoryId: familyCat.id, name: 'Birth Doula', slug: 'birth-doula', isApproved: true },
+    { categoryId: soulSpiritCat.id, name: 'End-of-Life Doula', slug: 'end-of-life-doula', isApproved: true },
+    // Named for what these practitioners lawfully offer — integration support
+    // around an experience, never the provision of any substance.
+    { categoryId: soulSpiritCat.id, name: 'Plant Medicine Integration', slug: 'plant-medicine-integration', isApproved: true },
+    { categoryId: integrativeCat.id, name: 'Tibetan Medicine', slug: 'tibetan-medicine', isApproved: true },
   ];
 
   for (const sub of subcatData) {
