@@ -430,6 +430,46 @@ Copy should also state the three steps to going live (claim → complete profile
 → verification), because the honest answer to "how much work is this?" converts
 better than implying it is one click.
 
+#### Commercial terms in the invite — decided: state the price
+
+**Confirmed:** the invite names the $50/month Standard listing. That is the
+right call, and it should sit *after* the benefit and *before* the CTA, stated
+plainly. Burying pricing in cold outreach costs you the relationship at exactly
+the moment you are asking for trust, and a practitioner who finds out at
+checkout treats it as a bait-and-switch.
+
+Three things the copy has to get right, and one of them is a live risk:
+
+- **Lead with the free period, not the price.** The platform already carries
+  `GUIDE_FREE_PERIOD_DAYS`, currently **90**, wired into the subscription
+  checkout as trial days. "Free for your first 90 days, then $50/month" is a
+  materially stronger opening than "$50/month" and it is already true — no new
+  commercial commitment needed.
+- **Say the commission too.** The listing fee is not the whole cost: bookings
+  carry a platform commission (**20%** on sessions, events and tours; **10%**
+  on products under the v2.1 policy). An invite that mentions $50/month and
+  stays quiet about the commission sets up the worst possible discovery moment
+  — the practitioner finds it in their first payout. Say both, and say the part
+  that is genuinely favourable: **the platform absorbs the Stripe processing
+  fee**, so the guide nets exactly 80% of gross rather than 80% minus card
+  charges. That is a real differentiator and it is already how the ledger
+  behaves.
+- **Render the numbers from config, never hardcode them in the template.**
+  Free-period days and commission must come from the same source the billing
+  code reads, or the email will eventually contradict the invoice.
+
+⚠️ **Discrepancy to resolve before any copy is written.** The v2.1 policy
+(`docs/guide-payouts-v2.1-amendment.md`) sets commission at 20% / 10% for
+products, and per-category `CommissionRate` rows implement that. But
+`STRIPE_PLATFORM_COMMISSION_PERCENT` still defaults to **15** and is the value
+`/config` reports to the frontend. Whatever the invite says, a practitioner
+will check it against the site. Confirm which number is authoritative and make
+both surfaces read the same source before wave one.
+
+A "founding practitioner" framing for this first cohort is worth considering —
+it makes the cold approach feel like an invitation rather than a sales list,
+and it is accurate: these 136 genuinely are the first.
+
 **Unsubscribe behaviour** — signed token in the URL, so no login and no
 guessable ids:
 
@@ -461,6 +501,57 @@ codebase:
   unclaimed, not suppressed, batch not paused. A batch must be **pausable
   mid-flight** — 500 queued emails with no stop button is an incident waiting
   to happen.
+
+#### Sending in waves — decided: the platform sends, in throttled batches
+
+**Confirmed:** invites go out from the system itself, in batches sized to what
+the sending reputation can carry. No external campaign tool, so we own
+deliverability outright — which makes the controls below the feature, not
+paperwork around it.
+
+**Wave plan for the ~136 addresses.** Order matters as much as volume: send the
+best-quality segment first, because early engagement is what teaches the
+mailbox providers to trust the domain.
+
+| Day | Segment | Volume |
+| --- | --- | ---: |
+| 1 | Personal addresses, own domain (best signal) | 20 |
+| 2 | Personal addresses, continued | 30 |
+| 3 | Personal + freemail (gmail/yahoo) | 40 |
+| 4 | Remainder of personal | ~44 |
+| 5+ | **Role inboxes** (`info@`, `office@`) — separate copy, only after the reputation exists | 32 |
+
+Numbers are the ceiling, not the target: `INVITE_SEND_PER_DAY` is config, and
+the queue drains at that rate whatever is enqueued.
+
+**Send window.** Weekdays, 09:00–16:00 Pacific. Jobs enqueued outside the
+window wait rather than firing at 03:00, which reads as bulk mail to both
+filters and humans.
+
+**Circuit breaker — the control that matters most.** A pause button nobody is
+watching at 2am is not a safety mechanism. The queue evaluates a rolling
+window over the last 50 sends and **pauses the batch automatically** when
+either threshold trips:
+
+- hard bounces > **5%** → the address quality is bad; stop before the domain is
+  scored on it
+- spam complaints > **0.1%** (one complaint in a thousand) → the copy or the
+  targeting is wrong; stop and rethink, do not push through
+
+A tripped breaker notifies the admin and requires a human to resume. Both
+thresholds are industry-standard, and both are cheap to implement once
+`EmailSend` records exist.
+
+**Prerequisites before wave one — none of these are optional:**
+
+1. SPF, DKIM and DMARC published for the outreach subdomain, verified in
+   Resend.
+2. A seed test to Gmail, Outlook and Yahoo addresses we control, checking the
+   invite lands in the inbox rather than Promotions or spam.
+3. The full flow exercised end to end in `redirect` mode (§4.8) — claim link,
+   unsubscribe link, suppression, funnel counters.
+4. The unsubscribe path proven to work *from the actual email*, not just in
+   isolation. It is the one link that must never 404.
 
 ### 4.7 Retention
 
@@ -597,11 +688,18 @@ structured, deduplicated, categorised prospect data with zero outreach risk.
    forms? The crawl buys roughly 12–18 addresses; the manual route is the only
    thing that reaches the other 124.
 4. **The five shared inboxes** — one invite naming the practice, or drop them?
-5. **Free or paid framing?** The invite should be honest about the $50/month
-   listing plan and any launch offer. Getting this wrong on first contact is
-   expensive to walk back.
+5. ~~Free or paid framing?~~ **Decided 2026-07-31: the invite states the
+   $50/month plan** (§4.5). Two follow-ons still open: is the 90-day free
+   period offered to this cohort, and **is commission 20% or 15%** — the policy
+   doc and `STRIPE_PLATFORM_COMMISSION_PERCENT` disagree, and the invite cannot
+   ship until they don't.
 6. **Go-live approval** — who flips `INVITE_EMAIL_MODE=live`, and after which
    test?
+
+Also decided 2026-07-31: rows with no usable email are **not** turned into
+accounts and instead appear on the admin skipped list (§4.2); invites are sent
+**by the platform itself in throttled waves**, not an external campaign tool
+(§4.6).
 
 ## 10. Explicitly not in scope
 
