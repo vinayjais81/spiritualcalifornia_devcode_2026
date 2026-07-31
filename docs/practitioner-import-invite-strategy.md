@@ -684,22 +684,64 @@ structured, deduplicated, categorised prospect data with zero outreach risk.
 
 ---
 
+## 8a. Invite copy — settled inputs
+
+| | |
+| --- | --- |
+| **Sender name** | Lana Rafaella *(decided 2026-07-31)* |
+| **Reply-to** | `hello@spiritualcalifornia.com` *(decided 2026-07-31)* — already the platform's public support address (`contactEmails.support` in `/config`), so replies land in an inbox someone already watches. Confirm ownership before wave one: a cold campaign generates real replies, and an unwatched reply-to turns a warm response into a complaint. |
+| **Postal address** | `Spiritual California Inc., 631 E El Camino Real, Sunnyvale, CA 94087` — already published on the Travel Disclosures page. Required in the footer by CAN-SPAM. |
+| **$50/month plan** | **Not mentioned.** *(decided 2026-07-31)* Consistent with reality: the subscription is not enforced anywhere today, so quoting it would describe a charge that doesn't happen. |
+| **Commission** | One neutral line — **recommended, awaiting confirmation.** See below. |
+
+### Why the commission belongs in the invite even though the $50 doesn't
+
+They are different facts. The $50 is not charged today; **the 20% commission
+is** (10% on products). If the invite is silent on money altogether, a
+practitioner's first encounter with the platform's economics is their first
+payout — which is precisely the "nobody told me" moment that produces loud
+churn and, from a cold list, public complaint.
+
+Said plainly it reads in our favour, because it is genuinely favourable:
+
+> There's no cost to list. When you're booked through Spiritual California we
+> keep 20% — and we cover the card processing fees, so you receive exactly 80%
+> of what a client pays.
+
+Every clause of that is true as the ledger behaves today: no listing charge is
+enforced, commission is 20% on sessions, events and tours, and the v2.1 policy
+has the platform absorbing the Stripe fee so the guide nets exactly
+gross × (1 − commission). Products sit at 10% and are left to the "how it
+works" page rather than cluttering the line.
+
+It also pre-qualifies: a practitioner who won't accept 20% self-selects out
+before anyone spends effort onboarding them, which is cheaper for both sides
+than discovering it at payout.
+
+**Rendered from `fees.commissionByCategory`, never typed as a literal** — see
+`docs/commission-display-truth.md` for the version of that mistake we already
+shipped once.
+
 ## 9. Decisions needed from the client
 
-1. **Who is the sender?** A named person converts far better than a brand on
-   cold outreach. Name and reply-to address, please.
-2. **Physical postal address** for the email footer — legally required.
+1. ~~Who is the sender?~~ **Decided: Lana Rafaella, reply-to
+   `hello@spiritualcalifornia.com`** (§8a). Open: confirm someone owns that
+   inbox for the duration of the campaign.
+2. ~~Physical postal address~~ **Resolved: the Sunnyvale address already
+   published on the Travel Disclosures page** (§8a). Confirm it's the one to
+   use for outreach.
 3. **The rows with no email** (167 practitioners) — leave as prospect data, run
    the Tier 1 crawl for the 29 with their own site (§4.3), or have someone work
    the 124 directory profiles by hand through the directories' own contact
    forms? The crawl buys roughly 12–18 addresses; the manual route is the only
    thing that reaches the other 124.
 4. **The five shared inboxes** — one invite naming the practice, or drop them?
-5. ~~Free or paid framing?~~ **Decided 2026-07-31: the invite states the
-   $50/month plan** (§4.5). Two follow-ons still open: is the 90-day free
-   period offered to this cohort, and **is commission 20% or 15%** — the policy
-   doc and `STRIPE_PLATFORM_COMMISSION_PERCENT` disagree, and the invite cannot
-   ship until they don't.
+5. ~~Free or paid framing?~~ **Decided 2026-07-31: the $50/month plan is NOT
+   mentioned** — it isn't enforced today, so quoting it would describe a charge
+   that doesn't happen (§8a). The 20%-vs-15% conflict that blocked this is
+   resolved: 20% is authoritative and the guide-facing display was fixed
+   (`docs/commission-display-truth.md`). **Still open: whether the one-line
+   commission mention goes in** (§8a — recommended).
 6. **Go-live approval** — who flips `INVITE_EMAIL_MODE=live`, and after which
    test?
 
