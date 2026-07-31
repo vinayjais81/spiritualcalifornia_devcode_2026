@@ -248,6 +248,57 @@ Rules worth stating explicitly:
   the practitioner fills it in themselves at claim time — which is also the
   moment they take responsibility for its accuracy.
 
+#### The skipped list — a working list, not a report
+
+**Confirmed requirement:** a row with no usable email never becomes an account;
+instead it lands on a list the admin can see and act on. This is the other half
+of the import product, and it covers more than missing emails — every row the
+importer declines is recorded with a machine-readable reason:
+
+| Reason | Rows in this file | What it means |
+| --- | ---: | --- |
+| `SKIPPED_NO_EMAIL` | 167 | Nothing to invite. 29 have their own site (crawlable, §4.3); 124 are directory-only; 14 have no URL |
+| `SKIPPED_DUPLICATE` | ~6 | The address already belongs to another row, or to an existing platform user |
+| `SKIPPED_SUPPRESSED` | 0 today | Previously unsubscribed or complained — **must never be recreated** |
+| `SKIPPED_NOT_A_PERSON` | 15 | The "Sources:" commentary rows |
+| `NEEDS_REVIEW` | 18 | Organisation-shaped name — admin confirms or edits before it imports |
+
+The screen is `/admin/practitioner-import/:batchId/skipped`: filter by reason
+and sheet, search by name, sort by city. Every row shows what we hold — name,
+city, modality, the URL from the file — and nothing we don't.
+
+**It has to be actionable, or it is just a CSV with extra steps.** Four
+actions, in descending order of value:
+
+1. **Add an email inline.** The admin finds an address by hand (through the
+   directory's own contact form, a phone call, a referral) and pastes it on the
+   row. The prospect converts to a real account and joins the next invite wave
+   — **without re-uploading the spreadsheet**. This is the workflow that
+   eventually reaches the 124 directory-only practitioners, and it is the main
+   reason the list exists.
+2. **Mark as worked** — "contacted via Psychology Today, 12 Aug", so two people
+   don't chase the same practitioner and nobody re-chases a refusal.
+3. **Export CSV** of the current filter, for whoever is doing outreach outside
+   the admin panel.
+4. **Exclude permanently** — a row that should never be revisited (wrong
+   person, out of area, asked us not to). Excluded rows stay excluded when the
+   same file is imported again.
+
+**Re-importing the same spreadsheet must reconcile, not duplicate.** Each row
+carries a stable fingerprint (sheet + normalised name + city), so a second
+upload updates the prospect it already has and reports what changed, rather
+than producing 309 fresh rows. Without this, the second import doubles the
+list and the working notes are lost.
+
+**Skipped prospects are still personal data.** Nobody emailed them, but we hold
+their name, city and practice. That means: they are searchable by name and
+email so a deletion request can actually find them; the suppression list is
+checked before they can ever be converted; and they fall under the same
+retention rule as unclaimed accounts (§4.7) — a prospect nobody has worked
+within 12 months is purged. Holding a list of 167 named practitioners
+indefinitely with no plan to contact them is the kind of thing that reads badly
+in a data request.
+
 ### 4.3 Enrichment — can scraping fill in the missing emails?
 
 Proposed by the client: during import, follow the URL in the *Website /
@@ -522,13 +573,13 @@ the safety work is done.
 | Phase | Scope | Est. |
 | --- | --- | --- |
 | **0 — Taxonomy** | Add the 5 missing subcategories; agree the sheet→category map | 0.5 d |
-| **1 — Import (no email at all)** | Schema + parser + normaliser + dedupe + preview + commit; `/admin/practitioner-import` | 3–4 d |
+| **1 — Import (no email at all)** | Schema + parser + normaliser + dedupe + preview + commit; `/admin/practitioner-import`; the skipped list with inline "add email", mark-as-worked, export and exclude | 4–5 d |
 | **1.5 — Enrichment crawl** *(optional, §4.3)* | Tier 1 only: crawl the 29 own-site rows, confidence scoring, approve-per-row in preview | 1.5–2 d |
 | **2 — Claim + unsubscribe** | Widen `claimAccount`; 30-day invite token; unsubscribe/delete page + endpoint; suppression | 2–3 d |
 | **3 — Sending** | `invite-tasks` queue, throttle, `EmailSend` records, Resend webhooks, pause/resume, redirect mode | 3 d |
 | **4 — Invite email + admin console** | Final copy, both templates (personal / role inbox), batch dashboard + funnel | 2–3 d |
 | **5 — Hardening** | Retention purge job, reminder job, audit coverage, QA pass, DNS + warm-up run | 2 d |
-| | | **≈ 13–15 dev-days** |
+| | | **≈ 14–16 dev-days** (+1.5–2 if the enrichment crawl is included) |
 
 Phase 1 is genuinely useful on its own: it turns the spreadsheet into
 structured, deduplicated, categorised prospect data with zero outreach risk.
