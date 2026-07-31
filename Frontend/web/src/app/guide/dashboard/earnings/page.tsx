@@ -49,6 +49,11 @@ export default function EarningsPage() {
   const [showPayoutForm, setShowPayoutForm] = useState(false);
   const siteConfig = useSiteConfigOrFallback();
   const commissionPercent = siteConfig.fees.platformCommissionPercent;
+  // Per-category rates come straight from the CommissionRate rows the ledger
+  // charges against. These used to be typed into the copy by hand and had gone
+  // stale against the v2.1 policy — events and tours were quoted at 12% and
+  // 15% while the ledger took 20%.
+  const rates = siteConfig.fees.commissionByCategory;
   const minPayout = siteConfig.payouts.minUsd;
 
   const { data: earnings, isLoading } = useQuery<EarningsData>({
@@ -153,7 +158,7 @@ export default function EarningsPage() {
         </div>
 
         <div style={{ fontFamily: font, fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 20 }}>
-          From services, events, and tours on Spiritual California. Platform commission varies by category (services {commissionPercent}%, events 12%, tours 15%, products 10%).
+          From services, events, and tours on Spiritual California. Platform commission varies by category (services {rates?.SERVICE ?? commissionPercent}%, events {rates?.EVENT ?? commissionPercent}%, tours {rates?.TOUR ?? commissionPercent}%, products {rates?.PRODUCT ?? 10}%).
         </div>
 
         {/* v2 banners */}

@@ -8,7 +8,19 @@
 
 export interface SiteConfig {
   fees: {
+    /** Sessions, events and tours. Products have their own rate — see below. */
     platformCommissionPercent: number;
+    /**
+     * Live per-category rates from the backend's CommissionRate table. Use
+     * this wherever the surface concerns products; `platformCommissionPercent`
+     * is only the sessions/events/tours headline.
+     */
+    commissionByCategory?: {
+      SERVICE: number;
+      EVENT: number;
+      TOUR: number;
+      PRODUCT: number;
+    };
     eventBookingFeePercent: number;
   };
   payouts: {
@@ -53,9 +65,16 @@ export interface SiteConfig {
  * the request fails. Kept in sync with the backend defaults in
  * ConfigController.getPublicConfig().
  */
+// These render before /config/public lands, so a stale value here is shown to
+// real guides for a moment on every page load — both numbers below were wrong
+// (15% commission, $50 minimum) against the v2.1 policy the ledger enforces.
 export const SITE_CONFIG_FALLBACK: SiteConfig = {
-  fees: { platformCommissionPercent: 15, eventBookingFeePercent: 5 },
-  payouts: { minUsd: 50 },
+  fees: {
+    platformCommissionPercent: 20,
+    commissionByCategory: { SERVICE: 20, EVENT: 20, TOUR: 20, PRODUCT: 10 },
+    eventBookingFeePercent: 5,
+  },
+  payouts: { minUsd: 100 },
   cancellationPolicies: {
     service: {
       fullRefundHoursBefore: 48,

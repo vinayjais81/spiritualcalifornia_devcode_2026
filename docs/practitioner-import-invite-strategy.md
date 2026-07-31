@@ -458,13 +458,16 @@ Three things the copy has to get right, and one of them is a live risk:
   Free-period days and commission must come from the same source the billing
   code reads, or the email will eventually contradict the invoice.
 
-⚠️ **Discrepancy to resolve before any copy is written.** The v2.1 policy
-(`docs/guide-payouts-v2.1-amendment.md`) sets commission at 20% / 10% for
-products, and per-category `CommissionRate` rows implement that. But
-`STRIPE_PLATFORM_COMMISSION_PERCENT` still defaults to **15** and is the value
-`/config` reports to the frontend. Whatever the invite says, a practitioner
-will check it against the site. Confirm which number is authoritative and make
-both surfaces read the same source before wave one.
+✅ **Resolved 2026-07-31 — 20% is authoritative, and the display was fixed.**
+The v2.1 migration inserts platform-default `CommissionRate` rows at 20%
+(SERVICE/EVENT/TOUR; PRODUCT 10%) and the ledger charges against them, so
+payouts were always correct. `/config` was reporting
+`STRIPE_PLATFORM_COMMISSION_PERCENT` — a last-resort fallback of 15 — and the
+guide dashboard was quoting it, along with hardcoded "events 12%, tours 15%"
+copy left over from before v2.1. **Guides were shown 15% while being charged
+20%.** `/config/public` now reads the live rate rows and returns
+`fees.commissionByCategory`; the dashboard renders from that. Invite copy must
+use the same field — never a literal.
 
 A "founding practitioner" framing for this first cohort is worth considering —
 it makes the cold approach feel like an invitation rather than a sales list,
