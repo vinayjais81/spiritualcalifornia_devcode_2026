@@ -125,6 +125,12 @@ const envSchema = z.object({
   // See docs/order-hold-expiry.md.
   ORDER_HOLD_MINUTES: z.string().optional(),
   ORDER_TASKS_ENABLED: z.string().optional(),
+
+  // ── Practitioner import ────────────────────────────────────────────────
+  // HMAC key for email suppression tombstones. Same declaration rule applies:
+  // undeclared here means the service silently falls back to JWT_ACCESS_SECRET
+  // however the .env reads. See docs/practitioner-import-phase-1.md.
+  EMAIL_HASH_SECRET: z.string().optional(),
   RETURN_WINDOW_DAYS: z.string().optional(),
   SUPPORT_EMAIL: z.string().optional(),
 });

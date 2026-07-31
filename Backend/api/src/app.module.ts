@@ -13,6 +13,7 @@ import { EventsModule } from './modules/events/events.module';
 import { ProductsModule } from './modules/products/products.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { PractitionerImportModule } from './modules/practitioner-import/practitioner-import.module';
 import { VerificationModule } from './modules/verification/verification.module';
 import { AiModule } from './modules/ai/ai.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -61,6 +62,7 @@ import { StaticPagesModule } from './modules/static-pages/static-pages.module';
     ProductsModule,
     ReviewsModule,
     AdminModule,
+    PractitionerImportModule,
     VerificationModule,
     AiModule,
     NotificationsModule,

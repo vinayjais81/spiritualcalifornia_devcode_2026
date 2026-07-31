@@ -23,6 +23,7 @@ import {
   Calendar,
   Mountain,
   CreditCard,
+  FileSpreadsheet,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.store';
 import { useRouter } from 'next/navigation';
@@ -38,6 +39,7 @@ const navItems = [
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/guides', label: 'Guides', icon: BookOpen },
   { href: '/admin/verification', label: 'Verification Queue', icon: ShieldCheck },
+  { href: '/admin/practitioner-import', label: 'Practitioner Import', icon: FileSpreadsheet },
   { href: '/admin/products', label: 'Products', icon: Package },
   { href: '/admin/events', label: 'Events', icon: Calendar },
   { href: '/admin/tours', label: 'Tours', icon: Mountain },

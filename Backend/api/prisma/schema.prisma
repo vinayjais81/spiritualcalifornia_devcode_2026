@@ -25,6 +25,34 @@ enum VerificationStatus {
   FLAGGED
 }
 
+// ── Practitioner import (admin bulk onboarding) ──────────────────────────────
+// See docs/practitioner-import-invite-strategy.md
+
+enum ImportBatchStatus {
+  DRAFT // parsed, admin still reviewing
+  COMMITTED // accounts created for the importable rows
+  ARCHIVED // superseded or abandoned
+}
+
+enum ProspectStatus {
+  PENDING // importable — an account will be created on commit
+  NEEDS_REVIEW // e.g. an organisation-shaped name; admin confirms first
+  SKIPPED_NO_EMAIL // nothing to invite; stays as prospect research
+  SKIPPED_DUPLICATE // address belongs to another row or an existing user
+  SKIPPED_SUPPRESSED // previously unsubscribed — must never be recreated
+  SKIPPED_NOT_A_PERSON // the spreadsheet's trailing "Sources:" commentary rows
+  EXCLUDED // admin excluded it; stays excluded across re-imports
+  ACCOUNT_CREATED // committed
+}
+
+enum SuppressionReason {
+  UNSUBSCRIBED
+  DELETED
+  BOUNCED
+  COMPLAINED
+  MANUAL
+}
+
 enum OnboardingPath {
   SELF_REGISTRATION
   PROACTIVE_INVITE
@@ -201,7 +229,7 @@ model User {
   isActive            Boolean   @default(true)
   deactivatedAt       DateTime?
   deactivatedReason   String?
-  deactivatedBy       String?   // User.id of the admin who deactivated
+  deactivatedBy       String? // User.id of the admin who deactivated
   // Pre-launch onboarding: admin creates guide accounts with throwaway
   // emails on a known test domain (see TEST_ACCOUNT_EMAIL_DOMAIN env).
   // The admin "Convert test account" workflow can swap the email + fire
@@ -234,14 +262,109 @@ model User {
   seekerProfile     SeekerProfile?
   guideProfile      GuideProfile?
   refreshTokens     RefreshToken[]
-  reviewsGiven      Review[]       @relation("ReviewAuthor")
-  reviewsReceived   Review[]       @relation("ReviewGuide")
-  testimonialsGiven Testimonial[]  @relation("TestimonialAuthor")
+  reviewsGiven      Review[]          @relation("ReviewAuthor")
+  reviewsReceived   Review[]          @relation("ReviewGuide")
+  testimonialsGiven Testimonial[]     @relation("TestimonialAuthor")
   notifications     Notification[]
   auditLogs         AuditLog[]
   guideFollows      GuideFollow[]
+  importBatches     ImportBatch[]     @relation("ImportUploadedBy")
+  importedProspect  ImportedProspect?
 
   @@map("users")
+}
+
+/// One spreadsheet upload. Parsing writes prospects in DRAFT; committing turns
+/// the importable ones into guide accounts. Kept after commit as the audit
+/// trail for where a proactively-invited practitioner came from.
+model ImportBatch {
+  id           String            @id @default(cuid())
+  filename     String
+  /// Human label for the source list, e.g. "Bay Area list, Jul 2026".
+  sourceLabel  String?
+  uploadedById String
+  status       ImportBatchStatus @default(DRAFT)
+
+  rowsTotal       Int @default(0)
+  rowsImportable  Int @default(0)
+  accountsCreated Int @default(0)
+
+  notes       String?
+  createdAt   DateTime  @default(now())
+  committedAt DateTime?
+
+  uploadedBy User               @relation("ImportUploadedBy", fields: [uploadedById], references: [id])
+  prospects  ImportedProspect[]
+  guides     GuideProfile[]
+
+  @@index([status, createdAt])
+  @@map("import_batches")
+}
+
+/// One spreadsheet row, kept whether or not it became an account. The rows that
+/// never become accounts are the point: they are the admin's manual-outreach
+/// work queue (see the strategy doc §4.2).
+model ImportedProspect {
+  id        String @id @default(cuid())
+  batchId   String
+  sheetName String
+  rowNumber Int
+
+  /// Stable identity for a practitioner across re-imports of the same list —
+  /// sheet + normalised name + city. Lets a second upload reconcile onto the
+  /// existing row (preserving exclusions and outreach notes) instead of
+  /// duplicating it.
+  fingerprint String
+
+  /// Exactly what the row said, for audit and re-parsing after a mapping fix.
+  rawJson Json
+
+  name            String
+  email           String?
+  city            String?
+  modality        String?
+  websiteUrl      String?
+  categorySlug    String?
+  subcategorySlug String?
+
+  status     ProspectStatus @default(PENDING)
+  skipReason String?
+
+  /// Manual-outreach bookkeeping, so two people don't chase the same
+  /// practitioner and a refusal isn't re-chased.
+  workedNote String?
+  workedAt   DateTime?
+
+  /// Set once the row becomes an account.
+  userId String? @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  batch ImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  user  User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([batchId, fingerprint])
+  @@index([batchId, status])
+  @@index([fingerprint])
+  @@index([email])
+  @@map("imported_prospects")
+}
+
+/// The tombstone that makes "delete my information" stick.
+///
+/// Deleting a practitioner's row and nothing else means the next import of the
+/// same spreadsheet recreates them and emails them again — the worst outcome
+/// available. Storing an HMAC of the address lets a future import recognise
+/// "this person asked us never to come back" while retaining no personal data.
+model EmailSuppression {
+  id        String            @id @default(cuid())
+  emailHash String            @unique
+  reason    SuppressionReason
+  note      String?
+  createdAt DateTime          @default(now())
+
+  @@map("email_suppressions")
 }
 
 model UserRole {
@@ -316,9 +439,9 @@ model SeekerProfile {
 // ─────────────────────────────────────────────
 
 model GuideProfile {
-  id                   String             @id @default(cuid())
-  userId               String             @unique
-  slug                 String             @unique
+  id                   String                   @id @default(cuid())
+  userId               String                   @unique
+  slug                 String                   @unique
   displayName          String
   tagline              String?
   bio                  String?
@@ -328,48 +451,55 @@ model GuideProfile {
   city                 String?
   state                String?
   zipCode              String?
-  country              String?            @default("United States")
+  country              String?                  @default("United States")
   timezone             String?
   websiteUrl           String?
   instagramUrl         String?
   youtubeUrl           String?
-  languages            String[]           @default([])
-  modalities           String[]           @default([])
-  issuesHelped         String[]           @default([])
+  languages            String[]                 @default([])
+  modalities           String[]                 @default([])
+  issuesHelped         String[]                 @default([])
   yearsExperience      Int?
   calendarType         String?
   calendarLink         String?
   sessionPricingJson   String?
-  calendlyConnected    Boolean            @default(false)
+  calendlyConnected    Boolean                  @default(false)
   calendlyAccessToken  String?
   calendlyRefreshToken String?
   calendlyUserUri      String?
-  isPublished          Boolean            @default(false)
-  isVerified           Boolean            @default(false)
-  verificationStatus   VerificationStatus @default(PENDING)
-  onboardingPath       OnboardingPath     @default(SELF_REGISTRATION)
+  isPublished          Boolean                  @default(false)
+  isVerified           Boolean                  @default(false)
+  verificationStatus   VerificationStatus       @default(PENDING)
+  /// SELF_REGISTRATION = signed themselves up. PROACTIVE_INVITE = created by an
+  /// admin spreadsheet import and not yet claimed. This is the segregation flag
+  /// for reporting — an invited-but-unclaimed profile is not a practitioner we
+  /// actually have.
+  onboardingPath       OnboardingPath           @default(SELF_REGISTRATION)
+  /// Which spreadsheet upload produced this profile, if any.
+  importBatchId        String?
   stripeAccountId      String?
-  stripeOnboardingDone Boolean            @default(false)
+  stripeOnboardingDone Boolean                  @default(false)
   algoliaObjectId      String?
-  averageRating        Float              @default(0)
-  totalReviews         Int                @default(0)
-  isFeatured           Boolean            @default(false)
+  averageRating        Float                    @default(0)
+  totalReviews         Int                      @default(0)
+  isFeatured           Boolean                  @default(false)
   // Admin-managed display order. Lower sortOrder = appears earlier on the
   // /practitioners listing. Default 0 → all unsorted rows tie, broken by
   // createdAt DESC. Set by admin drag-to-reorder on /admin/guides.
-  sortOrder            Int                @default(0)
+  sortOrder            Int                      @default(0)
   // Postgres FTS: generated tsvector column managed entirely by the DB
   // (see 20260520120000_postgres_fts migration). Prisma can't manage
   // generated columns so this is declared as Unsupported — the column
   // exists in the schema for drift detection but the app never writes it.
   searchVector         Unsupported("tsvector")?
-  claimToken           String?            @unique
+  claimToken           String?                  @unique
   claimTokenExpiry     DateTime?
   scrapedSourceUrl     String?
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
 
   user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  importBatch     ImportBatch?       @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
   categories      GuideCategory[]
   services        Service[]
   credentials     Credential[]
@@ -717,11 +847,11 @@ model PayoutRequest {
 // ─────────────────────────────────────────────
 
 model LedgerEntry {
-  id              String          @id @default(cuid())
+  id              String           @id @default(cuid())
   guideId         String
   entryType       LedgerEntryType
-  amount          Decimal         @db.Decimal(12, 2) // Signed: +credit / −debit
-  currency        String          @default("USD")
+  amount          Decimal          @db.Decimal(12, 2) // Signed: +credit / −debit
+  currency        String           @default("USD")
   status          LedgerStatus
   // Nullable: PAYOUT and ADJUSTMENT entries aren't tied to a single category
   // (a payout aggregates earnings across categories). Category-filtered
@@ -740,7 +870,7 @@ model LedgerEntry {
   reversalOfId    String?
   description     String?
   metadata        Json?
-  createdAt       DateTime        @default(now())
+  createdAt       DateTime         @default(now())
 
   guide         GuideProfile   @relation(fields: [guideId], references: [id])
   payment       Payment?       @relation(fields: [paymentId], references: [id])
@@ -806,20 +936,20 @@ model PayoutAuditLog {
 // reconciliation cron. Operators triage each row in /admin/reconciliation
 // and either resolve it (write the missing entry) or dismiss it.
 model ReconciliationMismatch {
-  id                       String    @id @default(cuid())
-  stripeBalanceTxnId       String    @unique
-  stripeType               String    // 'charge' | 'refund' | 'transfer' | 'application_fee' | 'stripe_fee' | other
-  stripeAmount             Decimal   @db.Decimal(12, 2)
-  stripeCurrency           String    @default("USD")
-  stripeCreatedAt          DateTime
-  expectedLedgerEntryType  String?
-  paymentId                String?
-  details                  Json?
-  resolved                 Boolean   @default(false)
-  resolvedAt               DateTime?
-  resolvedBy               String?
-  resolutionNote           String?
-  createdAt                DateTime  @default(now())
+  id                      String    @id @default(cuid())
+  stripeBalanceTxnId      String    @unique
+  stripeType              String // 'charge' | 'refund' | 'transfer' | 'application_fee' | 'stripe_fee' | other
+  stripeAmount            Decimal   @db.Decimal(12, 2)
+  stripeCurrency          String    @default("USD")
+  stripeCreatedAt         DateTime
+  expectedLedgerEntryType String?
+  paymentId               String?
+  details                 Json?
+  resolved                Boolean   @default(false)
+  resolvedAt              DateTime?
+  resolvedBy              String?
+  resolutionNote          String?
+  createdAt               DateTime  @default(now())
 
   @@index([resolved, createdAt])
   @@map("reconciliation_mismatches")
@@ -843,31 +973,31 @@ model StripeWebhookEvent {
 // ─────────────────────────────────────────────
 
 model Event {
-  id              String    @id @default(cuid())
+  id              String                   @id @default(cuid())
   guideId         String
   title           String
   description     String?
   type            EventType
   startTime       DateTime
   endTime         DateTime
-  timezone        String    @default("America/Los_Angeles")
+  timezone        String                   @default("America/Los_Angeles")
   location        String?
   onlineUrl       String?
   zoomMeetingId   String?
   zoomJoinUrl     String?
   coverImageUrl   String?
-  isPublished     Boolean   @default(false)
-  isCancelled     Boolean   @default(false)
+  isPublished     Boolean                  @default(false)
+  isCancelled     Boolean                  @default(false)
   algoliaObjectId String?
-  averageRating   Float     @default(0)
-  reviewCount     Int       @default(0)
+  averageRating   Float                    @default(0)
+  reviewCount     Int                      @default(0)
   // Admin-managed display order on /admin/events. Public /events still
   // sorts chronologically by startTime — sortOrder here is admin-side only.
-  sortOrder       Int       @default(0)
+  sortOrder       Int                      @default(0)
   // Postgres FTS — see GuideProfile.searchVector for rationale.
   searchVector    Unsupported("tsvector")?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
 
   guide       GuideProfile      @relation(fields: [guideId], references: [id], onDelete: Cascade)
   ticketTiers EventTicketTier[]
@@ -936,30 +1066,30 @@ enum TicketStatus {
 // ─────────────────────────────────────────────
 
 model Product {
-  id              String           @id @default(cuid())
+  id              String                   @id @default(cuid())
   guideId         String
   name            String
   description     String?
   type            ProductType
   category        ProductCategory? // Drives shop page category tabs
-  price           Decimal          @db.Decimal(10, 2)
-  currency        String           @default("USD")
+  price           Decimal                  @db.Decimal(10, 2)
+  currency        String                   @default("USD")
   stockQuantity   Int?
   imageUrls       String[]
   fileS3Key       String?
   digitalFiles    Json? // Array of { name, size, url } for digital downloads
   shippingInfo    Json?
-  isActive        Boolean          @default(true)
+  isActive        Boolean                  @default(true)
   algoliaObjectId String?
-  averageRating   Float            @default(0)
-  reviewCount     Int              @default(0)
+  averageRating   Float                    @default(0)
+  reviewCount     Int                      @default(0)
   // Admin-managed display order on /shop. Default 0 = unsorted; admin
   // drag-to-reorder on /admin/products writes per-row sortOrder.
-  sortOrder       Int              @default(0)
+  sortOrder       Int                      @default(0)
   // Postgres FTS — see GuideProfile.searchVector for rationale.
   searchVector    Unsupported("tsvector")?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
 
   guide      GuideProfile     @relation(fields: [guideId], references: [id], onDelete: Cascade)
   variants   ProductVariant[]
@@ -973,25 +1103,25 @@ model Product {
 }
 
 model Order {
-  id               String      @id @default(cuid())
-  seekerId         String
-  status           OrderStatus @default(PENDING)
-  subtotal         Decimal     @default(0) @db.Decimal(10, 2)
-  discountAmount   Decimal     @default(0) @db.Decimal(10, 2)
-  shippingCost     Decimal     @default(0) @db.Decimal(10, 2)
-  taxAmount        Decimal     @default(0) @db.Decimal(10, 2)
-  taxRate          Decimal?    @db.Decimal(6, 4) // Snapshot of rate at time of order
-  totalAmount      Decimal     @db.Decimal(10, 2)
-  currency         String      @default("USD")
-  shippingAddress  Json?
-  contactEmail     String?
-  contactFirstName String?
-  contactLastName  String?
-  contactPhone     String?
-  promoCodeId      String?
-  shippingMethodId String?
-  notes            String?
-  paidAt           DateTime?
+  id                 String      @id @default(cuid())
+  seekerId           String
+  status             OrderStatus @default(PENDING)
+  subtotal           Decimal     @default(0) @db.Decimal(10, 2)
+  discountAmount     Decimal     @default(0) @db.Decimal(10, 2)
+  shippingCost       Decimal     @default(0) @db.Decimal(10, 2)
+  taxAmount          Decimal     @default(0) @db.Decimal(10, 2)
+  taxRate            Decimal?    @db.Decimal(6, 4) // Snapshot of rate at time of order
+  totalAmount        Decimal     @db.Decimal(10, 2)
+  currency           String      @default("USD")
+  shippingAddress    Json?
+  contactEmail       String?
+  contactFirstName   String?
+  contactLastName    String?
+  contactPhone       String?
+  promoCodeId        String?
+  shippingMethodId   String?
+  notes              String?
+  paidAt             DateTime?
   // PENDING orders hold real stock (decremented at create so concurrent
   // checkouts can't oversell), so an abandoned checkout must not hold it
   // forever. Reaped by the order-tasks hold reaper; cleared on PAID.
@@ -999,8 +1129,8 @@ model Order {
   holdExpiresAt      DateTime?
   cancelledAt        DateTime?
   cancellationReason String?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
   seeker         SeekerProfile   @relation(fields: [seekerId], references: [id])
   promoCode      PromoCode?      @relation("OrderPromoCode", fields: [promoCodeId], references: [id])
@@ -1044,7 +1174,7 @@ model OrderItem {
 // ─────────────────────────────────────────────
 
 model BlogPost {
-  id              String    @id @default(cuid())
+  id              String                   @id @default(cuid())
   guideId         String
   title           String
   slug            String
@@ -1052,20 +1182,20 @@ model BlogPost {
   excerpt         String?
   coverImageUrl   String?
   tags            String[]
-  isPublished     Boolean   @default(false)
+  isPublished     Boolean                  @default(false)
   publishedAt     DateTime?
   // Reader "applause" (clap) tally. Incremented via POST /blog/:id/applaud;
   // dedupe is per-device (localStorage) on the client, so this is a simple
   // running total rather than a per-user join.
-  applauseCount   Int       @default(0)
+  applauseCount   Int                      @default(0)
   algoliaObjectId String?
   // Admin-managed display order on /journal. Lower sortOrder = appears
   // earlier. Default 0 → unsorted rows tie, broken by publishedAt DESC.
-  sortOrder       Int       @default(0)
+  sortOrder       Int                      @default(0)
   // Postgres FTS — see GuideProfile.searchVector for rationale.
   searchVector    Unsupported("tsvector")?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
 
   guide GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
 
@@ -1085,24 +1215,24 @@ model BlogPost {
 // Verification is enforced by the per-source unique FKs below; exactly one of
 // {bookingId, ticketPurchaseId, tourBookingId, orderItemId} is set per row.
 model Review {
-  id              String       @id @default(cuid())
-  authorId        String
-  guideId         String       // The guide (User.id) whose offering was reviewed — for roll-up aggregation
-  targetType      ReviewTarget // What kind of offering: SERVICE | EVENT | TOUR | PRODUCT
-  targetEntityId  String       // Service.id, Event.id, SoulTour.id, or Product.id
-  bookingId        String?     @unique
-  ticketPurchaseId String?     @unique
-  tourBookingId    String?     @unique
-  orderItemId      String?     @unique
-  rating          Int
-  title           String?
-  body            String?
-  guideReply      String?
-  guideRepliedAt  DateTime?
-  isApproved      Boolean      @default(true)
-  isFlagged       Boolean      @default(false)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id               String       @id @default(cuid())
+  authorId         String
+  guideId          String // The guide (User.id) whose offering was reviewed — for roll-up aggregation
+  targetType       ReviewTarget // What kind of offering: SERVICE | EVENT | TOUR | PRODUCT
+  targetEntityId   String // Service.id, Event.id, SoulTour.id, or Product.id
+  bookingId        String?      @unique
+  ticketPurchaseId String?      @unique
+  tourBookingId    String?      @unique
+  orderItemId      String?      @unique
+  rating           Int
+  title            String?
+  body             String?
+  guideReply       String?
+  guideRepliedAt   DateTime?
+  isApproved       Boolean      @default(true)
+  isFlagged        Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
   author         User            @relation("ReviewAuthor", fields: [authorId], references: [id])
   guide          User            @relation("ReviewGuide", fields: [guideId], references: [id])
@@ -1309,24 +1439,24 @@ model CartItem {
 // ─────────────────────────────────────────────
 
 model SoulTour {
-  id                   String     @id @default(cuid())
+  id                   String                   @id @default(cuid())
   guideId              String
   title                String
-  slug                 String     @unique
+  slug                 String                   @unique
   description          String?
   shortDesc            String?
   // startDate/endDate kept for back-compat with existing data + as the
   // tour's "primary" departure summary; bookings always reference TourDeparture.
   startDate            DateTime
   endDate              DateTime
-  timezone             String     @default("America/Los_Angeles")
+  timezone             String                   @default("America/Los_Angeles")
   location             String?
   address              String?
   city                 String?
   state                String?
-  country              String?    @default("United States")
-  basePrice            Decimal    @db.Decimal(10, 2)
-  currency             String     @default("USD")
+  country              String?                  @default("United States")
+  basePrice            Decimal                  @db.Decimal(10, 2)
+  currency             String                   @default("USD")
   capacity             Int
   spotsRemaining       Int
   coverImageUrl        String?
@@ -1335,31 +1465,31 @@ model SoulTour {
   included             String[] // What's included in the price
   notIncluded          String[] // What's NOT included
   requirements         String? // Participation requirements
-  depositMin           Decimal?   @db.Decimal(10, 2) // Legacy: total min deposit (kept for back-compat)
+  depositMin           Decimal?                 @db.Decimal(10, 2) // Legacy: total min deposit (kept for back-compat)
   // ── Phase A additions ──
   difficultyLevel      String? // EASY | MODERATE | CHALLENGING
   languages            String[] // ["English", "Spanish"]
   meetingPoint         String? // "Kathmandu Tribhuvan International Airport (KTM)"
   cancellationPolicy   Json? // { fullRefundDaysBefore: 90, halfRefundDaysBefore: 60 } — falls back to platform default
-  balanceDueDaysBefore Int        @default(60)
-  minDepositPerPerson  Decimal?   @db.Decimal(10, 2)
+  balanceDueDaysBefore Int                      @default(60)
+  minDepositPerPerson  Decimal?                 @db.Decimal(10, 2)
   // ── Listing-page additions (2026-04-17) ──
   trackType            TourTrack? // ADVENTURE | HEALING — drives public listing tabs
   latestUpdate         String? // Guide's latest announcement shown on tour card
   latestUpdateAt       DateTime?
   // ─────────────────────
-  isPublished          Boolean    @default(false)
-  isCancelled          Boolean    @default(false)
-  averageRating        Float      @default(0)
-  reviewCount          Int        @default(0)
+  isPublished          Boolean                  @default(false)
+  isCancelled          Boolean                  @default(false)
+  averageRating        Float                    @default(0)
+  reviewCount          Int                      @default(0)
   // Admin-managed display order on /admin/tours. Public /travels still
   // sorts chronologically by next-departure startDate — sortOrder here is
   // admin-side only.
-  sortOrder            Int        @default(0)
+  sortOrder            Int                      @default(0)
   // Postgres FTS — see GuideProfile.searchVector for rationale.
   searchVector         Unsupported("tsvector")?
-  createdAt            DateTime   @default(now())
-  updatedAt            DateTime   @updatedAt
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
 
   guide      GuideProfile       @relation(fields: [guideId], references: [id], onDelete: Cascade)
   roomTypes  TourRoomType[]
@@ -1506,22 +1636,22 @@ model TourBooking {
 // ─────────────────────────────────────────────
 
 model BookingConsent {
-  id             String      @id @default(cuid())
-  tourBookingId  String      @unique
-  tourBooking    TourBooking @relation(fields: [tourBookingId], references: [id], onDelete: Cascade)
+  id            String      @id @default(cuid())
+  tourBookingId String      @unique
+  tourBooking   TourBooking @relation(fields: [tourBookingId], references: [id], onDelete: Cascade)
   // ISO 8601 UTC moment the customer ticked the box.
-  acceptedAt     DateTime    @default(now())
+  acceptedAt    DateTime    @default(now())
   // Client IP at time of acceptance, captured server-side from the
   // request. String (not Inet) to keep things database-portable.
-  ip             String
+  ip            String
   // Verbatim copy of the checkbox label shown to the customer.
   // Persisted so we can reproduce exactly what they agreed to even if
   // the on-screen copy changes later.
-  consentText    String      @db.Text
+  consentText   String      @db.Text
   // Per-document version tags from Frontend/web/src/lib/legalDocVersions.
   // Shape: { terms: "2026-05-22", privacy: "...", refund: "...", disclosures: "..." }
-  docVersions    Json
-  createdAt      DateTime    @default(now())
+  docVersions   Json
+  createdAt     DateTime    @default(now())
 
   @@index([acceptedAt])
   @@map("booking_consents")
