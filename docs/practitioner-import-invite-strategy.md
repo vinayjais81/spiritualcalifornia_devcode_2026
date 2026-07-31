@@ -49,7 +49,7 @@ that matter commercially, so the data comes first.
 created without one — `User.email` is unique and required, and an account with
 no email can never be claimed or contacted. **56% of this file is not
 importable as accounts.** They are still valuable as a research list, which the
-design accounts for (§5.1), but they are not wave-one invites.
+design accounts for (§4.1), but they are not wave-one invites.
 
 **b) Of those 142, six are duplicates** — one inbox shared by several
 practitioners. `info@sfreikicenter.com` appears on **five** rows.
@@ -248,7 +248,86 @@ Rules worth stating explicitly:
   the practitioner fills it in themselves at claim time — which is also the
   moment they take responsibility for its accuracy.
 
-### 4.3 What an imported account is
+### 4.3 Enrichment — can scraping fill in the missing emails?
+
+Proposed by the client: during import, follow the URL in the *Website /
+Contact* column and scrape the missing details, chiefly the email.
+
+Sound instinct, and the answer is a qualified yes — but the ceiling is far
+lower than the 167 missing addresses suggest, because of **what those URLs
+point at**. Measured across the file, excluding the 15 "Sources:" commentary
+rows (so 309 real practitioner rows):
+
+| Rows with no email | Count | Can a crawler get an address? |
+| --- | ---: | --- |
+| Own practice website | **29** | Yes — small practice sites usually publish one |
+| Third-party directory profile only | **124** | **No.** Psychology Today, Noomii and HealthProfs deliberately publish no email; contact runs through their internal messaging. The file's own notes say exactly this |
+| No usable URL at all | 14 | No |
+
+So crawling the URLs we already hold has a hard ceiling of **29 candidates**,
+and small-practice sites publish a usable address maybe half to two-thirds of
+the time — realistically **12–18 new addresses**, taking wave one from ~136 to
+~150. Worth having; not worth delaying the campaign for.
+
+**Three tiers, in descending order of value per day of work:**
+
+**Tier 1 — crawl the practitioner's own site (29 rows).** Fetch the homepage
+plus the obvious contact pages (`/contact`, `/about`, `/book`), prefer a
+`mailto:` link over an address found in body text, and stop at the first
+confident hit. ~1.5–2 days including the review UI. This is the tier I'd
+build.
+
+**Tier 2 — search-based discovery for the 124 directory-only rows.** Query a
+search API for `"name" + city + modality`, identify their own domain, then run
+Tier 1 against it. Higher potential yield, materially lower accuracy: common
+names in a metro area of 7 million produce confident matches for **the wrong
+person**, and a wrong match here is not a bounce — it emails a stranger a
+message naming a real practitioner, their city and their modality. That is a
+disclosure incident. Only worth doing with per-row human confirmation, which
+largely erases the automation saving. 2–3 further days.
+
+**Tier 3 — accept that email isn't the channel for those 124.** For Psychology
+Today profiles the working contact method *is* the profile's message form, by
+that platform's design. Reaching them means someone sending messages through
+the directory, or a different motion entirely (a call, an event, a referral).
+No engineering required, and honest about what the data supports.
+
+**Constraints any crawler we build must honour** — these are what separate
+"enrichment" from "we scraped people and got blocked":
+
+- **Only the practitioner's own domain.** Never crawl Psychology Today, Noomii
+  or HealthProfs: their terms prohibit it, and they hold no email anyway.
+- Respect `robots.txt`; identify ourselves in the `User-Agent` with a contact
+  URL; **1 request per second per domain**, hard timeout, at most ~4 pages per
+  site; cache results so a re-run never re-crawls.
+- Public pages only. Nothing behind a login, form or paywall.
+- Discard obvious non-personal addresses (`webmaster@`, `noreply@`,
+  `press@`, WordPress theme-author addresses) — these are how a crawler
+  quietly poisons a list.
+
+**Provenance and confidence are mandatory, not decoration.** Every enriched
+field stores where it came from (`source: crawl`, the exact URL, the method —
+`mailto` vs text match, the fetch timestamp) plus a confidence score built from
+signals like: does the email's domain match the site's domain, does the local
+part resemble the practitioner's name, was it a `mailto:` link, was it the only
+address on the page.
+
+**No scraped address is ever used without a human approving that row.** They
+arrive in the import preview (§4.2) as suggestions — shown with the address,
+its confidence, and a link to the page it came from — and an admin ticks each
+one. A spreadsheet-supplied address can flow straight through; a machine-found
+one cannot. The asymmetry is deliberate: the cost of a wrong scraped address
+isn't a wasted send, it's disclosing a named practitioner's details to whoever
+owns that inbox, and burning our sending reputation with a complaint from
+someone who was never even on the list.
+
+**Build note:** nothing exists for this today — no HTTP client, no HTML parser,
+no scraping queue. Tier 1 needs `cheerio` (or careful regex over `mailto:`),
+Node 20's global `fetch`, and a job on the same BullMQ pattern as the other
+task queues, so the crawl runs in the background and the admin sees results
+land in the preview.
+
+### 4.4 What an imported account is
 
 | Field | Value | Why |
 | --- | --- | --- |
@@ -268,7 +347,7 @@ IMPORTED ──invite sent──▶ INVITED ──clicks claim──▶ CLAIMED 
     │                        │
     │                        ├──clicks unsubscribe──▶ DELETED  (+ suppression tombstone)
     │                        ├──bounce/complaint────▶ SUPPRESSED
-    │                        └──90 days, no action──▶ EXPIRED  (purged, §4.6)
+    │                        └──90 days, no action──▶ EXPIRED  (purged, §4.7)
     └──admin excludes────────────────────────────────▶ ARCHIVED
 ```
 
@@ -282,7 +361,7 @@ pre-arranged handover and wrong for a cold invite that may be read a week
 later. Invited accounts get a **30-day token**, and an expired link lands on a
 page offering a fresh one rather than a dead end.
 
-### 4.4 The invite email
+### 4.5 The invite email
 
 Content requirements, each mapping to a real obligation:
 
@@ -313,7 +392,7 @@ guessable ids:
 3. If they later change their mind, the suppression entry is removable by an
    admin on request — deliberately a manual, logged act.
 
-### 4.5 Sending infrastructure
+### 4.6 Sending infrastructure
 
 The invite is not one more `EmailService` call. Bulk needs its own queue —
 mirroring `order-tasks` / `tour-tasks`, so it is a familiar shape in this
@@ -332,7 +411,7 @@ codebase:
   mid-flight** — 500 queued emails with no stop button is an incident waiting
   to happen.
 
-### 4.6 Retention
+### 4.7 Retention
 
 Unclaimed invited accounts are personal data we hold for someone who never
 responded. Keeping them indefinitely is the thing that makes a future data
@@ -345,7 +424,7 @@ request awkward:
   pattern as the tour health-info purge, which already implements a retention
   promise.
 
-### 4.7 Test-mode interlock
+### 4.8 Test-mode interlock
 
 The client's requirement is a testing convenience; treated properly it is a
 safety mechanism, and the default must be safe.
@@ -444,6 +523,7 @@ the safety work is done.
 | --- | --- | --- |
 | **0 — Taxonomy** | Add the 5 missing subcategories; agree the sheet→category map | 0.5 d |
 | **1 — Import (no email at all)** | Schema + parser + normaliser + dedupe + preview + commit; `/admin/practitioner-import` | 3–4 d |
+| **1.5 — Enrichment crawl** *(optional, §4.3)* | Tier 1 only: crawl the 29 own-site rows, confidence scoring, approve-per-row in preview | 1.5–2 d |
 | **2 — Claim + unsubscribe** | Widen `claimAccount`; 30-day invite token; unsubscribe/delete page + endpoint; suppression | 2–3 d |
 | **3 — Sending** | `invite-tasks` queue, throttle, `EmailSend` records, Resend webhooks, pause/resume, redirect mode | 3 d |
 | **4 — Invite email + admin console** | Final copy, both templates (personal / role inbox), batch dashboard + funnel | 2–3 d |
@@ -460,8 +540,11 @@ structured, deduplicated, categorised prospect data with zero outreach risk.
 1. **Who is the sender?** A named person converts far better than a brand on
    cold outreach. Name and reply-to address, please.
 2. **Physical postal address** for the email footer — legally required.
-3. **The 182 rows with no email** — leave as prospect data, or should someone
-   work the directory links by hand to find addresses before we import?
+3. **The rows with no email** (167 practitioners) — leave as prospect data, run
+   the Tier 1 crawl for the 29 with their own site (§4.3), or have someone work
+   the 124 directory profiles by hand through the directories' own contact
+   forms? The crawl buys roughly 12–18 addresses; the manual route is the only
+   thing that reaches the other 124.
 4. **The five shared inboxes** — one invite naming the practice, or drop them?
 5. **Free or paid framing?** The invite should be honest about the $50/month
    listing plan and any launch offer. Getting this wrong on first contact is
@@ -471,7 +554,11 @@ structured, deduplicated, categorised prospect data with zero outreach risk.
 
 ## 10. Explicitly not in scope
 
-- Scraping or enriching data ourselves — we import what the client supplies.
+- Crawling third-party directories (Psychology Today, Noomii, HealthProfs) —
+  prohibited by their terms, and they hold no email to find. Enrichment is
+  limited to a practitioner's own website (§4.3).
+- Search-based discovery of practitioners' websites (Tier 2) unless the client
+  asks for it and accepts per-row confirmation.
 - Publishing unclaimed profiles publicly in any form.
 - Importing bios, credentials or third-party directory links.
 - SMS or LinkedIn outreach.
