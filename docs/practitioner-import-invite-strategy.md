@@ -692,7 +692,7 @@ structured, deduplicated, categorised prospect data with zero outreach risk.
 | **Reply-to** | `hello@spiritualcalifornia.com` *(decided 2026-07-31)* — already the platform's public support address (`contactEmails.support` in `/config`), so replies land in an inbox someone already watches. Confirm ownership before wave one: a cold campaign generates real replies, and an unwatched reply-to turns a warm response into a complaint. |
 | **Postal address** | `Spiritual California Inc., 631 E El Camino Real, Sunnyvale, CA 94087` — already published on the Travel Disclosures page. Required in the footer by CAN-SPAM. |
 | **$50/month plan** | **Not mentioned.** *(decided 2026-07-31)* Consistent with reality: the subscription is not enforced anywhere today, so quoting it would describe a charge that doesn't happen. |
-| **Commission** | One neutral line — **recommended, awaiting confirmation.** See below. |
+| **Commission** | **Named in the invite, one line** *(decided 2026-07-31)*. See below. |
 
 ### Why the commission belongs in the invite even though the $50 doesn't
 
@@ -740,8 +740,8 @@ shipped once.
    mentioned** — it isn't enforced today, so quoting it would describe a charge
    that doesn't happen (§8a). The 20%-vs-15% conflict that blocked this is
    resolved: 20% is authoritative and the guide-facing display was fixed
-   (`docs/commission-display-truth.md`). **Still open: whether the one-line
-   commission mention goes in** (§8a — recommended).
+   (`docs/commission-display-truth.md`). The **one-line commission mention is
+   in** (§8a, decided 2026-07-31). Copy inputs are now complete.
 6. **Go-live approval** — who flips `INVITE_EMAIL_MODE=live`, and after which
    test?
 
