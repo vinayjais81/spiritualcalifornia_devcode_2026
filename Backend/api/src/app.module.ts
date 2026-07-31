@@ -14,6 +14,7 @@ import { ProductsModule } from './modules/products/products.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { PractitionerImportModule } from './modules/practitioner-import/practitioner-import.module';
+import { PractitionerInvitesModule } from './modules/practitioner-invites/practitioner-invites.module';
 import { VerificationModule } from './modules/verification/verification.module';
 import { AiModule } from './modules/ai/ai.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -63,6 +64,7 @@ import { StaticPagesModule } from './modules/static-pages/static-pages.module';
     ReviewsModule,
     AdminModule,
     PractitionerImportModule,
+    PractitionerInvitesModule,
     VerificationModule,
     AiModule,
     NotificationsModule,

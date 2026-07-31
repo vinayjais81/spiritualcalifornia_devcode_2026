@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, Suspense } from 'react';
+import { useState, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { PasswordStrengthMeter, evaluatePassword } from '@/components/auth/PasswordStrengthMeter';
 import { FieldLabel, FormLegend } from '@/components/forms';
+import { apiErrorMessage } from '@/lib/apiError';
 
 type Status = 'idle' | 'loading' | 'success' | 'error';
 
@@ -37,9 +38,67 @@ function ClaimAccountContent() {
 
   const pwdStrength = useMemo(() => evaluatePassword(password), [password]);
 
+  // Check the link before asking for a password. Without this, someone whose
+  // invite lapsed fills in a password, submits, and only then discovers the
+  // link is dead — and a cold recipient has no "Spiritual California contact"
+  // to ask for a new one. Read-only: describing a token never consumes it.
+  const [linkState, setLinkState] = useState<
+    'checking' | 'ok' | 'expired' | 'already-claimed' | 'unknown'
+  >('checking');
+  const [greetName, setGreetName] = useState<string | null>(null);
+  const [supportEmail, setSupportEmail] = useState('support@spiritualcalifornia.com');
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    api
+      .get(`/invites/claim/${encodeURIComponent(token)}`)
+      .then(({ data }) => {
+        if (cancelled) return;
+        if (data?.supportEmail) setSupportEmail(data.supportEmail);
+        if (data?.valid) {
+          setGreetName(data.firstName ?? null);
+          setLinkState('ok');
+          return;
+        }
+        if (data?.reason === 'expired') setLinkState('expired');
+        else if (data?.reason === 'already-claimed') setLinkState('already-claimed');
+        // An unrecognised token here is not necessarily bad: pre-launch test
+        // accounts use the same page and are not described by this endpoint.
+        // Fall through to the form and let the API decide on submit.
+        else setLinkState('ok');
+      })
+      .catch(() => {
+        if (!cancelled) setLinkState('ok');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
   if (!token) {
     return (
       <ErrorLayout message="This claim link is missing its token. Please use the link from the email we sent you." />
+    );
+  }
+
+  if (linkState === 'expired') {
+    return (
+      <ErrorLayout
+        title="This link has expired"
+        message={`Invite links stay valid for 30 days. Email ${supportEmail} and we'll send you a fresh one — your profile is still reserved.`}
+      />
+    );
+  }
+
+  if (linkState === 'already-claimed') {
+    return (
+      <ErrorLayout
+        title="You've already claimed this account"
+        message="Your password is set. Sign in to pick up where you left off."
+        ctaHref="/signin"
+        ctaLabel="Sign in"
+      />
     );
   }
 
@@ -71,10 +130,8 @@ function ClaimAccountContent() {
       // Brief pause so the success state is visible, then route to the
       // guide dashboard where they can finish profile / verification.
       setTimeout(() => router.push('/guide/dashboard'), 1200);
-    } catch (err: any) {
-      const msg: string =
-        err?.response?.data?.message ?? 'Something went wrong. Please try again.';
-      setErrorMsg(msg);
+    } catch (err: unknown) {
+      setErrorMsg(apiErrorMessage(err, 'Something went wrong. Please try again.'));
       setStatus('error');
     }
   };
@@ -178,8 +235,17 @@ function ClaimAccountContent() {
               margin: '0 0 10px',
             }}
           >
-            Claim your{' '}
-            <em style={{ fontStyle: 'italic', color: '#F07814' }}>account</em>
+            {greetName ? (
+              <>
+                Welcome,{' '}
+                <em style={{ fontStyle: 'italic', color: '#F07814' }}>{greetName}</em>
+              </>
+            ) : (
+              <>
+                Claim your{' '}
+                <em style={{ fontStyle: 'italic', color: '#F07814' }}>account</em>
+              </>
+            )}
           </h1>
           <p
             style={{
@@ -460,7 +526,17 @@ function PageShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ErrorLayout({ message }: { message: string }) {
+function ErrorLayout({
+  message,
+  title = 'Invalid link',
+  ctaHref = '/',
+  ctaLabel = 'Return Home',
+}: {
+  message: string;
+  title?: string;
+  ctaHref?: string;
+  ctaLabel?: string;
+}) {
   return (
     <PageShell>
       <div style={{ textAlign: 'center', maxWidth: '440px' }}>
@@ -468,7 +544,7 @@ function ErrorLayout({ message }: { message: string }) {
           className="font-playfair"
           style={{ fontSize: '40px', fontWeight: 300, color: '#3A3530', margin: '0 0 16px' }}
         >
-          Invalid link
+          {title}
         </h1>
         <p
           style={{
@@ -482,7 +558,7 @@ function ErrorLayout({ message }: { message: string }) {
           {message}
         </p>
         <Link
-          href="/"
+          href={ctaHref}
           style={{
             display: 'inline-flex',
             alignItems: 'center',
@@ -498,7 +574,7 @@ function ErrorLayout({ message }: { message: string }) {
             textDecoration: 'none',
           }}
         >
-          Return Home
+          {ctaLabel}
         </Link>
       </div>
     </PageShell>

@@ -11,7 +11,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { Role, VerificationStatus, Prisma } from '@prisma/client';
+import { Role, VerificationStatus, Prisma, OnboardingPath } from '@prisma/client';
 import { checkPasswordPolicy } from '../../common/validators/is-strong-password.validator';
 import * as bcrypt from 'bcrypt';
 import { randomBytes, randomUUID } from 'crypto';
@@ -571,17 +571,27 @@ export class AuthService {
   async claimAccount(token: string, password: string) {
     const user = await this.prisma.user.findFirst({
       where: { emailVerifyToken: token },
+      include: { guideProfile: { select: { onboardingPath: true } } },
     });
 
     if (!user) throw new BadRequestException('Invalid claim token');
     if (user.emailVerifyExpiry && user.emailVerifyExpiry < new Date()) {
       throw new BadRequestException('Claim token expired');
     }
-    if (!user.isTestAccount) {
-      // Defense-in-depth: the claim endpoint is only for accounts that went
-      // through the admin convert workflow. A real user with a stray
-      // emailVerifyToken should be sent down /verify-email or
-      // /reset-password instead — never both at once.
+
+    // Defense-in-depth: the claim endpoint exists for accounts someone else
+    // created on the holder's behalf. A real user with a stray
+    // emailVerifyToken should be sent down /verify-email or /reset-password
+    // instead — never both at once.
+    //
+    // Two origins qualify, and the guard recognises both rather than being
+    // relaxed into "any token works":
+    //   1. isTestAccount — the pre-launch admin convert workflow.
+    //   2. PROACTIVE_INVITE — created by an admin spreadsheet import
+    //      (docs/practitioner-import-invite-strategy.md). These carry a real
+    //      email from the start, so they are never flagged isTestAccount.
+    const isInvitedGuide = user.guideProfile?.onboardingPath === OnboardingPath.PROACTIVE_INVITE;
+    if (!user.isTestAccount && !isInvitedGuide) {
       throw new BadRequestException(
         'This token is not valid for the claim flow.',
       );
@@ -607,6 +617,11 @@ export class AuthService {
           // is now the source of truth.
           passwordResetToken: null,
           passwordResetExpiry: null,
+          // Stamp the funnel only for invited accounts, and only once, so a
+          // re-claim can't overwrite the original conversion date.
+          ...(isInvitedGuide && !user.inviteClaimedAt
+            ? { inviteClaimedAt: new Date() }
+            : {}),
         },
       }),
       // Belt-and-suspenders: convertTestAccount already revoked refresh

@@ -255,6 +255,10 @@ model User {
   // doesn't see them. JSON keeps the schema simple — fields are sparse
   // and only read at one well-defined point.
   pendingProfileJson  Json?
+  // Proactive-invite funnel timestamps. Kept on the user so the import batch
+  // report can show invited → claimed without joining through audit logs.
+  invitedAt           DateTime?
+  inviteClaimedAt     DateTime?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
