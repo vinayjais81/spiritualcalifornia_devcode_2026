@@ -131,6 +131,20 @@ const envSchema = z.object({
   // undeclared here means the service silently falls back to JWT_ACCESS_SECRET
   // however the .env reads. See docs/practitioner-import-phase-1.md.
   EMAIL_HASH_SECRET: z.string().optional(),
+
+  // ── Practitioner invites (sending) ─────────────────────────────────────
+  // INVITE_EMAIL_MODE defaults to 'redirect' in code, so an environment that
+  // never set it cannot mail real practitioners. Going live is an explicit act.
+  INVITE_EMAIL_MODE: z.string().optional(),
+  INVITE_EMAIL_REDIRECT_TO: z.string().optional(),
+  INVITE_SEND_PER_DAY: z.string().optional(),
+  INVITE_TASKS_ENABLED: z.string().optional(),
+  INVITE_EMAIL_FROM: z.string().optional(),
+  INVITE_SENDER_NAME: z.string().optional(),
+  INVITE_REPLY_TO: z.string().optional(),
+  INVITE_POSTAL_ADDRESS: z.string().optional(),
+  INVITE_SOURCE_DESCRIPTION: z.string().optional(),
+  RESEND_WEBHOOK_SECRET: z.string().optional(),
   RETURN_WINDOW_DAYS: z.string().optional(),
   SUPPORT_EMAIL: z.string().optional(),
 });

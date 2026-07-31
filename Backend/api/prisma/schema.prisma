@@ -45,6 +45,23 @@ enum ProspectStatus {
   ACCOUNT_CREATED // committed
 }
 
+enum InviteSendState {
+  IDLE // nothing queued
+  SENDING // queue is draining
+  PAUSED // stopped by an admin or tripped by the circuit breaker
+  COMPLETED // every eligible recipient has been attempted
+}
+
+enum EmailSendStatus {
+  QUEUED
+  SENT // handed to Resend
+  DELIVERED // provider confirmed
+  BOUNCED
+  COMPLAINED // marked as spam
+  FAILED // never left the building
+  SKIPPED // pre-send checks disqualified it
+}
+
 enum SuppressionReason {
   UNSUBSCRIBED
   DELETED
@@ -274,6 +291,7 @@ model User {
   guideFollows      GuideFollow[]
   importBatches     ImportBatch[]     @relation("ImportUploadedBy")
   importedProspect  ImportedProspect?
+  emailSends        EmailSend[]
 
   @@map("users")
 }
@@ -297,9 +315,18 @@ model ImportBatch {
   createdAt   DateTime  @default(now())
   committedAt DateTime?
 
+  /// Invite-wave state for this batch. Paused is sticky: the circuit breaker
+  /// sets it and a human has to clear it, because the thresholds it watches
+  /// (bounces, spam complaints) mean the list or the copy is wrong, not that
+  /// the queue hit a blip.
+  inviteState       InviteSendState @default(IDLE)
+  invitePausedAt    DateTime?
+  invitePauseReason String?
+
   uploadedBy User               @relation("ImportUploadedBy", fields: [uploadedById], references: [id])
   prospects  ImportedProspect[]
   guides     GuideProfile[]
+  emailSends EmailSend[]
 
   @@index([status, createdAt])
   @@map("import_batches")
@@ -353,6 +380,47 @@ model ImportedProspect {
   @@index([fingerprint])
   @@index([email])
   @@map("imported_prospects")
+}
+
+/// One attempted email, so "did this practitioner ever get their invite?" has
+/// an answer. Before this, EmailService sent inline and kept no record at all.
+///
+/// Deliberately stores a **hash** of the recipient rather than the address:
+/// someone who later asks to be removed must not be left behind in the send
+/// log. The address is resolved from the User row at send time and never
+/// persisted here.
+model EmailSend {
+  id      String @id @default(cuid())
+  /// e.g. 'practitioner-invite'. One table, several campaigns later.
+  purpose String
+
+  userId        String?
+  importBatchId String?
+  emailHash     String
+
+  status            EmailSendStatus @default(QUEUED)
+  /// Resend's id, which inbound webhooks are correlated on.
+  providerMessageId String?
+  error             String?
+  /// True when INVITE_EMAIL_MODE=redirect diverted this away from the real
+  /// practitioner. Redirected sends are excluded from deliverability stats —
+  /// counting test traffic would poison the circuit breaker's judgement.
+  redirected        Boolean         @default(false)
+
+  queuedAt     DateTime  @default(now())
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  bouncedAt    DateTime?
+  complainedAt DateTime?
+  openedAt     DateTime?
+
+  user  User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+  batch ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+
+  @@index([importBatchId, status])
+  @@index([providerMessageId])
+  @@index([purpose, sentAt])
+  @@map("email_sends")
 }
 
 /// The tombstone that makes "delete my information" stick.

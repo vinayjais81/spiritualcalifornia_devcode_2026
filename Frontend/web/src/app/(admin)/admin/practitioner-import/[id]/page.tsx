@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Check, Download, Play, X } from 'lucide-react';
+import { ArrowLeft, Check, Download, Pause, Play, Send, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { apiErrorMessage } from '@/lib/apiError';
 
@@ -41,6 +41,17 @@ interface Prospect {
   workedNote: string | null;
   workedAt: string | null;
   userId: string | null;
+}
+
+interface SendStats {
+  mode: 'live' | 'redirect';
+  remainingToday: number;
+  withinSendWindow: boolean;
+  inviteState: 'IDLE' | 'SENDING' | 'PAUSED' | 'COMPLETED';
+  pausedAt: string | null;
+  pauseReason: string | null;
+  counts: Partial<Record<'QUEUED' | 'SENT' | 'DELIVERED' | 'BOUNCED' | 'COMPLAINED' | 'FAILED' | 'SKIPPED', number>>;
+  claimed: number;
 }
 
 interface Batch {
@@ -205,6 +216,48 @@ export default function ImportBatchPage() {
     onError: (e: unknown) => toast.error(apiErrorMessage(e, 'Commit failed.')),
   });
 
+  // ── Invite sending (Phase 3) ──────────────────────────────────────────────
+  const { data: sendStats } = useQuery<SendStats>({
+    queryKey: ['admin', 'invite-stats', batchId],
+    queryFn: () => api.get(`/invites/batches/${batchId}/stats`).then((r) => r.data),
+    // A wave drains over days; keep the panel honest without a manual refresh.
+    refetchInterval: 30_000,
+  });
+
+  const invalidateSend = () =>
+    qc.invalidateQueries({ queryKey: ['admin', 'invite-stats', batchId] });
+
+  const queueWave = useMutation({
+    mutationFn: (segment: 'personal' | 'role-inbox' | 'all') =>
+      api.post(`/invites/batches/${batchId}/queue`, { segment }).then((r) => r.data),
+    onSuccess: (res: { queued: number; skipped: number }) => {
+      toast.success(
+        `${res.queued} queued for sending${res.skipped ? `, ${res.skipped} skipped` : ''}. The worker drains inside the daily cap.`,
+      );
+      invalidateSend();
+    },
+    onError: (e: unknown) => toast.error(apiErrorMessage(e, 'Could not queue the wave.')),
+  });
+
+  const pauseWave = useMutation({
+    mutationFn: (reason: string) =>
+      api.post(`/invites/batches/${batchId}/pause`, { reason }).then((r) => r.data),
+    onSuccess: () => {
+      toast.success('Wave paused. Nothing further will send until you resume it.');
+      invalidateSend();
+    },
+    onError: (e: unknown) => toast.error(apiErrorMessage(e, 'Could not pause the wave.')),
+  });
+
+  const resumeWave = useMutation({
+    mutationFn: () => api.post(`/invites/batches/${batchId}/resume`).then((r) => r.data),
+    onSuccess: () => {
+      toast.success('Wave resumed.');
+      invalidateSend();
+    },
+    onError: (e: unknown) => toast.error(apiErrorMessage(e, 'Could not resume the wave.')),
+  });
+
   const counts = batch?.counts ?? {};
   const readyCount = counts.PENDING ?? 0;
 
@@ -281,6 +334,104 @@ export default function ImportBatchPage() {
                   the public site. <strong>Nothing is emailed.</strong>
                 </p>
               </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── Invites ──────────────────────────────────────────────────── */}
+        {batch?.status === 'COMMITTED' && sendStats && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex flex-wrap items-center gap-3">
+                <Send className="h-4 w-4" /> Invites
+                {sendStats.mode === 'live' ? (
+                  <Badge variant="outline" className="border-red-200 bg-red-100 text-red-800">
+                    LIVE — real practitioners
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="border-amber-200 bg-amber-100 text-amber-800">
+                    Test mode — redirected
+                  </Badge>
+                )}
+                <Badge variant="outline">{sendStats.inviteState.toLowerCase()}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {sendStats.mode === 'live' ? (
+                <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                  Every invite queued here goes to a real practitioner who never asked
+                  to hear from us. There is no undo.
+                </p>
+              ) : (
+                <p className="rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-600">
+                  Invites are being redirected to the test address. Claim and
+                  unsubscribe links in them are real and will work.
+                </p>
+              )}
+
+              {sendStats.inviteState === 'PAUSED' && sendStats.pauseReason && (
+                <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                  <strong>Paused.</strong> {sendStats.pauseReason}
+                </div>
+              )}
+
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+                {(['QUEUED', 'SENT', 'DELIVERED', 'BOUNCED', 'COMPLAINED', 'FAILED', 'SKIPPED'] as const).map(
+                  (key) => (
+                    <div key={key} className="rounded-lg border p-3">
+                      <div className="text-xl font-semibold tabular-nums text-gray-900">
+                        {sendStats.counts[key] ?? 0}
+                      </div>
+                      <div className="text-[11px] uppercase tracking-wide text-gray-500">
+                        {key.toLowerCase()}
+                      </div>
+                    </div>
+                  ),
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3 border-t pt-4">
+                <Button
+                  onClick={() => queueWave.mutate('personal')}
+                  disabled={queueWave.isPending || sendStats.inviteState === 'PAUSED'}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  {queueWave.isPending ? 'Queueing…' : 'Queue personal addresses'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => queueWave.mutate('role-inbox')}
+                  disabled={queueWave.isPending || sendStats.inviteState === 'PAUSED'}
+                >
+                  Queue role inboxes
+                </Button>
+                {sendStats.inviteState === 'PAUSED' ? (
+                  <Button variant="outline" onClick={() => resumeWave.mutate()} disabled={resumeWave.isPending}>
+                    Resume
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="text-red-600"
+                    onClick={() => {
+                      const reason = window.prompt('Why are you pausing this wave?', '');
+                      if (reason !== null) pauseWave.mutate(reason);
+                    }}
+                    disabled={pauseWave.isPending}
+                  >
+                    <Pause className="mr-1.5 h-3.5 w-3.5" /> Pause
+                  </Button>
+                )}
+              </div>
+
+              <p className="text-xs text-gray-500">
+                {sendStats.remainingToday} left in today&apos;s cap ·{' '}
+                {sendStats.withinSendWindow
+                  ? 'inside the send window'
+                  : 'outside the send window — queued mail waits'}{' '}
+                · {sendStats.claimed} claimed so far. Role inboxes reach a front desk,
+                so they go last, once the domain has a reputation.
+              </p>
             </CardContent>
           </Card>
         )}

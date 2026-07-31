@@ -16,6 +16,9 @@ async function bootstrap() {
   // (signature verification needs the exact bytes, before JSON parsing).
   app.use('/api/v1/payments/webhook', express.raw({ type: 'application/json' }));
   app.use('/api/v1/verification/stripe-identity/webhook', express.raw({ type: 'application/json' }));
+  // Resend signs practitioner-invite delivery events with Svix, verified over
+  // the raw bytes — parsing first would change them and fail every check.
+  app.use('/api/v1/invites/webhook/resend', express.raw({ type: 'application/json' }));
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
