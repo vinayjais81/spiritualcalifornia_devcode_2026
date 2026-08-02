@@ -34,6 +34,19 @@ api.interceptors.request.use((config) => {
     if (token) config.headers.Authorization = `Bearer ${token}`;
     config.headers['x-session-id'] = getOrCreateCartSessionId();
   }
+
+  // File uploads must NOT inherit the instance-wide JSON content type above.
+  // axios v1 checks the declared content type before serialising: with
+  // `application/json` set it runs FormData through `formDataToJSON()` and
+  // JSON.stringify's the result, so the File silently collapses to `{}` and
+  // the real bytes are never sent. The server then sees an ordinary JSON body
+  // and rejects it (`property file should not exist` from forbidNonWhitelisted)
+  // instead of a multipart upload. Deleting the header lets the browser set
+  // `multipart/form-data` with its boundary.
+  if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+    config.headers.delete('Content-Type');
+  }
+
   return config;
 });
 
