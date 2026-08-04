@@ -23,7 +23,10 @@
     "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts",
     "seed:pages": "ts-node -r tsconfig-paths/register prisma/seed-static-pages.ts",
     "backfill:ledger:verify": "ts-node -r tsconfig-paths/register scripts/backfill-ledger.ts --mode=verify",
-    "backfill:ledger:write": "ts-node -r tsconfig-paths/register scripts/backfill-ledger.ts --mode=write"
+    "backfill:ledger:write": "ts-node -r tsconfig-paths/register scripts/backfill-ledger.ts --mode=write",
+    "purge:report": "ts-node -r tsconfig-paths/register scripts/purge-demo-data.ts --mode=report",
+    "purge:trial": "ts-node -r tsconfig-paths/register scripts/purge-demo-data.ts --mode=trial",
+    "purge:execute": "ts-node -r tsconfig-paths/register scripts/purge-demo-data.ts --mode=execute"
   },
   "prisma": {
     "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts"
