@@ -146,64 +146,116 @@ async function resolveSurvivors(): Promise<{ keepIds: string[]; purgeIds: string
 
 // ─── Report ──────────────────────────────────────────────────────────────────
 
+interface PlanStep {
+  model: string;
+  /** Prisma filter. `{}` means the whole table. */
+  where: Record<string, unknown>;
+  scope: string;
+}
+
 /**
- * Every table the purge touches, in a stable display order. `scope` documents
- * what the execute phase does so the report and the delete can't drift apart.
+ * The single definition of what this script touches — consumed by BOTH the
+ * report (as `count({ where })`) and the purge (as `deleteMany({ where })`).
+ *
+ * Sharing one list is the point. When the report built its own unscoped counts
+ * it overstated every scoped table and implied the platform-default commission
+ * rows were about to be deleted when they were not. A report that disagrees
+ * with the delete is worse than no report before an irreversible operation.
+ *
+ * Order is load-bearing — see the commentary on `purge()`.
  */
-const TABLES: Array<{ model: string; scope: string }> = [
-  { model: 'review', scope: 'all' },
-  { model: 'payoutAuditLog', scope: 'all' },
-  { model: 'reconciliationMismatch', scope: 'all' },
-  { model: 'ledgerEntry', scope: 'all' },
-  { model: 'payment', scope: 'all' },
-  { model: 'payoutRequest', scope: 'all' },
-  { model: 'payoutAccount', scope: 'all' },
-  { model: 'guideSubscription', scope: 'all' },
-  { model: 'bookingConsent', scope: 'all' },
-  { model: 'tourBookingTraveler', scope: 'all' },
-  { model: 'tourBooking', scope: 'all' },
-  { model: 'orderItem', scope: 'all' },
-  { model: 'order', scope: 'all' },
-  { model: 'ticketPurchase', scope: 'all' },
-  { model: 'booking', scope: 'all' },
-  { model: 'serviceSlot', scope: 'all' },
-  { model: 'service', scope: 'all' },
-  { model: 'availability', scope: 'all' },
-  { model: 'eventTicketTier', scope: 'all' },
-  { model: 'event', scope: 'all' },
-  { model: 'tourItineraryDay', scope: 'all' },
-  { model: 'tourDeparture', scope: 'all' },
-  { model: 'tourRoomType', scope: 'all' },
-  { model: 'soulTour', scope: 'all' },
-  { model: 'productVariant', scope: 'all' },
-  { model: 'product', scope: 'all' },
-  { model: 'blogPost', scope: 'all' },
-  { model: 'credentialVerification', scope: 'all' },
-  { model: 'credential', scope: 'all' },
-  { model: 'guideMedia', scope: 'all' },
-  { model: 'guideCategory', scope: 'purged guides' },
-  { model: 'commissionRate', scope: 'per-guide overrides only' },
-  { model: 'testimonial', scope: 'all' },
-  { model: 'favorite', scope: 'all' },
-  { model: 'guideFollow', scope: 'all' },
-  { model: 'notification', scope: 'all' },
-  { model: 'cartItem', scope: 'all' },
-  { model: 'cart', scope: 'all' },
-  { model: 'identityVerification', scope: 'all (no FK — manual)' },
-  { model: 'scraperJob', scope: 'all' },
-  { model: 'stripeWebhookEvent', scope: 'all' },
-  { model: 'contactLead', scope: 'all' },
-  { model: 'promoCode', scope: keepPromos ? 'PRESERVED' : 'all' },
-  { model: 'emailSend', scope: 'all' },
-  { model: 'importedProspect', scope: 'all' },
-  { model: 'importBatch', scope: 'all' },
-  { model: 'auditLog', scope: purgeAllAudit ? 'all' : 'purged users only' },
-  { model: 'seekerProfile', scope: 'purged users' },
-  { model: 'guideProfile', scope: 'purged users' },
-  { model: 'userRole', scope: 'purged users' },
-  { model: 'refreshToken', scope: 'all (forces re-login)' },
-  { model: 'user', scope: 'purged users' },
-];
+function buildPlan(purgeIds: string[]): PlanStep[] {
+  const ofPurgedUsers = { userId: { in: purgeIds } };
+
+  const plan: PlanStep[] = [
+    // Money first: each holds a Restrict reference to the next.
+    { model: 'review', where: {}, scope: 'all' },
+    { model: 'payoutAuditLog', where: {}, scope: 'all' },
+    { model: 'reconciliationMismatch', where: {}, scope: 'all' },
+    { model: 'ledgerEntry', where: {}, scope: 'all' },
+    { model: 'payment', where: {}, scope: 'all' },
+    { model: 'payoutRequest', where: {}, scope: 'all' },
+    { model: 'payoutAccount', where: {}, scope: 'all' },
+    { model: 'guideSubscription', where: {}, scope: 'all' },
+
+    // Transactions.
+    { model: 'bookingConsent', where: {}, scope: 'all' },
+    { model: 'tourBookingTraveler', where: {}, scope: 'all' },
+    { model: 'tourBooking', where: {}, scope: 'all' },
+    { model: 'orderItem', where: {}, scope: 'all' },
+    { model: 'order', where: {}, scope: 'all' },
+    { model: 'ticketPurchase', where: {}, scope: 'all' },
+    { model: 'booking', where: {}, scope: 'all' },
+
+    // Catalogue.
+    { model: 'serviceSlot', where: {}, scope: 'all' },
+    { model: 'service', where: {}, scope: 'all' },
+    { model: 'availability', where: {}, scope: 'all' },
+    { model: 'eventTicketTier', where: {}, scope: 'all' },
+    { model: 'event', where: {}, scope: 'all' },
+    { model: 'tourItineraryDay', where: {}, scope: 'all' },
+    { model: 'tourDeparture', where: {}, scope: 'all' },
+    { model: 'tourRoomType', where: {}, scope: 'all' },
+    { model: 'soulTour', where: {}, scope: 'all' },
+    { model: 'productVariant', where: {}, scope: 'all' },
+    { model: 'product', where: {}, scope: 'all' },
+    { model: 'blogPost', where: {}, scope: 'all' },
+    { model: 'credentialVerification', where: {}, scope: 'all' },
+    { model: 'credential', where: {}, scope: 'all' },
+    { model: 'guideMedia', where: {}, scope: 'all' },
+    {
+      model: 'guideCategory',
+      where: { guide: { userId: { in: purgeIds } } },
+      scope: 'purged guides',
+    },
+
+    // Per-guide overrides only. Rows with a null guideId are the platform
+    // defaults (20% / 10% Products) and must survive.
+    {
+      model: 'commissionRate',
+      where: { guideId: { not: null } },
+      scope: 'per-guide overrides only',
+    },
+
+    // Social and session state. Cart and IdentityVerification have no FK to
+    // User and would otherwise survive as orphans.
+    { model: 'testimonial', where: {}, scope: 'all' },
+    { model: 'favorite', where: {}, scope: 'all' },
+    { model: 'guideFollow', where: {}, scope: 'all' },
+    { model: 'notification', where: {}, scope: 'all' },
+    { model: 'cartItem', where: {}, scope: 'all' },
+    { model: 'cart', where: {}, scope: 'all' },
+    { model: 'identityVerification', where: {}, scope: 'all (no FK — manual)' },
+    { model: 'scraperJob', where: {}, scope: 'all' },
+    { model: 'stripeWebhookEvent', where: {}, scope: 'all' },
+    { model: 'contactLead', where: {}, scope: 'all' },
+  ];
+
+  if (!keepPromos) plan.push({ model: 'promoCode', where: {}, scope: 'all' });
+
+  // Outreach. EmailSuppression is deliberately absent: it is the
+  // "never contact this address again" tombstone.
+  plan.push(
+    { model: 'emailSend', where: {}, scope: 'all' },
+    { model: 'importedProspect', where: {}, scope: 'all' },
+    { model: 'importBatch', where: {}, scope: 'all' },
+    {
+      model: 'auditLog',
+      where: purgeAllAudit ? {} : { userId: { in: purgeIds } },
+      scope: purgeAllAudit ? 'all' : 'purged users only',
+    },
+
+    // Profiles, then the users themselves. userRole cascades from User but is
+    // listed explicitly so the run accounts for all 61 tables, not 60.
+    { model: 'seekerProfile', where: ofPurgedUsers, scope: 'purged users' },
+    { model: 'guideProfile', where: ofPurgedUsers, scope: 'purged users' },
+    { model: 'userRole', where: ofPurgedUsers, scope: 'purged users' },
+    { model: 'refreshToken', where: {}, scope: 'all (forces re-login)' },
+    { model: 'user', where: { id: { in: purgeIds } }, scope: 'purged users' },
+  );
+
+  return plan;
+}
 
 /** Config and reference data that must survive — asserted after execute. */
 const PRESERVED = [
@@ -239,17 +291,18 @@ async function report(purgeIds: string[], keepIds: string[]) {
 
   heading('Rows to delete');
   let total = 0;
-  for (const { model, scope } of TABLES) {
-    if (scope === 'PRESERVED') {
-      row(model, dim('preserved'));
-      continue;
-    }
-    const delegate = (prisma as any)[model];
-    const count: number = await delegate.count();
+  // Counted with the *same* filter the delete will use, so this total is what
+  // actually disappears — not the table's size.
+  for (const { model, where, scope } of buildPlan(purgeIds)) {
+    const count: number = await (prisma as any)[model].count({ where });
     total += count;
     row(model, `${count} ${dim(`(${scope})`)}`);
   }
   console.log(`  ${bold('TOTAL'.padEnd(34, '.'))} ${total}`);
+
+  if (keepPromos) {
+    row('promoCode', dim('preserved (--keep-promos)'));
+  }
 
   heading('Preserved tables');
   for (const model of PRESERVED) {
@@ -369,86 +422,13 @@ class TrialRollback extends Error {
 async function purge(purgeIds: string[]): Promise<Record<string, number>> {
   const counts: Record<string, number> = {};
 
+  const plan = buildPlan(purgeIds);
+
   const run = async (tx: any) => {
-    const del = async (model: string, where: any = {}) => {
+    for (const { model, where } of plan) {
       const res = await tx[model].deleteMany({ where });
       counts[model] = res.count;
-    };
-
-    // ── Money first. Ledger before payment before payout account, because each
-    //    holds a Restrict reference to the next.
-    await del('review');
-    await del('payoutAuditLog');
-    await del('reconciliationMismatch');
-    await del('ledgerEntry');
-    await del('payment');
-    await del('payoutRequest');
-    await del('payoutAccount');
-    await del('guideSubscription');
-
-    // ── Transactions.
-    await del('bookingConsent');
-    await del('tourBookingTraveler');
-    await del('tourBooking');
-    await del('orderItem');
-    await del('order');
-    await del('ticketPurchase');
-    await del('booking');
-
-    // ── Catalogue.
-    await del('serviceSlot');
-    await del('service');
-    await del('availability');
-    await del('eventTicketTier');
-    await del('event');
-    await del('tourItineraryDay');
-    await del('tourDeparture');
-    await del('tourRoomType');
-    await del('soulTour');
-    await del('productVariant');
-    await del('product');
-    await del('blogPost');
-    await del('credentialVerification');
-    await del('credential');
-    await del('guideMedia');
-    await del('guideCategory', { guide: { userId: { in: purgeIds } } });
-
-    // ── Per-guide commission overrides only. Rows with a null guideId are the
-    //    platform defaults (20% / 10% Products); deleting those would silently
-    //    fall the whole platform back to the env var.
-    await del('commissionRate', { guideId: { not: null } });
-
-    // ── Social and session state. Cart and IdentityVerification have no FK to
-    //    User, so they would survive as orphans if left to cascade.
-    await del('testimonial');
-    await del('favorite');
-    await del('guideFollow');
-    await del('notification');
-    await del('cartItem');
-    await del('cart');
-    await del('identityVerification');
-    await del('scraperJob');
-    await del('stripeWebhookEvent');
-    await del('contactLead');
-    if (!keepPromos) await del('promoCode');
-
-    // ── Outreach. EmailSuppression is deliberately absent: it is the
-    //    "never contact this address again" tombstone, and dropping it would
-    //    let a future re-import email people who already unsubscribed.
-    await del('emailSend');
-    await del('importedProspect');
-    await del('importBatch');
-
-    await del('auditLog', purgeAllAudit ? {} : { userId: { in: purgeIds } });
-
-    // ── Profiles, then the users themselves.
-    await del('seekerProfile', { userId: { in: purgeIds } });
-    await del('guideProfile', { userId: { in: purgeIds } });
-    // Cascades from User anyway; deleted explicitly so the run report accounts
-    // for all 61 tables rather than 60 with one silently implied.
-    await del('userRole', { userId: { in: purgeIds } });
-    await del('refreshToken');
-    await del('user', { id: { in: purgeIds } });
+    }
 
     if (mode === 'trial') throw new TrialRollback(counts);
   };
