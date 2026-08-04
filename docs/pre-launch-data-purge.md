@@ -198,6 +198,21 @@ database.
 | `--stripe=off\|report\|execute` | Stripe-side cleanup (default: `report`) |
 | `--allow-live-stripe` | Required before any write against an `sk_live` key |
 
+### `--mode=stripe-only`
+Replays Stripe cleanup from a manifest written by an earlier `execute` run,
+without touching the database:
+
+```bash
+npm run purge:stripe -- --manifest=scripts/.purge-artifacts/purge-<stamp>.json --stripe=execute
+```
+
+This mode exists because `--stripe` defaults to `report`. An `execute` run that
+does not pass `--stripe=execute` leaves the Connect accounts alive, and simply
+re-running the script cannot fix it: the manifest is built by querying
+`GuideProfile` rows, and once the purge commits those rows — and the only copy
+of their `stripeAccountId` — are gone. The manifest on disk is the sole
+remaining record, so it is the only viable input.
+
 ### Ordering: database first, Stripe second
 
 Stripe cleanup runs **after** the database commits, driven by a manifest written

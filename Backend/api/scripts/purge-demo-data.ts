@@ -45,12 +45,12 @@ import { PrismaClient, Role } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import Stripe from 'stripe';
-import { writeFileSync, mkdirSync } from 'fs';
+import { writeFileSync, readFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 
 // ─── Arguments ───────────────────────────────────────────────────────────────
 
-type Mode = 'report' | 'trial' | 'execute';
+type Mode = 'report' | 'trial' | 'execute' | 'stripe-only';
 type StripeMode = 'off' | 'report' | 'execute';
 
 const args = process.argv.slice(2);
@@ -60,7 +60,16 @@ const has = (name: string): boolean => args.includes(`--${name}`);
 
 const modeArg = flag('mode');
 const mode: Mode =
-  modeArg === 'execute' ? 'execute' : modeArg === 'trial' ? 'trial' : 'report';
+  modeArg === 'execute'
+    ? 'execute'
+    : modeArg === 'trial'
+      ? 'trial'
+      : modeArg === 'stripe-only'
+        ? 'stripe-only'
+        : 'report';
+
+/** Path to a manifest from a previous execute run, for `--mode=stripe-only`. */
+const manifestPath = flag('manifest');
 
 const stripeArg = flag('stripe');
 const stripeMode: StripeMode =
@@ -566,6 +575,38 @@ async function verify(keepIds: string[]) {
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
+  // Replay Stripe cleanup from a manifest written by an earlier execute run.
+  // Necessary because the manifest is built by querying GuideProfile rows —
+  // once the purge commits, those rows are gone and the account ids exist
+  // nowhere else. The database is never touched in this mode.
+  if (mode === 'stripe-only') {
+    if (!manifestPath) {
+      console.error(
+        red('\nREFUSED: --mode=stripe-only requires --manifest=<path>.') +
+          '\nUse the manifest printed by the execute run, under scripts/.purge-artifacts/.\n',
+      );
+      process.exit(1);
+    }
+    const saved: StripeManifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+
+    heading('Target');
+    row('Manifest', manifestPath);
+    row('Recorded at', saved.createdAt);
+    row('Recorded database', saved.database);
+    if (saved.database !== target.database) {
+      console.log(
+        yellow(
+          `  WARNING this manifest was written against "${saved.database}" but ` +
+            `DATABASE_URL points at "${target.database}".`,
+        ),
+      );
+    }
+
+    await cleanupStripe(saved);
+    console.log(`\n${green(bold('Stripe replay complete.'))}\n`);
+    return;
+  }
+
   const { keepIds, purgeIds } = await resolveSurvivors();
 
   if (keepIds.length === 0) {

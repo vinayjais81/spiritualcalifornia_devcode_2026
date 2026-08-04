@@ -26,7 +26,8 @@
     "backfill:ledger:write": "ts-node -r tsconfig-paths/register scripts/backfill-ledger.ts --mode=write",
     "purge:report": "ts-node -r tsconfig-paths/register scripts/purge-demo-data.ts --mode=report",
     "purge:trial": "ts-node -r tsconfig-paths/register scripts/purge-demo-data.ts --mode=trial",
-    "purge:execute": "ts-node -r tsconfig-paths/register scripts/purge-demo-data.ts --mode=execute"
+    "purge:execute": "ts-node -r tsconfig-paths/register scripts/purge-demo-data.ts --mode=execute",
+    "purge:stripe": "ts-node -r tsconfig-paths/register scripts/purge-demo-data.ts --mode=stripe-only"
   },
   "prisma": {
     "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts"
