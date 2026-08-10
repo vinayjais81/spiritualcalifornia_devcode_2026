@@ -101,6 +101,33 @@ their handoff argues.
 
 Severity-ranked. Items 1–4 are blocking.
 
+### ✅ RESOLVED — client decisions, 2026-08-07
+
+Lana confirmed in discussion:
+
+- **No author identifier in the URL.** `/journal/{authorName}/{slug}` is not wanted.
+  Flat permanent slugs, exactly as the package assumes. This settles gap 1 below.
+- **No editorial/practitioner distinction in behaviour.** A post by an admin and a
+  post by a practitioner are the same kind of object. The *only* requirement is that
+  the database records **who wrote it**.
+- **The initial 124 are posted by SuperAdmin.**
+
+Note the scope of the first point: it concerns the **author segment**, not the
+**series prefix**. Keeping `/journal/`, `/clinic/` and `/what-to-do/` is consistent
+with what she asked for — see gap 2a.
+
+### ✅ RESOLVED — images delivered, 2026-08-10
+
+All 124 hero images supplied in `Images/{journal,what-to-do,clinic}/`. Verified:
+
+- **124 files, 124 articles, exact 1:1 match** — zero missing, zero orphaned
+- **Every file is 1536×1024 WebP** — fully conformant to §5 of the style spec
+- Filenames equal slugs exactly, so the self-wiring contract holds
+- **19 MB total** (journal 8.2 MB, what-to-do 6.5 MB, clinic 3.9 MB), ~155 KB average
+
+Gap 9 (missing images) is closed. The placeholder fallback is still worth building
+for future articles, but nothing is blocked on it.
+
 ### 🔴 1. Route structure is incompatible
 
 Current public route is `/journal/{guideSlug}/{postSlug}` — every post is nested
@@ -112,6 +139,22 @@ package requires globally permanent slugs.
 → Flat routes for all three series, global slug uniqueness, `/journal/{guideSlug}/{postSlug}`
 retained as a redirect so existing practitioner links survive.
 
+### 🔴 2a. Global slug uniqueness is a behaviour change for guides
+
+Flat URLs require slugs unique across the whole table. Today `@@unique([guideId, slug])`
+scopes them per author, so two practitioners can each publish `my-healing-journey`.
+Under flat routing the second must be auto-suffixed at authoring time.
+
+**The window to do this is now and it is free.** The journal is currently empty —
+all 9 posts were deleted in the 2026-08-04 purge — so changing the URL structure
+today breaks zero live links and needs zero redirects. Every week practitioners
+publish under the old scheme adds migration cost that does not currently exist.
+
+Separately: keeping three series prefixes is *not* in conflict with "no author in the
+URL". If the client instead wants everything under a single `/journal/` namespace,
+**159 of the 255 internal cross-links break** (143 `/clinic/`, 16 `/what-to-do/`) and
+would need mechanical rewriting. Confirm before building.
+
 ### 🔴 2. Scheduled publishing does not exist
 
 `blog.service.ts` filters public reads on `isPublished: true` **only** — there is no
@@ -122,6 +165,23 @@ would dump the entire 2.5-year calendar on day one.
 → Add `publishedAt: { lte: new Date() }` to every public read, and allow the
 importer to set future dates. No impact on guide posts, which always publish at
 `now`.
+
+**This directly conflicts with "launch the website with blogs".** The calendar is a
+strict weekly drip — one article every Tuesday from 2026-08-04 to 2028-12-26. Honoured
+literally, **exactly 1 of 124 articles is visible today**, reaching only ~4 by the end
+of August. A launch set has to be chosen deliberately; see §7 decision 1.
+
+### 🔴 3a. Nothing in the schema records who wrote a post
+
+The client's one stated requirement — track the author in the database — is the thing
+that does not currently exist. `BlogPost` has **no `User` reference at all**; the only
+author link is `guideId → GuideProfile → User`, so an admin-authored post is
+attributable only via the shell-profile workaround, and an editorial post has no
+author record whatsoever.
+
+→ Add `authorUserId String?` referencing `User` (set on every post regardless of
+kind) alongside `authorKind`. This is what satisfies her requirement literally, and
+it survives guide-profile deletion because it is independent of `guideId`.
 
 ### 🔴 3. `BlogPost.guideId` is required — editorial articles have no guide
 
@@ -296,9 +356,18 @@ link resolution, `verifiedAsOf` staleness warning, external link checker.
 
 ## 7. Decisions needed before Phase 1
 
-1. **Publishing calendar** — honour `publishedAt` as a genuine 2.5-year drip
-   (recommended: it is clearly deliberate), publish all 124 immediately, or compress
-   the schedule?
+1. **Publishing calendar — now the launch-blocking decision.** The dates are a strict
+   weekly Tuesday drip, 2026-08-04 → 2028-12-26. Honoured literally the site launches
+   with **1 article**. Three options:
+   - **(a) Literal** — 1 live today. Almost certainly not the intent.
+   - **(b) Launch tranche + drip** *(recommended)* — publish a curated set now (e.g.
+     all 50 Journal articles, which need no crisis page), keep the remainder on the
+     weekly schedule. Preserves the cadence the calendar was designed for while giving
+     the launch real depth.
+   - **(c) Publish all 124 at once** — dumps 164,429 words with no ongoing cadence, and
+     is blocked anyway for the 41 What To Do articles until the crisis page ships.
+
+   Needs Lana's call on the size and composition of the launch set.
 2. **Editorial-only categories** — 32 articles sit in clinical topics with no
    marketplace equivalent. Editorial-only taxonomy (recommended) or new categories?
 3. **Practitioner CTA fallback** — what does an article on Trauma Treatment link to?
