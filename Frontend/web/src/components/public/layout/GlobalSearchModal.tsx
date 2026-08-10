@@ -251,7 +251,7 @@ export function GlobalSearchModal({
                       imageUrl={b.coverImageUrl}
                       title={b.title}
                       subtitle={`by ${b.guideName}`}
-                      onClick={() => goTo(`/journal/${b.guideSlug}/${b.slug}`)}
+                      onClick={() => goTo(`/journal/${b.slug}`)}
                     />
                   ))}
                 </Section>

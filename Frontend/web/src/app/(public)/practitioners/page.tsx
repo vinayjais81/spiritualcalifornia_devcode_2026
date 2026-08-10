@@ -500,7 +500,7 @@ function SectionHead({ title, badge }: { title: string; badge?: string }) {
 function FeaturedCard({ guide }: { guide: Guide }) {
   const post = guide.blogPosts?.[0];
   const img = post?.coverImageUrl || pickFallbackImage(guide.slug);
-  const postHref = post ? `/journal/${guide.slug}/${post.slug}` : `/guides/${guide.slug}`;
+  const postHref = post ? `/journal/${post.slug}` : `/guides/${guide.slug}`;
   const primaryMod = guide.modalities?.[0] || 'Practitioner';
 
   return (

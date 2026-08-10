@@ -13,11 +13,14 @@ interface BlogPost {
   coverImageUrl: string | null;
   tags: string[];
   publishedAt: string | null;
+  /** Null for editorial articles, which belong to the publication. */
   guide: {
     slug: string;
     displayName: string;
     user: { avatarUrl: string | null };
-  };
+  } | null;
+  authorName?: string | null;
+  readTime?: string | null;
 }
 
 const filterTabs = ['All', 'Spiritual Practices', 'Sound Healing', 'Meditation', 'Wellness', 'Sacred Living'];
@@ -38,11 +41,17 @@ function adaptSearchHit(hit: any): BlogPost {
     coverImageUrl: hit.coverImageUrl,
     tags: hit.tags ?? [],
     publishedAt: hit.publishedAt,
-    guide: {
-      slug: hit.guideSlug,
-      displayName: hit.guideName,
-      user: { avatarUrl: hit.guideAvatarUrl },
-    },
+    // Editorial hits come back with no guide (the FTS query LEFT JOINs), and
+    // guideName is COALESCEd to the editorial byline. Returning a half-built
+    // guide object with a null slug would produce a link to /guides/null.
+    guide: hit.guideSlug
+      ? {
+          slug: hit.guideSlug,
+          displayName: hit.guideName,
+          user: { avatarUrl: hit.guideAvatarUrl },
+        }
+      : null,
+    authorName: hit.guideName ?? null,
   };
 }
 
@@ -203,16 +212,15 @@ export default function JournalPage() {
         {/* Featured Hero */}
         {featured && (
           <FeaturedHero
-            guideSlug={featured.guide.slug}
             postSlug={featured.slug}
             title={featured.title}
             excerpt={featured.excerpt || undefined}
             coverImageUrl={featured.coverImageUrl || undefined}
             category={featured.tags[0]}
-            authorName={featured.guide.displayName}
-            authorAvatar={featured.guide.user.avatarUrl || undefined}
+            authorName={featured.guide?.displayName ?? featured.authorName ?? 'Spiritual California'}
+            authorAvatar={featured.guide?.user.avatarUrl || undefined}
             publishedAt={featured.publishedAt ? formatDate(featured.publishedAt) : ''}
-            readTime="8 min read"
+            readTime={featured.readTime ?? '8 min read'}
           />
         )}
 
@@ -245,23 +253,22 @@ export default function JournalPage() {
             background: '#FEF7F0', border: '1px solid rgba(240,120,20,0.2)', borderRadius: 16,
             color: '#8A8278', fontSize: 14,
           }}>
-            No articles yet. Check back soon — new stories land here from our verified practitioners.
+            No articles yet. Check back soon — new writing lands here from our editorial team and our verified practitioners.
           </div>
         ) : (
           <div className="sc-cards-3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 28 }}>
             {remaining.map((post) => (
               <PostCard
                 key={post.id}
-                guideSlug={post.guide.slug}
                 postSlug={post.slug}
                 title={post.title}
                 excerpt={post.excerpt || undefined}
                 coverImageUrl={post.coverImageUrl || undefined}
                 category={post.tags[0]}
-                authorName={post.guide.displayName}
-                authorAvatar={post.guide.user.avatarUrl || undefined}
+                authorName={post.guide?.displayName ?? post.authorName ?? 'Spiritual California'}
+                authorAvatar={post.guide?.user.avatarUrl || undefined}
                 publishedAt={post.publishedAt ? formatDate(post.publishedAt) : ''}
-                readTime="5 min read"
+                readTime={post.readTime ?? '5 min read'}
               />
             ))}
           </div>

@@ -4,7 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 
 interface PostCardProps {
-  guideSlug: string;
+  /** Unused since routing went flat; kept optional so callers need not pass it. */
+  guideSlug?: string;
   postSlug: string;
   title: string;
   excerpt?: string;
@@ -26,7 +27,7 @@ export function PostCard({
 
   return (
     <Link
-      href={`/journal/${guideSlug}/${postSlug}`}
+      href={`/journal/${postSlug}`}
       style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}

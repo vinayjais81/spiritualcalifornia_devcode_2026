@@ -3,7 +3,8 @@
 import Link from 'next/link';
 
 interface FeaturedHeroProps {
-  guideSlug: string;
+  /** Unused since routing went flat; kept optional so callers need not pass it. */
+  guideSlug?: string;
   postSlug: string;
   title: string;
   excerpt?: string;
@@ -21,7 +22,7 @@ export function FeaturedHero({
 }: FeaturedHeroProps) {
   return (
     <Link
-      href={`/journal/${guideSlug}/${postSlug}`}
+      href={`/journal/${postSlug}`}
       style={{ textDecoration: 'none', color: 'inherit', display: 'block', marginBottom: 40 }}
     >
       <div style={{

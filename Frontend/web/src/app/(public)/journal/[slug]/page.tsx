@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
-import { normalizePostContent } from '@/lib/postContent';
+import { renderArticleBody, estimateReadTime } from '@/lib/articleContent';
 import { useAuthStore } from '@/store/auth.store';
 import { ReadingProgressBar } from '@/components/public/journal/ReadingProgressBar';
 import { AuthorBioCard } from '@/components/public/journal/AuthorBioCard';
@@ -21,6 +21,11 @@ interface BlogPost {
   tags: string[];
   publishedAt: string | null;
   applauseCount: number;
+  /**
+   * Null for editorial articles, which belong to the publication rather than to
+   * a practitioner. Everything guide-shaped on this page — the bio card, the
+   * follow button, the author link — has to tolerate that.
+   */
   guide: {
     id: string;
     slug: string;
@@ -28,7 +33,18 @@ interface BlogPost {
     tagline: string | null;
     bio: string | null;
     user: { avatarUrl: string | null };
-  };
+  } | null;
+  // Editorial fields; absent on practitioner posts.
+  contentFormat?: 'HTML' | 'MARKDOWN' | null;
+  authorName?: string | null;
+  authorRole?: string | null;
+  dek?: string | null;
+  readTime?: string | null;
+  heroAlt?: string | null;
+  categoryLabel?: string | null;
+  healthAdjacent?: boolean;
+  // evidenceTier is deliberately absent — the API strips it. It must never
+  // render. See docs/journal-content-library-strategy.md.
 }
 
 interface RelatedPostApi {
@@ -47,8 +63,9 @@ function formatDate(dateStr: string) {
 
 export default function SinglePostPage() {
   const params = useParams();
-  const guideSlug = params.guideSlug as string;
-  const postSlug = params.postSlug as string;
+  // Flat routing: /journal/{slug}, no author segment. Slugs are globally
+  // unique so editorial and practitioner posts share one address space.
+  const postSlug = params.slug as string;
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [related, setRelated] = useState<RelatedPostApi[]>([]);
@@ -65,7 +82,7 @@ export default function SinglePostPage() {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const res = await api.get(`/blog/${guideSlug}/${postSlug}`);
+        const res = await api.get(`/blog/${postSlug}`);
         setPost(res.data);
       } catch {
         setPost(null);
@@ -74,7 +91,7 @@ export default function SinglePostPage() {
       }
     };
     fetchPost();
-  }, [guideSlug, postSlug]);
+  }, [postSlug]);
 
   // Related posts: best-effort, silently empty if the endpoint isn't live.
   useEffect(() => {
@@ -101,7 +118,8 @@ export default function SinglePostPage() {
 
   // Load the current user's follow state for this guide (signed-in only).
   useEffect(() => {
-    if (!post || !isAuthenticated) { setFollowing(false); return; }
+    // Editorial articles have no practitioner to follow.
+    if (!post?.guide || !isAuthenticated) { setFollowing(false); return; }
     api.get(`/guides/${post.guide.id}/follow-status`)
       .then((r) => setFollowing(!!r.data?.isFollowing))
       .catch(() => { /* non-critical */ });
@@ -126,10 +144,10 @@ export default function SinglePostPage() {
   };
 
   const handleFollow = async () => {
-    if (!post) return;
+    if (!post?.guide) return;
     if (!isAuthenticated) {
       toast.error('Sign in to follow this practitioner.');
-      router.push(`/signin?redirect=${encodeURIComponent(`/journal/${guideSlug}/${postSlug}`)}`);
+      router.push(`/signin?redirect=${encodeURIComponent(`/journal/${postSlug}`)}`);
       return;
     }
     if (followBusy) return;
@@ -160,11 +178,13 @@ export default function SinglePostPage() {
 
   if (!post) return <div style={{ padding: 100, textAlign: 'center' }}>Post not found</div>;
 
-  // Legacy seeded posts stored Tiptap JSON in `content`; normalise to HTML so
-  // the body renders as markup rather than raw JSON, and so the read-time
-  // estimate counts prose instead of JSON syntax.
-  const bodyHtml = normalizePostContent(post.content);
-  const readTime = `${Math.max(1, Math.ceil(bodyHtml.replace(/<[^>]+>/g, '').split(/\s+/).filter(Boolean).length / 200))} min read`;
+  // Imported articles are Markdown; guide posts are HTML from the dashboard
+  // editor (with some legacy Tiptap JSON rows that get repaired). contentFormat
+  // decides, so nothing has to sniff the content.
+  const bodyHtml = renderArticleBody(post.content, post.contentFormat);
+  // Editorial articles carry an authored read time; fall back to a word count.
+  const readTime = post.readTime ?? estimateReadTime(bodyHtml);
+  const byline = post.guide?.displayName ?? post.authorName ?? 'Spiritual California';
 
   // Share handlers — pure client-side, no backend needed. Twitter/LinkedIn
   // open the network's share-intent in a new tab; Copy Link writes the
@@ -227,42 +247,62 @@ export default function SinglePostPage() {
           display: 'flex', alignItems: 'center', gap: 14,
           paddingBottom: 32, borderBottom: '1px solid rgba(240,120,20,0.15)',
         }}>
-          <Link href={`/guides/${post.guide.slug}`} style={{ textDecoration: 'none' }}>
+          {/* Avatar links to the practitioner; editorial articles get the mark. */}
+          {post.guide ? (
+            <Link href={`/guides/${post.guide.slug}`} style={{ textDecoration: 'none' }}>
+              <div style={{
+                width: 52, height: 52, borderRadius: '50%', border: '2px solid #F07814',
+                overflow: 'hidden', background: '#FEF7F0',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                {post.guide.user.avatarUrl ? (
+                  <img src={post.guide.user.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 600, color: '#F07814' }}>
+                    {post.guide.displayName.split(' ').map(w => w[0]).join('').slice(0, 2)}
+                  </span>
+                )}
+              </div>
+            </Link>
+          ) : (
             <div style={{
               width: 52, height: 52, borderRadius: '50%', border: '2px solid #F07814',
-              overflow: 'hidden', background: '#FEF7F0',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: '#FEF7F0', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              {post.guide.user.avatarUrl ? (
-                <img src={post.guide.user.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 600, color: '#F07814' }}>
-                  {post.guide.displayName.split(' ').map(w => w[0]).join('').slice(0, 2)}
-                </span>
-              )}
+              <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 600, color: '#F07814' }}>
+                SC
+              </span>
             </div>
-          </Link>
+          )}
           <div style={{ flex: 1 }}>
-            <Link href={`/guides/${post.guide.slug}`} style={{ textDecoration: 'none' }}>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#3A3530' }}>{post.guide.displayName}</div>
-            </Link>
+            {post.guide ? (
+              <Link href={`/guides/${post.guide.slug}`} style={{ textDecoration: 'none' }}>
+                <div style={{ fontSize: 14, fontWeight: 500, color: '#3A3530' }}>{byline}</div>
+              </Link>
+            ) : (
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#3A3530' }}>{byline}</div>
+            )}
             <div style={{ fontSize: 12, color: '#8A8278' }}>
+              {post.authorRole ? `${post.authorRole} · ` : ''}
               {post.publishedAt && formatDate(post.publishedAt)} · {readTime}
             </div>
           </div>
-          <button
-            onClick={handleFollow}
-            disabled={followBusy}
-            style={{
-              padding: '7px 18px', borderRadius: 6,
-              background: following ? '#F07814' : 'transparent',
-              border: `1.5px solid ${following ? '#F07814' : 'rgba(240,120,20,0.3)'}`,
-              fontSize: 11, fontWeight: 500, color: following ? '#fff' : '#3A3530',
-              cursor: followBusy ? 'default' : 'pointer',
-            }}
-          >
-            {following ? 'Following' : 'Follow'}
-          </button>
+          {/* Nothing to follow on an editorial article. */}
+          {post.guide && (
+            <button
+              onClick={handleFollow}
+              disabled={followBusy}
+              style={{
+                padding: '7px 18px', borderRadius: 6,
+                background: following ? '#F07814' : 'transparent',
+                border: `1.5px solid ${following ? '#F07814' : 'rgba(240,120,20,0.3)'}`,
+                fontSize: 11, fontWeight: 500, color: following ? '#fff' : '#3A3530',
+                cursor: followBusy ? 'default' : 'pointer',
+              }}
+            >
+              {following ? 'Following' : 'Follow'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -366,17 +406,38 @@ export default function SinglePostPage() {
         </button>
       </div>
 
-      {/* Author Bio Card */}
-      <AuthorBioCard
-        slug={post.guide.slug}
-        name={post.guide.displayName}
-        tagline={post.guide.tagline || undefined}
-        bio={post.guide.bio || undefined}
-        avatarUrl={post.guide.user.avatarUrl || undefined}
-        isFollowing={following}
-        followBusy={followBusy}
-        onFollow={handleFollow}
-      />
+      {/*
+        Standing disclaimer, rendered by the template when healthAdjacent is
+        set — never hand-written into an article body, per §6 of the style spec.
+      */}
+      {post.healthAdjacent && (
+        <div style={{ maxWidth: 680, margin: '0 auto', padding: '0 24px 24px' }}>
+          <p className="journal-article__disclaimer" style={{
+            fontSize: 13, lineHeight: 1.6, color: '#8A8278', fontStyle: 'italic',
+            borderTop: '1px solid rgba(240,120,20,0.15)', paddingTop: 20, margin: 0,
+          }}>
+            Educational content, not medical advice. Talk to a qualified provider
+            about your situation. If you need support now, see{' '}
+            <Link href="/crisis-support" style={{ color: '#F07814', textDecoration: 'underline' }}>
+              crisis resources
+            </Link>.
+          </p>
+        </div>
+      )}
+
+      {/* Author Bio Card — practitioner posts only; editorial has no guide. */}
+      {post.guide && (
+        <AuthorBioCard
+          slug={post.guide.slug}
+          name={post.guide.displayName}
+          tagline={post.guide.tagline || undefined}
+          bio={post.guide.bio || undefined}
+          avatarUrl={post.guide.user.avatarUrl || undefined}
+          isFollowing={following}
+          followBusy={followBusy}
+          onFollow={handleFollow}
+        />
+      )}
 
       {/* Related Posts — only render if the /blog feed returned neighbours */}
       {related.length > 0 && (

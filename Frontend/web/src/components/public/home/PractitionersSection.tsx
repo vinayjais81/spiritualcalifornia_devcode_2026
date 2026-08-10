@@ -62,7 +62,7 @@ export function PractitionersSection({ guides, blogPosts }: Props) {
         avatarImage: p.guide.avatarUrl || '/images/logo.jpg',
         avatarAlt: p.guide.displayName,
         metaText: `${p.guide.displayName} · ${estimateReadTime(p.excerpt)}`,
-        href: `/journal/${p.guide.slug}/${p.slug}`,
+        href: `/journal/${p.slug}`,
       }))
     : [];
 

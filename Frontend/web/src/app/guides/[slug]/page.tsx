@@ -611,7 +611,7 @@ export default function GuideProfilePage() {
               <SectionTitle>From {guide.displayName.split(' ')[0]}&apos;s Journal</SectionTitle>
               <div className="sc-cards-2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                 {guide.blogPosts.slice(0, 4).map((post) => (
-                  <Link key={post.id} href={`/journal/${guide.slug}/${post.slug}`} style={{
+                  <Link key={post.id} href={`/journal/${post.slug}`} style={{
                     background: C.white, border: '1px solid rgba(240,120,20,0.12)',
                     borderRadius: '10px', overflow: 'hidden', textDecoration: 'none', color: 'inherit',
                     transition: 'box-shadow 0.3s, transform 0.3s', display: 'block',
