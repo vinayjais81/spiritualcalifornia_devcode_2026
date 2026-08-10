@@ -32,6 +32,11 @@ interface CategoryTab {
   count: number;
 }
 
+interface TopicChip {
+  tag: string;
+  count: number;
+}
+
 /**
  * Articles per page. The API clamps `limit` to 50 (see BlogController), so this
  * must stay at or below that — a larger value is silently reduced, which would
@@ -75,6 +80,11 @@ export default function JournalPage() {
   // Tabs come from the API rather than a literal, so they always describe what
   // is actually published.
   const [tabs, setTabs] = useState<CategoryTab[]>([]);
+  // Topic chips, aggregated server-side across the whole library. Deriving
+  // them from `posts` described only the page on screen and reshuffled on
+  // every search.
+  const [topics, setTopics] = useState<TopicChip[]>([]);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   // Pagination for the default listing. The library is 124 articles and
@@ -91,8 +101,14 @@ export default function JournalPage() {
   useEffect(() => {
     api
       .get('/blog/categories')
-      .then((res) => setTabs(res.data?.categories ?? []))
-      .catch(() => setTabs([]));
+      .then((res) => {
+        setTabs(res.data?.categories ?? []);
+        setTopics(res.data?.topics ?? []);
+      })
+      .catch(() => {
+        setTabs([]);
+        setTopics([]);
+      });
   }, []);
 
   // Debounce the search input so we don't fire a request on every keystroke.
@@ -105,18 +121,19 @@ export default function JournalPage() {
     const q = searchQuery.trim();
     const handle = setTimeout(async () => {
       try {
-        // A selected tab narrows both paths, so search and category compose
-        // rather than one silently overriding the other.
+        // Tab, chip and query all narrow both paths, so they compose rather
+        // than one silently overriding the others.
         const category = activeFilter === ALL_TAB ? undefined : activeFilter;
+        const tag = activeTag ?? undefined;
 
         if (q.length > 0) {
           // Server-side FTS — typo-tolerant via pg_trgm.
-          const res = await api.get('/search/blog', { params: { q, page: 0, category } });
+          const res = await api.get('/search/blog', { params: { q, page: 0, category, tag } });
           const hits = (res.data?.hits ?? []) as any[];
           if (!cancelled) setPosts(hits.map(adaptSearchHit));
         } else {
           // No query → default "latest posts" listing, first page.
-          const res = await api.get('/blog', { params: { page: 1, limit: PAGE_SIZE, category } });
+          const res = await api.get('/blog', { params: { page: 1, limit: PAGE_SIZE, category, tag } });
           if (!cancelled) {
             setPosts(res.data?.posts ?? []);
             setPage(1);
@@ -134,13 +151,7 @@ export default function JournalPage() {
       cancelled = true;
       clearTimeout(handle);
     };
-  }, [searchQuery, activeFilter]);
-
-  // Derive topic chips from the tags of posts we actually have. Avoids
-  // hardcoding a curated list that can drift from what's published.
-  const topics = Array.from(
-    new Set(posts.flatMap((p) => p.tags || [])),
-  ).slice(0, 10);
+  }, [searchQuery, activeFilter, activeTag]);
 
   const featured = posts[0];
   const remaining = posts.slice(1);
@@ -155,13 +166,14 @@ export default function JournalPage() {
     setLoadingMore(true);
     try {
       const next = page + 1;
-      // Must carry the active category, or page 2 would silently widen back to
-      // every article while the tab still reads as selected.
+      // Must carry the active narrowing, or page 2 would silently widen back to
+      // every article while the tab and chip still read as selected.
       const res = await api.get('/blog', {
         params: {
           page: next,
           limit: PAGE_SIZE,
           category: activeFilter === ALL_TAB ? undefined : activeFilter,
+          tag: activeTag ?? undefined,
         },
       });
       const incoming: BlogPost[] = res.data?.posts ?? [];
@@ -263,16 +275,38 @@ export default function JournalPage() {
           display: 'flex', flexWrap: 'wrap', gap: 8,
         }}>
           <span style={{ fontSize: 11, color: '#8A8278', alignSelf: 'center', marginRight: 8 }}>Browse:</span>
-          {topics.map((topic) => (
-            <button key={topic} style={{
-              padding: '6px 14px', borderRadius: 20,
-              background: '#FEF7F0', border: '1px solid rgba(240,120,20,0.2)',
-              fontSize: 12, color: '#3A3530', cursor: 'pointer',
-              transition: 'all 0.2s',
-            }}>
-              {topic}
+          {topics.map(({ tag, count }) => {
+            const on = activeTag === tag;
+            return (
+              <button
+                key={tag}
+                // Clicking an active chip clears it, so the filter can be
+                // undone without hunting for a reset control.
+                onClick={() => setActiveTag(on ? null : tag)}
+                title={`${count} article${count === 1 ? '' : 's'}`}
+                style={{
+                  padding: '6px 14px', borderRadius: 20,
+                  background: on ? '#F07814' : '#FEF7F0',
+                  border: `1px solid ${on ? '#F07814' : 'rgba(240,120,20,0.2)'}`,
+                  fontSize: 12, color: on ? '#fff' : '#3A3530', cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {tag}
+              </button>
+            );
+          })}
+          {activeTag && (
+            <button
+              onClick={() => setActiveTag(null)}
+              style={{
+                padding: '6px 12px', borderRadius: 20, background: 'none', border: 'none',
+                fontSize: 12, color: '#8A8278', cursor: 'pointer', textDecoration: 'underline',
+              }}
+            >
+              Clear
             </button>
-          ))}
+          )}
         </div>
       )}
 

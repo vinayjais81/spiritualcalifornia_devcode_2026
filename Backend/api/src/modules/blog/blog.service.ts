@@ -204,11 +204,35 @@ export class BlogService {
 
     const total = await this.prisma.blogPost.count({ where: publicPostWhere() });
 
+    // Topic chips, aggregated across the whole library rather than the page
+    // currently on screen. Deriving them client-side from loaded posts meant
+    // they described 24 of 124 articles — and changed completely on every
+    // search, so they were never a stable way to browse.
+    //
+    // Raw SQL because `tags` is a text[]: unnest is the only way to group by
+    // element. Conditions mirror publicPostWhere() exactly — including the
+    // guideId IS NULL branch, without which every editorial article's tags
+    // would be missing.
+    const topics = await this.prisma.$queryRaw<Array<{ tag: string; count: bigint }>>`
+      SELECT t.tag AS tag, COUNT(*)::bigint AS count
+      FROM blog_posts b
+      LEFT JOIN guide_profiles g ON g.id = b."guideId"
+      LEFT JOIN users u ON u.id = g."userId"
+      CROSS JOIN LATERAL unnest(b.tags) AS t(tag)
+      WHERE b."isPublished" = true
+        AND b."publishedAt" <= NOW()
+        AND (b."guideId" IS NULL OR u."isActive" = true)
+      GROUP BY t.tag
+      ORDER BY count DESC, t.tag ASC
+      LIMIT 24
+    `;
+
     return {
       total,
       categories: grouped
         .filter((g) => g.categoryLabel)
         .map((g) => ({ label: g.categoryLabel as string, count: g._count._all })),
+      topics: topics.map((t) => ({ tag: t.tag, count: Number(t.count) })),
     };
   }
 

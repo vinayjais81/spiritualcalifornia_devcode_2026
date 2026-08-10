@@ -291,11 +291,18 @@ export class PostgresSearchService {
    * means "all topics"; the SQL below short-circuits on that so the parameter
    * costs nothing when unused.
    */
-  async searchBlog(query: string, page = 0, hitsPerPage = 20, category?: string) {
+  async searchBlog(
+    query: string,
+    page = 0,
+    hitsPerPage = 20,
+    category?: string,
+    tag?: string,
+  ) {
     const q = this.cleanQuery(query);
     const skip = page * hitsPerPage;
     if (!q) return { hits: [], nbHits: 0, page, hitsPerPage };
     const cat = category?.trim() || null;
+    const tg = tag?.trim() || null;
 
     const hits = await this.prisma.$queryRaw<Array<{
       id: string; slug: string; title: string; excerpt: string | null;
@@ -328,6 +335,7 @@ export class PostgresSearchService {
           OR (g."isVerified" = true AND g."isPublished" = true AND u."isActive" = true)
         )
         AND (${cat}::text IS NULL OR b."categoryLabel" = ${cat})
+        AND (${tg}::text IS NULL OR b.tags @> ARRAY[${tg}]::text[])
         AND (
           b."searchVector" @@ websearch_to_tsquery('english', ${q})
           OR similarity(b.title, ${q}) > ${SIMILARITY_THRESHOLD}
@@ -347,6 +355,7 @@ export class PostgresSearchService {
           OR (g."isVerified" = true AND g."isPublished" = true AND u."isActive" = true)
         )
         AND (${cat}::text IS NULL OR b."categoryLabel" = ${cat})
+        AND (${tg}::text IS NULL OR b.tags @> ARRAY[${tg}]::text[])
         AND (
           b."searchVector" @@ websearch_to_tsquery('english', ${q})
           OR similarity(b.title, ${q}) > ${SIMILARITY_THRESHOLD}
