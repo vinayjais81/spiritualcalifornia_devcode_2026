@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { AuthorKind } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -14,6 +15,46 @@ function slugify(text: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * The public visibility gate for a post.
+ *
+ * Two things are load-bearing here.
+ *
+ * `publishedAt: { lte: now }` — without it, `isPublished` alone would expose a
+ * post the moment it is flagged, regardless of its date. The imported library
+ * carries real publication dates and the importer is allowed to set future
+ * ones, so a post scheduled for next month must stay invisible until then.
+ *
+ * The `OR` — editorial posts carry `guideId: null`. A bare
+ * `guide: { user: { isActive: true } }` is an inner-join style filter that drops
+ * every row whose guide is null, so writing the obvious thing would make the
+ * entire imported library invisible while looking perfectly correct. Editorial
+ * posts belong to the publication and have no guide to deactivate; guide posts
+ * still hide when their author is deactivated.
+ */
+function publicPostWhere(extra: Record<string, unknown> = {}) {
+  return {
+    isPublished: true,
+    publishedAt: { lte: new Date() },
+    OR: [{ guideId: null }, { guide: { user: { isActive: true } } }],
+    ...extra,
+  };
+}
+
+/**
+ * Fields never sent to a public client.
+ *
+ * `evidenceTier` is internal editorial metadata that calibrates the language
+ * writers may use. The style spec is explicit that it must not render anywhere —
+ * no badge, no label, no tooltip — because readers do not know what the tiers
+ * mean. Stripping it at the serialiser rather than just omitting it from the
+ * template means it cannot leak through an API response either.
+ */
+export function stripInternalFields<T extends Record<string, any>>(post: T): Omit<T, 'evidenceTier'> {
+  const { evidenceTier: _evidenceTier, ...rest } = post;
+  return rest;
 }
 
 @Injectable()
@@ -38,11 +79,15 @@ export class BlogService {
     }
 
     const baseSlug = slugify(dto.title);
-    const slug = await this.uniqueSlug(guide.id, baseSlug);
+    const slug = await this.uniqueSlug(baseSlug);
 
     const post = await this.prisma.blogPost.create({
       data: {
         guideId: guide.id,
+        // Recorded on every post regardless of kind. Independent of guideId so
+        // it survives guide-profile deletion.
+        authorUserId: userId,
+        authorKind: AuthorKind.GUIDE,
         title: dto.title,
         slug,
         content: dto.content,
@@ -72,13 +117,14 @@ export class BlogService {
   // ─── List Published Posts by Guide ID (Public Profile) ──────────────────────
 
   async findPublishedByGuideId(guideId: string) {
-    return this.prisma.blogPost.findMany({
+    const posts = await this.prisma.blogPost.findMany({
       // Defensive: callers usually pass a guideId that's already passed the
       // public profile's isActive gate, but enforcing here means stray
       // callers can never leak posts from a deactivated guide.
-      where: { guideId, isPublished: true, guide: { user: { isActive: true } } },
+      where: publicPostWhere({ guideId }),
       orderBy: { publishedAt: 'desc' },
     });
+    return posts.map(stripInternalFields);
   }
 
   // ─── List All Published Posts (Public Journal Page) ─────────────────────────
@@ -86,18 +132,22 @@ export class BlogService {
   async findAllPublished(page = 1, limit = 12, tag?: string) {
     const skip = (page - 1) * limit;
 
-    // Hide posts whose guide has been deactivated by an admin.
-    const where: any = { isPublished: true, guide: { user: { isActive: true } } };
-    if (tag) {
-      where.tags = { has: tag };
-    }
+    // Hide posts whose guide has been deactivated by an admin, and posts whose
+    // publication date has not arrived yet.
+    const where: any = publicPostWhere(tag ? { tags: { has: tag } } : {});
 
     const [posts, total] = await Promise.all([
       this.prisma.blogPost.findMany({
         where,
         // Admin-managed sortOrder primary; publishedAt breaks ties so
         // unsorted posts still feel "fresh first".
-        orderBy: [{ sortOrder: 'asc' }, { publishedAt: 'desc' }],
+        // The importer assigns sortOrder 1–124 from the original editorial
+        // calendar. That matters more than it looks: the client asked for every
+        // imported article to carry the import date, so publishedAt is identical
+        // across the library and cannot break a tie. Without a distinct
+        // sortOrder the order would be undefined and pagination unstable —
+        // the same article could appear on two pages.
+        orderBy: [{ sortOrder: 'asc' }, { publishedAt: 'desc' }, { id: 'asc' }],
         skip,
         take: limit,
         include: {
@@ -115,7 +165,7 @@ export class BlogService {
     ]);
 
     return {
-      posts,
+      posts: posts.map(stripInternalFields),
       pagination: {
         page,
         limit,
@@ -127,6 +177,40 @@ export class BlogService {
 
   // ─── Get Single Post by Slug (Public) ───────────────────────────────────────
 
+  /**
+   * Primary public lookup. Slugs are globally unique, so a post is addressable
+   * at /journal/{slug} with no author segment — the client's routing decision
+   * of 2026-08-10. Serves editorial and practitioner posts identically.
+   */
+  async findByFlatSlug(slug: string) {
+    const post = await this.prisma.blogPost.findFirst({
+      where: publicPostWhere({ slug }),
+      include: {
+        guide: {
+          select: {
+            id: true,
+            slug: true,
+            displayName: true,
+            tagline: true,
+            isVerified: true,
+            user: { select: { avatarUrl: true } },
+          },
+        },
+        category: { select: { id: true, name: true, slug: true } },
+      },
+    });
+
+    if (!post) {
+      throw new NotFoundException('Blog post not found');
+    }
+
+    return stripInternalFields(post);
+  }
+
+  /**
+   * Legacy lookup for the old /journal/{guideSlug}/{postSlug} URLs. Retained
+   * only so those links can resolve to a redirect rather than 404.
+   */
   async findBySlug(guideSlug: string, postSlug: string) {
     const guide = await this.prisma.guideProfile.findFirst({
       // 404 if the guide's account has been deactivated — matches the
@@ -199,7 +283,7 @@ export class BlogService {
 
     if (dto.title !== undefined) {
       data.title = dto.title;
-      data.slug = await this.uniqueSlug(guide.id, slugify(dto.title), postId);
+      data.slug = await this.uniqueSlug(slugify(dto.title), postId);
     }
     if (dto.content !== undefined) data.content = dto.content;
     if (dto.excerpt !== undefined) data.excerpt = dto.excerpt;
@@ -266,17 +350,25 @@ export class BlogService {
     }
   }
 
-  private async uniqueSlug(guideId: string, baseSlug: string, excludeId?: string): Promise<string> {
+  /**
+   * Slugs are unique across the whole table, not per author.
+   *
+   * Behaviour change for practitioners: two guides could previously each
+   * publish `my-healing-journey`, because uniqueness was scoped by guideId.
+   * Flat /journal/{slug} URLs mean a slug can only belong to one post
+   * site-wide, so the second author now silently gets `my-healing-journey-1`.
+   */
+  private async uniqueSlug(baseSlug: string, excludeId?: string): Promise<string> {
     let slug = baseSlug;
     let counter = 0;
 
     while (true) {
       const existing = await this.prisma.blogPost.findFirst({
         where: {
-          guideId,
           slug,
           ...(excludeId ? { id: { not: excludeId } } : {}),
         },
+        select: { id: true },
       });
 
       if (!existing) return slug;

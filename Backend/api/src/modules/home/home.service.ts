@@ -78,7 +78,14 @@ export class HomeService {
 
   private async getRecentBlogPosts() {
     const posts = await this.prisma.blogPost.findMany({
-      where: { isPublished: true, guide: { user: { isActive: true } } },
+      // Mirrors publicPostWhere() in BlogService: the date gate keeps scheduled
+      // posts hidden, and the OR is required because editorial posts carry a
+      // null guideId — a bare `guide: { … }` filter would drop every one of them.
+      where: {
+        isPublished: true,
+        publishedAt: { lte: new Date() },
+        OR: [{ guideId: null }, { guide: { user: { isActive: true } } }],
+      },
       // Admin-managed sortOrder primary; publishedAt breaks ties so unsorted
       // (sortOrder=0) posts still feel "fresh first".
       orderBy: [{ sortOrder: 'asc' }, { publishedAt: 'desc' }],
@@ -102,11 +109,17 @@ export class HomeService {
       coverImageUrl: p.coverImageUrl,
       tags: p.tags,
       publishedAt: p.publishedAt,
-      guide: {
-        slug: p.guide.slug,
-        displayName: p.guide.displayName,
-        avatarUrl: p.guide.user.avatarUrl,
-      },
+      // Null for editorial posts, which belong to the publication rather than
+      // to a practitioner. Callers render the byline from `authorName` instead.
+      guide: p.guide
+        ? {
+            slug: p.guide.slug,
+            displayName: p.guide.displayName,
+            avatarUrl: p.guide.user.avatarUrl,
+          }
+        : null,
+      authorName: p.authorName,
+      authorKind: p.authorKind,
     }));
   }
 

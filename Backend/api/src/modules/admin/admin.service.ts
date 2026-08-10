@@ -2152,7 +2152,7 @@ export class AdminService {
     }
 
     const baseSlug = this.slugify(dto.title);
-    const slug = await this.uniqueBlogSlug(guideId, baseSlug);
+    const slug = await this.uniqueBlogSlug(baseSlug);
 
     return this.prisma.blogPost.create({
       data: {
@@ -2196,11 +2196,11 @@ export class AdminService {
 
     if (dto.title !== undefined) {
       data.title = dto.title;
-      data.slug = await this.uniqueBlogSlug(newGuideId, this.slugify(dto.title), postId);
-    } else if (newGuideId !== post.guideId) {
-      // Re-attributed to a new guide — ensure slug is still unique under the new owner
-      data.slug = await this.uniqueBlogSlug(newGuideId, post.slug, postId);
+      data.slug = await this.uniqueBlogSlug(this.slugify(dto.title), postId);
     }
+    // Re-attribution to a different guide no longer touches the slug: slugs are
+    // globally unique and the URL carries no author segment, so moving a post
+    // between authors cannot collide and must not change its permalink.
 
     if (dto.content !== undefined) data.content = dto.content;
     if (dto.excerpt !== undefined) data.excerpt = dto.excerpt;
@@ -2238,20 +2238,21 @@ export class AdminService {
       .replace(/^-+|-+$/g, '');
   }
 
-  private async uniqueBlogSlug(
-    guideId: string,
-    baseSlug: string,
-    excludeId?: string,
-  ): Promise<string> {
+  /**
+   * Slugs are unique across the whole table, not per guide — posts are
+   * addressed at a flat /journal/{slug} with no author segment, so re-attributing
+   * a post to a different guide no longer affects its slug.
+   */
+  private async uniqueBlogSlug(baseSlug: string, excludeId?: string): Promise<string> {
     let slug = baseSlug || 'post';
     let counter = 0;
     while (true) {
       const existing = await this.prisma.blogPost.findFirst({
         where: {
-          guideId,
           slug,
           ...(excludeId ? { id: { not: excludeId } } : {}),
         },
+        select: { id: true },
       });
       if (!existing) return slug;
       counter++;

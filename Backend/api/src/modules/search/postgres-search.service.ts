@@ -304,7 +304,7 @@ export class PostgresSearchService {
         b."coverImageUrl",
         b.tags,
         b."publishedAt",
-        g."displayName" AS "guideName",
+        COALESCE(g."displayName", b."authorName") AS "guideName",
         g.slug AS "guideSlug",
         u."avatarUrl" AS "guideAvatarUrl",
         GREATEST(
@@ -312,12 +312,14 @@ export class PostgresSearchService {
           similarity(b.title, ${q})
         ) AS rank
       FROM blog_posts b
-      JOIN guide_profiles g ON g.id = b."guideId"
-      JOIN users u ON u.id = g."userId"
+      LEFT JOIN guide_profiles g ON g.id = b."guideId"
+      LEFT JOIN users u ON u.id = g."userId"
       WHERE b."isPublished" = true
-        AND g."isVerified" = true
-        AND g."isPublished" = true
-        AND u."isActive" = true
+        AND b."publishedAt" <= NOW()
+        AND (
+          b."guideId" IS NULL
+          OR (g."isVerified" = true AND g."isPublished" = true AND u."isActive" = true)
+        )
         AND (
           b."searchVector" @@ websearch_to_tsquery('english', ${q})
           OR similarity(b.title, ${q}) > ${SIMILARITY_THRESHOLD}
@@ -328,12 +330,14 @@ export class PostgresSearchService {
     const [{ count }] = await this.prisma.$queryRaw<Array<{ count: bigint }>>`
       SELECT COUNT(*)::bigint AS count
       FROM blog_posts b
-      JOIN guide_profiles g ON g.id = b."guideId"
-      JOIN users u ON u.id = g."userId"
+      LEFT JOIN guide_profiles g ON g.id = b."guideId"
+      LEFT JOIN users u ON u.id = g."userId"
       WHERE b."isPublished" = true
-        AND g."isVerified" = true
-        AND g."isPublished" = true
-        AND u."isActive" = true
+        AND b."publishedAt" <= NOW()
+        AND (
+          b."guideId" IS NULL
+          OR (g."isVerified" = true AND g."isPublished" = true AND u."isActive" = true)
+        )
         AND (
           b."searchVector" @@ websearch_to_tsquery('english', ${q})
           OR similarity(b.title, ${q}) > ${SIMILARITY_THRESHOLD}

@@ -292,6 +292,8 @@ model User {
   importBatches     ImportBatch[]     @relation("ImportUploadedBy")
   importedProspect  ImportedProspect?
   emailSends        EmailSend[]
+  /// Posts this user wrote, whether as an admin/editor or as a practitioner.
+  blogPostsAuthored BlogPost[]        @relation("BlogAuthor")
 
   @@map("users")
 }
@@ -641,6 +643,7 @@ model Category {
 
   subcategories Subcategory[]
   guides        GuideCategory[]
+  blogPosts     BlogPost[]
 
   @@map("categories")
 }
@@ -1245,9 +1248,55 @@ model OrderItem {
 // BLOG
 // ─────────────────────────────────────────────
 
+/// Author of a post. EDITORIAL posts come from the imported content library and
+/// belong to the publication rather than to any practitioner — they carry a null
+/// guideId so no guide-profile lifecycle event can reach them. GUIDE posts are
+/// practitioner-authored through the dashboard, exactly as before.
+enum AuthorKind {
+  EDITORIAL
+  GUIDE
+}
+
+/// Editorial series an imported article belongs to. Stored for admin filtering
+/// and listing tabs only — it deliberately never appears in a URL, because all
+/// posts live under one flat /journal/{slug} namespace (client decision
+/// 2026-08-10). See docs/journal-content-library-strategy.md §6a.
+enum ArticleSeries {
+  JOURNAL
+  WHAT_TO_DO
+  CLINIC
+}
+
+/// Guide posts come from the dashboard editor as HTML. Imported articles are
+/// Markdown and are rendered through a sanitising pipeline instead. Storing the
+/// format beats sniffing the content at render time.
+enum ContentFormat {
+  HTML
+  MARKDOWN
+}
+
+/// How urgently an article should route a reader onward. Drives the emphasis of
+/// the crisis-resources link in the article footer.
+enum Escalation {
+  NONE
+  PRACTITIONER
+  CLINICIAN
+  URGENT
+}
+
 model BlogPost {
   id              String                   @id @default(cuid())
-  guideId         String
+  /// Null for EDITORIAL posts. Nullable so the imported library cannot be
+  /// destroyed by deleting a guide profile — this relation cascades.
+  guideId         String?
+  /// The user who actually wrote the post, recorded for every post regardless
+  /// of kind. Independent of guideId on purpose: it survives guide-profile
+  /// deletion, and it is the only place an admin-authored post's author is
+  /// recorded at all.
+  authorUserId    String?
+  authorKind      AuthorKind               @default(GUIDE)
+  series          ArticleSeries?
+  contentFormat   ContentFormat            @default(HTML)
   title           String
   slug            String
   content         String
@@ -1269,10 +1318,67 @@ model BlogPost {
   createdAt       DateTime                 @default(now())
   updatedAt       DateTime                 @updatedAt
 
-  guide GuideProfile @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  // ── Editorial frontmatter (imported library) ───────────────────────────────
+  /// One-sentence standfirst, 20–30 words. Distinct from `excerpt`, which is
+  /// auto-derived from body text for guide posts.
+  dek               String?
+  /// Byline as written, e.g. "Spiritual California Editorial". Kept as text so
+  /// the publication can be credited without inventing a user account.
+  authorName        String?
+  authorRole        String?
+  readTime          String?
+  heroAlt           String?
+  /// Display label from the article, e.g. "Reiki" or "Trauma Treatment". Many
+  /// of these are editorial-only topics with no marketplace equivalent.
+  categoryLabel     String?
+  /// Resolved marketplace category, when one exists. Drives the "find matching
+  /// practitioners" CTA; null for editorial-only topics, which get a fallback.
+  categoryId        String?
+  relatedModalities String[] @default([])
+  /// When true the template appends the standing medical disclaimer. Never
+  /// hand-written into article bodies.
+  healthAdjacent    Boolean  @default(false)
+  sourcesCount      Int?
+  /// INTERNAL EDITORIAL ONLY — A|B|C|D. Calibrates the language writers may
+  /// use. MUST NOT be serialised to any public API response or rendered in the
+  /// UI; readers do not know what the tiers mean. Stripped in the public
+  /// serialiser rather than merely omitted from the template, so it cannot leak
+  /// by accident. See docs/journal-content-library-strategy.md.
+  evidenceTier      String?
 
-  @@unique([guideId, slug])
+  // ── "What To Do" series only ───────────────────────────────────────────────
+  situation        String?
+  timeToTry        String?
+  primaryTechnique String?
+  /// Slugs of articles this one routes readers onward to.
+  routesTo         String[]    @default([])
+  escalation       Escalation?
+
+  // ── Clinic freshness ───────────────────────────────────────────────────────
+  /// Two articles (psilocybin, MDMA) carry regulatory content that can become
+  /// actively wrong rather than merely dated. Surfaced on-page and warned on in
+  /// CI once older than `reviewCadence`.
+  verifiedAsOf  DateTime?
+  reviewCadence String?
+
+  // ── Import bookkeeping ─────────────────────────────────────────────────────
+  /// Path of the source .md file, e.g. "articles/reiki-two-reviews.md". Makes
+  /// re-import idempotent: the importer upserts on this rather than creating
+  /// duplicates.
+  sourcePath  String? @unique
+  /// SHA-256 of the source file, so a re-import can skip unchanged articles.
+  contentHash String?
+
+  guide      GuideProfile? @relation(fields: [guideId], references: [id], onDelete: Cascade)
+  authorUser User?         @relation("BlogAuthor", fields: [authorUserId], references: [id], onDelete: SetNull)
+  category   Category?     @relation(fields: [categoryId], references: [id])
+
+  /// Globally unique — posts live at a flat /journal/{slug} with no author
+  /// segment, so a slug can only belong to one post site-wide. Replaces the
+  /// old @@unique([guideId, slug]), which scoped uniqueness per author.
+  @@unique([slug])
   @@index([isPublished, publishedAt])
+  @@index([authorKind, series])
   @@map("blog_posts")
 }
 

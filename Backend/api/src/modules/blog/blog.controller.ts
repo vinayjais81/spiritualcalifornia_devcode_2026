@@ -68,11 +68,32 @@ export class BlogController {
     );
   }
 
-  // ─── Get Single Post by Slug (Public) ──────────────────────────────────────
+  // ─── Get Single Post by Flat Slug (Public) ─────────────────────────────────
+
+  /**
+   * Primary article route. Slugs are globally unique so no author segment is
+   * needed — /journal/{slug} serves editorial and practitioner posts alike.
+   *
+   * Declared after the literal `@Get('mine')` above: a single-segment wildcard
+   * would otherwise swallow it. Same hazard as the PaymentsController route
+   * ordering — literal routes must sit above wildcards.
+   */
+  @Public()
+  @Get(':slug')
+  @ApiOperation({ summary: 'Get a published blog post by its global slug' })
+  @ApiResponse({ status: 200, description: 'Blog post' })
+  @ApiResponse({ status: 404, description: 'Post not found' })
+  findByFlatSlug(@Param('slug') slug: string) {
+    return this.blogService.findByFlatSlug(slug);
+  }
+
+  // ─── Legacy: Get Post by Guide Slug + Post Slug (Public) ───────────────────
+  // Retained so pre-flat-routing links resolve instead of 404ing. The frontend
+  // route redirects to /journal/{slug}.
 
   @Public()
   @Get(':guideSlug/:postSlug')
-  @ApiOperation({ summary: 'Get a published blog post by guide slug and post slug' })
+  @ApiOperation({ summary: '[Legacy] Get a published post by guide slug and post slug' })
   @ApiResponse({ status: 200, description: 'Blog post' })
   @ApiResponse({ status: 404, description: 'Post not found' })
   findBySlug(

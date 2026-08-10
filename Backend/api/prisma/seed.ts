@@ -1100,7 +1100,8 @@ async function main() {
     if (!guide?.guideProfile) continue;
 
     await prisma.blogPost.upsert({
-      where: { guideId_slug: { guideId: guide.guideProfile.id, slug: post.slug } },
+      // Slugs are globally unique now, not scoped per guide.
+      where: { slug: post.slug },
       create: {
         guideId: guide.guideProfile.id,
         title: post.title,
