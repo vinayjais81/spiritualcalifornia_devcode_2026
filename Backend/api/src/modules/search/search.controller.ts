@@ -58,8 +58,13 @@ export class SearchController {
   @Get('blog')
   @ApiOperation({ summary: 'Search blog / journal posts' })
   @ApiQuery({ name: 'q', required: false }) @ApiQuery({ name: 'page', required: false })
-  searchBlog(@Query('q') q?: string, @Query('page') page?: string) {
-    return this.searchService.searchBlog(q || '', Number(page) || 0);
+  @ApiQuery({ name: 'category', required: false })
+  searchBlog(
+    @Query('q') q?: string,
+    @Query('page') page?: string,
+    @Query('category') category?: string,
+  ) {
+    return this.searchService.searchBlog(q || '', Number(page) || 0, category);
   }
 
   @Post('reindex')

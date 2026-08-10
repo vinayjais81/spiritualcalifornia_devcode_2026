@@ -45,8 +45,8 @@ export class SearchService {
     return this.pg.searchTours(query, page);
   }
 
-  async searchBlog(query: string, page = 0) {
-    return this.pg.searchBlog(query, page);
+  async searchBlog(query: string, page = 0, category?: string) {
+    return this.pg.searchBlog(query, page, 20, category);
   }
 
   // ─── Bulk Index All Data (called from seed or admin) ───────────────────────

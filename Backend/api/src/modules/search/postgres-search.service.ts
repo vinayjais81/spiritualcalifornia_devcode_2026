@@ -285,10 +285,17 @@ export class PostgresSearchService {
     return { hits, nbHits: Number(count), page, hitsPerPage };
   }
 
-  async searchBlog(query: string, page = 0, hitsPerPage = 20) {
+  /**
+   * `category` narrows results to one editorial topic so the journal's filter
+   * tabs and its search box compose instead of overriding each other. Null
+   * means "all topics"; the SQL below short-circuits on that so the parameter
+   * costs nothing when unused.
+   */
+  async searchBlog(query: string, page = 0, hitsPerPage = 20, category?: string) {
     const q = this.cleanQuery(query);
     const skip = page * hitsPerPage;
     if (!q) return { hits: [], nbHits: 0, page, hitsPerPage };
+    const cat = category?.trim() || null;
 
     const hits = await this.prisma.$queryRaw<Array<{
       id: string; slug: string; title: string; excerpt: string | null;
@@ -320,6 +327,7 @@ export class PostgresSearchService {
           b."guideId" IS NULL
           OR (g."isVerified" = true AND g."isPublished" = true AND u."isActive" = true)
         )
+        AND (${cat}::text IS NULL OR b."categoryLabel" = ${cat})
         AND (
           b."searchVector" @@ websearch_to_tsquery('english', ${q})
           OR similarity(b.title, ${q}) > ${SIMILARITY_THRESHOLD}
@@ -338,6 +346,7 @@ export class PostgresSearchService {
           b."guideId" IS NULL
           OR (g."isVerified" = true AND g."isPublished" = true AND u."isActive" = true)
         )
+        AND (${cat}::text IS NULL OR b."categoryLabel" = ${cat})
         AND (
           b."searchVector" @@ websearch_to_tsquery('english', ${q})
           OR similarity(b.title, ${q}) > ${SIMILARITY_THRESHOLD}

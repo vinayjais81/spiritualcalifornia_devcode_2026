@@ -129,12 +129,17 @@ export class BlogService {
 
   // ─── List All Published Posts (Public Journal Page) ─────────────────────────
 
-  async findAllPublished(page = 1, limit = 12, tag?: string) {
+  async findAllPublished(page = 1, limit = 12, tag?: string, category?: string) {
     const skip = (page - 1) * limit;
 
     // Hide posts whose guide has been deactivated by an admin, and posts whose
     // publication date has not arrived yet.
-    const where: any = publicPostWhere(tag ? { tags: { has: tag } } : {});
+    const extra: Record<string, unknown> = {};
+    if (tag) extra.tags = { has: tag };
+    // Exact match on the editorial label rather than a contains: the tab list
+    // is built from these same values, so a tab can only ever be an exact one.
+    if (category) extra.categoryLabel = category;
+    const where: any = publicPostWhere(extra);
 
     const [posts, total] = await Promise.all([
       this.prisma.blogPost.findMany({
@@ -172,6 +177,38 @@ export class BlogService {
         total,
         totalPages: Math.ceil(total / limit),
       },
+    };
+  }
+
+  // ─── Category Tabs (Public) ────────────────────────────────────────────────
+
+  /**
+   * The journal's filter tabs, derived from what is actually published.
+   *
+   * These were previously a hardcoded array — ['All', 'Spiritual Practices',
+   * 'Sound Healing', 'Meditation', 'Wellness', 'Sacred Living'] — that matched
+   * no field in the database, so every tab filtered nothing and several named
+   * topics the library does not contain.
+   *
+   * Grouping on live data means the tabs cannot drift from the content: import
+   * an article in a new category and its tab appears; remove the last one and
+   * the tab goes away.
+   */
+  async getCategories() {
+    const grouped = await this.prisma.blogPost.groupBy({
+      by: ['categoryLabel'],
+      where: publicPostWhere({ categoryLabel: { not: null } }),
+      _count: { _all: true },
+      orderBy: { _count: { categoryLabel: 'desc' } },
+    });
+
+    const total = await this.prisma.blogPost.count({ where: publicPostWhere() });
+
+    return {
+      total,
+      categories: grouped
+        .filter((g) => g.categoryLabel)
+        .map((g) => ({ label: g.categoryLabel as string, count: g._count._all })),
     };
   }
 

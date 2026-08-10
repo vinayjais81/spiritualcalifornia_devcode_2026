@@ -24,7 +24,13 @@ interface BlogPost {
   readTime?: string | null;
 }
 
-const filterTabs = ['All', 'Spiritual Practices', 'Sound Healing', 'Meditation', 'Wellness', 'Sacred Living'];
+/** Sentinel for "no category filter". Never sent to the API. */
+const ALL_TAB = 'All';
+
+interface CategoryTab {
+  label: string;
+  count: number;
+}
 
 /**
  * Articles per page. The API clamps `limit` to 50 (see BlogController), so this
@@ -65,7 +71,10 @@ function adaptSearchHit(hit: any): BlogPost {
 
 export default function JournalPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [activeFilter, setActiveFilter] = useState('All');
+  const [activeFilter, setActiveFilter] = useState(ALL_TAB);
+  // Tabs come from the API rather than a literal, so they always describe what
+  // is actually published.
+  const [tabs, setTabs] = useState<CategoryTab[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   // Pagination for the default listing. The library is 124 articles and
@@ -75,6 +84,16 @@ export default function JournalPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Tab list is independent of the current filter/search, so it is fetched once
+  // and not refetched as the user narrows down — otherwise the tabs would
+  // vanish as soon as you selected one.
+  useEffect(() => {
+    api
+      .get('/blog/categories')
+      .then((res) => setTabs(res.data?.categories ?? []))
+      .catch(() => setTabs([]));
+  }, []);
 
   // Debounce the search input so we don't fire a request on every keystroke.
   // 250ms is the standard sweet-spot — perceptibly instant on fast typers,
@@ -86,14 +105,18 @@ export default function JournalPage() {
     const q = searchQuery.trim();
     const handle = setTimeout(async () => {
       try {
+        // A selected tab narrows both paths, so search and category compose
+        // rather than one silently overriding the other.
+        const category = activeFilter === ALL_TAB ? undefined : activeFilter;
+
         if (q.length > 0) {
           // Server-side FTS — typo-tolerant via pg_trgm.
-          const res = await api.get('/search/blog', { params: { q, page: 0 } });
+          const res = await api.get('/search/blog', { params: { q, page: 0, category } });
           const hits = (res.data?.hits ?? []) as any[];
           if (!cancelled) setPosts(hits.map(adaptSearchHit));
         } else {
           // No query → default "latest posts" listing, first page.
-          const res = await api.get('/blog', { params: { page: 1, limit: PAGE_SIZE } });
+          const res = await api.get('/blog', { params: { page: 1, limit: PAGE_SIZE, category } });
           if (!cancelled) {
             setPosts(res.data?.posts ?? []);
             setPage(1);
@@ -111,7 +134,7 @@ export default function JournalPage() {
       cancelled = true;
       clearTimeout(handle);
     };
-  }, [searchQuery]);
+  }, [searchQuery, activeFilter]);
 
   // Derive topic chips from the tags of posts we actually have. Avoids
   // hardcoding a curated list that can drift from what's published.
@@ -132,7 +155,15 @@ export default function JournalPage() {
     setLoadingMore(true);
     try {
       const next = page + 1;
-      const res = await api.get('/blog', { params: { page: next, limit: PAGE_SIZE } });
+      // Must carry the active category, or page 2 would silently widen back to
+      // every article while the tab still reads as selected.
+      const res = await api.get('/blog', {
+        params: {
+          page: next,
+          limit: PAGE_SIZE,
+          category: activeFilter === ALL_TAB ? undefined : activeFilter,
+        },
+      });
       const incoming: BlogPost[] = res.data?.posts ?? [];
       // Guard against duplicates: sortOrder ties could otherwise let a row
       // appear on two pages.
@@ -171,7 +202,7 @@ export default function JournalPage() {
           Stories, Practices &amp; Wisdom
         </h1>
         <p style={{ fontSize: 15, color: '#8A8278', maxWidth: 520, margin: '0 auto' }}>
-          Explorations in consciousness, healing, and the spiritual path — written by our verified practitioners.
+          Explorations in consciousness, healing, and the spiritual path — from our editorial team and our verified practitioners.
         </p>
       </div>
 
@@ -187,10 +218,11 @@ export default function JournalPage() {
           flexWrap: 'wrap', gap: 8,
         }}>
           <div className="scrollbar-none" style={{ display: 'flex', gap: 0, overflowX: 'auto', maxWidth: '100%' }}>
-            {filterTabs.map((tab) => (
+            {[{ label: ALL_TAB, count: 0 }, ...tabs].map(({ label: tab, count }) => (
               <button
                 key={tab}
                 onClick={() => setActiveFilter(tab)}
+                title={count ? `${count} article${count === 1 ? '' : 's'}` : undefined}
                 style={{
                   padding: '16px 24px', background: 'none', border: 'none', cursor: 'pointer',
                   flexShrink: 0, whiteSpace: 'nowrap',

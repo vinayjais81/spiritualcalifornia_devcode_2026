@@ -60,12 +60,29 @@ export class BlogController {
     @Query('page') page?: number,
     @Query('limit') limit?: number,
     @Query('tag') tag?: string,
+    @Query('category') category?: string,
   ) {
     return this.blogService.findAllPublished(
       page ? Number(page) : 1,
       limit ? Math.min(Number(limit), 50) : 12,
       tag,
+      category,
     );
+  }
+
+  // ─── Category Tabs (Public) ────────────────────────────────────────────────
+
+  /**
+   * Must stay above `@Get(':slug')` — a single-segment wildcard declared first
+   * would capture "categories" as a post slug and 404. Same hazard as the
+   * PaymentsController route ordering.
+   */
+  @Public()
+  @Get('categories')
+  @ApiOperation({ summary: 'Journal filter tabs, derived from published posts' })
+  @ApiResponse({ status: 200, description: '{ total, categories: [{ label, count }] }' })
+  getCategories() {
+    return this.blogService.getCategories();
   }
 
   // ─── Get Single Post by Flat Slug (Public) ─────────────────────────────────
