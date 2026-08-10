@@ -29,6 +29,53 @@ const PRIVACY_EMAIL =
 const LEGAL_EMAIL =
   process.env.CONTACT_EMAIL_LEGAL ?? 'legal@spiritualcalifornia.com';
 
+/**
+ * Crisis resources.
+ *
+ * Required before any What To Do article publishes — the client declared it a
+ * hard blocker, and the content makes plain why: 24 articles across all three
+ * series tell readers to "contact a crisis line", and not one of them carries a
+ * number or a link. Without this page the instruction is inert at exactly the
+ * moment it matters.
+ *
+ * Deliberately contains no techniques, no modalities, no practitioner
+ * promotion and no CTA. Someone arriving here needs a phone number, not a
+ * marketplace. Kept as a CMS row so the numbers can be corrected without a
+ * deploy — crisis line numbers do change.
+ */
+const CRISIS_BODY = `
+<p><strong>If you are in immediate danger, call 911.</strong></p>
+
+<p>The lines below are free, confidential, and open 24 hours a day, every day, in the United States. You do not have to be suicidal to call any of them. They take calls about anxiety, grief, loneliness, substance use, abuse, and simply not coping — and it is always reasonable to call.</p>
+
+<h2>988 Suicide &amp; Crisis Lifeline</h2>
+<p><strong>Call or text 988.</strong> Chat at <a href="https://988lifeline.org" target="_blank" rel="noopener noreferrer">988lifeline.org</a>.</p>
+<p>For anyone in emotional distress or suicidal crisis. Also the right number if you are worried about someone else.</p>
+
+<h2>Crisis Text Line</h2>
+<p><strong>Text HOME to 741741.</strong></p>
+<p>If talking out loud feels impossible, this is text-only with a trained counsellor.</p>
+
+<h2>Veterans Crisis Line</h2>
+<p><strong>Call 988 and press 1</strong>, or text 838255. Chat at <a href="https://www.veteranscrisisline.net" target="_blank" rel="noopener noreferrer">veteranscrisisline.net</a>.</p>
+<p>For veterans, service members, and their families. You do not need to be enrolled in VA benefits.</p>
+
+<h2>National Domestic Violence Hotline</h2>
+<p><strong>Call 1-800-799-7233</strong>, or text START to 88788. Chat at <a href="https://www.thehotline.org" target="_blank" rel="noopener noreferrer">thehotline.org</a>.</p>
+<p>For anyone experiencing domestic violence, or unsure whether what is happening counts.</p>
+
+<h2>SAMHSA National Helpline</h2>
+<p><strong>Call 1-800-662-4357.</strong></p>
+<p>Treatment referral and information for mental health and substance use. Free, confidential, English and Spanish.</p>
+
+<h2>Outside the United States</h2>
+<p><a href="https://findahelpline.com" target="_blank" rel="noopener noreferrer">findahelpline.com</a> lists verified crisis lines by country.</p>
+
+<hr>
+
+<p><em>Spiritual California is not a crisis service and cannot respond to emergencies. Nothing on this site is a substitute for professional care.</em></p>
+`;
+
 // HTML bodies live as Tiptap-compatible markup so the admin rich-text editor
 // can round-trip them without losing structure.
 const PRIVACY_BODY = `
@@ -369,6 +416,19 @@ async function main() {
         "Spiritual California's mission: building a single trusted destination for mind, body and soul — where verification, community, and transformation converge.",
       eyebrow: 'Our Mission',
       body: MISSION_BODY,
+    },
+    now,
+  );
+
+  await seedPage(
+    {
+      slug: 'crisis-support',
+      title: 'Immediate support',
+      metaTitle: 'Crisis Support | Spiritual California',
+      metaDescription:
+        'Free, confidential crisis lines available 24/7 in the United States.',
+      eyebrow: 'If you need help now',
+      body: CRISIS_BODY,
     },
     now,
   );
