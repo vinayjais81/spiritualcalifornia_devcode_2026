@@ -20,7 +20,13 @@ interface BlogPost {
   coverImageUrl: string | null;
   tags: string[];
   publishedAt: string;
-  guide: { slug: string; displayName: string; avatarUrl: string | null };
+  /**
+   * Null for editorial articles, which belong to the publication rather than a
+   * practitioner. This section is statically prerendered, so a missed null here
+   * fails the production build rather than just the page.
+   */
+  guide: { slug: string; displayName: string; avatarUrl: string | null } | null;
+  authorName?: string | null;
 }
 
 function estimateReadTime(excerpt: string | null): string {
@@ -59,9 +65,9 @@ export function PractitionersSection({ guides, blogPosts }: Props) {
         tagVariant: 'default' as const,
         title: p.title,
         excerpt: p.excerpt || '',
-        avatarImage: p.guide.avatarUrl || '/images/logo.jpg',
-        avatarAlt: p.guide.displayName,
-        metaText: `${p.guide.displayName} · ${estimateReadTime(p.excerpt)}`,
+        avatarImage: p.guide?.avatarUrl || '/images/logo.jpg',
+        avatarAlt: p.guide?.displayName ?? p.authorName ?? 'Spiritual California',
+        metaText: `${p.guide?.displayName ?? p.authorName ?? 'Spiritual California'} · ${estimateReadTime(p.excerpt)}`,
         href: `/journal/${p.slug}`,
       }))
     : [];
