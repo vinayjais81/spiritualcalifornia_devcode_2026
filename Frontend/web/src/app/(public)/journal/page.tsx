@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { FeaturedHero } from '@/components/public/journal/FeaturedHero';
 import { PostCard } from '@/components/public/journal/PostCard';
@@ -24,6 +25,13 @@ interface BlogPost {
 }
 
 const filterTabs = ['All', 'Spiritual Practices', 'Sound Healing', 'Meditation', 'Wellness', 'Sacred Living'];
+
+/**
+ * Articles per page. The API clamps `limit` to 50 (see BlogController), so this
+ * must stay at or below that — a larger value is silently reduced, which would
+ * make totalPages disagree with what actually arrives.
+ */
+const PAGE_SIZE = 24;
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr);
@@ -60,6 +68,13 @@ export default function JournalPage() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  // Pagination for the default listing. The library is 124 articles and
+  // growing, so "latest posts" has to be a page of results rather than all of
+  // them — but Load More was previously a button with no handler, which meant
+  // the listing silently capped at the first page.
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   // Debounce the search input so we don't fire a request on every keystroke.
   // 250ms is the standard sweet-spot — perceptibly instant on fast typers,
@@ -77,9 +92,13 @@ export default function JournalPage() {
           const hits = (res.data?.hits ?? []) as any[];
           if (!cancelled) setPosts(hits.map(adaptSearchHit));
         } else {
-          // No query → default "latest posts" listing.
-          const res = await api.get('/blog', { params: { limit: 20 } });
-          if (!cancelled) setPosts(res.data?.posts ?? []);
+          // No query → default "latest posts" listing, first page.
+          const res = await api.get('/blog', { params: { page: 1, limit: PAGE_SIZE } });
+          if (!cancelled) {
+            setPosts(res.data?.posts ?? []);
+            setPage(1);
+            setTotalPages(res.data?.pagination?.totalPages ?? 1);
+          }
         }
       } catch {
         if (!cancelled) setPosts([]);
@@ -102,6 +121,35 @@ export default function JournalPage() {
 
   const featured = posts[0];
   const remaining = posts.slice(1);
+
+  /**
+   * Append the next page. Only offered for the unfiltered listing — search
+   * results come from a different endpoint with its own paging, and mixing the
+   * two would append FTS hits onto a chronological list.
+   */
+  const loadMore = async () => {
+    if (loadingMore || page >= totalPages) return;
+    setLoadingMore(true);
+    try {
+      const next = page + 1;
+      const res = await api.get('/blog', { params: { page: next, limit: PAGE_SIZE } });
+      const incoming: BlogPost[] = res.data?.posts ?? [];
+      // Guard against duplicates: sortOrder ties could otherwise let a row
+      // appear on two pages.
+      setPosts((prev) => {
+        const seen = new Set(prev.map((p) => p.id));
+        return [...prev, ...incoming.filter((p) => !seen.has(p.id))];
+      });
+      setPage(next);
+      setTotalPages(res.data?.pagination?.totalPages ?? totalPages);
+    } catch {
+      toast.error('Could not load more articles — please try again.');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const canLoadMore = !searchQuery.trim() && page < totalPages;
 
   return (
     <>
@@ -274,18 +322,25 @@ export default function JournalPage() {
           </div>
         )}
 
-        {/* Load more */}
-        <div style={{ textAlign: 'center', marginTop: 40 }}>
-          <button style={{
-            padding: '14px 32px', borderRadius: 8,
-            background: 'transparent', border: '1.5px solid rgba(240,120,20,0.3)',
-            fontFamily: "'Inter', sans-serif",
-            fontSize: 12, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase',
-            color: '#3A3530', cursor: 'pointer',
-          }}>
-            Load More Articles
-          </button>
-        </div>
+        {/* Load more — hidden once everything is on screen. */}
+        {canLoadMore && (
+          <div style={{ textAlign: 'center', marginTop: 40 }}>
+            <button
+              onClick={loadMore}
+              disabled={loadingMore}
+              style={{
+                padding: '14px 32px', borderRadius: 8,
+                background: 'transparent', border: '1.5px solid rgba(240,120,20,0.3)',
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 12, fontWeight: 500, letterSpacing: '0.08em', textTransform: 'uppercase',
+                color: '#3A3530', cursor: loadingMore ? 'default' : 'pointer',
+                opacity: loadingMore ? 0.6 : 1,
+              }}
+            >
+              {loadingMore ? 'Loading…' : 'Load More Articles'}
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
