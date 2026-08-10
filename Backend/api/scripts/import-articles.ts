@@ -64,6 +64,42 @@ const authorEmail = flag('author-email');
 const preserveDates = has('preserve-dates');
 const asDraft = has('draft');
 const confirmToken = flag('confirm');
+/**
+ * Re-import articles whose source file has not changed.
+ *
+ * Needed whenever something outside the .md file changes the derived row —
+ * moving the images to S3 being the first case. The hash only covers the
+ * source, so without this the importer would report 124 unchanged and quietly
+ * do nothing.
+ */
+const force = has('force');
+/** Keep the local /images/... paths instead of rewriting to S3. */
+const localImages = has('local-images');
+
+/**
+ * Where hero images are served from. Mirrors UploadService.getFileUrl so the
+ * CloudFront-or-S3 precedence is identical, and reuses the same env vars —
+ * a new one would be stripped by env.validation.ts until declared there.
+ */
+const IMAGE_BASE = (() => {
+  if (localImages) return '';
+  const cf = process.env.AWS_CLOUDFRONT_URL;
+  if (cf) return cf.replace(/\/$/, '');
+  const bucket = process.env.AWS_S3_BUCKET;
+  const region = process.env.AWS_REGION ?? 'us-west-1';
+  return bucket ? `https://${bucket}.s3.${region}.amazonaws.com` : '';
+})();
+
+/**
+ * `/images/journal/x.webp` → `<base>/article-images/journal/x.webp`, matching
+ * the keys upload-article-images.ts writes. Falls back to the original path
+ * when S3 is unconfigured, so an unconfigured environment still renders from
+ * `public/` rather than pointing at a host that does not exist.
+ */
+function resolveHeroImage(heroImage: string): string {
+  if (!IMAGE_BASE || !heroImage.startsWith('/images/')) return heroImage;
+  return `${IMAGE_BASE}/${heroImage.replace(/^\/images\//, 'article-images/')}`;
+}
 
 if (!contentRoot) {
   console.error('\n--content=<dir> is required (root of the content package).\n');
@@ -393,7 +429,7 @@ async function importArticles(
         select: { id: true, contentHash: true },
       });
 
-      if (existing?.contentHash === a.contentHash) {
+      if (existing?.contentHash === a.contentHash && !force) {
         stats.unchanged++;
         continue;
       }
@@ -415,7 +451,7 @@ async function importArticles(
         // listing components already read.
         dek: fm.dek ? String(fm.dek) : null,
         excerpt: fm.dek ? String(fm.dek) : null,
-        coverImageUrl: fm.heroImage ? String(fm.heroImage) : null,
+        coverImageUrl: fm.heroImage ? resolveHeroImage(String(fm.heroImage)) : null,
         heroAlt: fm.heroAlt ? String(fm.heroAlt) : null,
         authorName: fm.author ? String(fm.author) : null,
         authorRole: fm.authorRole ? String(fm.authorRole) : null,
@@ -471,6 +507,8 @@ async function main() {
   row('Mode', mode);
   row('Dates', preserveDates ? 'original editorial calendar' : 'import date (client decision)');
   row('State', asDraft ? 'draft' : 'published');
+  row('Hero images', IMAGE_BASE ? `${IMAGE_BASE}/article-images/…` : dim('local /images/… (S3 not configured)'));
+  if (force) row('Force', yellow('re-importing unchanged articles'));
 
   const articles = loadArticles();
   const allSlugs = new Set(articles.map((a) => a.slug));

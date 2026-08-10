@@ -30,7 +30,9 @@
     "purge:stripe": "ts-node -r tsconfig-paths/register scripts/purge-demo-data.ts --mode=stripe-only",
     "articles:report": "ts-node -r tsconfig-paths/register scripts/import-articles.ts --mode=report",
     "articles:trial": "ts-node -r tsconfig-paths/register scripts/import-articles.ts --mode=trial",
-    "articles:execute": "ts-node -r tsconfig-paths/register scripts/import-articles.ts --mode=execute"
+    "articles:execute": "ts-node -r tsconfig-paths/register scripts/import-articles.ts --mode=execute",
+    "images:report": "ts-node -r tsconfig-paths/register scripts/upload-article-images.ts --mode=report",
+    "images:execute": "ts-node -r tsconfig-paths/register scripts/upload-article-images.ts --mode=execute"
   },
   "prisma": {
     "seed": "ts-node -r tsconfig-paths/register prisma/seed.ts"
