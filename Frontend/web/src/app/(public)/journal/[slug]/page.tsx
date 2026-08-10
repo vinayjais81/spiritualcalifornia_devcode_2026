@@ -54,7 +54,12 @@ interface RelatedPostApi {
   excerpt: string | null;
   publishedAt: string | null;
   tags: string[];
-  guide: { slug: string; displayName: string };
+  // Nullable for the same reason as BlogPost.guide above. Declaring it
+  // non-null hid a crash from the compiler: every editorial article threw on
+  // `rp.guide.slug` while the types looked fine.
+  guide: { slug: string; displayName: string } | null;
+  authorName?: string | null;
+  readTime?: string | null;
 }
 
 function formatDate(dateStr: string) {
@@ -454,14 +459,13 @@ export default function SinglePostPage() {
             {related.map((rp) => (
               <PostCard
                 key={rp.id}
-                guideSlug={rp.guide.slug}
                 postSlug={rp.slug}
                 title={rp.title}
                 excerpt={rp.excerpt || undefined}
                 category={rp.tags?.[0]}
-                authorName={rp.guide.displayName}
+                authorName={rp.guide?.displayName ?? rp.authorName ?? 'Spiritual California'}
                 publishedAt={rp.publishedAt ? formatDate(rp.publishedAt) : ''}
-                readTime="5 min read"
+                readTime={rp.readTime ?? '5 min read'}
               />
             ))}
           </div>

@@ -30,12 +30,15 @@ interface BlogPost {
   publishedAt: string | null;
   sortOrder: number;
   createdAt: string;
+  /** Null for editorial articles imported from the content library. */
   guide: {
     id: string;
     slug: string;
     displayName: string;
     user: { avatarUrl: string | null };
-  };
+  } | null;
+  authorKind?: 'EDITORIAL' | 'GUIDE';
+  authorName?: string | null;
 }
 
 interface AuthorOption {
@@ -348,15 +351,22 @@ export default function AdminBlogPage() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
-                              {post.guide.user.avatarUrl ? (
+                              {post.guide?.user.avatarUrl ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img src={post.guide.user.avatarUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
                               ) : (
                                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-200 text-xs text-gray-600">
-                                  {post.guide.displayName[0]}
+                                  {(post.guide?.displayName ?? post.authorName ?? 'SC')[0]}
                                 </div>
                               )}
-                              <span className="text-gray-700">{post.guide.displayName}</span>
+                              <span className="text-gray-700">
+                                {post.guide?.displayName ?? post.authorName ?? 'Spiritual California'}
+                              </span>
+                              {!post.guide && (
+                                <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 text-[10px]">
+                                  Editorial
+                                </Badge>
+                              )}
                             </div>
                           </td>
                           <td className="px-4 py-3">
@@ -470,8 +480,10 @@ function PostModal({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  // Editorial articles have no guide to preselect — the author dropdown opens
+  // empty and the editor picks one only if they are re-attributing the post.
   const [authorValue, setAuthorValue] = useState(
-    existing ? encodeAuthor('guide', existing.guide.id) : '',
+    existing?.guide ? encodeAuthor('guide', existing.guide.id) : '',
   );
   const [title, setTitle] = useState(existing?.title ?? '');
   const [excerpt, setExcerpt] = useState(existing?.excerpt ?? '');

@@ -10,7 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
 import { CacheService } from '../../database/cache.service';
-import { Role, VerificationStatus, PaymentStatus, BookingStatus, TourBookingStatus, PayoutStatus, SubscriptionStatus } from '@prisma/client';
+import { Role, VerificationStatus, PaymentStatus, BookingStatus, TourBookingStatus, PayoutStatus, SubscriptionStatus, AuthorKind } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { EmailService } from '../notifications/email.service';
 import { LedgerService } from '../payments/ledger.service';
@@ -2191,6 +2191,10 @@ export class AdminService {
       if (resolved !== post.guideId) {
         data.guideId = resolved;
         newGuideId = resolved;
+        // Attributing an imported article to a practitioner makes it theirs;
+        // leaving authorKind as EDITORIAL would leave the row claiming to
+        // belong to the publication while pointing at a guide.
+        data.authorKind = AuthorKind.GUIDE;
       }
     }
 
