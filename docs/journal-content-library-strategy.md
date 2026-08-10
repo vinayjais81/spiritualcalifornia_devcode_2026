@@ -354,6 +354,34 @@ link resolution, `verifiedAsOf` staleness warning, external link checker.
 
 ---
 
+## 6a. Client decisions — 2026-08-10 (supersede §7 where they conflict)
+
+1. **`publishedAt` = import date.** The 2.5-year calendar is discarded; all 124
+   publish immediately, dated today.
+   → *Consequence handled:* 124 rows sharing one timestamp makes
+   `orderBy: [{sortOrder}, {publishedAt desc}]` non-deterministic — every tie-break
+   column is equal, so Postgres may return a different order per query and pagination
+   becomes unstable (the same article can appear on two pages). The importer therefore
+   assigns `sortOrder` 1–124 from the original calendar sequence, preserving the
+   editorial reading order as display order while `publishedAt` reads as today.
+   Admin drag-reorder continues to work on top.
+
+2. **One namespace: everything under `/journal/{slug}`.** No `/clinic` or
+   `/what-to-do` prefixes.
+   → *Consequence handled:* 159 internal cross-links (143 `/clinic/`, 16
+   `/what-to-do/`) are rewritten to `/journal/{slug}` at import. This is lossless —
+   all 124 slugs were verified globally unique, so no collision is possible. The
+   `routesTo` frontmatter arrays carry bare slugs and resolve the same way.
+   `series` is still stored for admin filtering and future listing tabs; it just
+   never appears in a URL.
+
+3. **`authorUserId` confirmed.** Added, set on every post regardless of author kind.
+
+4. **Journal table is empty** — the URL restructure costs nothing today.
+
+5. **Editorial responsibility sits with the client.** The six 🔴 articles publish as
+   written; no softening, no engineering sign-off sought.
+
 ## 7. Decisions needed before Phase 1
 
 1. **Publishing calendar — now the launch-blocking decision.** The dates are a strict
