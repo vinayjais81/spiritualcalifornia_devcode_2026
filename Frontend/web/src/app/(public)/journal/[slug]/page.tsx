@@ -54,6 +54,14 @@ interface RelatedPostApi {
   excerpt: string | null;
   publishedAt: string | null;
   tags: string[];
+  /**
+   * Was missing from this interface entirely, so the "You may also like" cards
+   * never received a cover and always rendered PostCard's placeholder. The API
+   * has always returned it.
+   */
+  coverImageUrl: string | null;
+  /** Editorial topic — a better card label than an arbitrary first tag. */
+  categoryLabel?: string | null;
   // Nullable for the same reason as BlogPost.guide above. Declaring it
   // non-null hid a crash from the compiler: every editorial article threw on
   // `rp.guide.slug` while the types looked fine.
@@ -98,14 +106,44 @@ export default function SinglePostPage() {
     fetchPost();
   }, [postSlug]);
 
-  // Related posts: best-effort, silently empty if the endpoint isn't live.
+  /**
+   * Related posts: same topic first, topped up with recent articles.
+   *
+   * This previously asked for the latest 4 with an `excludeId` the API does not
+   * accept, so every article in the library showed the same three posts under
+   * "You may also like". Preferring the article's own category makes the block
+   * mean something; the top-up keeps it full for categories with few articles.
+   */
   useEffect(() => {
     if (!post) return;
     (async () => {
+      const take = (items: RelatedPostApi[], exclude: Set<string>) =>
+        items.filter((p) => p.id !== post.id && !exclude.has(p.id));
+
       try {
-        const res = await api.get('/blog', { params: { limit: 4, excludeId: post.id } });
-        const items: RelatedPostApi[] = res.data?.posts ?? [];
-        setRelated(items.filter((p) => p.id !== post.id).slice(0, 3));
+        const picked: RelatedPostApi[] = [];
+        const seen = new Set<string>();
+
+        if (post.categoryLabel) {
+          const res = await api.get('/blog', {
+            params: { limit: 6, category: post.categoryLabel },
+          });
+          for (const p of take(res.data?.posts ?? [], seen)) {
+            picked.push(p);
+            seen.add(p.id);
+          }
+        }
+
+        if (picked.length < 3) {
+          const res = await api.get('/blog', { params: { limit: 8 } });
+          for (const p of take(res.data?.posts ?? [], seen)) {
+            if (picked.length >= 3) break;
+            picked.push(p);
+            seen.add(p.id);
+          }
+        }
+
+        setRelated(picked.slice(0, 3));
       } catch {
         setRelated([]);
       }
@@ -462,7 +500,8 @@ export default function SinglePostPage() {
                 postSlug={rp.slug}
                 title={rp.title}
                 excerpt={rp.excerpt || undefined}
-                category={rp.tags?.[0]}
+                coverImageUrl={rp.coverImageUrl || undefined}
+                category={rp.categoryLabel ?? rp.tags?.[0]}
                 authorName={rp.guide?.displayName ?? rp.authorName ?? 'Spiritual California'}
                 publishedAt={rp.publishedAt ? formatDate(rp.publishedAt) : ''}
                 readTime={rp.readTime ?? '5 min read'}
