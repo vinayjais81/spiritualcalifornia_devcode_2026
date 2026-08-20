@@ -59,15 +59,26 @@ PGPASSWORD="$MASTER_PW" psql \
   -v app_user="$APP_USER" \
   -v app_pw="$APP_PW" <<'SQL'
 -- Idempotent: safe to re-run, and re-running rotates the password.
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'app_user') THEN
-    EXECUTE format('CREATE ROLE %I LOGIN PASSWORD %L', :'app_user', :'app_pw');
-  ELSE
-    EXECUTE format('ALTER ROLE %I LOGIN PASSWORD %L', :'app_user', :'app_pw');
-  END IF;
-END
-$$;
+--
+-- Deliberately NOT a DO $$ ... $$ block. psql performs variable
+-- interpolation while lexing its input, and it explicitly skips the inside
+-- of quoted literals and dollar-quoted strings — so :'app_user' inside a DO
+-- block reaches the server verbatim and fails. Generating the statement with
+-- format() and running it through \gexec keeps the substitution in psql,
+-- where it works.
+--
+-- format() is still used for %I / %L quoting, so a password containing
+-- punctuation cannot break out of the statement.
+
+-- Postgres has no CREATE ROLE IF NOT EXISTS.
+SELECT format('CREATE ROLE %I LOGIN PASSWORD %L', :'app_user', :'app_pw')
+WHERE NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'app_user')
+\gexec
+
+-- And rotate it if the role was already there.
+SELECT format('ALTER ROLE %I LOGIN PASSWORD %L', :'app_user', :'app_pw')
+WHERE EXISTS (SELECT 1 FROM pg_roles WHERE rolname = :'app_user')
+\gexec
 
 GRANT CONNECT ON DATABASE spiritual_california TO :"app_user";
 
