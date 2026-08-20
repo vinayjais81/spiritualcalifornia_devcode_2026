@@ -50,6 +50,30 @@ PORT="${ENDPOINT##*:}"
 # passes through a shell argument, only stdin and an env var.
 APP_PW=$(openssl rand -base64 32 | tr -d '/+=' | head -c 32)
 
+echo "Creating extensions as the master user on ${HOST}..."
+
+# ── Extensions must be created by the MASTER, not by sc_app ──────────────────
+#
+# Migrations contain `CREATE EXTENSION IF NOT EXISTS pgcrypto` and `pg_trgm`.
+# On RDS, creating an extension requires rds_superuser, which sc_app very
+# deliberately does not have — granting it would hand the application role
+# the ability to alter roles and read everything, to save one line here.
+#
+# Creating them up front as the master makes the migration's IF NOT EXISTS a
+# no-op, so `prisma migrate deploy` succeeds as an unprivileged role.
+#
+# Found the hard way: the first production deploy failed at
+# 20260429000000_payouts_v2_ledger with 42501, "permission denied to create
+# extension pgcrypto".
+PGPASSWORD="$MASTER_PW" psql \
+  "host=$HOST port=$PORT dbname=$DB_NAME user=scadmin sslmode=require" \
+  -v ON_ERROR_STOP=1 <<'SQL'
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- Trigram matching, used by the Postgres FTS search implementation.
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+SELECT extname FROM pg_extension ORDER BY extname;
+SQL
+
 echo "Creating role ${APP_USER} on ${HOST}..."
 
 # sslmode=require, because rds.force_ssl=1 rejects anything else.
