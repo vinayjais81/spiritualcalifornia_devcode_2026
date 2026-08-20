@@ -1,0 +1,21 @@
+# Terraform state can contain resource identifiers and secrets pulled into
+# outputs. The account stack keeps state in S3; only bootstrap/ writes state
+# locally, and that file must never be committed.
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Provider binaries and lock metadata for the local run.
+.terraform/
+
+# Variable files — these hold environment-specific values and sometimes
+# secrets. Commit .tfvars.example instead if a template is needed.
+*.tfvars
+!*.tfvars.example
+
+# Saved plans are a point-in-time snapshot and can embed sensitive values.
+*.tfplan
+
+# Crash logs
+crash.log
+crash.*.log
