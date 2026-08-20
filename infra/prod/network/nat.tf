@@ -126,34 +126,82 @@ resource "aws_eip" "nat_instance" {
 
 /**
  * The NAT is a single point of failure, so it is monitored rather than
- * merely hoped for. A failed status check means outbound traffic has stopped
- * — payments included — and the fix is to replace the instance.
+ * merely hoped for. A failed status check means outbound traffic has
+ * stopped, payments included.
+ *
+ * TWO alarms, because the two status checks mean different things and only
+ * one of them is automatically fixable:
+ *
+ *   StatusCheckFailed_System   — the underlying host/hardware. AWS can move
+ *                                the instance to healthy hardware, so this
+ *                                one gets the `recover` action.
+ *   StatusCheckFailed_Instance — the OS itself is wedged. Recovery cannot
+ *                                help (it would restore the same broken
+ *                                state), so this one only notifies.
+ *
+ * AWS enforces this distinction: the `recover` action is REJECTED on any
+ * metric other than StatusCheckFailed_System, which is what a first apply
+ * of this file discovered.
  */
-resource "aws_cloudwatch_metric_alarm" "nat_instance_health" {
+
+# The alerts topic lives in the account stack. Looked up by name rather than
+# wired through remote state, so the two stacks stay independently appliable.
+data "aws_sns_topic" "alerts" {
+  name = "sc-prod-alerts"
+}
+
+resource "aws_cloudwatch_metric_alarm" "nat_system_check" {
   count = var.use_nat_gateway ? 0 : 1
 
-  alarm_name          = "sc-prod-nat-instance-unhealthy"
-  alarm_description   = "NAT instance failed its status check. Outbound traffic (Stripe, Resend) is down."
+  alarm_name          = "sc-prod-nat-system-check-failed"
+  alarm_description   = "NAT instance host failed. Auto-recovery triggered; outbound traffic (Stripe, Resend) is down until it completes."
   namespace           = "AWS/EC2"
-  metric_name         = "StatusCheckFailed"
+  metric_name         = "StatusCheckFailed_System"
   statistic           = "Maximum"
   period              = 60
   evaluation_periods  = 2
   threshold           = 0
   comparison_operator = "GreaterThanThreshold"
-  treat_missing_data  = "breaching"
+
+  # `missing`, not `breaching`: a deliberately stopped instance would
+  # otherwise look like a failure and trigger recovery attempts against a
+  # host nobody asked to be running.
+  treat_missing_data = "missing"
 
   dimensions = {
     InstanceId = aws_instance.nat[0].id
   }
 
-  # Recover the instance on underlying-hardware failure without waiting for
-  # a human. Does not help if the OS itself wedges.
   alarm_actions = [
     "arn:aws:automate:${var.region}:ec2:recover",
+    data.aws_sns_topic.alerts.arn,
   ]
 
-  tags = { Name = "sc-prod-nat-alarm" }
+  tags = { Name = "sc-prod-nat-system-alarm" }
+}
+
+resource "aws_cloudwatch_metric_alarm" "nat_instance_check" {
+  count = var.use_nat_gateway ? 0 : 1
+
+  alarm_name          = "sc-prod-nat-instance-check-failed"
+  alarm_description   = "NAT instance OS is unresponsive. Outbound traffic (Stripe, Resend) is down and needs manual replacement."
+  namespace           = "AWS/EC2"
+  metric_name         = "StatusCheckFailed_Instance"
+  statistic           = "Maximum"
+  period              = 60
+  evaluation_periods  = 2
+  threshold           = 0
+  comparison_operator = "GreaterThanThreshold"
+  treat_missing_data  = "missing"
+
+  dimensions = {
+    InstanceId = aws_instance.nat[0].id
+  }
+
+  # Notify only. Recovery would restore the same wedged OS.
+  alarm_actions = [data.aws_sns_topic.alerts.arn]
+
+  tags = { Name = "sc-prod-nat-instance-alarm" }
 }
 
 # ─── Option B: managed NAT Gateway ───────────────────────────────────────────
