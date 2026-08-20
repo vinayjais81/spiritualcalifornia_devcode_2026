@@ -85,7 +85,17 @@ jobs:
       # the commit being deployed rather than drifting on the instance.
       - name: Deploy
         run: |
-          SCRIPT=$(cat infra/scripts/deploy-on-instance.sh)
+          # The script is base64'd rather than embedded as text.
+          #
+          # It has to survive bash -> JSON -> the AWS CLI -> dash on the
+          # instance, and a shell script is full of exactly the characters
+          # each of those layers treats specially: quotes, $(), backslashes,
+          # newlines. Passing it as a heredoc failed with a syntax error
+          # pointing at a "(" that was never meant to be interpreted at all.
+          #
+          # Base64 is [A-Za-z0-9+/=] and a single line, so nothing in it means
+          # anything to any layer in between.
+          SCRIPT_B64=$(base64 -w0 infra/scripts/deploy-on-instance.sh)
           FIRST=true
 
           for ID in ${{ steps.targets.outputs.ids }}; do
@@ -109,19 +119,30 @@ jobs:
             # Comments must stay OUT of the backslash continuation below: a
             # `\` continues to the next line, and a comment line breaks the
             # chain so the following argument is parsed as its own command.
+            # Built with jq into a JSON file so the shell never has to quote
+            # it, and passed by reference. Every previous failure here came
+            # from a quoting layer, not from the deploy itself.
+            jq -n \
+              --arg b64 "$SCRIPT_B64" \
+              --arg sha "${{ steps.sha.outputs.sha }}" \
+              --arg mig "$RUN_MIG" \
+              '{
+                 commands: [
+                   "set -eu",
+                   ("echo " + $b64 + " | base64 -d > /tmp/deploy.sh"),
+                   "chown ubuntu:ubuntu /tmp/deploy.sh",
+                   ("sudo -u ubuntu -H env TARGET_SHA=" + $sha
+                     + " RUN_MIGRATIONS=" + $mig
+                     + " REGION=us-west-1 bash /tmp/deploy.sh")
+                 ]
+               }' > /tmp/ssm-params.json
+
             CMD=$(aws ssm send-command \
               --instance-ids "$ID" \
               --document-name AWS-RunShellScript \
               --comment "deploy ${{ steps.sha.outputs.sha }}" \
               --timeout-seconds 2400 \
-              --parameters commands="$(jq -Rn --arg s "$SCRIPT" --arg sha '${{ steps.sha.outputs.sha }}' --arg mig "$RUN_MIG" '
-                [
-                  "set -eu",
-                  "cat > /tmp/deploy.sh <<'SCRIPT_EOF'\n\($s)\nSCRIPT_EOF",
-                  "chmod +x /tmp/deploy.sh",
-                  "chown ubuntu:ubuntu /tmp/deploy.sh",
-                  "sudo -u ubuntu -H env TARGET_SHA=\($sha) RUN_MIGRATIONS=\($mig) REGION=us-west-1 bash /tmp/deploy.sh"
-                ]')" \
+              --parameters file:///tmp/ssm-params.json \
               --query "Command.CommandId" --output text)
 
             echo "SSM command $CMD"
