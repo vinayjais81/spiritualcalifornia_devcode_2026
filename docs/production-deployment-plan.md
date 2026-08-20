@@ -740,6 +740,21 @@ Each of these has already cost time on QA, or will cost time on launch day. They
 0c. **`CacheService` had never executed, in any environment.** It reads `REDIS_URL`, which was absent from `env.validation.ts`, so Zod stripped it and the service disabled itself everywhere. Every `getOrSet` fell through to Postgres. Declaring it then exposed a second defect — its `retryStrategy` never returned `null`, so enabling it crash-looped the process. Both fixed, and the cache now sits behind `CACHE_ENABLED` (default off) so switching it on is deliberate and switching it off is an env change rather than a code deploy. See the env inventory.
 
 1. **`/api/*` collision.** Next.js owns `/api/revalidate-static-page`. The ALB rule ordering in §P6 is load-bearing.
+
+   **CONFIRMED LIVE ON QA, 2026-08-20 — this was never a hypothetical.** A `POST` to that path returned NestJS's own 404 shape (`{"message":"Cannot POST /api/revalidate-static-page",...}`), identical to a known-bad Nest route, proving Nginx's `location /api/` was swallowing it. CMS revalidation had therefore never worked in any deployed environment: admin edits to Terms / Privacy / Refund / Disclosures fell back to the 5-minute ISR window instead of publishing on save. Fixed on QA with an exact-match block that outranks the prefix match regardless of file order:
+
+   ```nginx
+   location = /api/revalidate-static-page {
+       proxy_pass http://127.0.0.1:3000;   # NO trailing slash — it would strip the path
+       proxy_http_version 1.1;
+       proxy_set_header Host              $host;
+       proxy_set_header X-Real-IP         $remote_addr;
+       proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+       proxy_set_header X-Forwarded-Proto $scheme;
+   }
+   ```
+
+   After the reload the route returned `401 {"ok":false,"error":"Unauthorized"}` — a Next.js response, confirming both the routing and that `STATIC_PAGE_REVALIDATE_SECRET` is present on the frontend. **Do not mirror QA's old routing into the ALB**; priority 10 in §P6 is the equivalent, and it is required, not defensive.
 2. **CORS is exactly one origin in production.** `main.ts:38-41` — `www`, a trailing slash or `http://` all fail. `FRONTEND_URL` must be byte-exact.
 3. **`sameSite: 'strict'` refresh cookie** (`auth.controller.ts:260`) — this is why the API cannot live on `api.spiritualcalifornia.com` (D4).
 4. **Undeclared env vars vanish.** Zod's `z.object()` strips unknown keys; `@nestjs/config` exposes only validated ones.
