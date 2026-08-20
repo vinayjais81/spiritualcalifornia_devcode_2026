@@ -29,8 +29,8 @@ Out of scope: application feature work, the practitioner-import content pipeline
 | DNS | `spiritualcalifornia.nityo.in` (A record → Elastic IP) |
 | Compute | 1 × EC2, Ubuntu, PM2 running `sc-api` (:3001) + `sc-web` (:3000) |
 | Ingress | Nginx on the box, Let's Encrypt certificate, path-routes `/api/*` → 3001, `/*` → 3000 |
-| Database | RDS PostgreSQL 16, single-AZ |
-| Cache/queues | Redis; BullMQ workers run **in-process** inside `sc-api` |
+| Database | RDS PostgreSQL **17.9** (`database-1`), `db.t3.micro`, single-AZ, 20 GiB, **1-day backup retention**, no deletion protection |
+| Cache/queues | **No ElastiCache exists** — Redis runs locally on the EC2 instance. BullMQ workers run **in-process** inside `sc-api`. Production is therefore the first time this app talks to a remote, authenticated Redis |
 | Storage | S3 bucket, pre-signed direct browser uploads |
 | Deploy | GitHub Actions `deploy.yml` → SSH → `git reset --hard origin/main` → `npm ci` → `prisma migrate deploy` → `npm run seed:pages` → build → `pm2 restart` |
 | Secrets | `.env` files edited by hand on the instance |
@@ -112,7 +112,7 @@ This is the crux of the constraint. A single account has no hard tenancy boundar
 {
   "Effect": "Allow",
   "Action": ["ssm:GetParameter", "ssm:GetParameters", "ssm:GetParametersByPath"],
-  "Resource": "arn:aws:ssm:us-west-2:<ACCOUNT_ID>:parameter/sc/prod/*"
+  "Resource": "arn:aws:ssm:us-west-1:<ACCOUNT_ID>:parameter/sc/prod/*"
 }
 ```
 
@@ -171,12 +171,12 @@ Enforce with an AWS Config `required-tags` rule → SNS on non-compliance. An un
 
 | # | Decision | Choice | Rationale |
 |---|---|---|---|
-| D1 | Region | **us-west-2 (Oregon)** | us-west-1 exposes only 2 AZs to most accounts and does not offer every service this stack uses — **AWS Textract in particular is not available in every region; us-west-2 has it.** Verify Textract + Stripe Identity coverage before committing. Oregon is also ~10% cheaper and offers 4 AZs. Region separation from QA (us-west-1) is a free extra blast-radius boundary. *Fallback if the client mandates parity: us-west-1, Multi-AZ across 1a/1c, Textract called cross-region.* |
+| D1 | Region | **us-west-1 (N. California)** — same region as QA | REVISED 2026-08-20 after verification against the live account. The original recommendation was us-west-2, largely because Textract was believed unavailable in us-west-1; **that was checked in the client account and is false — Textract is available in us-west-1.** With that argument gone, parity wins: one region to reason about for a one-dev team, and the dedicated VPC already supplies the isolation a second region would have added. us-west-1 offers two AZs to this account (`us-west-1a`, `us-west-1c`), which is enough for Multi-AZ RDS and a two-AZ ASG. Costs roughly 10% more than Oregon (~$40/mo at this scale) — accepted. |
 | D2 | Compute | **EC2 + ASG + PM2**, not ECS Fargate | Keeps the pipeline the team already operates. Containerisation is Phase 2 (§13); doing it during a launch adds a second unproven variable. |
 | D3 | Ingress | **ALB path-based routing**; Nginx dropped | Two target groups on the same instances (:3000, :3001), each health-checked independently. See the `/api/revalidate-static-page` trap in §10.1. |
 | D4 | Single origin | Frontend and API both on **`https://spiritualcalifornia.com`** — no `api.` subdomain | The refresh-token cookie is `sameSite: 'strict'` in production (`auth.controller.ts:260`). Splitting the API onto a subdomain makes every refresh cross-site and **silently breaks session renewal**. Same-origin is a hard requirement, not a preference. |
 | D5 | Canonical host | apex `spiritualcalifornia.com`; `www.` **301-redirects** to apex | `NODE_ENV=production` locks CORS to exactly `[FRONTEND_URL]` (`main.ts:38-41`). If `www` *serves* the app, every API call from `www` fails CORS. It must redirect at the ALB, not be served. |
-| D6 | Database | RDS PostgreSQL 16, **Multi-AZ instance**, `db.t4g.medium` to start | Multi-AZ *cluster* mode requires m6gd/r6gd class — overkill at launch. t4g.medium → r6g.large is a resize, not a rebuild. |
+| D6 | Database | RDS PostgreSQL **17.x** (matching QA 17.9), **Multi-AZ instance**, `db.t4g.medium` to start | Multi-AZ *cluster* mode requires m6gd/r6gd class — overkill at launch. t4g.medium → r6g.large is a resize, not a rebuild. |
 | D7 | Secrets | **SSM Parameter Store SecureString**, one blob per app: `/sc/prod/api/dotenv`, `/sc/prod/web/dotenv` | Satisfies "I'll edit live creds manually" — the operator edits one encrypted parameter — while surviving instance replacement and giving versioning + instant rollback. Parameter Store Standard is free; Secrets Manager costs $0.40/secret/mo and buys rotation the app can't use yet. |
 | D8 | Data migration | **None. Prod starts empty.** | QA holds demo/test data. Copying it would import test accounts, fake payouts and sandbox Stripe IDs. |
 | D9 | Deploy trigger | Manual dispatch / tag on a **`production` branch**, GitHub Environment with required approval | `main` → QA stays automatic. Prod never deploys on a merge. |
@@ -228,18 +228,18 @@ Application changes production requires and QA currently masks. Do these in `mai
 
    This removes AWS access keys from GitHub secrets entirely.
 
-8. **Check service quotas** in us-west-2 on day one: EC2 vCPU, Elastic IPs, VPCs per region, RDS instances.
+8. **Check service quotas** in us-west-1 on day one: EC2 vCPU, Elastic IPs, VPCs per region, RDS instances.
 
 ### P2 — Network (~0.5 day)
 
 | Resource | Spec |
 |---|---|
 | VPC | `sc-prod-vpc`, `10.20.0.0/16`, DNS hostnames + resolution on |
-| Public subnets | `10.20.0.0/24` (us-west-2a), `10.20.1.0/24` (2b) — ALB + NAT only |
-| Private app subnets | `10.20.10.0/24` (2a), `10.20.11.0/24` (2b) — EC2 |
-| Private data subnets | `10.20.20.0/24` (2a), `10.20.21.0/24` (2b) — RDS + ElastiCache |
+| Public subnets | `10.20.0.0/24` (us-west-1a), `10.20.1.0/24` (us-west-1c) — ALB + NAT only |
+| Private app subnets | `10.20.10.0/24` (us-west-1a), `10.20.11.0/24` (us-west-1c) — EC2 |
+| Private data subnets | `10.20.20.0/24` (us-west-1a), `10.20.21.0/24` (us-west-1c) — RDS + ElastiCache |
 | IGW | attached; routed only from public subnets |
-| NAT Gateway | 1, in us-west-2a to start (see trade-off below) |
+| NAT Gateway | 1, in us-west-1a to start (see trade-off below) |
 | VPC endpoints | **Gateway:** S3 (free, keeps upload traffic off NAT). **Interface:** `ssm`, `ssmmessages`, `ec2messages` (required for Session Manager without internet), `logs`, `kms`, `secretsmanager` |
 | Flow logs | → CloudWatch Logs, 30-day retention |
 
@@ -262,7 +262,7 @@ Application changes production requires and QA currently masks. Do these in `mai
 
 ```
 Identifier:            sc-prod-rds-pg16
-Engine:                PostgreSQL 16.x (match QA's minor version at launch)
+Engine:                PostgreSQL 17.x — QA runs 17.9; match its minor version at launch
 Class:                 db.t4g.medium (2 vCPU / 4 GiB) → r6g.large when p95 CPU > 60%
 Multi-AZ:              Yes (instance deployment)
 Storage:               100 GiB gp3, autoscaling to 500 GiB
@@ -357,12 +357,17 @@ Required by the Zod schema — **the API refuses to boot if any is missing or em
 | `NODE_ENV` | `production` | Turns on HSTS, CSP, strict CORS, `sameSite: strict` cookies; disables Swagger |
 | `PORT` | `3001` | |
 | `FRONTEND_URL` | `https://spiritualcalifornia.com` | **Exact — no trailing slash, no `www`.** This is the entire CORS allow-list in prod |
-| `DATABASE_URL` | `postgresql://sc_app:<pw>@sc-prod-rds-pg16…:5432/spiritual_california?schema=public&sslmode=require&connection_limit=10` | See §8 on pool sizing |
+| `DATABASE_URL` | `postgresql://sc_app:<pw>@sc-prod-rds-pg16…:5432/spiritual_california?schema=public&sslmode=require` plus a separate `DATABASE_POOL_MAX` | **`connection_limit` does NOT work here** — PrismaService drives a `pg` Pool via @prisma/adapter-pg, which never reads it. See §8 |
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` | ElastiCache primary endpoint / 6379 / AUTH token | Queues read `REDIS_HOST`/`PORT`, **not** `REDIS_URL` |
+| `REDIS_TLS` | `true` | **Required** if the replication group has in-transit encryption on, or every queue fails to connect |
+| `REDIS_URL` | `rediss://:<auth>@<primary>:6379` | Read only by `CacheService`. Note `rediss://` (two s) when TLS is on |
+| `CACHE_ENABLED` | `false` at launch → `true` once invalidation is verified under real traffic | The cache had never run in any environment before 2026-08-20, so it goes live deliberately and separately. Off costs nothing but database load |
+| `TRUST_PROXY_HOPS` | `1` (the ALB) | Wrong value either breaks per-client rate limiting or lets a caller forge `X-Forwarded-For` |
+| `DATABASE_POOL_MAX` | `10` to start | The real pool control — `connection_limit` in the URL is ignored. Budget `instances × processes × this` against RDS `max_connections` |
 | `JWT_ACCESS_SECRET` | `openssl rand -hex 32` — **new, never reused from QA** | ≥32 chars enforced |
 | `JWT_REFRESH_SECRET` | different `openssl rand -hex 32` | |
 | `JWT_ACCESS_EXPIRES_IN` / `JWT_REFRESH_EXPIRES_IN` | `30m` / `7d` | |
-| `AWS_REGION` | `us-west-2` | |
+| `AWS_REGION` | `us-west-1` | |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | see note below | |
 | `AWS_S3_BUCKET` | `sc-prod-uploads` | |
 | `AWS_CLOUDFRONT_URL` | `https://<dist>.cloudfront.net` | |
@@ -466,7 +471,7 @@ Target groups:
 | TG | Port | Health check | Success |
 |---|---|---|---|
 | `sc-prod-web-tg` | 3000 | `/healthz`, 30s, 2 healthy / 3 unhealthy | 200 |
-| `sc-prod-api-tg` | 3001 | `/api/v1/health`, 30s, 2/3 | 200 |
+| `sc-prod-api-tg` | 3001 | `/api/v1/health/live`, 30s, 2/3 | 200 |
 
 Both: deregistration delay 60s (drains in-flight requests); stickiness **off** — JWT auth is stateless, don't introduce sticky sessions.
 
@@ -486,7 +491,7 @@ Both: deregistration delay 60s (drains in-flight requests); stickiness **off** �
 
 1. **Route 53 public hosted zone** for `spiritualcalifornia.com`; note the four NS records.
 2. **Before touching the registrar:** lower the TTL on existing records at the current DNS provider to 300s and wait out the old TTL. This is what makes the cutover reversible in minutes rather than hours.
-3. **ACM certificate** in **us-west-2** for apex + `www`, DNS-validated, auto-renew. (Separate us-east-1 cert if a `cdn.` CloudFront alias is used.)
+3. **ACM certificate** in **us-west-1** for apex + `www`, DNS-validated, auto-renew. (Separate us-east-1 cert if a `cdn.` CloudFront alias is used.)
 4. Records:
 
 | Name | Type | Value |
@@ -711,12 +716,12 @@ Targets: **RPO 5 minutes** (RDS PITR granularity), **RTO 1 hour** (restore + DNS
 
 | # | Change | Phase | Size |
 |---|---|---|---|
-| 1 | `trust proxy` via `NestExpressApplication` | P0.1 | S — **critical** |
+| 1 | `trust proxy` via `NestExpressApplication` | P0.1 | ✅ **DONE** — commit d0af2eb |
 | 2 | Redis-backed throttler storage | P0.2 | S |
-| 3 | `/api/v1/health` + `/healthz` | P0.3 | S |
-| 4 | `enableShutdownHooks()` + BullMQ drain on SIGTERM | P0.4 | M |
+| 3 | `/api/v1/health/live` (ALB) + `/api/v1/health` (deep) + `/healthz` | P0.3 | ✅ **DONE** — commit d0af2eb. Split into liveness vs readiness; see note below |
+| 4 | `enableShutdownHooks()` + BullMQ drain on SIGTERM | P0.4 | ✅ **DONE** — commit d0af2eb |
 | 5 | Explicit Helmet CSP directives | P0.5 | M — **critical** |
-| 6 | `tls: {}` on all five BullMQ connections | P3 | S |
+| 6 | `tls: {}` on all BullMQ connections (six, not five — verification.service.ts has its own) | P3 | ✅ **DONE** — commit d0af2eb, via `REDIS_TLS` + `buildQueueConnection()` |
 | 7 | Declare any new env var in `env.validation.ts` | P5 | S |
 | 8 | Confirm AWS SDK clients use the default credential chain | P5 | S |
 | 9 | `deploy-prod.yml` + SSM deploy script | P8 | M |
@@ -727,6 +732,12 @@ Targets: **RPO 5 minutes** (RDS PITR granularity), **RTO 1 hour** (restore + DNS
 ## 10. Codebase-specific traps
 
 Each of these has already cost time on QA, or will cost time on launch day. They are why this document is longer than a generic AWS runbook.
+
+0. **The API used to hang forever at boot when Redis was unreachable — FIXED 2026-08-20, commit `d0af2eb`.** Found by running the app with Redis stopped, not by reading it. Every queue's `onModuleInit` awaited `queue.add(...)` to arm its repeatable job; BullMQ *buffers* that command while disconnected, so the promise never settled — neither resolved nor rejected. The `try/catch` around it, commented as letting the API "log and continue rather than refusing to boot", could never fire, and Nest's bootstrap stalled before `app.listen()`. Invisible on QA, where Redis is on localhost and up whenever the box is. **In production this was an unrecoverable outage**: ElastiCache is a cross-AZ dependency with failovers, so any instance starting during a blip would hang forever, never pass a health check, and in an ASG replacements would never enter service. `onModuleInit` now delegates to a non-awaited `initQueue()`. **When ElastiCache is introduced in P3, re-run the Redis-down boot test before trusting the ASG.**
+
+0b. **Nothing had `error` listeners on the BullMQ Queue/Worker objects** — an `'error'` event with no listener is an unhandled exception in Node, so an unreachable Redis produced raw `AggregateError`s. Measured 30 before, 0 after. Fixed in the same commit; note there are **six** Redis consumers, not five — `verification.service.ts` builds its own queue outside the `*.queue.ts` files.
+
+0c. **`CacheService` had never executed, in any environment.** It reads `REDIS_URL`, which was absent from `env.validation.ts`, so Zod stripped it and the service disabled itself everywhere. Every `getOrSet` fell through to Postgres. Declaring it then exposed a second defect — its `retryStrategy` never returned `null`, so enabling it crash-looped the process. Both fixed, and the cache now sits behind `CACHE_ENABLED` (default off) so switching it on is deliberate and switching it off is an env change rather than a code deploy. See the env inventory.
 
 1. **`/api/*` collision.** Next.js owns `/api/revalidate-static-page`. The ALB rule ordering in §P6 is load-bearing.
 2. **CORS is exactly one origin in production.** `main.ts:38-41` — `www`, a trailing slash or `http://` all fail. `FRONTEND_URL` must be byte-exact.
@@ -748,7 +759,7 @@ Each of these has already cost time on QA, or will cost time on launch day. They
 
 ---
 
-## 11. Cost estimate (us-west-2, on-demand, monthly)
+## 11. Cost estimate (us-west-1, on-demand, monthly)
 
 | Item | Launch tier | Scale tier (4 app instances, r6g.large DB) |
 |---|---|---|
@@ -804,7 +815,7 @@ Deliberately excluded from launch scope, in the order they become worthwhile:
 
 | # | Question | Default if no answer (proceeding on this basis) |
 |---|---|---|
-| 1 | Region: us-west-2 (recommended) or us-west-1 for parity? | **us-west-2**, pending a Textract / Stripe Identity availability check |
+| 1 | Region: us-west-1 or us-west-2? | **RESOLVED 2026-08-20 — us-west-1**, same region as QA. Textract availability was verified in the client account, removing the original reason to prefer Oregon. |
 | 2 | One NAT Gateway or two? | **One**, AZ-failure risk recorded, revisited at week 4 |
 | 3 | Is `www` a redirect or a served host? | **Redirect to apex** — required by the CORS design |
 | 4 | Does inbound email (MX) need hosting, or is the domain send-only? | **Send-only**; no MX records created |
