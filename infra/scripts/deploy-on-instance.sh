@@ -134,17 +134,30 @@ npm run build
 log "swapping processes"
 cd "${APP_DIR}"
 
-if pm2 describe sc-api > /dev/null 2>&1; then
-  pm2 restart sc-api
-else
-  pm2 start "${APP_DIR}/Backend/api/dist/main.js" --name sc-api
-fi
+#
+# --cwd is load-bearing for sc-api, not cosmetic.
+#
+# ConfigModule uses `envFilePath: '.env'`, which dotenv resolves relative to
+# the process's working directory. Started without --cwd the process inherits
+# this script's directory (the repo root), looks for a .env that is not
+# there, and every variable arrives undefined — so Zod rejects the config and
+# the process crash-loops. The .env is written into Backend/api, so that is
+# where the process has to run.
+#
+# delete-then-start rather than restart: PM2 stores the options a process was
+# CREATED with, so a restart would silently keep an old --cwd and this fix
+# would appear not to work. At one instance the gap is a couple of seconds,
+# and it guarantees the running process matches the current script.
+pm2 delete sc-api > /dev/null 2>&1 || true
+pm2 start "${APP_DIR}/Backend/api/dist/main.js" \
+  --name sc-api \
+  --cwd "${APP_DIR}/Backend/api"
 
-if pm2 describe sc-web > /dev/null 2>&1; then
-  pm2 restart sc-web
-else
-  pm2 start npm --name sc-web --cwd "${APP_DIR}/Frontend/web" -- start
-fi
+pm2 delete sc-web > /dev/null 2>&1 || true
+pm2 start npm \
+  --name sc-web \
+  --cwd "${APP_DIR}/Frontend/web" \
+  -- start
 
 pm2 save
 
