@@ -33,20 +33,47 @@ import type { PoolConfig } from 'pg';
  * — the connection is built exactly as before, so nothing changes off RDS.
  */
 export function buildPoolConfig(connectionString: string | undefined, poolMax?: number): PoolConfig {
-  const config: PoolConfig = { connectionString };
+  const caPath = process.env.DATABASE_CA_CERT_PATH;
+  const useCa = !!caPath && existsSync(caPath);
+
+  /**
+   * `sslmode` has to come OUT of the URL when we supply a CA.
+   *
+   * node-postgres parses the connection string and derives its own `ssl`
+   * object from `sslmode`, which then competes with the one passed
+   * alongside it. The URL wins, our CA is discarded, and the connection
+   * fails with the same "self-signed certificate in certificate chain" as
+   * if nothing had been configured at all — the fix looks applied and has
+   * no effect.
+   *
+   * Removing the parameter leaves exactly one source of truth. TLS is still
+   * mandatory: the `ssl` object below turns it on, and RDS enforces it
+   * server-side anyway via rds.force_ssl=1.
+   */
+  const url = useCa ? stripSslMode(connectionString) : connectionString;
+
+  const config: PoolConfig = { connectionString: url };
 
   if (poolMax && poolMax > 0) {
     config.max = poolMax;
   }
 
-  const caPath = process.env.DATABASE_CA_CERT_PATH;
-  if (caPath && existsSync(caPath)) {
+  if (useCa) {
     config.ssl = {
-      ca: readFileSync(caPath, 'utf8'),
+      ca: readFileSync(caPath as string, 'utf8'),
       // The entire point. Never set this to false to make an error go away.
       rejectUnauthorized: true,
     };
   }
 
   return config;
+}
+
+/** Remove any `sslmode=...` parameter, leaving the rest of the URL intact. */
+function stripSslMode(connectionString: string | undefined): string | undefined {
+  if (!connectionString) return connectionString;
+
+  return connectionString
+    .replace(/([?&])sslmode=[^&]*&/i, '$1')
+    .replace(/[?&]sslmode=[^&]*$/i, '');
 }
