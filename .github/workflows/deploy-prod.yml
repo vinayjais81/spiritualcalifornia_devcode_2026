@@ -1,0 +1,196 @@
+name: Deploy to Production
+
+# Never on push. Production ships when a person decides it ships.
+#
+# The `production` GitHub Environment carries required reviewers, and the
+# AWS trust policy is pinned to `environment:production` — so AWS will not
+# issue a credential at all until a human has approved the run.
+on:
+  workflow_dispatch:
+    inputs:
+      run_migrations:
+        description: "Run prisma migrate deploy (a pre-deploy snapshot is always taken first)"
+        type: boolean
+        default: true
+      ref:
+        description: "Branch, tag or SHA to deploy"
+        type: string
+        default: production
+
+concurrency:
+  group: deploy-prod
+  cancel-in-progress: false # never abandon a half-finished production deploy
+
+env:
+  AWS_REGION: us-west-1
+  ASG_NAME: sc-prod-app-asg
+  DB_IDENTIFIER: sc-prod-rds-pg
+
+permissions:
+  id-token: write # request the OIDC token
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Resolve commit
+        id: sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      # No AWS access keys exist in this repository. The role is assumed with
+      # a short-lived OIDC token scoped to this repo AND this environment.
+      - name: Assume the deploy role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::372110294387:role/sc-prod-deploy-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      # The rollback. Prisma migrations do not reverse themselves, so a
+      # snapshot taken BEFORE the migration is the only way back from a bad
+      # one. Taken unconditionally: the cheapest insurance in the pipeline.
+      - name: Pre-deploy snapshot
+        run: |
+          SNAP="sc-prod-presnap-$(echo '${{ steps.sha.outputs.sha }}' | cut -c1-8)-$(date -u +%Y%m%d%H%M)"
+          echo "Creating $SNAP"
+          aws rds create-db-snapshot \
+            --db-instance-identifier "$DB_IDENTIFIER" \
+            --db-snapshot-identifier "$SNAP" \
+            --tags Key=Environment,Value=prod Key=Project,Value=spiritual-california
+          aws rds wait db-snapshot-available --db-snapshot-identifier "$SNAP"
+          echo "SNAPSHOT=$SNAP" >> "$GITHUB_ENV"
+          echo "Snapshot ready. Restore target if this deploy goes wrong."
+
+      - name: Find instances
+        id: targets
+        run: |
+          IDS=$(aws autoscaling describe-auto-scaling-groups \
+            --auto-scaling-group-names "$ASG_NAME" \
+            --query "AutoScalingGroups[0].Instances[?LifecycleState=='InService'].InstanceId" \
+            --output text)
+          [ -n "$IDS" ] || { echo "No in-service instances"; exit 1; }
+          echo "Deploying to: $IDS"
+          echo "ids=$IDS" >> "$GITHUB_OUTPUT"
+
+      # The script is read from the checked-out repo, so it always matches
+      # the commit being deployed rather than drifting on the instance.
+      - name: Deploy
+        run: |
+          SCRIPT=$(cat infra/scripts/deploy-on-instance.sh)
+          FIRST=true
+
+          for ID in ${{ steps.targets.outputs.ids }}; do
+            echo "::group::$ID"
+
+            # Migrations run once, from the first instance only. Concurrent
+            # `migrate deploy` would contend on Prisma's advisory lock — safe,
+            # but still a bug worth not having.
+            RUN_MIG="false"
+            if [ "$FIRST" = "true" ] && [ "${{ inputs.run_migrations }}" = "true" ]; then
+              RUN_MIG="true"
+            fi
+
+            CMD=$(aws ssm send-command \
+              --instance-ids "$ID" \
+              --document-name AWS-RunShellScript \
+              --comment "deploy ${{ steps.sha.outputs.sha }}" \
+              --timeout-seconds 2400 \
+              --parameters commands="$(jq -Rn --arg s "$SCRIPT" --arg sha '${{ steps.sha.outputs.sha }}' --arg mig "$RUN_MIG" '
+                [
+                  "set -euo pipefail",
+                  "export TARGET_SHA=\($sha)",
+                  "export RUN_MIGRATIONS=\($mig)",
+                  "cat > /tmp/deploy.sh <<'SCRIPT_EOF'\n\($s)\nSCRIPT_EOF",
+                  "chmod +x /tmp/deploy.sh",
+                  "sudo -u ubuntu -H env TARGET_SHA=\($sha) RUN_MIGRATIONS=\($mig) REGION=us-west-1 bash /tmp/deploy.sh"
+                ]')" \
+              --query "Command.CommandId" --output text)
+
+            echo "SSM command $CMD"
+            if ! aws ssm wait command-executed --command-id "$CMD" --instance-id "$ID"; then
+              echo "::error::Deploy failed on $ID"
+              aws ssm get-command-invocation --command-id "$CMD" --instance-id "$ID" \
+                --query "StandardErrorContent" --output text || true
+              aws ssm get-command-invocation --command-id "$CMD" --instance-id "$ID" \
+                --query "StandardOutputContent" --output text | tail -60 || true
+              echo "Restore point: $SNAPSHOT"
+              exit 1
+            fi
+
+            aws ssm get-command-invocation --command-id "$CMD" --instance-id "$ID" \
+              --query "StandardOutputContent" --output text | tail -40
+            echo "::endgroup::"
+            FIRST=false
+          done
+
+      # Written after success so a replacement instance launched later
+      # bootstraps to the code that is actually running, rather than to
+      # whatever the AMI happened to contain.
+      - name: Record deployed commit
+        run: |
+          aws ssm put-parameter \
+            --name /sc/prod/app/target-sha \
+            --description "Commit currently deployed to production." \
+            --type String --overwrite \
+            --value "${{ steps.sha.outputs.sha }}"
+
+      # Verified through the load balancer, not just on the instance: this is
+      # the first check that exercises the target groups and listener rules
+      # rather than localhost.
+      - name: Verify through the load balancer
+        run: |
+          ALB=$(aws elbv2 describe-load-balancers --names sc-prod-alb \
+            --query "LoadBalancers[0].DNSName" --output text)
+
+          for i in $(seq 1 30); do
+            WEB=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://$ALB/healthz" || echo 000)
+            API=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://$ALB/api/v1/health/live" || echo 000)
+            if [ "$WEB" = "200" ] && [ "$API" = "200" ]; then
+              echo "Load balancer serving both apps."
+
+              # The /api/* collision guard. Priority 10 must send this to
+              # Next.js; if it reaches NestJS the response is a Nest-shaped
+              # 404 and CMS revalidation is silently broken.
+              REVAL=$(curl -s --max-time 10 -X POST -H 'Content-Type: application/json' \
+                -d '{}' "http://$ALB/api/revalidate-static-page" || echo '')
+              case "$REVAL" in
+                *Unauthorized*|*secret*|*slug*)
+                  echo "Revalidate route correctly reaches Next.js." ;;
+                *"Cannot POST"*)
+                  echo "::error::/api/revalidate-static-page is hitting NestJS — listener rule priority 10 is wrong."
+                  exit 1 ;;
+                *)
+                  echo "::warning::Unexpected revalidate response: $REVAL" ;;
+              esac
+              exit 0
+            fi
+            echo "  web=$WEB api=$API — retrying"
+            sleep 10
+          done
+
+          echo "::error::Load balancer never returned healthy. Restore point: $SNAPSHOT"
+          exit 1
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Production deploy"
+            echo ""
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Commit | \`${{ steps.sha.outputs.sha }}\` |"
+            echo "| Ref | \`${{ inputs.ref }}\` |"
+            echo "| Migrations | ${{ inputs.run_migrations }} |"
+            echo "| Snapshot | \`$SNAPSHOT\` |"
+            echo "| Result | ${{ job.status }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
