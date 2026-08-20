@@ -754,7 +754,7 @@ Each of these has already cost time on QA, or will cost time on launch day. They
    }
    ```
 
-   After the reload the route returned `401 {"ok":false,"error":"Unauthorized"}` — a Next.js response, confirming both the routing and that `STATIC_PAGE_REVALIDATE_SECRET` is present on the frontend. **Do not mirror QA's old routing into the ALB**; priority 10 in §P6 is the equivalent, and it is required, not defensive.
+   After the reload the route returned `401 {"ok":false,"error":"Unauthorized"}` — a Next.js response, confirming both the routing and that `STATIC_PAGE_REVALIDATE_SECRET` is present on the frontend. **Verified end-to-end the same day**: a content edit to `/crisis-support` in the admin panel appeared on the public page immediately rather than after the 5-minute ISR window, which also proves the secret *matches* on both the backend and the frontend (a mismatch would 401 the backend's own call and fail silently). **Do not mirror QA's old routing into the ALB**; priority 10 in §P6 is the equivalent, and it is required, not defensive.
 2. **CORS is exactly one origin in production.** `main.ts:38-41` — `www`, a trailing slash or `http://` all fail. `FRONTEND_URL` must be byte-exact.
 3. **`sameSite: 'strict'` refresh cookie** (`auth.controller.ts:260`) — this is why the API cannot live on `api.spiritualcalifornia.com` (D4).
 4. **Undeclared env vars vanish.** Zod's `z.object()` strips unknown keys; `@nestjs/config` exposes only validated ones.
