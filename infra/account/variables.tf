@@ -49,13 +49,27 @@ variable "alert_email" {
 
 variable "monthly_budget_usd" {
   description = <<-EOT
-    Total account budget. Covers QA plus production, so it should exceed the
-    ~$340/mo production estimate plus whatever QA costs today. Cost is an
-    availability control: a surprise bill on a client account gets things
-    turned off.
+    Total account budget, in USD.
+
+    Set to track ACTUAL expected spend, not the eventual ceiling. A budget
+    far above real usage never fires, which makes it decoration rather than a
+    control.
+
+    Measured 2026-08-20: the account bills ~$0/month — it is standalone (no
+    Organization) and credits or free tier are currently offsetting usage, to
+    the point that a running t3.medium produces no EC2 compute line at all.
+    That is precisely why the figure should stay low: when the credits are
+    exhausted, spend will not creep upward, it will step up in one month, and
+    a high budget would not notice.
+
+    At 100, the 80% threshold fires at $80 — early enough that a forgotten
+    NAT gateway or an oversized instance is caught while it is still cheap.
+
+    RAISE THIS DELIBERATELY as production comes online (~$340-400/mo
+    estimated in §11), as a step in the P13 cutover rather than a surprise.
   EOT
   type        = number
-  default     = 500
+  default     = 100
 }
 
 # ─── Optional, billable services ─────────────────────────────────────────────
