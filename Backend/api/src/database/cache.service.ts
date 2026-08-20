@@ -10,15 +10,28 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
   private redis: Redis | null = null;
   private readonly logger = new Logger(CacheService.name);
   private readonly enabled: boolean;
+  private readonly cacheEnabled: boolean;
 
   constructor(private readonly config: ConfigService) {
     const redisUrl = this.config.get<string>('REDIS_URL');
-    this.enabled = !!redisUrl;
+    // Opt-in, not opt-out. REDIS_URL was missing from the env schema until
+    // now, so ConfigService always returned undefined and this service
+    // silently disabled itself in every environment — meaning the cache has
+    // never actually run, and its invalidation has never been exercised
+    // against real traffic. Requiring an explicit CACHE_ENABLED keeps that
+    // status quo until someone turns it on deliberately, and leaves a kill
+    // switch that does not need a code deploy.
+    this.cacheEnabled = this.config.get<string>('CACHE_ENABLED') === 'true';
+    this.enabled = !!redisUrl && this.cacheEnabled;
   }
 
   async onModuleInit() {
     if (!this.enabled) {
-      this.logger.warn('Redis not configured — caching disabled');
+      this.logger.warn(
+        this.cacheEnabled
+          ? 'REDIS_URL not set — caching disabled'
+          : 'CACHE_ENABLED is not "true" — caching disabled',
+      );
       return;
     }
     // The cache is an optimisation, never a dependency: if Redis is

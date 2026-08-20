@@ -30,6 +30,12 @@ const envSchema = z.object({
   REDIS_PASSWORD: z.string().optional(),
   REDIS_TLS: z.string().optional(),
 
+  // Cache kill switch. Defaults to OFF, which preserves the behaviour every
+  // environment has actually had to date (see REDIS_URL below). Turning the
+  // cache on is therefore a deliberate act, and — more importantly — turning
+  // it back off is an env change rather than a code deploy.
+  CACHE_ENABLED: z.string().optional(),
+
   // Redis — CacheService connects with this URL instead of the fields above.
   //
   // It was previously absent from this schema, which meant Zod stripped it and
