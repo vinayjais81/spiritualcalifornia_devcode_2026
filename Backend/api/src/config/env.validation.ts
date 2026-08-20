@@ -22,6 +22,16 @@ const envSchema = z.object({
   // max_connections.
   DATABASE_POOL_MAX: z.coerce.number().min(1).max(100).optional(),
 
+  // Path to the Amazon RDS CA bundle. When set, the pg pool verifies the
+  // server certificate against it instead of failing with
+  // "self-signed certificate in certificate chain" (P1011).
+  //
+  // The alternative — sslmode=no-verify — keeps the connection encrypted
+  // while accepting any certificate, which leaves the door open to a
+  // machine-in-the-middle reading payment records and identity documents.
+  // Unset off RDS, where the connection is built exactly as before.
+  DATABASE_CA_CERT_PATH: z.string().optional(),
+
   // Redis — queues (BullMQ) connect with the discrete host/port/password
   // below. REDIS_TLS must be 'true' for an ElastiCache group with in-transit
   // encryption enabled, or every worker fails to connect.

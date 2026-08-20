@@ -19,8 +19,9 @@ import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { buildPoolConfig } from '../src/common/db-ssl';
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool(buildPoolConfig(process.env.DATABASE_URL));
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter } as any);
 

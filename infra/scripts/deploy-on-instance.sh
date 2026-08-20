@@ -58,13 +58,36 @@ git clean -fd -e node_modules -e .env -e .env.local
 rm -f "${HOME}/.git-credentials"
 git config --global --unset credential.helper || true
 
-# ── 3. Environment files ─────────────────────────────────────────────────────
+# ── 3. RDS CA bundle ─────────────────────────────────────────────────────────
+#
+# RDS certificates are signed by the Amazon RDS root CA, which is not in
+# Node's trust store, so node-postgres rejects the connection with
+# "self-signed certificate in certificate chain". Handing it the bundle lets
+# verification stay ON rather than being switched off to make the error go
+# away — see Backend/api/src/common/db-ssl.ts.
+#
+# The bundle is a public certificate, refreshed here on every deploy so a CA
+# rotation does not require a rebuild.
+CA_PATH="${APP_DIR}/rds-ca-bundle.pem"
+log "fetching RDS CA bundle"
+curl -fsSL --retry 3 -o "${CA_PATH}.tmp" \
+  https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+# Only replace a working bundle if the download actually looks like one.
+grep -q "BEGIN CERTIFICATE" "${CA_PATH}.tmp" || { log "ERROR: CA bundle download looks wrong"; exit 1; }
+mv "${CA_PATH}.tmp" "${CA_PATH}"
+
+# ── 4. Environment files ─────────────────────────────────────────────────────
 log "writing env files"
 aws ssm get-parameter --region "$REGION" --name /sc/prod/api/dotenv --with-decryption \
   --query Parameter.Value --output text > Backend/api/.env
 aws ssm get-parameter --region "$REGION" --name /sc/prod/web/dotenv --with-decryption \
   --query Parameter.Value --output text > Frontend/web/.env.local
 chmod 600 Backend/api/.env Frontend/web/.env.local
+
+# Point the app at the bundle fetched above. Appended rather than expected in
+# the stored config, because the path is a property of THIS host's layout,
+# not of the environment's configuration.
+echo "DATABASE_CA_CERT_PATH=${CA_PATH}" >> Backend/api/.env
 
 # ── 4. Backend ───────────────────────────────────────────────────────────────
 log "building backend"

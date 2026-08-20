@@ -39,6 +39,7 @@ import 'dotenv/config';
 import { PrismaClient, AuthorKind, ArticleSeries, ContentFormat, Escalation } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { buildPoolConfig } from '../src/common/db-ssl';
 import { load as parseYaml } from 'js-yaml';
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join, basename } from 'path';
@@ -184,7 +185,7 @@ const targetDb = (() => {
   }
 })();
 
-const pool = new Pool({ connectionString: databaseUrl });
+const pool = new Pool(buildPoolConfig(databaseUrl));
 const prisma = new PrismaClient({ adapter: new PrismaPg(pool) });
 
 // ─── Parsing ─────────────────────────────────────────────────────────────────

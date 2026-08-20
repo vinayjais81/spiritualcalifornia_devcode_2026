@@ -44,6 +44,7 @@ import 'dotenv/config';
 import { PrismaClient, Role } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { buildPoolConfig } from '../src/common/db-ssl';
 import Stripe from 'stripe';
 import { writeFileSync, readFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
@@ -105,7 +106,7 @@ function describeTarget(url: string): { host: string; database: string } {
 
 const target = describeTarget(databaseUrl);
 
-const pool = new Pool({ connectionString: databaseUrl });
+const pool = new Pool(buildPoolConfig(databaseUrl));
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 

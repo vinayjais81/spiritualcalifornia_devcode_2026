@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/commo
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { buildPoolConfig } from '../common/db-ssl';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
@@ -19,10 +20,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
     // the raw value regardless.
     const poolMax = Number(process.env.DATABASE_POOL_MAX) || 10;
 
-    const pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      max: poolMax,
-    });
+    // buildPoolConfig adds the RDS CA when DATABASE_CA_CERT_PATH is set, so
+    // TLS is verified rather than merely encrypted. See src/common/db-ssl.ts.
+    const pool = new Pool(buildPoolConfig(process.env.DATABASE_URL, poolMax));
     const adapter = new PrismaPg(pool);
 
     super({

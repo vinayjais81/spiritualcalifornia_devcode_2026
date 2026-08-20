@@ -24,6 +24,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaClient, EarningCategory } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+import { buildPoolConfig } from '../src/common/db-ssl';
 
 type Mode = 'verify' | 'write';
 
@@ -34,7 +35,7 @@ const mode: Mode = modeArg === 'write' ? 'write' : 'verify';
 // Prisma 7 requires a driver adapter — match how PrismaService constructs the
 // client in the running app (PrismaPg over a pg Pool). A bare `new PrismaClient()`
 // throws PrismaClientInitializationError.
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const pool = new Pool(buildPoolConfig(process.env.DATABASE_URL));
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 // Flat ConfigService stand-in for env reads — avoids spinning up the full Nest app.
