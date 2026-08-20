@@ -69,13 +69,13 @@ resource "aws_ssm_parameter" "api_dotenv_template" {
   tier        = "Advanced" # the template exceeds the 4 KB Standard limit
 
   value = <<-EOT
-    # ── Composed by Terraform ────────────────────────────────────────────
+    # --- Composed by Terraform -------------------------------------------
     NODE_ENV=production
     PORT=3001
     FRONTEND_URL=https://spiritualcalifornia.com
 
     # sslmode=require is mandatory: rds.force_ssl=1 rejects plaintext.
-    # Pool size is set by DATABASE_POOL_MAX, NOT by connection_limit —
+    # Pool size is set by DATABASE_POOL_MAX, NOT by connection_limit -
     # @prisma/adapter-pg never reads that URL parameter.
     DATABASE_URL=postgresql://sc_app:REPLACE_WITH_SC_APP_PASSWORD@${aws_db_instance.main.endpoint}/spiritual_california?schema=public&sslmode=require
     DATABASE_POOL_MAX=10
@@ -94,7 +94,7 @@ resource "aws_ssm_parameter" "api_dotenv_template" {
     AWS_REGION=${var.region}
     TRUST_PROXY_HOPS=1
 
-    # ── Operator supplies everything below ───────────────────────────────
+    # --- Operator supplies everything below ------------------------------
     JWT_ACCESS_SECRET=PLACEHOLDER_openssl_rand_hex_32
     JWT_REFRESH_SECRET=PLACEHOLDER_different_openssl_rand_hex_32
     JWT_ACCESS_EXPIRES_IN=30m
@@ -133,7 +133,7 @@ resource "aws_ssm_parameter" "api_dotenv_template" {
 
     STATIC_PAGE_REVALIDATE_SECRET=PLACEHOLDER_must_match_the_frontend
 
-    # ── Behaviour flags — each one deliberate ────────────────────────────
+    # --- Behaviour flags, each one deliberate ----------------------------
     LEDGER_V2_ENABLED=true
     # Do not auto-sweep real money before the first manual cycle reconciles.
     AUTO_PAYOUT_ENABLED=false
