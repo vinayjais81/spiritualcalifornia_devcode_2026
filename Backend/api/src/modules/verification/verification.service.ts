@@ -160,16 +160,47 @@ export class VerificationService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    await this.queue.add(
-      'analyze-guide-credentials',
-      { guideId },
-      {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 5000 },
-        removeOnComplete: { count: 100 },
-        removeOnFail: { count: 50 },
-      },
-    );
+    // Bounded, because this runs on the request path.
+    //
+    // BullMQ requires `maxRetriesPerRequest: null`, which means a command
+    // issued while Redis is unreachable is buffered indefinitely rather than
+    // rejected — fine for the boot-time arming call, which we deliberately
+    // leave pending, but not here: an HTTP request would hang until the
+    // client gave up, holding a connection the whole time. Enough of those
+    // and the pool is exhausted by a Redis outage the API is otherwise
+    // surviving perfectly well.
+    const ENQUEUE_TIMEOUT_MS = 5000;
+
+    try {
+      await Promise.race([
+        this.queue.add(
+          'analyze-guide-credentials',
+          { guideId },
+          {
+            attempts: 3,
+            backoff: { type: 'exponential', delay: 5000 },
+            removeOnComplete: { count: 100 },
+            removeOnFail: { count: 50 },
+          },
+        ),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`enqueue timed out after ${ENQUEUE_TIMEOUT_MS}ms — Redis unreachable`)),
+            ENQUEUE_TIMEOUT_MS,
+          ),
+        ),
+      ]);
+    } catch (err: any) {
+      // Swallow rather than fail the guide's submission. Their profile is
+      // already saved and sits at IN_REVIEW, which is where an admin picks it
+      // up anyway — losing the automated analysis is a degradation, losing
+      // the submission would be data loss.
+      this.logger.error(
+        `[Queue] could not enqueue verification for guide ${guideId}: ${err.message}. ` +
+          `The guide remains IN_REVIEW for manual admin review.`,
+      );
+      return;
+    }
 
     this.logger.log(`[Queue] Enqueued verification job for guide: ${guideId}`);
   }
