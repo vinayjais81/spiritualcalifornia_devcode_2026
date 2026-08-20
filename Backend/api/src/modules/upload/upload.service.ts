@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectsCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomUUID } from 'crypto';
+import { awsSdkConfig } from '../../common/aws-config';
 
 export type UploadFolder = 'avatars' | 'credentials' | 'guide-media' | 'products' | 'events';
 
@@ -21,22 +22,33 @@ export class UploadService {
     this.region = this.config.get<string>('AWS_REGION', 'us-west-1');
     this.cloudfrontUrl = this.config.get<string>('AWS_CLOUDFRONT_URL', '');
 
-    const accessKeyId = this.config.get<string>('AWS_ACCESS_KEY_ID', '');
-    const secretAccessKey = this.config.get<string>('AWS_SECRET_ACCESS_KEY', '');
-
-    // [STUB] If AWS keys are placeholders, operate in stub mode
+    /**
+     * Stub mode keys off the BUCKET, not off AWS credentials.
+     *
+     * It previously keyed off AWS_ACCESS_KEY_ID, which silently broke the
+     * production design: there, the app authenticates through an EC2
+     * instance role and deliberately has no access key in its environment.
+     * The old check read that absence as "not configured" and put uploads
+     * into stub mode — so every upload would have appeared to succeed while
+     * writing nothing at all.
+     *
+     * The bucket name is the honest signal: no bucket means nowhere to
+     * upload to, regardless of how credentials are supplied.
+     */
+    const configuredBucket = this.config.get<string>('AWS_S3_BUCKET', '');
     this.isStub =
-      !accessKeyId ||
-      accessKeyId.startsWith('your-') ||
-      accessKeyId === '';
+      !configuredBucket ||
+      configuredBucket === 'stub-bucket' ||
+      configuredBucket.startsWith('your-') ||
+      configuredBucket.toUpperCase().startsWith('PLACEHOLDER');
 
     if (!this.isStub) {
-      this.s3 = new S3Client({
-        region: this.region,
-        credentials: { accessKeyId, secretAccessKey },
-      });
+      // awsSdkConfig omits `credentials` when no explicit keys are set, so
+      // the SDK resolves the instance profile. Passing empty strings would
+      // NOT fall back — it fails with a signature error.
+      this.s3 = new S3Client(awsSdkConfig(this.config));
     } else {
-      this.logger.warn('[STUB] AWS S3 keys not configured — upload service in stub mode');
+      this.logger.warn('[STUB] AWS_S3_BUCKET not configured — upload service in stub mode');
     }
   }
 

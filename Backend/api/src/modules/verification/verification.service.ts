@@ -7,6 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Queue, Worker, Job } from 'bullmq';
 import { buildQueueConnection } from '../../common/redis-connection';
+import { awsSdkConfig } from '../../common/aws-config';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
 import { StripeService } from '../payments/stripe.service';
@@ -360,21 +361,34 @@ export class VerificationService implements OnModuleInit, OnModuleDestroy {
       };
     }
 
-    const awsRegion = this.config.get<string>('AWS_REGION', 'eu-north-1');
     const bucket = this.config.get<string>('AWS_S3_BUCKET')!;
-    const credentials = {
-      accessKeyId: this.config.get<string>('AWS_ACCESS_KEY_ID')!,
-      secretAccessKey: this.config.get<string>('AWS_SECRET_ACCESS_KEY')!,
-    };
+
+    /**
+     * awsSdkConfig omits `credentials` entirely when no explicit keys are
+     * set, letting the SDK resolve the EC2 instance profile — which is how
+     * production authenticates, so that no static AWS key exists in its
+     * environment at all.
+     *
+     * Building a credentials object from empty strings does NOT fall back to
+     * the instance profile; it fails with a signature error that reads like
+     * a permissions problem.
+     */
+    const sdkConfig = awsSdkConfig(this.config);
 
     // Step 1: Download file bytes from S3
-    const s3 = new S3Client({ region: awsRegion, credentials });
+    const s3 = new S3Client(sdkConfig);
     const s3Response = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: s3Key }));
     const bytes = await (s3Response.Body as any).transformToByteArray() as Uint8Array;
 
     // Step 2: Send bytes to Textract using AWS_TEXTRACT_REGION (must support Textract — eu-north-1 does not)
-    const textractRegion = this.config.get<string>('AWS_TEXTRACT_REGION', 'eu-west-1');
-    const textract = new TextractClient({ region: textractRegion, credentials });
+    // Textract is not offered in every region. Verified 2026-08-20 that it
+    // IS available in us-west-1, so production needs no cross-region hop;
+    // the override remains for environments whose bucket region lacks it.
+    const textractRegion = this.config.get<string>(
+      'AWS_TEXTRACT_REGION',
+      sdkConfig.region,
+    );
+    const textract = new TextractClient({ ...sdkConfig, region: textractRegion });
     const response = await textract.send(
       new DetectDocumentTextCommand({ Document: { Bytes: bytes } }),
     );

@@ -55,8 +55,24 @@ const envSchema = z.object({
 
   // AWS
   AWS_REGION: z.string().default('us-west-1'),
-  AWS_ACCESS_KEY_ID: z.string().min(1),
-  AWS_SECRET_ACCESS_KEY: z.string().min(1),
+
+  // OPTIONAL, and absent in production on purpose.
+  //
+  // Production runs on EC2 with an instance role (sc-prod-ec2-role), so the
+  // SDK's default credential chain supplies rotating credentials and no
+  // static key exists to leak. Requiring these would force placeholder
+  // values into the environment — and a placeholder is worse than nothing,
+  // because the SDK would try to use it instead of falling through to the
+  // instance profile. See src/common/aws-config.ts.
+  //
+  // Still set locally and on QA, which have no instance profile to inherit.
+  AWS_ACCESS_KEY_ID: z.string().optional(),
+  AWS_SECRET_ACCESS_KEY: z.string().optional(),
+
+  // Textract is not available in every region. Defaults to AWS_REGION;
+  // verified 2026-08-20 that us-west-1 does offer it, so production needs no
+  // override.
+  AWS_TEXTRACT_REGION: z.string().optional(),
   AWS_S3_BUCKET: z.string().min(1),
   AWS_CLOUDFRONT_URL: z.string().url().optional().or(z.literal('')),
 
