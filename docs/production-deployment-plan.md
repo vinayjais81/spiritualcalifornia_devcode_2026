@@ -776,6 +776,46 @@ Each of these has already cost time on QA, or will cost time on launch day. They
 
 ## 11. Cost estimate (us-west-1, on-demand, monthly)
 
+> **DECISION 2026-08-20 — launch at the ~$135/mo tier, not the ~$395 full-HA tier.**
+>
+> The table below prices the full design. Verified against the AWS Pricing API for
+> us-west-1, it comes to **≈$395/mo** — higher than the $340 originally written here,
+> because that figure was for us-west-2 and the region changed to us-west-1 (D1).
+> API-verified: `t3.medium` $0.0496/hr, `db.t4g.medium` Multi-AZ $0.1710/hr,
+> `db.t4g.small` single-AZ $0.0430/hr, `t3.small` $0.0248/hr.
+>
+> **What launch actually runs (~$135):** ALB ($26) · 1× `t3.medium` in an ASG of 1
+> ($36) · RDS `db.t4g.small` **single-AZ** + 20 GB with storage autoscaling ($34) ·
+> ElastiCache `t4g.micro` single node ($13) · **NAT instance `t4g.nano` instead of a
+> NAT Gateway** ($4 vs $41) · S3 + CloudFront + Route 53 + CloudWatch + backups (~$22).
+>
+> **What that trades away, stated plainly:** single-AZ RDS means a host or AZ failure
+> is 10–30 minutes of hard downtime rather than 60–120 seconds; one app instance means
+> deploys have a brief gap; one Redis node means a failure loses queued jobs; and the
+> NAT instance is a single point of failure for *outbound* traffic — the site keeps
+> serving pages, but Stripe and Resend calls stop.
+>
+> **Why this shape and not the cheaper ~$90 one:** dropping the ALB and ASG saves a
+> further $45 and destroys the upgrade path. With them in place, going to full HA is
+> `desired_capacity = 2` and `multi_az = true` — a five-minute change. Without them it
+> is an environment rebuild performed on a live system. The extra $45/mo buys the
+> option not to repeat this work.
+>
+> **Not compromised at any tier:** automated backups with PITR (downtime is
+> recoverable, data loss is not) and private subnets, which the NAT instance keeps
+> nearly free.
+>
+> **Upgrade triggers** — decide now so they are not judgement calls later:
+> Multi-AZ when real money flows daily or before the first marketing push;
+> `t4g.medium` when RDS `FreeableMemory` sits under ~200 MB or CPU credits trend down
+> across a week; a second app instance when p95 latency degrades under normal load;
+> NAT Gateway when outbound reliability starts carrying real money.
+>
+> Note also that the account currently bills ~$0 because credits are absorbing usage
+> (§P1). Production plus QA at steady state is ~$465/mo once those lapse, and it will
+> arrive as a step rather than a ramp — which is why the budget alarm sits at $100.
+
+
 | Item | Launch tier | Scale tier (4 app instances, r6g.large DB) |
 |---|---|---|
 | ALB | $23 | $35 |
