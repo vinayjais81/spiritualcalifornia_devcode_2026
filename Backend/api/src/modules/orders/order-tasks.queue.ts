@@ -3,6 +3,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue, Worker, Job } from 'bullmq';
+import { buildQueueConnection } from '../../common/redis-connection';
 import { OrdersService } from './orders.service';
 
 const QUEUE_NAME = 'order-tasks';
@@ -54,16 +55,22 @@ export class OrderTasksQueue implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
+    // Bootstrap must never block on Redis — see buildQueueConnection().
+    void this.initQueue();
+  }
+
+  private async initQueue() {
     if (!this.enabled) {
       this.logger.warn('[Queue] order-tasks queue disabled via ORDER_TASKS_ENABLED=false');
       return;
     }
 
-    const connection = {
+    const connection = buildQueueConnection({
       host: this.redisHost,
       port: this.redisPort,
-      ...(this.redisPassword ? { password: this.redisPassword } : {}),
-    };
+      password: this.redisPassword,
+      tls: this.config.get<string>('REDIS_TLS') === 'true',
+    });
 
     try {
       this.queue = new Queue(QUEUE_NAME, { connection });
@@ -84,20 +91,47 @@ export class OrderTasksQueue implements OnModuleInit, OnModuleDestroy {
         this.logger.error(`[Queue] ${job?.name} failed: ${err.message}`),
       );
 
-      // Register cron jobs (idempotent — BullMQ dedupes by repeat key)
-      await this.queue.add(
-        JOB_HOLD_REAPER,
-        {},
-        {
-          repeat: { pattern: CRON_HOLD_REAPER },
-          removeOnComplete: { count: 50 },
-          removeOnFail: { count: 50 },
-        },
+      // Connection-level errors need a listener on BOTH objects. An 'error'
+      // event with no listener is an unhandled exception in Node, which is
+      // how an unreachable Redis used to fill the log with raw
+      // AggregateErrors that no logger had formatted.
+      this.queue.on('error', (err) =>
+        this.logger.warn(`[Queue] order-tasks connection error: ${err.message}`),
+      );
+      this.worker.on('error', (err) =>
+        this.logger.warn(`[Queue] order-tasks worker error: ${err.message}`),
       );
 
-      this.logger.log(
-        `[Queue] order-tasks worker started — hold-reaper(${CRON_HOLD_REAPER})`,
-      );
+      // Register cron jobs (idempotent — BullMQ dedupes by repeat key).
+      //
+      // Deliberately NOT awaited. BullMQ resolves this only once it holds a
+      // live connection, so awaiting it hangs onModuleInit — and therefore
+      // the entire bootstrap, before app.listen() — for as long as Redis is
+      // unreachable. The catch below cannot help: the promise never settles,
+      // it simply never resolves.
+      //
+      // Left pending, it arms the moment Redis becomes reachable, so a cache
+      // that is briefly down self-heals instead of needing a restart.
+      void this.queue
+        .add(
+          JOB_HOLD_REAPER,
+          {},
+          {
+            repeat: { pattern: CRON_HOLD_REAPER },
+            removeOnComplete: { count: 50 },
+            removeOnFail: { count: 50 },
+          },
+        )
+        .then(() =>
+          this.logger.log(
+            `[Queue] order-tasks worker started — hold-reaper(${CRON_HOLD_REAPER})`,
+          ),
+        )
+        .catch((err: any) =>
+          this.logger.error(
+            `[Queue] could not arm order-tasks schedule: ${err.message}. Abandoned order holds will not be released until Redis is reachable.`,
+          ),
+        );
     } catch (err: any) {
       this.logger.error(
         `[Queue] failed to start order-tasks queue: ${err.message}. Abandoned order holds will not be released until Redis is available.`,

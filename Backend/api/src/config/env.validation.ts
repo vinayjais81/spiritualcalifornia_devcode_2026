@@ -10,10 +10,33 @@ const envSchema = z.object({
   // Database
   DATABASE_URL: z.string().min(1),
 
-  // Redis
+  // App — reverse proxy. Number of proxies we control between the client and
+  // this process (Nginx on QA, ALB in production). Defaults to 1 outside
+  // development; see main.ts for why getting this wrong breaks rate limiting.
+  TRUST_PROXY_HOPS: z.coerce.number().min(0).max(5).optional(),
+
+  // Database — pg Pool size. PrismaService drives a `pg` Pool directly via
+  // @prisma/adapter-pg, so Prisma's `connection_limit` URL parameter does
+  // NOT apply; the pool is sized here (pg's own default is 10). Budget:
+  // instances x processes x this value must stay well under the RDS
+  // max_connections.
+  DATABASE_POOL_MAX: z.coerce.number().min(1).max(100).optional(),
+
+  // Redis — queues (BullMQ) connect with the discrete host/port/password
+  // below. REDIS_TLS must be 'true' for an ElastiCache group with in-transit
+  // encryption enabled, or every worker fails to connect.
   REDIS_HOST: z.string().default('localhost'),
   REDIS_PORT: z.coerce.number().default(6379),
   REDIS_PASSWORD: z.string().optional(),
+  REDIS_TLS: z.string().optional(),
+
+  // Redis — CacheService connects with this URL instead of the fields above.
+  //
+  // It was previously absent from this schema, which meant Zod stripped it and
+  // ConfigService always returned undefined: CacheService silently disabled
+  // itself in every environment, and every getOrSet() fell through to Postgres.
+  // Declaring it here is what makes the cache layer real.
+  REDIS_URL: z.string().optional(),
 
   // JWT
   JWT_ACCESS_SECRET: z.string().min(32),

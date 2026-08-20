@@ -32,6 +32,7 @@ import { CalendlyModule } from './modules/calendly/calendly.module';
 import { TicketsModule } from './modules/tickets/tickets.module';
 import { PublicConfigModule } from './modules/config/config.module';
 import { StaticPagesModule } from './modules/static-pages/static-pages.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { StaticPagesModule } from './modules/static-pages/static-pages.module';
     TicketsModule,
     PublicConfigModule,
     StaticPagesModule,
+    HealthModule,
   ],
 })
 export class AppModule {}

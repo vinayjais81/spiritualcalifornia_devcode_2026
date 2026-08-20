@@ -3,6 +3,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue, Worker, Job } from 'bullmq';
+import { buildQueueConnection } from '../../common/redis-connection';
 import { PrismaService } from '../../database/prisma.service';
 import { StripeService } from '../payments/stripe.service';
 import { VerificationService } from './verification.service';
@@ -51,16 +52,24 @@ export class IdentityReconcileQueue implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
+    // Bootstrap must never block on Redis. Awaiting the arming call below
+    // hangs Nest before app.listen() for as long as Redis is unreachable —
+    // see buildQueueConnection() for the full explanation.
+    void this.initQueue();
+  }
+
+  private async initQueue() {
     if (!this.enabled) {
       this.logger.warn('[Queue] identity-reconcile disabled via IDENTITY_RECONCILE_ENABLED=false');
       return;
     }
 
-    const connection = {
+    const connection = buildQueueConnection({
       host: this.redisHost,
       port: this.redisPort,
-      ...(this.redisPassword ? { password: this.redisPassword } : {}),
-    };
+      password: this.redisPassword,
+      tls: this.config.get<string>('REDIS_TLS') === 'true',
+    });
 
     try {
       this.queue = new Queue(QUEUE_NAME, { connection });
@@ -75,6 +84,9 @@ export class IdentityReconcileQueue implements OnModuleInit, OnModuleDestroy {
         },
         { connection, concurrency: 1 },
       );
+
+      this.queue.on('error', (err) => this.logger.warn(`[Queue] connection error: ${err.message}`));
+      this.worker.on('error', (err) => this.logger.warn(`[Queue] worker error: ${err.message}`));
 
       this.worker.on('failed', (job, err) =>
         this.logger.error(`[Queue] ${job?.name} failed: ${err.message}`),

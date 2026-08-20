@@ -9,7 +9,20 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   private pool: Pool;
 
   constructor() {
-    const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+    // Pool size is set HERE, not in DATABASE_URL. Because we drive `pg`
+    // directly through @prisma/adapter-pg, Prisma's own `connection_limit`
+    // URL parameter is never read — putting it in the URL looks like it
+    // works and silently does nothing.
+    //
+    // Read from process.env rather than ConfigService: this provider is
+    // constructed before ConfigService is injectable, and process.env holds
+    // the raw value regardless.
+    const poolMax = Number(process.env.DATABASE_POOL_MAX) || 10;
+
+    const pool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+      max: poolMax,
+    });
     const adapter = new PrismaPg(pool);
 
     super({

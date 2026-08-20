@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import cookieParser from 'cookie-parser';
@@ -10,7 +11,7 @@ import { SanitizePipe } from './common/sanitize.pipe';
 import { PaginationQueryPipe } from './common/pipes/pagination-query.pipe';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { rawBody: true });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: true });
 
   // Increase body size limit — preserve raw body for Stripe webhooks
   // (signature verification needs the exact bytes, before JSON parsing).
@@ -26,6 +27,26 @@ async function bootstrap() {
   const port = configService.get<number>('PORT', 3001);
   const frontendUrl = configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
   const nodeEnv = configService.get<string>('NODE_ENV', 'development');
+
+  // Trust the reverse proxy in front of us (Nginx on QA, ALB in production).
+  //
+  // Without this, Express reports the proxy's address as `req.ip` for every
+  // caller. Two things break as a result, both silently:
+  //   1. ThrottlerModule buckets by `req.ip`, so the ENTIRE site would share
+  //      one rate limit — 10 requests/second total, for everyone.
+  //   2. Audit logs and abuse investigation record the load balancer instead
+  //      of the actual client.
+  //
+  // The hop count is the number of proxies we control between the client and
+  // this process; trusting more hops than that lets a caller forge an
+  // arbitrary X-Forwarded-For. One proxy (ALB, or Nginx) is the default.
+  const trustProxyHops = configService.get<number>(
+    'TRUST_PROXY_HOPS',
+    nodeEnv === 'development' ? 0 : 1,
+  );
+  if (trustProxyHops > 0) {
+    app.set('trust proxy', trustProxyHops);
+  }
 
   // Security — hardened Helmet config
   app.use(helmet({
@@ -85,6 +106,12 @@ async function bootstrap() {
       swaggerOptions: { persistAuthorization: true },
     });
   }
+
+  // Rolling deploys and Auto Scaling instance replacement both terminate the
+  // process with SIGTERM. Shutdown hooks let Nest run onModuleDestroy across
+  // providers first — draining the BullMQ workers and closing the Prisma pool
+  // — instead of dropping an in-flight stock-hold release or payout job.
+  app.enableShutdownHooks();
 
   await app.listen(port);
   console.log(`🚀 API running on http://localhost:${port}/api/v1`);

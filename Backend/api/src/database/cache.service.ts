@@ -2,6 +2,9 @@ import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/commo
 import { ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
 
+/** Attempts before the cache gives up and the app serves uncached. */
+const MAX_CONNECT_ATTEMPTS = 5;
+
 @Injectable()
 export class CacheService implements OnModuleInit, OnModuleDestroy {
   private redis: Redis | null = null;
@@ -18,17 +21,48 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
       this.logger.warn('Redis not configured — caching disabled');
       return;
     }
+    // The cache is an optimisation, never a dependency: if Redis is
+    // unreachable the app must still boot and serve from Postgres.
+    //
+    // Getting there needs all four options below. The previous retryStrategy
+    // returned a delay forever and never null, so an unreachable Redis
+    // reconnected in an endless loop and surfaced an unhandled
+    // AggregateError that took the whole process down at startup — which is
+    // exactly what a cache must never do.
+    const client = new Redis(this.config.get<string>('REDIS_URL')!, {
+      // Give up rather than reconnect forever.
+      retryStrategy: (times) => (times > MAX_CONNECT_ATTEMPTS ? null : Math.min(times * 200, 2000)),
+      maxRetriesPerRequest: 2,
+      // Fail commands immediately while disconnected instead of queueing them
+      // up to be rejected later, off the back of no active promise chain.
+      enableOfflineQueue: false,
+      lazyConnect: true,
+      connectTimeout: 5000,
+    });
+
+    // Attach before connecting: an 'error' with no listener is an unhandled
+    // exception in Node, and that is the crash path we are closing.
+    client.on('error', (err) => {
+      if (this.redis) {
+        this.logger.warn(`Redis cache error: ${err.message}`);
+      }
+    });
+    client.on('end', () => {
+      if (this.redis) {
+        this.redis = null;
+        this.logger.warn('Redis cache connection closed — serving uncached until restart');
+      }
+    });
+
     try {
-      this.redis = new Redis(this.config.get<string>('REDIS_URL')!, {
-        maxRetriesPerRequest: 3,
-        retryStrategy: (times) => Math.min(times * 200, 2000),
-      });
-      this.redis.on('error', (err) => this.logger.error(`Redis error: ${err.message}`));
-      await this.redis.ping();
+      await client.connect();
+      await client.ping();
+      this.redis = client;
       this.logger.log('Redis connected for caching');
     } catch (err: any) {
       this.logger.warn(`Redis connection failed: ${err.message} — caching disabled`);
       this.redis = null;
+      client.disconnect();
     }
   }
 

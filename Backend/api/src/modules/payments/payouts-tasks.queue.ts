@@ -3,6 +3,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue, Worker, Job } from 'bullmq';
+import { buildQueueConnection } from '../../common/redis-connection';
 import { PrismaService } from '../../database/prisma.service';
 import { LedgerService } from './ledger.service';
 import { StripeService } from './stripe.service';
@@ -64,16 +65,24 @@ export class PayoutsTasksQueue implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
+    // Bootstrap must never block on Redis. Awaiting the arming call below
+    // hangs Nest before app.listen() for as long as Redis is unreachable —
+    // see buildQueueConnection() for the full explanation.
+    void this.initQueue();
+  }
+
+  private async initQueue() {
     if (!this.enabled) {
       this.logger.warn('[Queue] payouts-tasks queue disabled via PAYOUTS_TASKS_ENABLED=false');
       return;
     }
 
-    const connection = {
+    const connection = buildQueueConnection({
       host: this.redisHost,
       port: this.redisPort,
-      ...(this.redisPassword ? { password: this.redisPassword } : {}),
-    };
+      password: this.redisPassword,
+      tls: this.config.get<string>('REDIS_TLS') === 'true',
+    });
 
     try {
       this.queue = new Queue(QUEUE_NAME, { connection });
@@ -102,6 +111,9 @@ export class PayoutsTasksQueue implements OnModuleInit, OnModuleDestroy {
       this.worker.on('completed', (job, result) =>
         this.logger.log(`[Queue] ${job.name} completed: ${JSON.stringify(result)}`),
       );
+      this.queue.on('error', (err) => this.logger.warn(`[Queue] connection error: ${err.message}`));
+      this.worker.on('error', (err) => this.logger.warn(`[Queue] worker error: ${err.message}`));
+
       this.worker.on('failed', (job, err) =>
         this.logger.error(`[Queue] ${job?.name} failed: ${err.message}`),
       );

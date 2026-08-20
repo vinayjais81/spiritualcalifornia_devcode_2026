@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Queue, Worker, Job } from 'bullmq';
+import { buildQueueConnection } from '../../common/redis-connection';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
 import { StripeService } from '../payments/stripe.service';
@@ -91,11 +92,12 @@ export class VerificationService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    const connection = {
+    const connection = buildQueueConnection({
       host: this.redisHost,
       port: this.redisPort,
-      ...(this.redisPassword ? { password: this.redisPassword } : {}),
-    };
+      password: this.redisPassword,
+      tls: this.config.get<string>('REDIS_TLS') === 'true',
+    });
 
     this.queue = new Queue(QUEUE_NAME, { connection });
 
@@ -105,6 +107,16 @@ export class VerificationService implements OnModuleInit, OnModuleDestroy {
         await this.processVerificationJob(job.data.guideId);
       },
       { connection, concurrency: 3 },
+    );
+
+    // An 'error' event with no listener is an unhandled exception in Node.
+    // Without these, an unreachable Redis crashes the process instead of
+    // degrading — the document-analysis queue is optional, the API is not.
+    this.queue.on('error', (err) =>
+      this.logger.warn(`[Queue] document-analysis connection error: ${err.message}`),
+    );
+    this.worker.on('error', (err) =>
+      this.logger.warn(`[Queue] document-analysis worker error: ${err.message}`),
     );
 
     this.worker.on('completed', (job) =>
