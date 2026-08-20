@@ -93,11 +93,19 @@ export class HealthService implements OnModuleDestroy {
       port: Number(this.config.get<string | number>('REDIS_PORT', 6379)),
       ...(password ? { password } : {}),
       ...(useTls ? { tls: {} } : {}),
-      // A health probe must fail fast rather than queue commands behind a
-      // reconnect loop, which is exactly what the ioredis defaults would do.
+      // The offline queue stays ON, and the probe is bounded by withTimeout()
+      // instead.
+      //
+      // Pairing `lazyConnect` with `enableOfflineQueue: false` — the obvious
+      // way to make a probe fail fast — is a trap: the first ping() is issued
+      // before the socket has opened and dies instantly with "Stream isn't
+      // writeable", so a perfectly healthy Redis reports down. That is a
+      // false negative, and a false negative on a health check is worse than
+      // no health check at all.
+      //
+      // Buffering the command instead means a live Redis answers immediately
+      // and a dead one is caught by the 2s timeout.
       maxRetriesPerRequest: 1,
-      enableOfflineQueue: false,
-      lazyConnect: true,
       connectTimeout: PROBE_TIMEOUT_MS,
       retryStrategy: (times) => (times > 3 ? null : Math.min(times * 200, 1000)),
     });
