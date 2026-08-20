@@ -119,9 +119,21 @@ jobs:
             # Comments must stay OUT of the backslash continuation below: a
             # `\` continues to the next line, and a comment line breaks the
             # chain so the following argument is parsed as its own command.
+            # Staged in /opt/sc-deploy, deliberately NOT /tmp.
+            #
+            # /tmp is world-writable and sticky (1777), and Ubuntu enables
+            # fs.protected_regular by default: writing to an EXISTING file
+            # there that is owned by another user is refused — for root too.
+            # Since the script is chowned to ubuntu after the first deploy,
+            # every subsequent deploy then failed with "cannot create
+            # /tmp/deploy.sh: Permission denied" while running as root.
+            #
+            # /opt is root-owned and not world-writable, so the protection
+            # does not apply.
+            #
             # Built with jq into a JSON file so the shell never has to quote
-            # it, and passed by reference. Every previous failure here came
-            # from a quoting layer, not from the deploy itself.
+            # it, and passed by reference. Every failure here so far came
+            # from a shell or filesystem layer, not from the deploy itself.
             jq -n \
               --arg b64 "$SCRIPT_B64" \
               --arg sha "${{ steps.sha.outputs.sha }}" \
@@ -129,11 +141,12 @@ jobs:
               '{
                  commands: [
                    "set -eu",
-                   ("echo " + $b64 + " | base64 -d > /tmp/deploy.sh"),
-                   "chown ubuntu:ubuntu /tmp/deploy.sh",
+                   "mkdir -p /opt/sc-deploy",
+                   ("echo " + $b64 + " | base64 -d > /opt/sc-deploy/deploy.sh"),
+                   "chown ubuntu:ubuntu /opt/sc-deploy/deploy.sh",
                    ("sudo -u ubuntu -H env TARGET_SHA=" + $sha
                      + " RUN_MIGRATIONS=" + $mig
-                     + " REGION=us-west-1 bash /tmp/deploy.sh")
+                     + " REGION=us-west-1 bash /opt/sc-deploy/deploy.sh")
                  ]
                }' > /tmp/ssm-params.json
 
