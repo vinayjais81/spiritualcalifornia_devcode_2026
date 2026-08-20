@@ -246,10 +246,15 @@ echo
 
 if [[ $UPLOAD -eq 1 ]]; then
   echo "Uploading to Parameter Store..."
+  # Content is passed inline rather than as file://. Under Git Bash on
+  # Windows the AWS CLI is a native binary that cannot resolve the shell's
+  # /tmp/... paths, so file:// fails with "No such file or directory" for a
+  # file that plainly exists. These blobs are a few KB, well inside the
+  # command-line limit.
   aws ssm put-parameter --region "$REGION" --name /sc/prod/api/dotenv \
-    --type SecureString --tier Advanced --value "file://${API_FILE}" --overwrite >/dev/null
+    --type SecureString --tier Advanced --value "$(cat "$API_FILE")" --overwrite >/dev/null
   aws ssm put-parameter --region "$REGION" --name /sc/prod/web/dotenv \
-    --type SecureString --value "file://${WEB_FILE}" --overwrite >/dev/null
+    --type SecureString --value "$(cat "$WEB_FILE")" --overwrite >/dev/null
   echo "Uploaded."
 else
   echo "Files written to: ${OUT_DIR}"
