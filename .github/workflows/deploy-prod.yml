@@ -104,13 +104,20 @@ jobs:
               --document-name AWS-RunShellScript \
               --comment "deploy ${{ steps.sha.outputs.sha }}" \
               --timeout-seconds 2400 \
+              # NOTE: SSM runs these under /bin/sh, which is dash on Ubuntu —
+              # NOT bash. `set -o pipefail` is a bash builtin and dash rejects
+              # it outright ("Illegal option -o pipefail"), killing the command
+              # before anything runs. `set -eu` is POSIX and works in both.
+              #
+              # The deploy script itself is bash and keeps its own
+              # `set -euo pipefail`; it is invoked explicitly with `bash`
+              # below, so its shebang and options apply normally.
               --parameters commands="$(jq -Rn --arg s "$SCRIPT" --arg sha '${{ steps.sha.outputs.sha }}' --arg mig "$RUN_MIG" '
                 [
-                  "set -euo pipefail",
-                  "export TARGET_SHA=\($sha)",
-                  "export RUN_MIGRATIONS=\($mig)",
+                  "set -eu",
                   "cat > /tmp/deploy.sh <<'SCRIPT_EOF'\n\($s)\nSCRIPT_EOF",
                   "chmod +x /tmp/deploy.sh",
+                  "chown ubuntu:ubuntu /tmp/deploy.sh",
                   "sudo -u ubuntu -H env TARGET_SHA=\($sha) RUN_MIGRATIONS=\($mig) REGION=us-west-1 bash /tmp/deploy.sh"
                 ]')" \
               --query "Command.CommandId" --output text)
