@@ -52,12 +52,15 @@ variable "health_check_type" {
     replaced, and the ASG loops forever burning instances. EC2 checks only
     ask whether the machine is alive.
 
-    FLIP TO "ELB" once P8 has deployed code and /api/v1/health/live returns
-    200 — that is what makes a hung Node process count as unhealthy rather
-    than merely a stopped instance.
+    FLIPPED TO "ELB" on 2026-08-21, once the first deploy succeeded and both
+    target groups reported healthy. That is what makes a hung Node process
+    count as unhealthy rather than merely a stopped instance.
+
+    Only set this back to "EC2" if the environment is ever rebuilt from
+    scratch, where instances again exist before any code does.
   EOT
   type        = string
-  default     = "EC2"
+  default     = "ELB"
 }
 
 variable "acm_certificate_arn" {
