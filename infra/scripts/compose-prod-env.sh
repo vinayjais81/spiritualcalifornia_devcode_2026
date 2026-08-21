@@ -49,7 +49,14 @@ EXISTING=$(ssm_get /sc/prod/api/dotenv)
 EXISTING_WEB=$(ssm_get /sc/prod/web/dotenv)
 
 # Read one key out of an env blob. Trims CR, which Notepad-authored files carry.
-from_existing() { echo "${1:-}" | grep -E "^$2=" | head -1 | cut -d= -f2- | tr -d '\r'; }
+#
+# The trailing `|| true` matters: grep exits 1 when the key is absent, and with
+# `set -e` plus `pipefail` that aborts the whole script — silently, because the
+# failure is inside a command substitution and prints nothing. Every key that
+# already existed masked this; the first genuinely NEW variable hit it.
+from_existing() {
+  echo "${1:-}" | grep -E "^$2=" | head -1 | cut -d= -f2- | tr -d '\r' || true
+}
 
 # Keep the old value unless it is empty or still a placeholder.
 keep_or() {
@@ -87,6 +94,29 @@ EMAIL_HASH=$(keep_or "$(from_existing "$EXISTING" EMAIL_HASH_SECRET)" "$(rand_he
 REVALIDATE=$(keep_or "$(from_existing "$EXISTING" STATIC_PAGE_REVALIDATE_SECRET)" "$(rand_hex)")
 
 [[ "$JWT_ACCESS" != "$JWT_REFRESH" ]] || { echo "ERROR: JWT access and refresh secrets are identical" >&2; exit 1; }
+
+# ── Passport encryption key: generate once, then never lose it ───────────────
+#
+# Unlike the JWT secrets, regenerating this one DESTROYS DATA. It encrypts
+# stored passport numbers with AES-256-GCM; a different key fails
+# authentication rather than returning garbage, so every existing record
+# becomes permanently unreadable. No rotation handler exists yet.
+#
+# keep_or already carries the existing value forward, which is what matters —
+# but the extra guard below makes the consequence explicit rather than relying
+# on that being remembered.
+PASSPORT_KEY=$(keep_or "$(from_existing "$EXISTING" PASSPORT_ENCRYPTION_KEY)" "$(rand_hex)")
+
+if [[ ! "$PASSPORT_KEY" =~ ^[0-9a-fA-F]{64}$ ]]; then
+  echo "ERROR: PASSPORT_ENCRYPTION_KEY is not 64 hex characters. Refusing to write a key that cannot decrypt existing passports." >&2
+  exit 1
+fi
+
+EXISTING_PASSPORT=$(from_existing "$EXISTING" PASSPORT_ENCRYPTION_KEY)
+if [[ -n "$EXISTING_PASSPORT" && "$EXISTING_PASSPORT" != "$PASSPORT_KEY" ]]; then
+  echo "ERROR: refusing to replace an existing PASSPORT_ENCRYPTION_KEY - stored passports would become undecryptable." >&2
+  exit 1
+fi
 
 # Third-party keys: preserved if real, placeholder otherwise. This is what
 # lets the script run again at go-live without clobbering live credentials.
@@ -158,6 +188,12 @@ JWT_ACCESS_EXPIRES_IN=30m
 JWT_REFRESH_EXPIRES_IN=7d
 EMAIL_HASH_SECRET=${EMAIL_HASH}
 STATIC_PAGE_REVALIDATE_SECRET=${REVALIDATE}
+
+# Passport PII encryption (AES-256-GCM), for Soul Tour bookings.
+# DO NOT REGENERATE. A new key cannot decrypt existing passport records -
+# GCM fails authentication rather than returning garbage, and no rotation
+# handler exists. Generated once and carried forward on every run.
+PASSPORT_ENCRYPTION_KEY=${PASSPORT_KEY}
 
 STRIPE_SECRET_KEY=${STRIPE_SECRET}
 STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK}
@@ -232,6 +268,7 @@ grep -qE '^DATABASE_URL=postgresql://sc_app:[^@]+@[^/]+/spiritual_california\?' 
 grep -qE '^REDIS_URL=rediss://:[^@]+@' "$API_FILE" || { echo "FAIL: REDIS_URL malformed"; fail=1; }
 [[ "$(grep '^STATIC_PAGE_REVALIDATE_SECRET=' "$API_FILE")" == "$(grep '^STATIC_PAGE_REVALIDATE_SECRET=' "$WEB_FILE")" ]] || { echo "FAIL: revalidate secrets differ"; fail=1; }
 grep -q '^AWS_ACCESS_KEY_ID=' "$API_FILE" && { echo "FAIL: AWS keys must be absent (instance role)"; fail=1; }
+grep -qE '^PASSPORT_ENCRYPTION_KEY=[0-9a-fA-F]{64}$' "$API_FILE" || { echo "FAIL: PASSPORT_ENCRYPTION_KEY is not 64 hex chars"; fail=1; }
 LC_ALL=C grep -q '[^ -~]' "$API_FILE" && { echo "FAIL: non-ASCII would be unreadable via the Windows CLI"; fail=1; }
 grep -qE '= ' "$WEB_FILE" && { echo "FAIL: stray ' = ' in web env"; fail=1; }
 [[ $fail -eq 0 ]] || { echo; echo "Self-check failed. Nothing uploaded."; exit 1; }

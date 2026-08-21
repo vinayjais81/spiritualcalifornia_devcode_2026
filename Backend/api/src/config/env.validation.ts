@@ -187,6 +187,24 @@ const envSchema = z.object({
   // however the .env reads. See docs/practitioner-import-phase-1.md.
   EMAIL_HASH_SECRET: z.string().optional(),
 
+  // ── Passport PII encryption (AES-256-GCM) ──────────────────────────────
+  //
+  // Declared here for documentation and shape-checking only: passport-cipher.ts
+  // reads process.env DIRECTLY rather than through ConfigService, so it is
+  // not subject to the Zod-strips-unknown-keys trap the other variables are.
+  //
+  // Exactly 64 hex characters (32 bytes). Generate with `openssl rand -hex 32`.
+  //
+  // TREAT AS UNRECOVERABLE. It encrypts stored passport numbers as
+  // "v1:<iv>:<tag>:<ciphertext>"; change or lose it and every existing record
+  // fails GCM authentication and can never be decrypted. The "v1" prefix
+  // reserves room for a rotation handler, but none is implemented yet — so
+  // generate this ONCE, before any tour booking collects a passport.
+  PASSPORT_ENCRYPTION_KEY: z
+    .string()
+    .regex(/^[0-9a-fA-F]{64}$/, 'must be exactly 64 hex characters (32 bytes)')
+    .optional(),
+
   // ── Practitioner invites (sending) ─────────────────────────────────────
   // INVITE_EMAIL_MODE defaults to 'redirect' in code, so an environment that
   // never set it cannot mail real practitioners. Going live is an explicit act.
