@@ -230,8 +230,15 @@ jobs:
       # rather than localhost.
       - name: Verify through the load balancer
         run: |
+          # Distinguish "cannot check" from "check failed". A bare CLI error
+          # here exits 254 and reports the deploy as broken when the site may
+          # be serving perfectly — which is exactly what happened when the
+          # deploy role lacked DescribeLoadBalancers.
           ALB=$(aws elbv2 describe-load-balancers --names sc-prod-alb \
-            --query "LoadBalancers[0].DNSName" --output text)
+            --query "LoadBalancers[0].DNSName" --output text 2>/dev/null) || {
+            echo "::error::Could not look up the load balancer (permissions?). The deploy itself SUCCEEDED - verify manually."
+            exit 1
+          }
 
           for i in $(seq 1 30); do
             WEB=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://$ALB/healthz" || echo 000)

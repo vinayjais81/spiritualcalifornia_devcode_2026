@@ -175,6 +175,28 @@ data "aws_iam_policy_document" "deploy_extra" {
       aws_lb_target_group.api.arn,
     ]
   }
+
+  /**
+   * Read-only lookup of the load balancer's DNS name.
+   *
+   * The post-deploy verification resolves the ALB by name so it can check
+   * the site through the load balancer rather than only on localhost — the
+   * step that actually exercises the target groups and listener rules.
+   *
+   * Missing this made a SUCCESSFUL deploy report red: DescribeLoadBalancers
+   * returned AccessDenied, the CLI exited 254, and bash -e failed the step
+   * after the deploy had already completed and the site was serving.
+   *
+   * Describe* takes no resource-level conditions in ELBv2, so it is "*" —
+   * read-only, and it reveals nothing an attacker could not already learn by
+   * resolving the public hostname.
+   */
+  statement {
+    sid       = "DescribeLoadBalancer"
+    effect    = "Allow"
+    actions   = ["elasticloadbalancing:DescribeLoadBalancers"]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_policy" "deploy_extra" {
