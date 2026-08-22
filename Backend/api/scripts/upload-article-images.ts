@@ -35,6 +35,7 @@ import 'dotenv/config';
 import { S3Client, PutObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
+import { hasExplicitAwsKeys } from '../src/common/aws-config';
 
 const args = process.argv.slice(2);
 const flag = (n: string) => args.find((a) => a.startsWith(`--${n}=`))?.split('=').slice(1).join('=');
@@ -95,11 +96,23 @@ function collect(): Item[] {
 }
 
 async function main() {
-  if (!bucket || !accessKeyId || accessKeyId.startsWith('your-')) {
+  /**
+   * Configured-ness is decided by the BUCKET, not by an access key.
+   *
+   * Production authenticates through the EC2 instance role and deliberately
+   * carries no AWS_ACCESS_KEY_ID — so the old check ("no key means not
+   * configured") refused to run in exactly the environment it was needed in.
+   * The same mistaken test previously put UploadService into stub mode,
+   * where uploads reported success and wrote nothing.
+   *
+   * The bucket is the honest signal: no bucket means nowhere to upload,
+   * regardless of how credentials arrive.
+   */
+  if (!bucket || bucket.startsWith('your-') || bucket.toUpperCase().startsWith('PLACEHOLDER')) {
     console.error(
       red('\nREFUSED: S3 is not configured.') +
-        '\nAWS_S3_BUCKET and AWS_ACCESS_KEY_ID must be set to real values.\n' +
-        'UploadService would be in stub mode with this configuration.\n',
+        '\nAWS_S3_BUCKET must name a real bucket.\n' +
+        'Credentials come from the environment or, in production, the instance role.\n',
     );
     process.exit(1);
   }
@@ -123,7 +136,14 @@ async function main() {
 
   console.log(`\n  ${dim('Example:')} ${publicBase()}/${items[0]?.key ?? ''}`);
 
-  const s3 = new S3Client({ region, credentials: { accessKeyId, secretAccessKey } });
+  // Omits `credentials` entirely when no explicit keys are set, so the SDK
+  // resolves the instance profile. Passing empty strings does NOT fall back —
+  // it fails with a signature error that reads like a permissions problem.
+  const s3 = new S3Client(
+    hasExplicitAwsKeys(accessKeyId, secretAccessKey)
+      ? { region, credentials: { accessKeyId, secretAccessKey } }
+      : { region },
+  );
 
   if (mode === 'report') {
     // Sample rather than HEAD all 124 — enough to say whether a previous run
