@@ -94,6 +94,18 @@ variable "enable_waf" {
   default     = false
 }
 
+variable "site_domain" {
+  description = <<-EOT
+    The canonical hostname the site serves from.
+
+    www redirects here rather than serving, because production CORS permits
+    exactly one origin — if www served the site, every browser-side API call
+    from it would fail CORS while the page itself rendered fine.
+  EOT
+  type        = string
+  default     = "spiritualcalifornia.com"
+}
+
 variable "app_port_web" {
   type    = number
   default = 3000

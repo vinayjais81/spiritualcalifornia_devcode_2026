@@ -202,6 +202,45 @@ resource "aws_lb_listener_rule" "api_http" {
   }
 }
 
+/**
+ * PRIORITY 5 — www redirects to the apex, it does not serve.
+ *
+ * Production CORS permits exactly ONE origin (main.ts:38-41). If www serves
+ * the site, the page renders and then every browser-side API call fails
+ * CORS: sign-in, cart, checkout. It looks fine and quietly does not work,
+ * which is a far worse failure than a page that plainly errors.
+ *
+ * Priority 5 puts it above the path rules, so the redirect happens before
+ * any routing decision — a request to www never reaches a target group.
+ *
+ * Found missing after go-live: www was returning 200 instead of 301.
+ */
+resource "aws_lb_listener_rule" "www_redirect" {
+  count = local.https_enabled ? 1 : 0
+
+  listener_arn = aws_lb_listener.https[0].arn
+  priority     = 5
+
+  action {
+    type = "redirect"
+
+    redirect {
+      host        = var.site_domain
+      path        = "/#{path}"
+      query       = "#{query}"
+      protocol    = "HTTPS"
+      port        = "443"
+      status_code = "HTTP_301"
+    }
+  }
+
+  condition {
+    host_header {
+      values = ["www.${var.site_domain}"]
+    }
+  }
+}
+
 resource "aws_lb_listener_rule" "revalidate_https" {
   count = local.https_enabled ? 1 : 0
 
