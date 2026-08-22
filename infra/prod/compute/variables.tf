@@ -65,18 +65,25 @@ variable "health_check_type" {
 
 variable "acm_certificate_arn" {
   description = <<-EOT
-    Empty until P7 issues the certificate.
+    The certificate the HTTPS listener uses. Issued by the P7 DNS stack.
 
-    While empty, only an HTTP listener is created — which is what lets the
-    whole stack be tested through the ALB's own DNS name before the domain
-    exists. Set it and re-apply to add the HTTPS listener and the HTTP to
-    HTTPS redirect.
+    COMMITTED AS A DEFAULT, DELIBERATELY — do not pass this with -var.
 
-    A certificate cannot be issued earlier: ACM validates via DNS, and the
-    hosted zone does not exist until P7.
+    Terraform does not remember command-line variables. This was originally
+    empty and supplied as `-var="acm_certificate_arn=..."`, which created
+    HTTPS correctly; the very next apply, run without the flag, fell back to
+    the empty default, decided HTTPS was disabled, and DESTROYED the 443
+    listener. The site went from serving HTTPS to refusing connections on
+    443, with no error and nothing in the plan that read as dangerous.
+
+    Any value that must survive the next apply belongs in the code.
+
+    Empty is still meaningful: it produces an HTTP-only listener, which is
+    what allowed the stack to be tested before the domain existed. Only
+    return it to empty when deliberately taking HTTPS down.
   EOT
   type        = string
-  default     = ""
+  default     = "arn:aws:acm:us-west-1:372110294387:certificate/c40d9cfd-15e6-4075-88ed-8e4aff0bb87b"
 }
 
 variable "enable_waf" {
