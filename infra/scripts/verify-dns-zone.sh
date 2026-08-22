@@ -37,26 +37,38 @@ if [[ -z "$ZONE_ID" || "$ZONE_ID" == "None" ]]; then
   exit 1
 fi
 
-# Whole new zone in one call, cached to a temp file.
-TMP=$(mktemp -d); trap 'rm -rf "$TMP"' EXIT
-aws route53 list-resource-record-sets --hosted-zone-id "$ZONE_ID" \
-  --output json > "$TMP/new.json"
+# Whole new zone in one call, held in a shell variable.
+#
+# Deliberately NOT a temp file. Under Git Bash on Windows, mktemp returns a
+# POSIX path like /tmp/tmp.XXXX, but node is a native Windows binary and
+# resolves that as D:\tmp\tmp.XXXX - which does not exist. Every lookup then
+# returned empty, and the script reported that EVERY mail record was missing.
+#
+# It failed closed, which was the right direction for a check guarding company
+# email - but a verification tool that cries wolf is one people learn to
+# override, so the ambiguity is removed rather than worked around.
+NEW_ZONE_JSON=$(aws route53 list-resource-record-sets --hosted-zone-id "$ZONE_ID" --output json)
+
+if [[ -z "$NEW_ZONE_JSON" ]]; then
+  echo "ERROR: could not read the Route 53 zone. Refusing to report on data I do not have." >&2
+  exit 1
+fi
 
 # What the new zone holds for one name+type, normalised for comparison.
 new_rec() {
-  node -e '
-    const fs=require("fs");
-    const [file,name,type]=process.argv.slice(1);
-    const z=JSON.parse(fs.readFileSync(file,"utf8"));
-    const want=(name.endsWith(".")?name:name+".").toLowerCase();
-    const out=[];
-    for(const r of z.ResourceRecordSets){
-      if(r.Name.toLowerCase()!==want||r.Type!==type)continue;
-      if(r.AliasTarget){out.push("ALIAS:"+r.AliasTarget.DNSName.replace(/\.$/,""));continue}
-      for(const v of (r.ResourceRecords||[])) out.push(v.Value.replace(/^"|"$/g,"").replace(/\.$/,""));
-    }
-    console.log(out.sort().join("|"));
-  ' "$TMP/new.json" "$1" "$2"
+  printf '%s' "$NEW_ZONE_JSON" | node -e '
+    let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{
+      const [name,type]=process.argv.slice(1);
+      const z=JSON.parse(s);
+      const want=(name.endsWith(".")?name:name+".").toLowerCase();
+      const out=[];
+      for(const r of z.ResourceRecordSets){
+        if(r.Name.toLowerCase()!==want||r.Type!==type)continue;
+        if(r.AliasTarget){out.push("ALIAS:"+r.AliasTarget.DNSName.replace(/\.$/,""));continue}
+        for(const v of (r.ResourceRecords||[])) out.push(v.Value.replace(/^"|"$/g,"").replace(/\.$/,""));
+      }
+      console.log(out.sort().join("|"));
+    });' "$1" "$2"
 }
 
 # What the internet currently sees, i.e. GoDaddy.
