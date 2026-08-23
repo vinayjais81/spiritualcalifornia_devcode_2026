@@ -247,18 +247,17 @@ jobs:
           # listener rules and the app, which is what "is production up"
           # actually means.
           #
-          # Falls back to the ALB over HTTP for the pre-DNS case, so this
-          # still works when rebuilding an environment from scratch.
+          # NO FALLBACK TO THE LOAD BALANCER HOSTNAME.
+          #
+          # There used to be one, and it is what produced four consecutive red
+          # runs on deploys that had actually succeeded: a single transient
+          # failure of the first probe switched BASE to http://<alb>, which
+          # 301-redirects to HTTPS, so every subsequent check read 301 and the
+          # step retried thirty times before failing a healthy site.
+          #
+          # A fallback that turns "one probe was slow" into "the deploy
+          # failed" is worse than no fallback. The domain resolves; check it.
           BASE="https://${SITE_DOMAIN}"
-          if ! curl -sf -o /dev/null --max-time 15 "$BASE/healthz" 2>/dev/null; then
-            ALB=$(aws elbv2 describe-load-balancers --names sc-prod-alb \
-              --query "LoadBalancers[0].DNSName" --output text 2>/dev/null) || {
-              echo "::error::Cannot reach the site by name and cannot look up the load balancer. The deploy itself SUCCEEDED - verify manually."
-              exit 1
-            }
-            echo "Site domain not answering yet; falling back to the load balancer over HTTP."
-            BASE="http://${ALB}"
-          fi
           echo "verifying against: $BASE"
 
           for i in $(seq 1 30); do
@@ -287,7 +286,18 @@ jobs:
             sleep 10
           done
 
-          echo "::error::Load balancer never returned healthy. Restore point: $SNAPSHOT"
+          # Reached only if the site never returned 200 across five minutes.
+          # Print what it actually said, so the next person does not have to
+          # guess from a wall of identical retry lines — which is exactly the
+          # position several earlier failures left us in.
+          echo "::error::${BASE} never returned healthy over 5 minutes (last: web=$WEB api=$API)."
+          echo "Diagnostics:"
+          curl -sS -o /dev/null -w "  healthz      : http=%{http_code} dns=%{time_namelookup}s connect=%{time_connect}s total=%{time_total}s\n" \
+            --max-time 15 "$BASE/healthz" 2>&1 || echo "  healthz      : request failed outright"
+          curl -sS -o /dev/null -w "  health/live  : http=%{http_code} total=%{time_total}s\n" \
+            --max-time 15 "$BASE/api/v1/health/live" 2>&1 || echo "  health/live  : request failed outright"
+          echo "  NOTE: the deploy itself completed and passed its on-instance health gate."
+          echo "  Restore point if needed: $SNAPSHOT"
           exit 1
 
       - name: Summary
