@@ -25,6 +25,10 @@ env:
   AWS_REGION: us-west-1
   ASG_NAME: sc-prod-app-asg
   DB_IDENTIFIER: sc-prod-rds-pg
+  # Verification targets the real site, which exercises DNS, the certificate,
+  # the listener rules and the app together. The load balancer's own hostname
+  # is only a fallback for a pre-DNS environment.
+  SITE_DOMAIN: spiritualcalifornia.com
 
 permissions:
   id-token: write # request the OIDC token
@@ -230,19 +234,36 @@ jobs:
       # rather than localhost.
       - name: Verify through the load balancer
         run: |
-          # Distinguish "cannot check" from "check failed". A bare CLI error
-          # here exits 254 and reports the deploy as broken when the site may
-          # be serving perfectly — which is exactly what happened when the
-          # deploy role lacked DescribeLoadBalancers.
-          ALB=$(aws elbv2 describe-load-balancers --names sc-prod-alb \
-            --query "LoadBalancers[0].DNSName" --output text 2>/dev/null) || {
-            echo "::error::Could not look up the load balancer (permissions?). The deploy itself SUCCEEDED - verify manually."
-            exit 1
-          }
+          # Verify against the SITE, not the load balancer's own hostname.
+          #
+          # Port 80 now 301-redirects to HTTPS, so probing http://<alb>/ never
+          # returns 200 and this step failed on three consecutive SUCCESSFUL
+          # deploys. Probing the ALB over HTTPS is not the answer either: the
+          # certificate is issued for spiritualcalifornia.com, so the name
+          # would not match.
+          #
+          # Once the domain resolves, the real hostname is also the more
+          # honest thing to check — it exercises DNS, the certificate, the
+          # listener rules and the app, which is what "is production up"
+          # actually means.
+          #
+          # Falls back to the ALB over HTTP for the pre-DNS case, so this
+          # still works when rebuilding an environment from scratch.
+          BASE="https://${SITE_DOMAIN}"
+          if ! curl -sf -o /dev/null --max-time 15 "$BASE/healthz" 2>/dev/null; then
+            ALB=$(aws elbv2 describe-load-balancers --names sc-prod-alb \
+              --query "LoadBalancers[0].DNSName" --output text 2>/dev/null) || {
+              echo "::error::Cannot reach the site by name and cannot look up the load balancer. The deploy itself SUCCEEDED - verify manually."
+              exit 1
+            }
+            echo "Site domain not answering yet; falling back to the load balancer over HTTP."
+            BASE="http://${ALB}"
+          fi
+          echo "verifying against: $BASE"
 
           for i in $(seq 1 30); do
-            WEB=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://$ALB/healthz" || echo 000)
-            API=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://$ALB/api/v1/health/live" || echo 000)
+            WEB=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$BASE/healthz" || echo 000)
+            API=$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "$BASE/api/v1/health/live" || echo 000)
             if [ "$WEB" = "200" ] && [ "$API" = "200" ]; then
               echo "Load balancer serving both apps."
 
@@ -250,7 +271,7 @@ jobs:
               # Next.js; if it reaches NestJS the response is a Nest-shaped
               # 404 and CMS revalidation is silently broken.
               REVAL=$(curl -s --max-time 10 -X POST -H 'Content-Type: application/json' \
-                -d '{}' "http://$ALB/api/revalidate-static-page" || echo '')
+                -d '{}' "$BASE/api/revalidate-static-page" || echo '')
               case "$REVAL" in
                 *Unauthorized*|*secret*|*slug*)
                   echo "Revalidate route correctly reaches Next.js." ;;
