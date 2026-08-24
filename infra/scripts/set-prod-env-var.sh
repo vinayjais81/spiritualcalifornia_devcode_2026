@@ -35,6 +35,20 @@ if [[ -z "$TARGET" || -z "$VAR" ]]; then
   exit 1
 fi
 
+# ── The NAME has to look like an env var name ────────────────────────────────
+#
+# Without this check a mistyped name (lowercase, a stray digit) falls through to
+# the "added" branch, and the variable-count guard then reports
+#     "unexpected variable count after add - aborting"
+# which reads like the config got corrupted. It did not; the name was simply
+# wrong. Reject it here, where the cause is obvious.
+if [[ ! "$VAR" =~ ^[A-Z][A-Z0-9_]*$ ]]; then
+  echo "ERROR: '$VAR' is not a valid variable name." >&2
+  echo "       Names are UPPERCASE letters, digits and underscores, e.g. GOOGLE_CLIENT_ID." >&2
+  echo "       Note the shell is case-sensitive: 'google_client_id' is a different name." >&2
+  exit 1
+fi
+
 case "$TARGET" in
   api) PARAM="/sc/prod/api/dotenv"; TIER="Advanced" ;;
   web) PARAM="/sc/prod/web/dotenv"; TIER="Standard" ;;
@@ -45,9 +59,36 @@ ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 [[ "$ACCOUNT" == "$EXPECTED_ACCOUNT" ]] || { echo "ERROR: wrong account ($ACCOUNT)" >&2; exit 1; }
 
 # ── Read the value without echoing it ────────────────────────────────────────
-printf 'Value for %s (input hidden): ' "$VAR" >&2
-read -rs VALUE
-echo >&2
+#
+# `read` needs a terminal. Launching this from PowerShell as
+# `& "C:\Program Files\Git\bin\bash.exe" script.sh` does NOT give it one:
+# stdin hits EOF immediately, the value comes back empty, and the old error
+# ("empty value") sent people hunting for a typo they had not made.
+#
+# Detect it and say what to do instead.
+if [[ ! -t 0 && -z "${VALUE:-}" ]]; then
+  cat >&2 <<'EOT'
+ERROR: no terminal on stdin, so the value cannot be prompted for.
+
+This happens when the script is launched from PowerShell as:
+    & "C:\Program Files\Git\bin\bash.exe" infra/scripts/set-prod-env-var.sh ...
+
+Open Git Bash and run it there instead:
+    cd /d/Development/htdocs/Spiritual_California_Marketplace_Platform
+    bash infra/scripts/set-prod-env-var.sh <api|web> <VARIABLE_NAME>
+
+Or pass the value through the environment (it will not reach shell history
+if the assignment is on the same line):
+    VALUE='the-secret' bash infra/scripts/set-prod-env-var.sh api MY_VAR
+EOT
+  exit 1
+fi
+
+if [[ -z "${VALUE:-}" ]]; then
+  printf 'Value for %s (input hidden): ' "$VAR" >&2
+  read -rs VALUE
+  echo >&2
+fi
 
 [[ -n "$VALUE" ]] || { echo "ERROR: empty value" >&2; exit 1; }
 
@@ -89,7 +130,7 @@ trap 'rm -rf "$TMP"' EXIT
 aws ssm get-parameter --region "$REGION" --name "$PARAM" --with-decryption \
   --query Parameter.Value --output text > "$TMP/current"
 
-BEFORE=$(grep -cE '^[A-Z_]+=' "$TMP/current")
+BEFORE=$(grep -cE '^[A-Z][A-Z0-9_]*=' "$TMP/current")
 [[ "$BEFORE" -gt 0 ]] || { echo "ERROR: fetched config has no variables - refusing to touch it" >&2; exit 1; }
 
 if grep -qE "^${VAR}=" "$TMP/current"; then
@@ -105,7 +146,7 @@ else
   ACTION="added"
 fi
 
-AFTER=$(grep -cE '^[A-Z_]+=' "$TMP/new")
+AFTER=$(grep -cE '^[A-Z][A-Z0-9_]*=' "$TMP/new")
 
 echo
 echo "  parameter : $PARAM"
