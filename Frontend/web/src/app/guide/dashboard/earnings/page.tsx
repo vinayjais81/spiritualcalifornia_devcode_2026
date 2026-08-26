@@ -80,7 +80,13 @@ export default function EarningsPage() {
         window.location.href = data.onboardingUrl;
       }
     },
-    onError: () => toast.error('Failed to start Stripe onboarding'),
+    // Show what the server actually said. The old handler ignored the error
+    // entirely, so a misconfigured Stripe key and an already-rejected account
+    // produced the identical, unactionable toast.
+    onError: (err: any) =>
+      toast.error(
+        err?.response?.data?.message ?? 'Failed to start Stripe onboarding',
+      ),
   });
 
   const payoutMutation = useMutation({

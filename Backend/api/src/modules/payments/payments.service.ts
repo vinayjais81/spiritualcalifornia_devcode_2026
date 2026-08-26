@@ -1420,6 +1420,53 @@ export class PaymentsService {
 
   // ─── Stripe Connect Onboarding (for Guides) ───────────────────────────────
 
+  /**
+   * Translate a Stripe SDK failure into something a human can act on.
+   *
+   * Every Stripe call in this flow used to propagate raw, so a misconfigured
+   * platform surfaced to the guide as "Failed to start Stripe onboarding" with
+   * the actual cause visible only in the server log. The three causes below
+   * account for essentially every failure seen at launch, and each has a
+   * different fix — telling them apart is the whole point.
+   *
+   * The full error is always logged; only the safe summary is returned.
+   */
+  private translateStripeConnectError(err: any): Error {
+    const type = err?.type ?? err?.rawType;
+    const code = err?.code;
+    const message: string = err?.message ?? String(err);
+
+    this.logger.error(
+      `[connect-onboard] Stripe call failed — type=${type} code=${code} status=${err?.statusCode}: ${message}`,
+    );
+
+    // Bad or missing API key: the key is a placeholder, blank, or from the
+    // wrong account. Nothing the guide does will help.
+    if (type === 'StripeAuthenticationError') {
+      return new BadRequestException(
+        'Payments are not configured on the server (Stripe rejected the API key). Please contact support.',
+      );
+    }
+
+    // Live-mode Connect refuses to create accounts until the platform profile
+    // is completed in the Stripe Dashboard. Reads as a permissions error.
+    if (type === 'StripePermissionError' || code === 'account_invalid') {
+      return new BadRequestException(
+        'The platform is not yet approved to create payout accounts. Please contact support.',
+      );
+    }
+
+    // Most often a test-mode account id used against a live key (or the
+    // reverse) after a key swap — the id simply does not exist in this mode.
+    if (code === 'resource_missing') {
+      return new BadRequestException(
+        'The payout account on file could not be found in Stripe. Please contact support so it can be reset.',
+      );
+    }
+
+    return new BadRequestException(`Could not start Stripe onboarding: ${message}`);
+  }
+
   async createConnectOnboarding(userId: string) {
     const guide = await this.prisma.guideProfile.findUnique({
       where: { userId },
@@ -1427,6 +1474,20 @@ export class PaymentsService {
     });
     if (!guide) throw new NotFoundException('Guide profile not found');
 
+    try {
+      return await this.runConnectOnboarding(guide);
+    } catch (err) {
+      throw this.translateStripeConnectError(err);
+    }
+  }
+
+  /** The actual flow; kept separate so every Stripe call sits inside one catch. */
+  private async runConnectOnboarding(guide: {
+    id: string;
+    displayName: string;
+    stripeAccountId: string | null;
+    user: { email: string };
+  }) {
     // If the guide already has an account, route based on Stripe's view of
     // its onboarding state. NEVER call createConnectAccount here — it always
     // creates a fresh Stripe account, which orphans the existing one in our
