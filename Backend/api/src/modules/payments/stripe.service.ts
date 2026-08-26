@@ -313,9 +313,36 @@ export class StripeService {
 
   // ─── Webhook Signature Verification ────────────────────────────────────────
 
+  /**
+   * Verify an incoming webhook against the endpoint secret(s).
+   *
+   * Stripe treats "events on your account" and "events on connected accounts"
+   * as separate endpoint types. A platform that needs both — this one does,
+   * because `account.updated` is what marks a guide payout-ready — may end up
+   * with TWO endpoints pointing at this same URL, and every endpoint carries
+   * its own signing secret.
+   *
+   * With a single secret, the second endpoint's deliveries all fail signature
+   * verification. That failure is quiet in exactly the worst way: guides finish
+   * Stripe onboarding, the platform never hears about it, and their paid
+   * offerings stay gate-drafted with nothing in the UI explaining why.
+   *
+   * So try the primary secret, then the Connect one if configured. Set
+   * STRIPE_CONNECT_WEBHOOK_SECRET only when Stripe actually issued a second
+   * endpoint; when it is unset this behaves exactly as before.
+   */
   constructEvent(payload: Buffer, signature: string): Stripe.Event {
-    const webhookSecret = this.config.get<string>('STRIPE_WEBHOOK_SECRET')!;
-    return this.stripe.webhooks.constructEvent(payload, signature, webhookSecret);
+    const primary = this.config.get<string>('STRIPE_WEBHOOK_SECRET')!;
+    const connect = this.config.get<string>('STRIPE_CONNECT_WEBHOOK_SECRET');
+
+    try {
+      return this.stripe.webhooks.constructEvent(payload, signature, primary);
+    } catch (err) {
+      if (!connect) throw err;
+      // Rethrows with Stripe's own signature error if this one fails too, so a
+      // genuinely forged request still reports the reason it was rejected.
+      return this.stripe.webhooks.constructEvent(payload, signature, connect);
+    }
   }
 
   // ─── Retrieve Payment Intent ───────────────────────────────────────────────

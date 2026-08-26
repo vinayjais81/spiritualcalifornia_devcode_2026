@@ -89,6 +89,11 @@ const envSchema = z.object({
   // Stripe
   STRIPE_SECRET_KEY: z.string().min(1),
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
+  // Second endpoint secret, needed only when Stripe issues a SEPARATE webhook
+  // endpoint for connected-account events (see StripeService.constructEvent).
+  // Must be declared here even though it is optional — the schema strips keys
+  // it does not know about, so an undeclared variable is silently ignored.
+  STRIPE_CONNECT_WEBHOOK_SECRET: z.string().optional(),
   STRIPE_PLATFORM_COMMISSION_PERCENT: z.coerce.number().default(15),
 
   // Guide subscription ($50/mo Standard listing). Price IDs are optional: when
