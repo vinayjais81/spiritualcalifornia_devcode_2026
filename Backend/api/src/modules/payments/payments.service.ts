@@ -1448,6 +1448,20 @@ export class PaymentsService {
       );
     }
 
+    // Connect was never enabled on the Stripe account at all. This is what
+    // production actually hit on 2026-08-26: a valid LIVE key, but the
+    // platform had never signed up for Connect, so accounts.create was
+    // rejected outright. Stripe reports it as a plain invalid-request with no
+    // distinguishing code, hence the message match.
+    //
+    // Fixed only in the Stripe Dashboard (Connect -> get started); no amount
+    // of retrying or key-swapping helps.
+    if (/signed up for Connect/i.test(message)) {
+      return new BadRequestException(
+        'Payouts are not enabled on the platform yet. Please contact support — no action is needed from you.',
+      );
+    }
+
     // Live-mode Connect refuses to create accounts until the platform profile
     // is completed in the Stripe Dashboard. Reads as a permissions error.
     if (type === 'StripePermissionError' || code === 'account_invalid') {
