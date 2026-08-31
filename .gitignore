@@ -25,3 +25,15 @@ Backend/api/.env.example
 Backend/api/.env.example
 Frontend/web/.env.local
 Frontend/web/.env.local
+
+# ── Environment config: never commit ─────────────────────────────────────────
+#
+# The `.env` / `.env.local` entries above match ONLY files named exactly that.
+# A prefixed variant does not match, so `prod-api.env` and `prod-web.env` — the
+# real production configuration — sat untracked but unignored in the repo root,
+# one `git add .` away from being committed and pushed to both remotes (one of
+# which is the client's). Match the suffix, not just the exact name.
+#
+# `.env.example` is deliberately NOT covered: it carries no values and is meant
+# to be committed as the documented list of required variables.
+*.env
