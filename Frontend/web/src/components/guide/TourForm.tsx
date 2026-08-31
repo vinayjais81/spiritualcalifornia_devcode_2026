@@ -340,18 +340,27 @@ export function TourForm({ initial, tourId }: Props) {
         halfRefundDaysBefore: Number(form.halfRefundDaysBefore) || 60,
       },
       isPublished: form.isPublished,
-      // For CREATE only, pass nested children. For EDIT, the backend update()
-      // currently ignores nested children — those are managed via dedicated
-      // sub-endpoints (POST /:id/departures, POST /:id/itinerary).
+
+      // Room types go on BOTH create and edit. They used to be create-only,
+      // on the assumption that nested children were handled by dedicated
+      // sub-endpoints — true for departures and itinerary, never built for
+      // room types. The form rendered and validated the price fields anyway,
+      // so a guide could edit a room price, get a success, and find it
+      // unchanged. `id` is what tells the server to update the existing row
+      // and keep its booked-seat count rather than create a duplicate.
+      roomTypes: form.roomTypes.map((rt) => ({
+        ...(rt.id ? { id: rt.id } : {}),
+        name: rt.name.trim(),
+        description: rt.description || undefined,
+        pricePerNight: Number(rt.pricePerNight) || 0,
+        totalPrice: Number(rt.totalPrice),
+        capacity: Number(rt.capacity),
+        amenities: csvToArray(rt.amenities),
+      })),
+
+      // Departures and itinerary stay create-only: on edit they are managed
+      // through POST /:id/departures and POST /:id/itinerary.
       ...(isEdit ? {} : {
-        roomTypes: form.roomTypes.map((rt) => ({
-          name: rt.name.trim(),
-          description: rt.description || undefined,
-          pricePerNight: Number(rt.pricePerNight) || 0,
-          totalPrice: Number(rt.totalPrice),
-          capacity: Number(rt.capacity),
-          amenities: csvToArray(rt.amenities),
-        })),
         departures: form.departures.map((d) => ({
           startDate: toIsoDate(d.startDate),
           endDate: toIsoDate(d.endDate),

@@ -7,7 +7,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { PUBLIC_GUIDE_WHERE } from '../../common/public-visibility';
 import { CacheService } from '../../database/cache.service';
 import { CreateTourDto } from './dto/create-tour.dto';
-import { UpdateTourDto } from './dto/update-tour.dto';
+import { UpdateTourDto, UpdateRoomTypeDto } from './dto/update-tour.dto';
 import { BookTourDto, PayBalanceDto, CancelBookingDto } from './dto/book-tour.dto';
 import { StripeService } from '../payments/stripe.service';
 import { PaymentsService } from '../payments/payments.service';
@@ -322,7 +322,7 @@ export class SoulToursService {
       this.payments.assertCanPublishPaidOffering(gate);
     }
 
-    const updated = await this.prisma.soulTour.update({
+    await this.prisma.soulTour.update({
       where: { id: tourId },
       data: {
         ...rest,
@@ -335,10 +335,113 @@ export class SoulToursService {
         latestUpdate,
         latestUpdateAt: latestUpdate !== undefined ? new Date() : undefined,
       },
-      include: { roomTypes: true, departures: true, itinerary: true },
+    });
+
+    // `roomTypes` used to be destructured off the body purely so the spread
+    // above would not choke on it, and then dropped — which is why editing a
+    // room price appeared to save and silently did not. Only reconcile when
+    // the caller actually sent the key: `undefined` means "not editing room
+    // types", and must not be read as "delete them all".
+    if (roomTypes !== undefined) {
+      await this.syncRoomTypes(tourId, roomTypes);
+    }
+
+    // Re-read so the response reflects the sync rather than the pre-update
+    // rows. Returning the stale set is what let this bug look like a success.
+    const updated = await this.prisma.soulTour.findUnique({
+      where: { id: tourId },
+      include: {
+        roomTypes: { orderBy: { sortOrder: 'asc' } },
+        departures: true,
+        itinerary: true,
+      },
     });
     await this.invalidateHomeCache();
     return updated;
+  }
+
+  /**
+   * Reconcile a tour's room types against the set the guide submitted.
+   *
+   * Deliberately not delete-all-then-recreate, for two reasons:
+   *
+   *   1. `available` is live inventory — it is decremented on every booking
+   *      (see bookTour). Recreating a row resets it to `capacity` and puts
+   *      sold-out rooms back on sale.
+   *   2. TourBooking.roomTypeId is a required relation, so deleting a booked
+   *      room type either fails at the database or strands the booking.
+   *
+   * So: rows arriving with an id are updated in place, rows without one are
+   * created, and rows the guide removed are deleted only if nothing is booked
+   * against them.
+   */
+  private async syncRoomTypes(tourId: string, incoming: UpdateRoomTypeDto[]) {
+    const existing = await this.prisma.tourRoomType.findMany({
+      where: { tourId },
+      include: { _count: { select: { bookings: true } } },
+    });
+    const byId = new Map(existing.map((r) => [r.id, r]));
+
+    // An id that isn't ours would otherwise update another tour's room.
+    for (const rt of incoming) {
+      if (rt.id && !byId.has(rt.id)) {
+        throw new BadRequestException(`Room type ${rt.id} does not belong to this tour`);
+      }
+    }
+
+    const keptIds = new Set(incoming.map((rt) => rt.id).filter(Boolean) as string[]);
+    const removed = existing.filter((r) => !keptIds.has(r.id));
+    const booked = removed.filter((r) => r._count.bookings > 0);
+    if (booked.length > 0) {
+      // Name them: "cannot remove a room type" is not actionable when a tour
+      // has several and the guide cannot see which one has a booking.
+      throw new BadRequestException(
+        `Cannot remove ${booked.map((r) => `"${r.name}"`).join(', ')} — ` +
+          `${booked.length === 1 ? 'it has' : 'they have'} existing bookings. ` +
+          `Set capacity to the number already booked to stop new sales instead.`,
+      );
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const r of removed) {
+        await tx.tourRoomType.delete({ where: { id: r.id } });
+      }
+
+      for (const [i, rt] of incoming.entries()) {
+        const base = {
+          name: rt.name,
+          description: rt.description,
+          pricePerNight: rt.pricePerNight,
+          totalPrice: rt.totalPrice,
+          capacity: rt.capacity,
+          amenities: rt.amenities ?? [],
+          sortOrder: i,
+        };
+
+        if (!rt.id) {
+          await tx.tourRoomType.create({
+            data: { tourId, ...base, available: rt.capacity },
+          });
+          continue;
+        }
+
+        // Preserve what has been sold. `available` is not a settable field on
+        // the form, so derive it: sold = old capacity - old available, and the
+        // new availability is whatever the new capacity leaves over.
+        const prev = byId.get(rt.id)!;
+        const sold = prev.capacity - prev.available;
+        if (rt.capacity < sold) {
+          throw new BadRequestException(
+            `"${rt.name}" already has ${sold} booked, so capacity cannot be set below ${sold}.`,
+          );
+        }
+
+        await tx.tourRoomType.update({
+          where: { id: rt.id },
+          data: { ...base, available: rt.capacity - sold },
+        });
+      }
+    });
   }
 
   // ─── Delete Tour ───────────────────────────────────────────────────────────
