@@ -19,6 +19,89 @@ import { UploadService } from '../upload/upload.service';
 import { SearchService } from '../search/search.service';
 import { checkPasswordPolicy } from '../../common/validators/is-strong-password.validator';
 
+// ─── Financials: who was on each side of a payment ───────────────────────────
+
+const SEEKER_NAME = { user: { select: { firstName: true, lastName: true } } } as const;
+const GUIDE_NAME = {
+  displayName: true,
+  user: { select: { firstName: true, lastName: true } },
+} as const;
+
+type NamedUser = { firstName: string | null; lastName: string | null } | null;
+type NamedGuide = { displayName: string | null; user: NamedUser };
+const personName = (u: NamedUser) =>
+  [u?.firstName, u?.lastName].filter(Boolean).join(' ').trim() || null;
+
+/**
+ * Collapse a Payment's four possible sources into one shape.
+ *
+ * `bookingId`, `orderId`, `ticketPurchaseId` and `tourBookingId` are all
+ * nullable on Payment and exactly one is set. The admin Transactions tab read
+ * `payment.booking.seeker` directly, so a service booking rendered names and
+ * an event ticket, shop order or tour booking rendered "—" — the parties were
+ * always there, just never selected or reached for.
+ *
+ * `guideName` is null for a multi-guide shop order on purpose: inventing a
+ * single seller for a basket spanning several would be worse than saying so.
+ */
+export function describePaymentParties(p: {
+  booking?: { seeker?: { user: NamedUser } | null; service?: { name: string; guide: NamedGuide } | null } | null;
+  ticketPurchase?: { seeker?: { user: NamedUser } | null; tier?: { event: { title: string; guide: NamedGuide } } | null } | null;
+  tourBooking?: { seeker?: { user: NamedUser } | null; tour?: { title: string; guide: NamedGuide } | null } | null;
+  order?: { id?: string; seeker?: { user: NamedUser } | null; items?: Array<{ product: { guide: NamedGuide } }> } | null;
+}): {
+  sourceType: 'SERVICE' | 'EVENT' | 'TOUR' | 'PRODUCT' | 'UNKNOWN';
+  sourceLabel: string | null;
+  seekerName: string | null;
+  guideName: string | null;
+} {
+  const guideOf = (g?: { displayName: string | null; user: NamedUser } | null) =>
+    g?.displayName || personName(g?.user ?? null);
+
+  if (p.booking) {
+    return {
+      sourceType: 'SERVICE',
+      sourceLabel: p.booking.service?.name ?? null,
+      seekerName: personName(p.booking.seeker?.user ?? null),
+      guideName: guideOf(p.booking.service?.guide),
+    };
+  }
+
+  if (p.ticketPurchase) {
+    return {
+      sourceType: 'EVENT',
+      sourceLabel: p.ticketPurchase.tier?.event?.title ?? null,
+      seekerName: personName(p.ticketPurchase.seeker?.user ?? null),
+      guideName: guideOf(p.ticketPurchase.tier?.event?.guide),
+    };
+  }
+
+  if (p.tourBooking) {
+    return {
+      sourceType: 'TOUR',
+      sourceLabel: p.tourBooking.tour?.title ?? null,
+      seekerName: personName(p.tourBooking.seeker?.user ?? null),
+      guideName: guideOf(p.tourBooking.tour?.guide),
+    };
+  }
+
+  if (p.order) {
+    const guides = [...new Set((p.order.items ?? []).map((i) => guideOf(i.product.guide)).filter(Boolean))] as string[];
+    return {
+      sourceType: 'PRODUCT',
+      // No human-facing order number exists; the id's tail is what support
+      // actually quotes back to a customer.
+      sourceLabel: p.order.id ? `Order ${p.order.id.slice(-8)}` : null,
+      seekerName: personName(p.order.seeker?.user ?? null),
+      guideName: guides.length === 1 ? guides[0] : null,
+    };
+  }
+
+  // Every source null. Real for a subscription charge, and for a payment whose
+  // source row was deleted — worth showing as a row rather than hiding.
+  return { sourceType: 'UNKNOWN', sourceLabel: null, seekerName: null, guideName: null };
+}
+
 @Injectable()
 export class AdminService {
   constructor(
@@ -1372,23 +1455,42 @@ export class AdminService {
           platformFee: true,
           status: true,
           createdAt: true,
+          // A Payment can hang off any ONE of four sources. Selecting only
+          // `booking` is why the admin Transactions tab showed "—" for the
+          // parties on every event ticket, shop order and tour booking: the
+          // row was real, the join simply wasn't asked for.
           booking: {
             select: {
-              seeker: {
+              seeker: { select: SEEKER_NAME },
+              service: { select: { name: true, guide: { select: GUIDE_NAME } } },
+            },
+          },
+          ticketPurchase: {
+            select: {
+              seeker: { select: SEEKER_NAME },
+              // Guide reached through the tier's event, not directly.
+              tier: {
                 select: {
-                  user: { select: { firstName: true, lastName: true } },
+                  event: { select: { title: true, guide: { select: GUIDE_NAME } } },
                 },
               },
-              service: {
-                select: {
-                  guide: {
-                    select: {
-                      user: { select: { firstName: true, lastName: true } },
-                      displayName: true,
-                    },
-                  },
-                },
-              },
+            },
+          },
+          tourBooking: {
+            select: {
+              seeker: { select: SEEKER_NAME },
+              tour: { select: { title: true, guide: { select: GUIDE_NAME } } },
+            },
+          },
+          order: {
+            select: {
+              // Order has no human-facing number; the id is the reference.
+              id: true,
+              seeker: { select: SEEKER_NAME },
+              // An order can span several guides' products, so there is no
+              // single seller. Take the distinct set and let the caller decide
+              // how to render one, several, or none.
+              items: { select: { product: { select: { guide: { select: GUIDE_NAME } } } } },
             },
           },
         },
@@ -1414,7 +1516,11 @@ export class AdminService {
         totalPayments,
       },
       revenueByMonth,
-      payments: recentPayments,
+      // Flattened here rather than in the admin page: the four sources have
+      // four different shapes, and a UI branching across all of them is how
+      // three of the four came to render "—" in the first place. `booking` is
+      // still passed through so nothing depending on it breaks.
+      payments: recentPayments.map((p) => ({ ...p, ...describePaymentParties(p) })),
       total: totalPayments,
       page,
       limit,

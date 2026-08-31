@@ -15,16 +15,24 @@ interface Payment {
   platformFee: string;
   status: string;
   createdAt: string;
-  booking: {
-    seeker: { user: { firstName: string; lastName: string } };
-    service: {
-      guide: {
-        user: { firstName: string; lastName: string };
-        displayName: string;
-      };
-    };
-  } | null;
+  // Resolved server-side. A payment hangs off one of four sources — service
+  // booking, event ticket, tour booking or shop order — and this page used to
+  // read `booking.seeker` directly, so three of the four rendered "—" for both
+  // parties. See describePaymentParties in admin.service.ts.
+  sourceType: 'SERVICE' | 'EVENT' | 'TOUR' | 'PRODUCT' | 'UNKNOWN';
+  sourceLabel: string | null;
+  seekerName: string | null;
+  // Null for a shop order spanning several guides — there is no single seller.
+  guideName: string | null;
 }
+
+const sourceLabels: Record<Payment['sourceType'], string> = {
+  SERVICE: 'Service',
+  EVENT: 'Event',
+  TOUR: 'Tour',
+  PRODUCT: 'Shop',
+  UNKNOWN: '—',
+};
 
 interface FinancialsData {
   summary: {
@@ -182,19 +190,25 @@ export default function FinancialsPage() {
                         : (data?.payments ?? []).map((payment) => (
                             <tr key={payment.id} className="hover:bg-gray-50">
                               <td className="px-4 py-3">
-                                {payment.booking ? (
-                                  <div className="text-xs">
-                                    <span className="font-medium text-gray-900">
-                                      {payment.booking.seeker.user.firstName} {payment.booking.seeker.user.lastName}
-                                    </span>
-                                    <span className="mx-1 text-gray-400">→</span>
-                                    <span className="text-gray-600">
-                                      {payment.booking.service.guide.displayName}
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <span className="text-xs text-gray-400">—</span>
-                                )}
+                                <div className="text-xs">
+                                  <span className="font-medium text-gray-900">
+                                    {payment.seekerName ?? <span className="font-normal text-gray-400">Unknown</span>}
+                                  </span>
+                                  <span className="mx-1 text-gray-400">→</span>
+                                  <span className="text-gray-600">
+                                    {/* A multi-guide shop order genuinely has no single
+                                        seller — say so rather than picking one. */}
+                                    {payment.guideName ?? (
+                                      <span className="text-gray-400">
+                                        {payment.sourceType === 'PRODUCT' ? 'Multiple guides' : 'Unknown'}
+                                      </span>
+                                    )}
+                                  </span>
+                                </div>
+                                <div className="mt-0.5 text-[11px] text-gray-400">
+                                  {sourceLabels[payment.sourceType]}
+                                  {payment.sourceLabel ? ` · ${payment.sourceLabel}` : ''}
+                                </div>
                               </td>
                               <td className="px-4 py-3 font-medium text-gray-900">
                                 ${Number(payment.amount).toFixed(2)}
