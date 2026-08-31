@@ -6,6 +6,10 @@ import {
   ArrayMaxSize,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  SEEKER_PROFILE_LIMITS as L,
+  SEEKER_PROFILE_MESSAGES as M,
+} from '../../../common/seeker-profile-limits';
 
 /**
  * Body of PATCH /seekers/me.
@@ -27,73 +31,73 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
  * Don't "fix" this by swapping in a code-unit check — it would start rejecting
  * saves the UI said were fine.
  *
+ * The caps themselves live in common/seeker-profile-limits.ts because the
+ * register wizard writes three of these same columns through a second endpoint
+ * (PATCH /users/seeker/profile). That one was left unbounded when this class
+ * was written; sharing the numbers is what keeps the two in step.
+ *
  * See docs/seeker-profile-field-limits.md.
  */
 export class UpdateSeekerProfileDto {
   @ApiPropertyOptional({
-    maxLength: 1000,
+    maxLength: L.bio,
     example: "I've been practising meditation for a few years…",
   })
   @IsOptional()
   @IsString()
-  @MaxLength(1000, { message: 'Bio must be 1000 characters or fewer.' })
+  @MaxLength(L.bio, { message: M.bio })
   bio?: string;
 
-  @ApiPropertyOptional({ maxLength: 100, example: 'San Francisco, CA' })
+  @ApiPropertyOptional({ maxLength: L.location, example: 'San Francisco, CA' })
   @IsOptional()
   @IsString()
-  @MaxLength(100, { message: 'Location must be 100 characters or fewer.' })
+  @MaxLength(L.location, { message: M.location })
   location?: string;
 
-  @ApiPropertyOptional({ maxLength: 60, example: 'America/Los_Angeles' })
+  @ApiPropertyOptional({
+    maxLength: L.timezone,
+    example: 'America/Los_Angeles',
+  })
   @IsOptional()
   @IsString()
-  @MaxLength(60, { message: 'Timezone must be 60 characters or fewer.' })
+  @MaxLength(L.timezone, { message: M.timezone })
   timezone?: string;
 
   @ApiPropertyOptional({
     type: [String],
     example: ['Meditation', 'Breathwork'],
-    description: 'Up to 20 interests, 40 characters each.',
+    description: `Up to ${L.interestCount} interests, ${L.interestLength} characters each.`,
   })
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(20, { message: 'Add at most 20 interests.' })
+  @ArrayMaxSize(L.interestCount, { message: M.interestCount })
   @IsString({ each: true })
-  @MaxLength(40, {
-    each: true,
-    message: 'Each interest must be 40 characters or fewer.',
-  })
+  @MaxLength(L.interestLength, { each: true, message: M.interestLength })
   interests?: string[];
 
   // Free-text rather than an enum on purpose — see the schema comment on
   // SeekerProfile.experienceLevel. Bounded, but not restricted to a list.
-  @ApiPropertyOptional({ maxLength: 40, example: 'explorer' })
+  @ApiPropertyOptional({ maxLength: L.experienceLevel, example: 'explorer' })
   @IsOptional()
   @IsString()
-  @MaxLength(40, { message: 'Experience level must be 40 characters or fewer.' })
+  @MaxLength(L.experienceLevel, { message: M.experienceLevel })
   experienceLevel?: string | null;
 
   @ApiPropertyOptional({
     type: [String],
     example: ['Meditation', 'Yoga'],
-    description: 'Up to 30 practices, 60 characters each.',
+    description: `Up to ${L.practiceCount} practices, ${L.practiceLength} characters each.`,
   })
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(30, { message: 'Select at most 30 practices.' })
+  @ArrayMaxSize(L.practiceCount, { message: M.practiceCount })
   @IsString({ each: true })
-  @MaxLength(60, {
-    each: true,
-    message: 'Each practice must be 60 characters or fewer.',
-  })
+  @MaxLength(L.practiceLength, { each: true, message: M.practiceLength })
   practices?: string[];
 
-  @ApiPropertyOptional({ maxLength: 1000 })
+  @ApiPropertyOptional({ maxLength: L.journeyText })
   @IsOptional()
   @IsString()
-  @MaxLength(1000, {
-    message: 'What brings you here must be 1000 characters or fewer.',
-  })
+  @MaxLength(L.journeyText, { message: M.journeyText })
   journeyText?: string | null;
 }

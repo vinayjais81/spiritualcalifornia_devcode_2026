@@ -157,6 +157,12 @@ function RegisterContent() {
 
   // Step 2 interests
   const [interests, setInterests]       = useState<string[]>([]);
+  // Mirrors UpdateSeekerBasicsDto / SEEKER_PROFILE_LIMITS on the API. The chips
+  // from ALL_INTERESTS are all short, but "+ Add your own" is free text and
+  // used to be unbounded on both sides. Keep these in sync with
+  // Backend/api/src/common/seeker-profile-limits.ts.
+  const INTEREST_MAX_COUNT = 20;
+  const INTEREST_MAX_LENGTH = 40;
   const [customInterest, setCustomInterest] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
 
@@ -273,7 +279,16 @@ function RegisterContent() {
   const toggleLang = (code: string) =>
     setLanguages((l) => l.includes(code) ? l.filter((x) => x !== code) : [...l, code]);
   const toggleInterest = (tag: string) =>
-    setInterests((t) => t.includes(tag) ? t.filter((x) => x !== tag) : [...t, tag]);
+    setInterests((t) => {
+      if (t.includes(tag)) return t.filter((x) => x !== tag);
+      // Say why instead of no-opping: a chip that just refuses to light up
+      // reads as a broken button.
+      if (t.length >= INTEREST_MAX_COUNT) {
+        toast.error(`You can pick up to ${INTEREST_MAX_COUNT} interests. Remove one to add another.`);
+        return t;
+      }
+      return [...t, tag];
+    });
   const togglePractice = (p: string) =>
     setPractices((arr) => arr.includes(p) ? arr.filter((x) => x !== p) : [...arr, p]);
 
@@ -748,11 +763,23 @@ function RegisterContent() {
                   style={{ display: 'flex', gap: 8 }}>
                   <input autoFocus value={customInterest} onChange={(e) => setCustomInterest(e.target.value)}
                     placeholder="Your interest…"
+                    maxLength={INTEREST_MAX_LENGTH}
+                    aria-describedby="custom-interest-hint"
                     style={{ ...inputStyle, width: 180, padding: '8px 14px', fontSize: 13 }} />
                   <button type="submit" style={{ ...btnPrimary, padding: '8px 16px', fontSize: 11 }}>Add</button>
                 </form>
               )}
             </div>
+
+            {/* State the caps rather than only enforcing them — the limits were
+                invisible here, so a truncated custom interest looked like a
+                bug. Counts stay live so the ceiling isn't a surprise. */}
+            <p id="custom-interest-hint" style={{
+              fontSize: 12, color: G.warmGray, marginTop: -24, marginBottom: 28,
+              fontFamily: 'var(--font-inter), sans-serif',
+            }}>
+              {interests.length}/{INTEREST_MAX_COUNT} selected · custom interests up to {INTEREST_MAX_LENGTH} characters.
+            </p>
 
             <button style={btnPrimary} onClick={saveInterestsAndContinue}>
               Continue <span style={{ fontSize: 16 }}>→</span>

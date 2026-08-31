@@ -45,6 +45,10 @@ New `UpdateSeekerProfileDto` class; controller and service now take it. The
 service maps each column explicitly instead of spreading the body, so a future
 DTO field can't silently become a writable column.
 
+> This pass covered `PATCH /seekers/me` only. A second endpoint writing the same
+> columns was missed — see [Second pass](#second-pass--the-register-wizard-wrote-the-same-columns-unbounded).
+> The caps below now live in `Backend/api/src/common/seeker-profile-limits.ts`.
+
 | Field             | Limit                          |
 | ----------------- | ------------------------------ |
 | `bio`             | 1000 characters                |
@@ -91,6 +95,57 @@ cases: the 2,800-char bio from the report, boundary values, unicode/emoji
 interests, per-entry and array-size caps, `null` for the clearable
 wizard-deferred fields, and rejection of `onboardingCompleted` / `onboardingStep`
 / `userId`.
+
+## Second pass — the register wizard wrote the same columns unbounded
+
+Re-verifying this defect on 2026-08-31 turned up a route the first fix missed.
+**Two** endpoints write the seeker profile's free-text columns:
+
+| Route | DTO | Fields | Caps in the first pass? |
+| --- | --- | --- | --- |
+| `PATCH /seekers/me` | `UpdateSeekerProfileDto` | all 7 | yes |
+| `PATCH /users/seeker/profile` | *(inline in the controller)* | `bio`, `location`, `interests` | **no** |
+
+The second one is what the register wizard's "what calls to your curiosity?"
+step calls (`saveInterestsAndContinue` in `register/page.tsx`) — before a seeker
+ever reaches a dashboard. Its DTO was declared inside `users.controller.ts`,
+confusingly under the *same class name* as the real one, carrying only
+`@IsString` / `@IsArray` and no length caps at all. So a 2,800-character bio was
+rejected on one route and written on the other.
+
+The [inline-`@Body()` sweep](inline-body-validation-sweep.md) didn't catch it
+either: that sweep looked for bodies typed as literals, and this body *was* a
+class — just an unbounded one. A class metatype gets you the pipe; it doesn't
+get you limits.
+
+The client half was missing too: the "+ Add your own" interest input had no
+`maxLength` and the step stated no limit, so a custom interest of any length
+went straight to the unbounded route.
+
+**The fix**
+
+- `Backend/api/src/common/seeker-profile-limits.ts` — the caps and their
+  messages, in one place outside either module. Both DTOs import it, so the two
+  routes can no longer drift. Two hard-coded copies of the numbers is exactly
+  how this happened.
+- `Backend/api/src/modules/users/dto/update-seeker-basics.dto.ts` — the second
+  endpoint's body, now a named, bounded class. Deliberately only the three
+  columns its service maps: it is not a back door onto the full profile.
+- `UsersService.updateSeekerProfile` now checks the profile exists (a missing
+  row made Prisma `P2025` surface as a 500) and maps columns explicitly rather
+  than spreading, matching `SeekersService.updateProfile`.
+- `register/page.tsx` — `maxLength` on the custom-interest input, a refusal
+  toast once 20 interests are picked (a chip that silently won't light up reads
+  as a broken button), and a live `n/20 selected · custom interests up to 40
+  characters` hint under the tag cloud.
+
+Tests: `Backend/api/src/modules/users/dto/update-seeker-basics.dto.spec.ts` —
+the 2,800-char bio on *this* route, boundary values, the unicode/emoji interests
+from the report (legal input, not a defect), the code-point vs code-unit
+asymmetry, and rejection of fields belonging to `PATCH /seekers/me`.
+
+> When a defect is "fixed", grep for every writer of the column, not just the
+> one the reproduction steps went through.
 
 ## Follow-ups (both since done)
 

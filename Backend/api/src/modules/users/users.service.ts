@@ -93,8 +93,23 @@ export class UsersService {
     });
   }
 
+  // Length caps live on UpdateSeekerBasicsDto (shared with PATCH /seekers/me
+  // via common/seeker-profile-limits.ts) — this must not be called with an
+  // unvalidated body.
   async updateSeekerProfile(userId: string, data: { interests?: string[]; location?: string; bio?: string }) {
-    return this.prisma.seekerProfile.update({ where: { userId }, data });
+    const profile = await this.prisma.seekerProfile.findUnique({ where: { userId } });
+    if (!profile) throw new NotFoundException('Seeker profile not found');
+    // Map explicitly rather than spreading, so a future DTO field can't
+    // silently become a writable column. Same reasoning as
+    // SeekersService.updateProfile.
+    return this.prisma.seekerProfile.update({
+      where: { userId },
+      data: {
+        interests: data.interests,
+        location: data.location,
+        bio: data.bio,
+      },
+    });
   }
 
   async findAll(params: { page: number; limit: number; search?: string }) {
