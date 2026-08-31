@@ -14,14 +14,15 @@
  * -------------
  *   1. One SUPER_ADMIN user            — nobody can administer the site without it
  *   2. Categories (9)                  — guide onboarding fails with an empty list
- *   3. CommissionRate rows             — what guides are actually charged
- *   4. ShippingMethod rows             — physical checkout is unusable without one
- *   5. TaxRate rows                    — an empty table silently charges $0 tax
+ *   3. Subcategories (39)              — the specialisations under each category
+ *   4. CommissionRate rows             — what guides are actually charged
+ *   5. ShippingMethod rows             — physical checkout is unusable without one
+ *   6. TaxRate rows                    — an empty table silently charges $0 tax
  *
- * All five are reference data: facts about how the platform is configured,
+ * All six are reference data: facts about how the platform is configured,
  * not sample content.
  *
- * 4 and 5 were missing when production went live, and the pair is a good
+ * 5 and 6 were missing when production went live, and the pair is a good
  * illustration of why "reference data" deserves a seed of its own. With no
  * ShippingMethod rows the shop checkout simply stopped — visible, if
  * confusing, since the UI rendered the empty list as "Loading shipping
@@ -76,6 +77,79 @@ const COMMISSION_RATES: Array<{ category: EarningCategory; percent: number }> = 
   { category: EarningCategory.TOUR, percent: 20 },
   { category: EarningCategory.PRODUCT, percent: 10 },
 ];
+
+/**
+ * The specialisations offered under each category, keyed by category slug.
+ *
+ * Without these the onboarding picker renders nine category cards with nothing
+ * underneath, and every practitioner invents their own taxonomy through the
+ * "custom subcategory" path — which still works, but leaves the practitioner
+ * filters with nothing curated to match on and a mess to reconcile later.
+ *
+ * NOTE the explicit `isApproved: true` in the seeder. The column defaults to
+ * FALSE, and `listCategories` filters on `isApproved: true` — so seeding
+ * without setting it creates all 39 rows and still serves an empty list. That
+ * failure looks exactly like the seed not having run.
+ */
+const SUBCATEGORIES: Record<string, Array<{ slug: string; name: string }>> = {
+  'mind-healing': [
+    { slug: 'breathwork', name: 'Breathwork' },
+    { slug: 'hypnotherapy', name: 'Hypnotherapy' },
+    { slug: 'meditation', name: 'Meditation' },
+    { slug: 'mindfulness-coaching', name: 'Mindfulness Coaching' },
+    { slug: 'nlp', name: 'NLP' },
+  ],
+  'body-healing': [
+    { slug: 'acupuncture', name: 'Acupuncture' },
+    { slug: 'energy-healing', name: 'Energy Healing' },
+    { slug: 'massage-bodywork', name: 'Massage & Bodywork' },
+    { slug: 'qigong', name: 'QiGong' },
+    { slug: 'reiki', name: 'Reiki' },
+    { slug: 'somatic-therapy', name: 'Somatic Therapy' },
+    { slug: 'sound-healing', name: 'Sound Healing' },
+    { slug: 'yoga', name: 'Yoga' },
+  ],
+  'soul-travels': [
+    { slug: 'nature-based-healing', name: 'Nature-Based Healing' },
+    { slug: 'spiritual-retreats', name: 'Spiritual Retreats' },
+  ],
+  'life-coaching': [
+    { slug: 'career-coaching', name: 'Career Coaching' },
+    { slug: 'executive-coaching', name: 'Executive Coaching' },
+    { slug: 'purpose-coaching', name: 'Purpose Coaching' },
+    { slug: 'relationship-coaching', name: 'Relationship Coaching' },
+  ],
+  'creative-arts': [
+    { slug: 'art-therapy', name: 'Art Therapy' },
+    { slug: 'dance-movement-therapy', name: 'Dance Movement Therapy' },
+    { slug: 'music-therapy', name: 'Music Therapy' },
+  ],
+  'soul-spirit': [
+    { slug: 'astrology', name: 'Astrology' },
+    { slug: 'end-of-life-doula', name: 'End-of-Life Doula' },
+    { slug: 'human-design', name: 'Human Design' },
+    { slug: 'plant-medicine-integration', name: 'Plant Medicine Integration' },
+    { slug: 'ritual-ceremony', name: 'Ritual & Ceremony' },
+    { slug: 'shamanism', name: 'Shamanism' },
+  ],
+  'nutrition-food': [
+    { slug: 'ayurvedic-nutrition', name: 'Ayurvedic Nutrition' },
+    { slug: 'functional-nutrition', name: 'Functional Nutrition' },
+    { slug: 'herbal-medicine', name: 'Herbal Medicine' },
+  ],
+  'integrative-health': [
+    { slug: 'functional-medicine', name: 'Functional Medicine' },
+    { slug: 'homeopathy', name: 'Homeopathy' },
+    { slug: 'naturopathy', name: 'Naturopathy' },
+    { slug: 'tibetan-medicine', name: 'Tibetan Medicine' },
+  ],
+  'family-children': [
+    { slug: 'birth-doula', name: 'Birth Doula' },
+    { slug: 'childrens-wellness', name: "Children's Wellness" },
+    { slug: 'family-healing', name: 'Family Healing' },
+    { slug: 'parenting-guidance', name: 'Parenting Guidance' },
+  ],
+};
 
 /**
  * Shipping options offered at checkout.
@@ -194,6 +268,31 @@ async function seedCommissionRates() {
   }
 }
 
+async function seedSubcategories() {
+  for (const [categorySlug, subs] of Object.entries(SUBCATEGORIES)) {
+    const category = await prisma.category.findUnique({ where: { slug: categorySlug } });
+    if (!category) {
+      // Should be impossible — seedCategories runs first — but a silent skip
+      // here would be indistinguishable from the category having no children.
+      console.log(`  WARNING: category '${categorySlug}' not found, skipped ${subs.length} subcategories`);
+      continue;
+    }
+
+    for (const s of subs) {
+      await prisma.subcategory.upsert({
+        where: { categoryId_slug: { categoryId: category.id, slug: s.slug } },
+        // Empty update: never re-approve or rename one an admin has changed.
+        update: {},
+        // isApproved must be set explicitly — it defaults to false and
+        // listCategories only returns approved rows. isCustom stays false:
+        // these are the curated list, not something a practitioner typed.
+        create: { categoryId: category.id, slug: s.slug, name: s.name, isApproved: true, isCustom: false },
+      });
+    }
+  }
+  console.log(`  subcategories: ${await prisma.subcategory.count({ where: { isApproved: true } })} approved`);
+}
+
 async function seedShippingMethods() {
   for (const m of SHIPPING_METHODS) {
     await prisma.shippingMethod.upsert({
@@ -228,6 +327,10 @@ async function main() {
 
   console.log('\nCategories...');
   await seedCategories();
+
+  // After categories: each subcategory is looked up by its parent's slug.
+  console.log('\nSubcategories...');
+  await seedSubcategories();
 
   console.log('\nCommission rates...');
   await seedCommissionRates();
