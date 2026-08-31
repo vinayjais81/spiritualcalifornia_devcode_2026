@@ -105,6 +105,11 @@ export default function CheckoutPage() {
     country: 'US',
   });
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
+  // An empty list and a failed request are different problems and need
+  // different words. Tracked separately because `shippingMethods.length === 0`
+  // cannot tell them apart, and rendering both as "Loading…" left a checkout
+  // that was permanently blocked looking like a slow network.
+  const [shippingState, setShippingState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [taxRates, setTaxRates] = useState<TaxRate[]>([]);
   const [selectedShippingId, setSelectedShippingId] = useState<string>('');
   const [promoCode, setPromoCode] = useState('');
@@ -185,11 +190,18 @@ export default function CheckoutPage() {
   // Load shipping methods + tax rates on mount (only needed if cart has physical items)
   useEffect(() => {
     if (!hasPhysical) return;
+    setShippingState('loading');
     api.get('/checkout/shipping-methods').then((r) => {
       const list: ShippingMethod[] = r.data || [];
       setShippingMethods(list);
+      setShippingState('ready');
       if (list.length > 0 && !selectedShippingId) setSelectedShippingId(list[0].id);
-    }).catch(() => {});
+    }).catch(() => {
+      // Was `.catch(() => {})`. Swallowing this left the section stuck on
+      // "Loading shipping options…" with no way for the buyer — or us — to
+      // tell a dead request from an unconfigured one.
+      setShippingState('error');
+    });
     api.get('/checkout/tax-rates').then((r) => setTaxRates(r.data || [])).catch(() => {});
   }, [hasPhysical]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -462,8 +474,22 @@ export default function CheckoutPage() {
               </div>
 
               <SectionTitle>Shipping Method</SectionTitle>
-              {shippingMethods.length === 0 ? (
+              {shippingState === 'loading' ? (
                 <div style={{ fontSize: 12, color: '#8A8278', marginBottom: 28 }}>Loading shipping options…</div>
+              ) : shippingState === 'error' ? (
+                <div style={{ fontSize: 12, color: '#B4342A', marginBottom: 28 }}>
+                  We couldn&rsquo;t load shipping options. Please refresh and try again — if this
+                  keeps happening, contact us and we&rsquo;ll complete your order for you.
+                </div>
+              ) : shippingMethods.length === 0 ? (
+                // Reached only when the request SUCCEEDED and returned nothing:
+                // shipping is unconfigured. That is our problem, not the
+                // buyer's, and it is not going to fix itself on a refresh — so
+                // don't tell them to try again.
+                <div style={{ fontSize: 12, color: '#B4342A', marginBottom: 28 }}>
+                  No shipping options are available right now, so this order can&rsquo;t be
+                  completed. We&rsquo;ve been notified — please contact us and we&rsquo;ll sort it out.
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
                   {shippingMethods.map((s) => {

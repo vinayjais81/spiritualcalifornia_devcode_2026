@@ -15,9 +15,20 @@
  *   1. One SUPER_ADMIN user            — nobody can administer the site without it
  *   2. Categories (9)                  — guide onboarding fails with an empty list
  *   3. CommissionRate rows             — what guides are actually charged
+ *   4. ShippingMethod rows             — physical checkout is unusable without one
+ *   5. TaxRate rows                    — an empty table silently charges $0 tax
  *
- * All three are reference data: facts about how the platform is configured,
+ * All five are reference data: facts about how the platform is configured,
  * not sample content.
+ *
+ * 4 and 5 were missing when production went live, and the pair is a good
+ * illustration of why "reference data" deserves a seed of its own. With no
+ * ShippingMethod rows the shop checkout simply stopped — visible, if
+ * confusing, since the UI rendered the empty list as "Loading shipping
+ * options…" forever. With no TaxRate rows `calculateTax` returns
+ * `{ rate: 0, name: 'No tax' }` and the order completes at the wrong total,
+ * server-side, with nothing to see. The blocking failure is the kind one
+ * notices; the silent one is the kind that reaches an accountant.
  *
  * IDEMPOTENT. Safe to re-run; it never overwrites an existing admin password
  * and never duplicates a category or a rate.
@@ -64,6 +75,50 @@ const COMMISSION_RATES: Array<{ category: EarningCategory; percent: number }> = 
   { category: EarningCategory.EVENT, percent: 20 },
   { category: EarningCategory.TOUR, percent: 20 },
   { category: EarningCategory.PRODUCT, percent: 10 },
+];
+
+/**
+ * Shipping options offered at checkout.
+ *
+ * The ids are derived from the name rather than left to cuid() so that every
+ * environment refers to the same method by the same id — an Order stores
+ * `shippingMethodId`, and a support question about a QA order should not need
+ * a translation table to answer against production.
+ */
+const SHIPPING_METHODS = [
+  { name: 'Standard Shipping', description: 'Delivered via USPS Ground', price: 12.0, estimatedDaysMin: 7, estimatedDaysMax: 14, sortOrder: 0 },
+  { name: 'Express Shipping', description: 'Priority delivery via USPS/UPS', price: 28.0, estimatedDaysMin: 3, estimatedDaysMax: 5, sortOrder: 1 },
+  { name: 'International Priority', description: 'International delivery via DHL/FedEx', price: 45.0, estimatedDaysMin: 5, estimatedDaysMax: 10, sortOrder: 2 },
+];
+
+/** `Standard Shipping` → `standard-shipping`. Matches the ids QA already uses. */
+const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+/**
+ * Sales tax by state.
+ *
+ * These are STATE-LEVEL BASE RATES, carried over from the QA seed so the two
+ * environments agree. They are deliberately simple and they are not tax
+ * advice: California alone has district rates that push the real figure above
+ * the 8.63% below, and seeding a state here asserts that the platform collects
+ * tax there — which is a nexus question, not a technical one.
+ *
+ * Seeded anyway because the alternative is what production shipped with: an
+ * empty table, every order at $0 tax, and no signal that anything is wrong.
+ * Being approximately right is recoverable; being silently zero is not. Have
+ * these reviewed, and edit them in the admin rather than here.
+ */
+const TAX_RATES = [
+  { state: 'CA', rate: 0.0863, name: 'California State Tax' },
+  { state: 'NY', rate: 0.08, name: 'New York State Tax' },
+  { state: 'TX', rate: 0.0625, name: 'Texas State Tax' },
+  { state: 'FL', rate: 0.06, name: 'Florida State Tax' },
+  { state: 'WA', rate: 0.065, name: 'Washington State Tax' },
+  { state: 'CO', rate: 0.029, name: 'Colorado State Tax' },
+  { state: 'AZ', rate: 0.056, name: 'Arizona State Tax' },
+  { state: 'OR', rate: 0.0, name: 'Oregon (No Sales Tax)' },
+  { state: 'NV', rate: 0.0685, name: 'Nevada State Tax' },
+  { state: 'HI', rate: 0.04, name: 'Hawaii General Excise Tax' },
 ];
 
 async function seedAdmin() {
@@ -139,6 +194,31 @@ async function seedCommissionRates() {
   }
 }
 
+async function seedShippingMethods() {
+  for (const m of SHIPPING_METHODS) {
+    await prisma.shippingMethod.upsert({
+      where: { id: slug(m.name) },
+      // Empty update, like categories: a re-run must not revert a price an
+      // admin has changed. Correcting a rate is an admin action, not a
+      // redeploy.
+      update: {},
+      create: { id: slug(m.name), ...m, isActive: true },
+    });
+  }
+  console.log(`  shipping methods: ${await prisma.shippingMethod.count({ where: { isActive: true } })} active`);
+}
+
+async function seedTaxRates() {
+  for (const t of TAX_RATES) {
+    await prisma.taxRate.upsert({
+      where: { state_country: { state: t.state, country: 'US' } },
+      update: {},
+      create: { state: t.state, country: 'US', rate: t.rate, name: t.name, isActive: true },
+    });
+  }
+  console.log(`  tax rates: ${await prisma.taxRate.count({ where: { isActive: true } })} active`);
+}
+
 async function main() {
   console.log('Production reference-data seed');
   console.log('  (reference data only — no demo guides, seekers or orders)\n');
@@ -152,7 +232,22 @@ async function main() {
   console.log('\nCommission rates...');
   await seedCommissionRates();
 
+  console.log('\nShipping methods...');
+  await seedShippingMethods();
+
+  console.log('\nTax rates...');
+  await seedTaxRates();
+
+  // Both lists are read through CacheService with a 1-hour TTL, and getOrSet
+  // caches whatever the fetcher returned — including the empty array this
+  // seed exists to fix. Restarting the API does NOT help: the value is in
+  // Redis, not in the process. Say so here, because the alternative is
+  // concluding the seed silently failed.
   console.log('\nDone.');
+  console.log('\nNOTE: /checkout/shipping-methods and /checkout/tax-rates are cached');
+  console.log('      for 1 hour. Clear the cached empties or the site will keep');
+  console.log('      serving them:');
+  console.log('        redis-cli -u "$REDIS_URL" DEL checkout:shipping checkout:tax');
 }
 
 main()
