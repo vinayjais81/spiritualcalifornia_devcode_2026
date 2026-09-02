@@ -200,3 +200,37 @@ A determined attacker who inspects the form once can tell their bot to skip the
 hidden field and wait three seconds. This stops commodity spam, not a targeted
 adversary. **Cloudflare Turnstile remains the durable fix** and is blocked only
 on someone creating the Cloudflare account for a site key.
+
+### Closing the gap: proof of form render
+
+The honeypot caught a bot that reads the form. It did not catch one that skips
+it. Observed on 2026-09-02, minutes after the honeypot deployed:
+
+```
+14:36:53  Registration DROPPED — honeypot filled — jhalpern@iatse.net
+14:36:57  Verification email sent to jhalpern@iatse.net
+```
+
+Same address, four seconds apart. Blocked, then it retried straight at the API —
+where an omitted field simply reads as empty, and empty passes. One bot account
+was created that way.
+
+So presence is now required, not just emptiness. A real submission always
+carries both fields; a direct POST carries neither. `detectBot` returns one of
+four actions rather than a pair of booleans, because the three signals have
+genuinely different confidences:
+
+| Signal | Action | Why |
+| --- | --- | --- |
+| Honeypot filled | `drop` | Certain. Discard silently, answer as success — an error teaches the bot which field caught it |
+| Fields absent / wrong type | `reject` | Ambiguous: a bot, or a stale browser tab. Visible "please refresh" error, because silently losing a real message is worse than a bot learning it needs two more fields |
+| Under 2000ms | `flag` | Weak — a person can paste and submit. Keep the submission, skip the courtesy email only |
+
+**All four register call sites had to be wired, not one.** `POST /auth/register`
+is reached from the seeker form, the guide form, and two onboarding wizard steps
+(`Step0Account`, `Step1Profile`). Requiring the fields while updating only the
+seeker form would have broken guide signup and onboarding outright — worth
+grepping for every caller before making a field mandatory.
+
+The `reject` message is deliberately actionable rather than accusatory:
+*"Your session has expired. Please refresh the page and submit again."*

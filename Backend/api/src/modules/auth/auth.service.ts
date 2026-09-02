@@ -13,7 +13,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Role, VerificationStatus, Prisma, OnboardingPath } from '@prisma/client';
 import { checkPasswordPolicy } from '../../common/validators/is-strong-password.validator';
-import { detectBot } from '../../common/bot-signals';
+import { detectBot, RELOAD_MESSAGE } from '../../common/bot-signals';
 import * as bcrypt from 'bcrypt';
 import { randomBytes, randomUUID } from 'crypto';
 import { Resend } from 'resend';
@@ -119,7 +119,7 @@ export class AuthService {
     // that trips the honeypot gets the ordinary "check your inbox" answer and
     // no account: telling it which field caught it only teaches it to adapt.
     const verdict = detectBot({ honeypot: dto.contactReference, elapsedMs: dto.elapsedMs });
-    if (verdict.bot) {
+    if (verdict.action === 'drop') {
       this.logger.warn(
         `Registration dropped as automated (${verdict.reason}) — claimed email: ${dto.email}`,
       );
@@ -127,7 +127,16 @@ export class AuthService {
         message: 'Registration successful. Please check your email to verify your account.',
       };
     }
-    if (verdict.suspicious) {
+    if (verdict.action === 'reject') {
+      // A honeypot only catches a bot that reads the form. One was seen being
+      // blocked and then succeeding four seconds later by posting straight at
+      // this endpoint, where an omitted field reads as empty and empty passes —
+      // so the fields must now be PRESENT. Visible error, not a silent drop:
+      // this is the verdict a stale browser tab can trigger.
+      this.logger.warn(`Registration rejected (${verdict.reason}) — claimed email: ${dto.email}`);
+      throw new BadRequestException(RELOAD_MESSAGE);
+    }
+    if (verdict.action === 'flag') {
       // Not enough to refuse a real person over — a fast paste-and-submit is
       // plausible — but worth being able to correlate later.
       this.logger.warn(`Registration flagged (${verdict.reason}) — ${dto.email}`);

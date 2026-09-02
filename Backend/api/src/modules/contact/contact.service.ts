@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service';
-import { detectBot } from '../../common/bot-signals';
+import { detectBot, RELOAD_MESSAGE } from '../../common/bot-signals';
 import { Resend } from 'resend';
 
 export interface SubmitContactDto {
@@ -61,7 +61,7 @@ export class ContactService {
       elapsedMs: (dto as any).elapsedMs,
     });
 
-    if (verdict.bot) {
+    if (verdict.action === 'drop') {
       // Answer exactly as a real submission would. A bot that receives an error
       // learns which field betrayed it and adapts; one that receives success
       // keeps posting into a void. Nothing is stored and no email is sent.
@@ -69,6 +69,15 @@ export class ContactService {
         `Contact submission dropped as automated (${verdict.reason}) — ip: ${clientIp ?? 'unknown'}, claimed email: ${dto.email}`,
       );
       return { success: true, id: null };
+    }
+
+    if (verdict.action === 'reject') {
+      // The one verdict that can legitimately reach a person (a stale browser
+      // tab), so it gets a visible, actionable error instead of a silent drop.
+      this.logger.warn(
+        `Contact submission rejected (${verdict.reason}) — ip: ${clientIp ?? 'unknown'}, claimed email: ${dto.email}`,
+      );
+      throw new BadRequestException(RELOAD_MESSAGE);
     }
 
     // 1. Persist lead
@@ -96,7 +105,7 @@ export class ContactService {
     // support, but never triggers the auto-reply: timing is too weak a signal
     // to justify discarding a genuine message, and strong enough to justify not
     // mailing a stranger on its say-so.
-    if (verdict.suspicious) {
+    if (verdict.action === 'flag') {
       this.logger.warn(
         `Contact lead #${lead.id} flagged (${verdict.reason}) — saved, support notified, no auto-reply`,
       );

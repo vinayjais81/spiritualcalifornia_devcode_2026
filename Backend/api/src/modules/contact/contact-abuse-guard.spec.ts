@@ -104,6 +104,9 @@ describe('ContactService — auto-reply abuse brakes', () => {
     const res = await service.submitLead({
       name: 'x', email: 'a@b.com', type: 'general',
       subject: 'subject here', message: 'a message long enough',
+      // Proof of form render. Without these the submission is now rejected
+      // outright as a direct API post — see bot-signals.spec.ts.
+      contactReference: '', elapsedMs: 9000,
     } as any);
 
     expect(prisma.contactLead.create).toHaveBeenCalled();

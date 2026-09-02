@@ -1,66 +1,91 @@
 import { detectBot, MIN_HUMAN_FILL_MS } from './bot-signals';
 
-// The honeypot is a HARD signal — a filled hidden field drops the submission.
-// Timing is a SOFT one — it never discards anything, because a real person can
-// paste a prepared message and an old cached page may not send the field at all.
-// These tests exist mainly to keep that asymmetry from being "tidied up" later.
+// Three signals with three different confidences, and therefore three different
+// consequences. The asymmetry is the design, so these tests mostly exist to stop
+// it being "tidied up" into one uniform rule later:
+//
+//   honeypot filled  -> drop    (certain; discard silently, answer as success)
+//   fields absent    -> reject  (ambiguous; visible "reload" error)
+//   too fast         -> flag    (weak; keep it, just skip the courtesy email)
 
 describe('detectBot', () => {
-  const human = { honeypot: '', elapsedMs: 9000 };
+  const fromForm = { honeypot: '', elapsedMs: 9000 };
 
-  it('passes an ordinary submission', () => {
-    expect(detectBot(human)).toEqual({ bot: false, suspicious: false });
+  it('accepts an ordinary submission', () => {
+    expect(detectBot(fromForm)).toEqual({ action: 'accept' });
   });
 
-  // ── Honeypot: hard ────────────────────────────────────────────────────────
+  // ── Honeypot: certain ─────────────────────────────────────────────────────
 
-  it('catches a filled honeypot', () => {
-    const v = detectBot({ ...human, honeypot: 'http://spam.example' });
-    expect(v.bot).toBe(true);
+  it('drops a filled honeypot', () => {
+    const v = detectBot({ ...fromForm, honeypot: 'http://spam.example' });
+    expect(v.action).toBe('drop');
     expect(v.reason).toMatch(/honeypot/i);
   });
 
-  it('treats whitespace as empty', () => {
-    // A browser or a proxy trimming an untouched field must not look like a bot.
-    expect(detectBot({ ...human, honeypot: '   ' }).bot).toBe(false);
+  it('treats whitespace as untouched', () => {
+    // A proxy trimming an empty field must not look like a bot.
+    expect(detectBot({ ...fromForm, honeypot: '   ' }).action).toBe('accept');
   });
 
-  it('ignores a non-string honeypot instead of throwing', () => {
-    // The field is caller-supplied JSON; `{contactReference: {}}` must not 500.
-    expect(detectBot({ ...human, honeypot: { nested: true } }).bot).toBe(false);
-    expect(detectBot({ ...human, honeypot: 42 }).bot).toBe(false);
+  it('drops before it considers timing', () => {
+    expect(detectBot({ honeypot: 'x', elapsedMs: 5 }).action).toBe('drop');
   });
 
-  // ── Timing: soft ──────────────────────────────────────────────────────────
+  // ── Missing proof of form render: the gap that let a bot through ───────────
+  //
+  // On 2026-09-02 a registration was blocked by the honeypot at 14:36:53 and
+  // succeeded four seconds later with the same address — retried straight at
+  // the API, where an omitted field reads as empty and empty passes.
 
-  it('flags an instant submission without dropping it', () => {
+  it('rejects a submission with no honeypot field at all', () => {
+    const v = detectBot({ elapsedMs: 9000 });
+    expect(v.action).toBe('reject');
+    expect(v.reason).toMatch(/anti-spam field missing/i);
+  });
+
+  it('rejects a submission with no timing field', () => {
+    const v = detectBot({ honeypot: '' });
+    expect(v.action).toBe('reject');
+    expect(v.reason).toMatch(/timing missing/i);
+  });
+
+  it('rejects a bare direct POST carrying neither field', () => {
+    expect(detectBot({}).action).toBe('reject');
+  });
+
+  it('rejects null, which is what a sloppy client sends for "absent"', () => {
+    expect(detectBot({ honeypot: null, elapsedMs: 9000 }).action).toBe('reject');
+    // `Number(null)` is 0 — finite, non-negative, under the threshold — so
+    // coercing here would have read as an instant submission rather than a
+    // missing one.
+    expect(detectBot({ honeypot: '', elapsedMs: null }).action).toBe('reject');
+  });
+
+  it('rejects a wrongly-typed field instead of throwing', () => {
+    // Caller-supplied JSON: `{contactReference: {}}` must not 500.
+    expect(detectBot({ honeypot: {}, elapsedMs: 9000 }).action).toBe('reject');
+    expect(detectBot({ honeypot: 42, elapsedMs: 9000 }).action).toBe('reject');
+    expect(detectBot({ honeypot: '', elapsedMs: 'soon' }).action).toBe('reject');
+    expect(detectBot({ honeypot: '', elapsedMs: NaN }).action).toBe('reject');
+    expect(detectBot({ honeypot: '', elapsedMs: -5 }).action).toBe('reject');
+  });
+
+  // ── Timing: weak, so it never discards ────────────────────────────────────
+
+  it('flags an instant submission but keeps it', () => {
     const v = detectBot({ honeypot: '', elapsedMs: 120 });
-    expect(v.bot).toBe(false);        // never discarded
-    expect(v.suspicious).toBe(true);  // but no auto-reply
+    expect(v.action).toBe('flag');
     expect(v.reason).toMatch(/120ms/);
   });
 
-  it('accepts a submission exactly at the threshold', () => {
-    expect(detectBot({ honeypot: '', elapsedMs: MIN_HUMAN_FILL_MS }).suspicious).toBe(false);
+  it('accepts exactly at the threshold and flags just under', () => {
+    expect(detectBot({ honeypot: '', elapsedMs: MIN_HUMAN_FILL_MS }).action).toBe('accept');
+    expect(detectBot({ honeypot: '', elapsedMs: MIN_HUMAN_FILL_MS - 1 }).action).toBe('flag');
   });
 
-  it('does NOT flag a missing timer', () => {
-    // A page cached from before this shipped sends no elapsedMs. Treating that
-    // as suspicious would have silently stopped auto-replies for real people.
-    expect(detectBot({ honeypot: '' })).toEqual({ bot: false, suspicious: false });
-    expect(detectBot({ honeypot: '', elapsedMs: undefined }).suspicious).toBe(false);
-  });
-
-  it('does NOT flag a garbage or negative timer', () => {
-    // Only a value that is genuinely, measurably too fast counts.
-    for (const bad of ['abc', NaN, -500, null, {}]) {
-      expect(detectBot({ honeypot: '', elapsedMs: bad }).suspicious).toBe(false);
-    }
-  });
-
-  it('reports the honeypot first when both signals fire', () => {
-    const v = detectBot({ honeypot: 'x', elapsedMs: 5 });
-    expect(v.bot).toBe(true);
-    expect(v.reason).toMatch(/honeypot/i);
+  it('treats a real zero as instant, not as missing', () => {
+    // The distinction the `typeof` guard exists to preserve.
+    expect(detectBot({ honeypot: '', elapsedMs: 0 }).action).toBe('flag');
   });
 });

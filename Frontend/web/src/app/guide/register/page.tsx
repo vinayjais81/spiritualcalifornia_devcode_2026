@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, FormEvent } from 'react';
+import { useBotTrap, HoneypotField } from '@/components/shared/BotTrap';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -54,6 +55,7 @@ export default function GuideRegisterPage() {
   const [password, setPassword]   = useState('');
   const [showPass, setShowPass]   = useState(false);
   const [loading, setLoading]     = useState(false);
+  const { botFields, honeypot, setHoneypot } = useBotTrap();
   const [error, setError]         = useState<string | null>(null);
 
   // Live password policy evaluation — drives submit button disabled state,
@@ -80,6 +82,7 @@ export default function GuideRegisterPage() {
         email,
         password,
         intent: 'guide',
+        ...botFields(),
       });
       setAuth(authData.user, authData.accessToken);
       // Start guide onboarding record then enter wizard
@@ -177,7 +180,8 @@ export default function GuideRegisterPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <form onSubmit={handleSubmit} style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <HoneypotField value={honeypot} onChange={setHoneypot} />
             <FormLegend />
 
             {error && (

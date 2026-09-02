@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
+import { useBotTrap, HoneypotField } from '@/components/shared/BotTrap';
 import { useOnboardingStore } from '@/store/onboarding.store';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
@@ -14,6 +15,7 @@ export function Step0Account() {
   const { step0, setStep0, setLoading, isLoading, setError, error, nextStep } = useOnboardingStore();
   const { isAuthenticated, user, setAuth } = useAuthStore();
 
+  const { botFields, honeypot, setHoneypot } = useBotTrap();
   const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState<'register' | 'login' | 'already'>(
     isAuthenticated ? 'already' : 'register',
@@ -47,6 +49,7 @@ export function Step0Account() {
         lastName: step0.lastName,
         email: step0.email,
         password: step0.password,
+        ...botFields(),
       });
       setAuth(authData.user, authData.accessToken);
       await api.post('/guides/onboarding/start');
@@ -161,7 +164,8 @@ export function Step0Account() {
       title={<>Create your <em style={{ fontStyle: 'italic', color: '#F07814' }}>guide account</em></>}
       subtitle="Start your journey as a verified guide on Spiritual California."
     >
-      <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <form onSubmit={handleRegister} style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <HoneypotField value={honeypot} onChange={setHoneypot} />
         <FormLegend />
         {error && <ErrorBanner message={error} />}
 

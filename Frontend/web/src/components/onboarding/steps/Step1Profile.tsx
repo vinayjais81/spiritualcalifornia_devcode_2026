@@ -8,6 +8,7 @@ import { api } from '@/lib/api';
 import { LocationAutocomplete } from '@/components/shared/LocationAutocomplete';
 import { PasswordStrengthMeter, evaluatePassword } from '@/components/auth/PasswordStrengthMeter';
 import { FieldLabel, FormLegend } from '@/components/forms';
+import { useBotTrap, HoneypotField } from '@/components/shared/BotTrap';
 
 
 const LANGUAGES = [
@@ -46,6 +47,7 @@ export function Step1Profile() {
   const { user, isAuthenticated, setAuth } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pendingFile = useRef<File | null>(null);
+  const { botFields, honeypot, setHoneypot } = useBotTrap();
   const [focused, setFocused] = useState<string | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -174,6 +176,7 @@ export function Step1Profile() {
           timezone: step1.timezone || undefined,
           websiteUrl: step1.websiteUrl || undefined,
           languages: step1.languages && step1.languages.length > 0 ? step1.languages : undefined,
+          ...botFields(),
         });
 
         // Test-domain emails (e.g. `@scprelaunch.test`) skip the inbox
@@ -299,7 +302,8 @@ export function Step1Profile() {
   return (
     // noValidate: handleSubmit owns all validation so every failure produces
     // the same visible toast + banner + focus treatment. See failValidation.
-    <form onSubmit={handleSubmit} noValidate>
+    <form onSubmit={handleSubmit} noValidate style={{ position: 'relative' }}>
+      <HoneypotField value={honeypot} onChange={setHoneypot} />
       <div style={{ marginBottom: '44px' }}>
         <div style={{ fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#F07814', marginBottom: '10px', fontFamily: 'var(--font-inter), sans-serif' }}>Step 1 of 6</div>
         <h1 className="font-playfair" style={{ fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 300, lineHeight: 1.1, color: '#3A3530', marginBottom: '10px' }}>
