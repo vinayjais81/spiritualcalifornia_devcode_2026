@@ -108,3 +108,42 @@ case where the per-address brake can never fire.
    payment data. `purge-demo-data.ts` is not the right tool — these are ordinary
    rows, and a targeted delete by `createdAt` window plus the message-shape
    signature above would be safer.
+
+---
+
+## Follow-up, same day: what the live data proved
+
+**The source is distributed.** The per-IP throttle was verified enforcing
+against production — five requests pass, the sixth returns `429` — yet
+submissions carried on at ~19/hour after it went live at 13:48 UTC. No single
+IP can do both. That rules out *any* per-IP defence, including WAF's
+rate-based rule.
+
+**So the auto-reply brakes are the load-bearing defence,** and the site-wide cap
+of 20/hour sat directly on top of the attack's own rate. The breaker flapped —
+open at 22/hour, closed again on the next dip — leaking auto-replies each time.
+Lowered to **8/hour**, still ~100x the genuine baseline of one or two a day.
+
+**The client IP is now logged** on every submission. There is no column for it
+and no ALB access logging, so during this incident there was no way to tell one
+attacker from a botnet — the fact that decides whether blocking can work at all.
+A log line answers it without a migration.
+
+**WAF is enabled and associated with the ALB** (`sc-prod-waf`), all three rules
+in COUNT mode per the design note. Be clear about what it does and does not buy:
+it will **not** stop this abuse — everything is counting rather than blocking,
+and the rate rule's threshold is 2000 per 5 minutes against an attack running at
+roughly 2 per 5 minutes. Its value is sampled requests and CloudWatch metrics,
+plus baseline coverage once the rules are switched to block after the 48-hour
+observation window.
+
+It was applied with `-target` on the two WAF resources only. A full apply would
+have carried an unrelated AMI bump into the launch template, and with the ASG on
+`version = "$Latest"` and a rolling `instance_refresh`, that is not something to
+smuggle into a security change. **That AMI drift is still pending** and will
+appear in the next plan — worth applying deliberately, when someone can watch a
+replacement come up, because a fresh instance boots with no application code.
+
+`enable_waf` now defaults to `true`. It was applied via `-var` while the default
+still read `false`, which left the live Web ACL one default-valued
+`terraform apply` away from being destroyed by someone not intending to touch it.

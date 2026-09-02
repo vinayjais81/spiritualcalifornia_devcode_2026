@@ -77,10 +77,15 @@ describe('ContactService — auto-reply abuse brakes', () => {
   });
 
   it('stays closed at the cap and opens just above it', async () => {
-    await setup({ fromAddress: 1, siteWide: 20 });
+    // Read the cap rather than restating it: it was tuned down from 20 to 8
+    // once the live attack was measured sitting right on top of the old value,
+    // and a hardcoded boundary here would have silently stopped testing one.
+    const CAP = (ContactService as any).CONFIRMATION_HOURLY_CAP as number;
+
+    await setup({ fromAddress: 1, siteWide: CAP });
     await expect(safe()).resolves.toBe(true);
 
-    await setup({ fromAddress: 1, siteWide: 21 });
+    await setup({ fromAddress: 1, siteWide: CAP + 1 });
     await expect(safe()).resolves.toBe(false);
   });
 

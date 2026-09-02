@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Patch, Body, Param, Query, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Body, Param, Query, HttpCode, HttpStatus, UseGuards, Ip } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -30,8 +30,10 @@ export class ContactController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Submit a contact / lead form' })
   @ApiResponse({ status: 200, description: 'Lead saved and emails dispatched' })
-  submit(@Body() dto: SubmitContactDto) {
-    return this.contactService.submitLead(dto);
+  // `req.ip` is the real client because main.ts sets `trust proxy` from
+  // TRUST_PROXY_HOPS; without that it would be the ALB's address for everyone.
+  submit(@Body() dto: SubmitContactDto, @Ip() ip: string) {
+    return this.contactService.submitLead(dto, ip);
   }
 
   // ─── Admin: list leads ──────────────────────────────────────────────────────

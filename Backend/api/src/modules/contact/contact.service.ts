@@ -54,7 +54,7 @@ export class ContactService {
     });
   }
 
-  async submitLead(dto: SubmitContactDto) {
+  async submitLead(dto: SubmitContactDto, clientIp?: string) {
     // 1. Persist lead
     const lead = await this.prisma.contactLead.create({
       data: {
@@ -67,7 +67,13 @@ export class ContactService {
       },
     });
 
-    this.logger.log(`New contact lead #${lead.id} from ${dto.email} — type: ${dto.type}`);
+    // The IP is logged rather than stored: no column exists for it, and during
+    // the 2026-09-02 abuse there was no way to tell a single attacker from a
+    // botnet — which is exactly the fact that decides whether an IP-based block
+    // can work at all. A log line needs no migration and is enough to answer it.
+    this.logger.log(
+      `New contact lead #${lead.id} from ${dto.email} — type: ${dto.type} — ip: ${clientIp ?? 'unknown'}`,
+    );
 
     // 2. Send emails — fire and forget, never block response
     void this.sendEmails(lead.id, dto);
@@ -96,7 +102,19 @@ export class ContactService {
    * the cost of pausing is a missing courtesy email, and the cost of not
    * pausing is the domain.
    */
-  private static readonly CONFIRMATION_HOURLY_CAP = 20;
+  /**
+   * Measured against the real attack: the per-IP throttle was confirmed
+   * enforcing (5 pass, the 6th gets a 429) while submissions carried on at
+   * ~19/hour, which proves a distributed source no per-IP rule can stop. That
+   * makes this cap the load-bearing defence, and 20 sat right on top of the
+   * attack's own rate — the breaker flapped open and shut, leaking auto-replies
+   * on every dip.
+   *
+   * 8/hour is still roughly a hundred times the genuine baseline of one or two
+   * a DAY, and being wrong costs a courtesy email while support is notified
+   * either way. Raise it only against measured legitimate volume.
+   */
+  private static readonly CONFIRMATION_HOURLY_CAP = 8;
 
   private async confirmationIsSafe(email: string): Promise<boolean> {
     const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);

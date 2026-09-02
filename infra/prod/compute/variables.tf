@@ -91,14 +91,19 @@ variable "enable_waf" {
     AWS WAF on the ALB: managed rule sets plus a rate limit. ~$12/month,
     which sits outside the $135 launch tier — hence off by default.
 
-    RECOMMENDED BEFORE REAL TRAFFIC. When enabled, start it in COUNT mode
-    (see waf.tf) for 48 hours and read the sampled requests before switching
-    to block: the managed rules will otherwise flag legitimate rich-text
-    admin submissions, and the rate rule would throttle Stripe's bursty
-    webhook retries.
+    When enabled, it starts in COUNT mode (see waf.tf): read the sampled
+    requests before switching to block, or the managed rules will flag
+    legitimate rich-text admin submissions and the rate rule will throttle
+    Stripe's bursty webhook retries.
+
+    ENABLED AND APPLIED 2026-09-02, during the contact-form abuse. The default
+    is `true` because it now matches real infrastructure — it was applied with
+    `-var="enable_waf=true"` while the default still said false, which left the
+    live Web ACL one default-valued `terraform apply` away from being destroyed
+    by someone who never intended to touch it.
   EOT
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "site_domain" {
