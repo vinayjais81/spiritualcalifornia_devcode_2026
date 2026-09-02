@@ -103,7 +103,7 @@ case "$VAR" in
   STRIPE_SECRET_KEY)
     [[ "$VALUE" == sk_* || "$VALUE" == rk_* ]] || { echo "ERROR: expected sk_live_/sk_test_ (or a restricted rk_ key)" >&2; exit 1; }
     ;;
-  STRIPE_WEBHOOK_SECRET|STRIPE_IDENTITY_WEBHOOK_SECRET)
+  STRIPE_WEBHOOK_SECRET|STRIPE_IDENTITY_WEBHOOK_SECRET|STRIPE_CONNECT_WEBHOOK_SECRET)
     [[ "$VALUE" == whsec_* ]] || { echo "ERROR: expected a signing secret (whsec_...)" >&2; exit 1; }
     ;;
   STRIPE_SUBSCRIPTION_PRICE_MONTHLY|STRIPE_SUBSCRIPTION_PRICE_ANNUAL)

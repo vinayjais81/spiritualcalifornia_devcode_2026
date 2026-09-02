@@ -126,6 +126,29 @@ STRIPE_SECRET=$(keep_third_party STRIPE_SECRET_KEY)
 STRIPE_WEBHOOK=$(keep_third_party STRIPE_WEBHOOK_SECRET)
 STRIPE_IDENTITY=$(keep_third_party STRIPE_IDENTITY_WEBHOOK_SECRET)
 RESEND_KEY=$(keep_third_party RESEND_API_KEY)
+
+# STRIPE_CONNECT_WEBHOOK_SECRET is deliberately NOT a keep_third_party key.
+#
+# Stripe splits "events on your account" from "events on connected accounts",
+# and both endpoints can point at the same URL with DIFFERENT signing secrets.
+# On 2026-08-27 a Connect endpoint (application=ca_...) was added for
+# `account.updated`; its secret never reached this config, so every delivery
+# failed signature verification with a 400 and Stripe threatened to disable
+# the endpoint. This script was part of that: it had no slot for the variable
+# at all, so even a correct manual fix would be erased on the next run.
+#
+# It stays optional rather than defaulting to PLACEHOLDER because the code
+# branches on presence (`if (!connect) throw err` in stripe.service.ts) — an
+# unset variable reports the real primary-secret failure, while a placeholder
+# would report a bogus second failure and misdirect the next investigation.
+STRIPE_CONNECT_WEBHOOK=$(from_existing "$EXISTING" STRIPE_CONNECT_WEBHOOK_SECRET)
+if [[ -n "$STRIPE_CONNECT_WEBHOOK" && "$STRIPE_CONNECT_WEBHOOK" != PLACEHOLDER* ]]; then
+  STRIPE_CONNECT_LINE="STRIPE_CONNECT_WEBHOOK_SECRET=${STRIPE_CONNECT_WEBHOOK}"
+else
+  STRIPE_CONNECT_LINE="# STRIPE_CONNECT_WEBHOOK_SECRET unset - required only if Stripe issued a
+# second (Connect) endpoint for the same webhook URL. Set it with:
+#   bash infra/scripts/set-prod-env-var.sh api STRIPE_CONNECT_WEBHOOK_SECRET"
+fi
 ANTHROPIC_KEY=$(keep_third_party ANTHROPIC_API_KEY)
 ZOOM_ACCOUNT=$(keep_third_party ZOOM_ACCOUNT_ID)
 ZOOM_CLIENT=$(keep_third_party ZOOM_CLIENT_ID)
@@ -198,6 +221,7 @@ PASSPORT_ENCRYPTION_KEY=${PASSPORT_KEY}
 STRIPE_SECRET_KEY=${STRIPE_SECRET}
 STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK}
 STRIPE_IDENTITY_WEBHOOK_SECRET=${STRIPE_IDENTITY}
+${STRIPE_CONNECT_LINE}
 STRIPE_PLATFORM_COMMISSION_PERCENT=20
 
 RESEND_API_KEY=${RESEND_KEY}
