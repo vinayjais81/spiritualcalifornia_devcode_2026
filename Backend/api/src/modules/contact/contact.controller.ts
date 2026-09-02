@@ -1,6 +1,6 @@
 import { Controller, Post, Get, Patch, Body, Param, Query, HttpCode, HttpStatus, UseGuards, Ip } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -16,6 +16,16 @@ class SubmitContactDto {
   @IsString() @IsNotEmpty() type: string;
   @IsString() @IsNotEmpty() @MinLength(3) @MaxLength(150) subject: string;
   @IsString() @IsNotEmpty() @MinLength(10) @MaxLength(2000) message: string;
+
+  /**
+   * Honeypot. Rendered off-screen, so a person leaves it empty. Optional and
+   * length-capped rather than forbidden: `forbidNonWhitelisted` would reject
+   * the request outright, which tells a bot exactly which field caught it.
+   */
+  @IsOptional() @IsString() @MaxLength(200) contactReference?: string;
+
+  /** Milliseconds between the form rendering and this submission. */
+  @IsOptional() @IsNumber() elapsedMs?: number;
 }
 
 @ApiTags('Contact')

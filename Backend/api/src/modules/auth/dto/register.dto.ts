@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsString, MaxLength, IsOptional, IsBoolean, IsIn, IsArray } from 'class-validator';
+import { IsEmail, IsString, MaxLength, IsOptional, IsBoolean, IsIn, IsArray, IsNumber } from 'class-validator';
 import { IsStrongPassword } from '../../../common/validators/is-strong-password.validator';
 
 export class RegisterDto {
@@ -93,4 +93,21 @@ export class RegisterDto {
   @IsArray()
   @IsString({ each: true })
   languages?: string[];
+
+  /**
+   * Honeypot — rendered off-screen, so a person leaves it empty. Optional and
+   * length-capped rather than forbidden, because `forbidNonWhitelisted` would
+   * reject the request and tell a bot exactly which field caught it.
+   */
+  @ApiPropertyOptional({ description: 'Anti-spam. Leave empty.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  contactReference?: string;
+
+  /** Milliseconds between the form rendering and this submission. */
+  @ApiPropertyOptional({ example: 8400 })
+  @IsOptional()
+  @IsNumber()
+  elapsedMs?: number;
 }

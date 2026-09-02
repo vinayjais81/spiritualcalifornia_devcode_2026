@@ -147,3 +147,56 @@ replacement come up, because a fresh instance boots with no application code.
 `enable_waf` now defaults to `true`. It was applied via `-var` while the default
 still read `false`, which left the live Web ACL one default-valued
 `terraform apply` away from being destroyed by someone not intending to touch it.
+
+---
+
+## Honeypot + fill timing (the part that stops submissions)
+
+Everything above caps the *harm*. Nothing stopped the bot from submitting,
+because the source is distributed and no per-IP rule can reach it. So the
+question had to stop being "how often is this IP asking?" and start being "is
+this a person?".
+
+`Backend/api/src/common/bot-signals.ts` + `Frontend/web/src/components/shared/BotTrap.tsx`,
+applied to **`POST /contact`** and **`POST /auth/register`**.
+
+### Honeypot — a hard signal
+
+An input rendered off-screen. A person never sees it, so it always arrives
+empty; a bot parses the HTML and fills everything. We know this bot reads the
+real DOM, because it posts valid `type` values (`general`, `media`,
+`partnership`…) that only appear in the rendered form.
+
+A filled honeypot means the submission is **silently dropped** — nothing stored,
+no email — and the endpoint returns the same success payload a real submission
+gets. An error would tell the bot which field caught it.
+
+Two details keep false positives at effectively zero, and both are deliberate:
+
+- **Hidden by off-screen positioning, not `display: none`.** Some bots skip
+  `display:none` inputs precisely because they know the trick.
+- **Named `contactReference`, not `website` / `address` / `company`.** Password
+  managers and browser autofill match on recognisable names and would happily
+  fill a hidden `website` field, turning a real person into a false positive.
+  `autocomplete="off"`, `tabIndex={-1}` and `aria-hidden` close the rest.
+
+### Fill timing — a soft signal, on purpose
+
+The client sends milliseconds between the form rendering and submitting. Under
+2000ms is not human. But a real person can paste a prepared message, and a page
+cached from before this shipped sends no timer at all — so timing **never**
+discards a submission. It only downgrades it to "suspicious", which costs the
+auto-reply email and nothing else. The lead is still saved and support is still
+notified.
+
+A bug worth recording, caught by its own test: the check originally used
+`Number(input.elapsedMs)`, and **`Number(null)` is `0`** — finite, non-negative,
+under the threshold. Any client sending `"elapsedMs": null` would have been
+flagged as an instant submitter. It now requires `typeof === 'number'`.
+
+### What this does not do
+
+A determined attacker who inspects the form once can tell their bot to skip the
+hidden field and wait three seconds. This stops commodity spam, not a targeted
+adversary. **Cloudflare Turnstile remains the durable fix** and is blocked only
+on someone creating the Cloudflare account for a site key.

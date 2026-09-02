@@ -13,6 +13,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Role, VerificationStatus, Prisma, OnboardingPath } from '@prisma/client';
 import { checkPasswordPolicy } from '../../common/validators/is-strong-password.validator';
+import { detectBot } from '../../common/bot-signals';
 import * as bcrypt from 'bcrypt';
 import { randomBytes, randomUUID } from 'crypto';
 import { Resend } from 'resend';
@@ -113,6 +114,25 @@ export class AuthService {
    * own.
    */
   async register(dto: RegisterDto) {
+    // Registration mails an unverified, caller-supplied address on demand, so
+    // it is the same shape of weapon the contact form turned out to be. A bot
+    // that trips the honeypot gets the ordinary "check your inbox" answer and
+    // no account: telling it which field caught it only teaches it to adapt.
+    const verdict = detectBot({ honeypot: dto.contactReference, elapsedMs: dto.elapsedMs });
+    if (verdict.bot) {
+      this.logger.warn(
+        `Registration dropped as automated (${verdict.reason}) — claimed email: ${dto.email}`,
+      );
+      return {
+        message: 'Registration successful. Please check your email to verify your account.',
+      };
+    }
+    if (verdict.suspicious) {
+      // Not enough to refuse a real person over — a fast paste-and-submit is
+      // plausible — but worth being able to correlate later.
+      this.logger.warn(`Registration flagged (${verdict.reason}) — ${dto.email}`);
+    }
+
     const existing = await this.usersService.findByEmail(dto.email);
     if (existing) throw new ConflictException('Email already registered');
 

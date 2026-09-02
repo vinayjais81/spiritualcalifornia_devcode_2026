@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { LocationAutocomplete } from '@/components/shared/LocationAutocomplete';
+import { useBotTrap, HoneypotField } from '@/components/shared/BotTrap';
 import { useAuthStore } from '@/store/auth.store';
 import {
   PasswordStrengthMeter,
@@ -134,6 +135,7 @@ function RegisterContent() {
   // Wizard state
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const { botFields, honeypot, setHoneypot } = useBotTrap();
   const [error, setError] = useState<string | null>(null);
 
   // Step 1 form — pre-filled from Google profile if available
@@ -239,6 +241,7 @@ function RegisterContent() {
         ...(phone ? { phone } : {}),
         ...(location ? { location } : {}),
         newsletterOptIn: newsletter,
+        ...botFields(),
       });
       setStep(2);
     } catch (err: any) {
@@ -501,7 +504,8 @@ function RegisterContent() {
               </div>
             )}
 
-            <form onSubmit={isGoogleUser ? (e) => { e.preventDefault(); setStep(2); } : handleRegister}>
+            <form style={{ position: 'relative' }} onSubmit={isGoogleUser ? (e) => { e.preventDefault(); setStep(2); } : handleRegister}>
+              <HoneypotField value={honeypot} onChange={setHoneypot} />
               {!isGoogleUser && (
                 <div style={{ marginBottom: 20 }}>
                   <FormLegend />

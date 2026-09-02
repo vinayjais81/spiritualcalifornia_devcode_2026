@@ -7,6 +7,7 @@ import { Footer } from '@/components/public/layout/Footer';
 import { api } from '@/lib/api';
 import { useSiteConfigOrFallback } from '@/lib/siteConfig';
 import { FieldLabel, FormLegend } from '@/components/forms';
+import { useBotTrap, HoneypotField } from '@/components/shared/BotTrap';
 
 const G = {
   gold:     '#F07814',
@@ -102,6 +103,7 @@ export default function ContactPage() {
   const [type, setType]       = useState('general');
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
+  const { botFields, honeypot, setHoneypot } = useBotTrap();
 
   const iStyle = (f: string) => focused === f ? iFocus : iBase;
 
@@ -117,6 +119,7 @@ export default function ContactPage() {
         type,
         subject,
         message,
+        ...botFields(),
       });
       setSuccess(true);
     } catch (err: any) {
@@ -175,7 +178,8 @@ export default function ContactPage() {
               </div>
             ) : (
               /* Contact form */
-              <form onSubmit={handleSubmit} style={{ background: G.white, border: '1px solid rgba(240,120,20,0.15)', borderRadius: 16, padding: 40 }}>
+              <form onSubmit={handleSubmit} style={{ position: 'relative', background: G.white, border: '1px solid rgba(240,120,20,0.15)', borderRadius: 16, padding: 40 }}>
+                <HoneypotField value={honeypot} onChange={setHoneypot} />
                 <div style={{ marginBottom: 20 }}>
                   <FormLegend />
                 </div>

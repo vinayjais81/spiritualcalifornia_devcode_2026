@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service';
+import { detectBot } from '../../common/bot-signals';
 import { Resend } from 'resend';
 
 export interface SubmitContactDto {
@@ -55,6 +56,21 @@ export class ContactService {
   }
 
   async submitLead(dto: SubmitContactDto, clientIp?: string) {
+    const verdict = detectBot({
+      honeypot: (dto as any).contactReference,
+      elapsedMs: (dto as any).elapsedMs,
+    });
+
+    if (verdict.bot) {
+      // Answer exactly as a real submission would. A bot that receives an error
+      // learns which field betrayed it and adapts; one that receives success
+      // keeps posting into a void. Nothing is stored and no email is sent.
+      this.logger.warn(
+        `Contact submission dropped as automated (${verdict.reason}) — ip: ${clientIp ?? 'unknown'}, claimed email: ${dto.email}`,
+      );
+      return { success: true, id: null };
+    }
+
     // 1. Persist lead
     const lead = await this.prisma.contactLead.create({
       data: {
@@ -75,8 +91,19 @@ export class ContactService {
       `New contact lead #${lead.id} from ${dto.email} — type: ${dto.type} — ip: ${clientIp ?? 'unknown'}`,
     );
 
-    // 2. Send emails — fire and forget, never block response
-    void this.sendEmails(lead.id, dto);
+    // 2. Send emails — fire and forget, never block response.
+    // A suspiciously fast submission is still recorded and still reaches
+    // support, but never triggers the auto-reply: timing is too weak a signal
+    // to justify discarding a genuine message, and strong enough to justify not
+    // mailing a stranger on its say-so.
+    if (verdict.suspicious) {
+      this.logger.warn(
+        `Contact lead #${lead.id} flagged (${verdict.reason}) — saved, support notified, no auto-reply`,
+      );
+      void this.sendEmails(lead.id, dto, { skipConfirmation: true });
+    } else {
+      void this.sendEmails(lead.id, dto);
+    }
 
     return { success: true, id: lead.id };
   }
@@ -144,7 +171,11 @@ export class ContactService {
     return true;
   }
 
-  private async sendEmails(leadId: string, dto: SubmitContactDto) {
+  private async sendEmails(
+    leadId: string,
+    dto: SubmitContactDto,
+    opts: { skipConfirmation?: boolean } = {},
+  ) {
     const resendKey   = this.config.get<string>('RESEND_API_KEY', '');
     const fromEmail   = this.config.get<string>('EMAIL_FROM', 'noreply@spiritualcalifornia.com');
     const supportEmail = this.config.get<string>('SUPPORT_EMAIL', 'support@spiritualcalifornia.com');
@@ -166,7 +197,8 @@ export class ContactService {
     // verified, so it is the half that can be aimed at strangers. The support
     // notification goes to our own inbox and carries no such risk — it is sent
     // unconditionally, so abuse stays visible rather than silently dropped.
-    const confirmToSender = await this.confirmationIsSafe(dto.email);
+    const confirmToSender =
+      !opts.skipConfirmation && (await this.confirmationIsSafe(dto.email));
 
     try {
       await Promise.race([
