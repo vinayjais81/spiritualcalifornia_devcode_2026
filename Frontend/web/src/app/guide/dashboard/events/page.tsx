@@ -112,6 +112,12 @@ export default function EventsPage() {
       toast.error('The event ends before it starts. Check the end time, or tick "Ends on a different day".');
       return;
     }
+    // A half-typed number ("-", "1e") is '' to the browser but NaN here, and
+    // JSON turns NaN into null — which the API rejects as "must be a number".
+    if (form.ticketPrice !== '' && !(Number(form.ticketPrice) >= 0)) {
+      toast.error('Enter a ticket price of 0 or more.');
+      return;
+    }
     try {
       if (editingId) {
         // Update existing event
@@ -123,6 +129,9 @@ export default function EventsPage() {
           location: form.location || undefined,
           description: form.description || undefined,
           coverImageUrl: form.coverImageUrl || undefined,
+          // `|| undefined` would drop a deliberate 0 and make an event
+          // impossible to turn free again, so test for an empty field instead.
+          ticketPrice: form.ticketPrice === '' ? undefined : Number(form.ticketPrice),
         });
         toast.success('Event updated');
       } else {
@@ -171,6 +180,13 @@ export default function EventsPage() {
       toast.error(err?.response?.data?.message || 'Failed to update');
     }
   };
+
+  // Tickets already sold on the tier being edited. Past buyers keep what they
+  // paid, so a price change is allowed — but the guide should know before they
+  // make one.
+  const ticketsSold = editingId
+    ? Number(events.find(e => e.id === editingId)?.ticketTiers?.[0]?.sold ?? 0)
+    : 0;
 
   return (
     <div>
@@ -225,11 +241,14 @@ export default function EventsPage() {
             endTime={form.endTime}
             onChange={({ startTime, endTime }) => setForm(f => ({ ...f, startTime, endTime }))}
           />
-          {!editingId && (
-            <FormGroup label="Price (USD, 0 for free)" required>
-              <Input required aria-required="true" type="number" value={form.ticketPrice} onChange={e => setForm(f => ({ ...f, ticketPrice: e.target.value }))} placeholder="45" min="0" />
-            </FormGroup>
-          )}
+          <FormGroup label="Price (USD, 0 for free)" required>
+            <Input required aria-required="true" type="number" value={form.ticketPrice} onChange={e => setForm(f => ({ ...f, ticketPrice: e.target.value }))} placeholder="45" min="0" step="0.01" />
+            {ticketsSold > 0 && (
+              <div style={{ fontFamily: font, fontSize: '11px', color: C.warmGray, marginTop: '4px' }}>
+                {ticketsSold} ticket{ticketsSold > 1 ? 's' : ''} already sold. Changing the price only affects new purchases.
+              </div>
+            )}
+          </FormGroup>
           <FormGroup label="Event Type" required>
             <Select required aria-required="true" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
               <option value="IN_PERSON">In-Person</option>

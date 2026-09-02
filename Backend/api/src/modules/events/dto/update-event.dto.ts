@@ -46,6 +46,21 @@ export class UpdateEventDto {
   @IsString()
   timezone?: string;
 
+  /**
+   * Ticket price for the event's General Admission tier. Omit to leave the
+   * price untouched; 0 makes the event free.
+   *
+   * The price lives on EventTicketTier, not Event, which is why this field
+   * had been left out of the update DTO entirely — so the dashboard's Edit
+   * form had no way to change a price after creation, and `whitelist` +
+   * `forbidNonWhitelisted` turned any attempt into a 400.
+   */
+  @ApiPropertyOptional({ example: 45 })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  ticketPrice?: number;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsBoolean()

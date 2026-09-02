@@ -173,11 +173,33 @@ export class EventsService {
     if (!event) throw new NotFoundException('Event not found');
     if (event.guideId !== guide.id) throw new ForbiddenException('Not your event');
 
+    // The price lives on EventTicketTier, so it is resolved separately from the
+    // Event columns below. Read the tiers up front: the payments gate has to
+    // judge the state this update RESULTS IN, not the state on disk.
+    const activeTiers = await this.prisma.eventTicketTier.findMany({
+      where: { eventId, isActive: true },
+      orderBy: { createdAt: 'asc' },
+      select: { id: true, price: true, sold: true },
+    });
+    // The dashboard only ever creates one tier ("General Admission"), so the
+    // oldest active tier is the one its price field maps to. Any further tiers
+    // are left alone but still count toward "is this event paid".
+    const priceTier = activeTiers[0];
+
     // Payments gate: if this update would result in a paid+published event,
     // require Stripe Connect. The gate fires only on the transition to
     // published (or while-published) — editing a draft event is unaffected.
+    //
+    // `eventIsPaid` reads the database, which is the state BEFORE this update.
+    // Once a price could be edited here that became a bypass: setting a free
+    // published event to $50 would be waved through, because the gate looked at
+    // the $0 still on disk. Fold the incoming price in instead.
     const finalPublished = dto.isPublished !== undefined ? !!dto.isPublished : event.isPublished;
-    if (finalPublished && (await this.eventIsPaid(eventId))) {
+    const finalIsPaid =
+      dto.ticketPrice !== undefined
+        ? dto.ticketPrice > 0 || activeTiers.slice(1).some((t) => Number(t.price) > 0)
+        : activeTiers.some((t) => Number(t.price) > 0);
+    if (finalPublished && finalIsPaid) {
       const gate = await this.payments.canPublishPaidOffering(guide.id);
       this.payments.assertCanPublishPaidOffering(gate);
     }
@@ -194,15 +216,55 @@ export class EventsService {
     if (dto.isPublished !== undefined) data.isPublished = dto.isPublished;
     if (dto.isCancelled !== undefined) data.isCancelled = dto.isCancelled;
 
-    const updated = await this.prisma.event.update({
-      where: { id: eventId },
-      data,
-      include: { ticketTiers: true },
-    });
+    // Event columns and the tier price move together: a partial write could
+    // leave a published event paid while the gate had cleared it as free.
+    const [updated] = await this.prisma.$transaction([
+      this.prisma.event.update({
+        where: { id: eventId },
+        data,
+        include: { ticketTiers: true },
+      }),
+      ...(dto.ticketPrice === undefined
+        ? []
+        : [
+            priceTier
+              ? this.prisma.eventTicketTier.update({
+                  where: { id: priceTier.id },
+                  data: { price: dto.ticketPrice },
+                })
+              : // An event created before the price field existed — or created
+                // with no price at all — has no tier to update. Mint the same
+                // one `create()` would have, so the price becomes editable
+                // rather than silently going nowhere.
+                this.prisma.eventTicketTier.create({
+                  data: {
+                    eventId,
+                    name: 'General Admission',
+                    price: dto.ticketPrice,
+                    capacity: 100,
+                  },
+                }),
+          ]),
+    ]);
+
+    if (dto.ticketPrice !== undefined && priceTier && priceTier.sold > 0) {
+      // Past buyers keep what they paid (TicketPurchase.totalAmount is its own
+      // column), so this is a pricing decision rather than a data problem — but
+      // it should be visible if anyone ever asks why two attendees paid
+      // different amounts for the same event.
+      this.logger.log(
+        `Event ${eventId}: tier price changed ${priceTier.price} -> ${dto.ticketPrice} with ${priceTier.sold} ticket(s) already sold`,
+      );
+    }
+
     // Any update may flip the publish/cancel/start-time state that the home
     // widget filters on — bust the cache unconditionally.
     await this.invalidateHomeCache();
-    return updated;
+    // Re-read so the response carries the new price rather than the tiers
+    // captured before the tier write landed.
+    return dto.ticketPrice === undefined
+      ? updated
+      : this.prisma.event.findUnique({ where: { id: eventId }, include: { ticketTiers: true } });
   }
 
   // ─── Delete ────────────────────────────────────────────────────────────────
