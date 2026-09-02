@@ -75,6 +75,57 @@ export class ContactService {
     return { success: true, id: lead.id };
   }
 
+  /**
+   * Whether it is safe to send the "we received your message" auto-reply.
+   *
+   * A per-IP throttle caps one attacker; it does nothing about a distributed
+   * one, and the damage here is not load — it is that our sending domain mails
+   * strangers who never asked. Enough of those and the domain is scored for
+   * spam, which for an unwarmed pre-launch domain is close to unrecoverable.
+   *
+   * Two independent brakes, both read from data we already store:
+   *
+   *  - PER ADDRESS. A real person submits the form once and gets one reply. A
+   *    second submission inside a day gets logged and served, but not mailed —
+   *    so the same address cannot be used to bombard someone's inbox.
+   *  - SITE WIDE. If submissions across the whole site exceed a rate no
+   *    genuine marketplace produces, stop auto-replying entirely until it
+   *    subsides. Normal volume before the abuse began was one or two a DAY.
+   *
+   * Modelled on the InviteSenderService circuit breaker, for the same reason:
+   * the cost of pausing is a missing courtesy email, and the cost of not
+   * pausing is the domain.
+   */
+  private static readonly CONFIRMATION_HOURLY_CAP = 20;
+
+  private async confirmationIsSafe(email: string): Promise<boolean> {
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+
+    const [fromThisAddress, siteWide] = await Promise.all([
+      this.prisma.contactLead.count({
+        where: { email, createdAt: { gte: dayAgo } },
+      }),
+      this.prisma.contactLead.count({ where: { createdAt: { gte: hourAgo } } }),
+    ]);
+
+    // The lead for this submission is already persisted, so 1 means "this one".
+    if (fromThisAddress > 1) {
+      this.logger.warn(
+        `Auto-reply suppressed: ${email} has submitted ${fromThisAddress} times in 24h`,
+      );
+      return false;
+    }
+    if (siteWide > ContactService.CONFIRMATION_HOURLY_CAP) {
+      this.logger.error(
+        `Auto-reply circuit breaker OPEN: ${siteWide} contact submissions in the last hour ` +
+          `(cap ${ContactService.CONFIRMATION_HOURLY_CAP}). Support notifications still sending.`,
+      );
+      return false;
+    }
+    return true;
+  }
+
   private async sendEmails(leadId: string, dto: SubmitContactDto) {
     const resendKey   = this.config.get<string>('RESEND_API_KEY', '');
     const fromEmail   = this.config.get<string>('EMAIL_FROM', 'noreply@spiritualcalifornia.com');
@@ -93,15 +144,25 @@ export class ContactService {
     // Support notification
     const notificationHtml = this.buildNotificationEmail(dto);
 
+    // The confirmation goes to an address the CALLER supplied and nobody has
+    // verified, so it is the half that can be aimed at strangers. The support
+    // notification goes to our own inbox and carries no such risk — it is sent
+    // unconditionally, so abuse stays visible rather than silently dropped.
+    const confirmToSender = await this.confirmationIsSafe(dto.email);
+
     try {
       await Promise.race([
         Promise.all([
-          resend.emails.send({
-            from: `Spiritual California <${fromEmail}>`,
-            to: dto.email,
-            subject: 'We received your message — Spiritual California',
-            html: confirmationHtml,
-          }),
+          ...(confirmToSender
+            ? [
+                resend.emails.send({
+                  from: `Spiritual California <${fromEmail}>`,
+                  to: dto.email,
+                  subject: 'We received your message — Spiritual California',
+                  html: confirmationHtml,
+                }),
+              ]
+            : []),
           resend.emails.send({
             from: `Spiritual California <${fromEmail}>`,
             to: supportEmail,

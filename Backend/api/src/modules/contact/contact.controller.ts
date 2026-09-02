@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { Role } from '@prisma/client';
+import { PublicFormThrottle } from '../../common/throttle.decorator';
 import { ContactService } from './contact.service';
 import { UpdateLeadStatusDto } from './dto/update-lead-status.dto';
 
@@ -25,6 +26,7 @@ export class ContactController {
   // ─── Public: submit contact form ────────────────────────────────────────────
 
   @Post()
+  @PublicFormThrottle()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Submit a contact / lead form' })
   @ApiResponse({ status: 200, description: 'Lead saved and emails dispatched' })
