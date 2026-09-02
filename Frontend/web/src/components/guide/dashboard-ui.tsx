@@ -114,14 +114,60 @@ export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement> & { 
 }
 
 // ─── Modal ───────────────────────────────────────────────────────────────────
+/**
+ * Every dialog in the guide + seeker dashboards is this component, and all but
+ * one of them wrap a data-entry form. So an accidental dismissal does not just
+ * close a panel — it silently destroys everything the user typed.
+ *
+ * The backdrop used to be a bare `onClick={onClose}`, which threw work away in
+ * three ordinary situations:
+ *
+ *  1. NATIVE PICKERS. A `datetime-local` / `date` / `select` popup is painted by
+ *     the browser OUTSIDE the page's DOM. Dismissing one with a click puts that
+ *     click over the backdrop, so choosing an event's start time and then
+ *     clicking away closed the whole Add Event form. This is the reported bug.
+ *  2. DRAG-SELECTING text in a field and releasing past the dialog edge: `click`
+ *     fires on the nearest common ancestor, which is the backdrop.
+ *  3. A slightly-missed scrollbar or a stray click while reading.
+ *
+ * Fix: a dismissal only counts when the gesture BEGINS and ENDS on the backdrop.
+ * `pointerdown` records where the press started; anything originating inside the
+ * dialog — or from a browser popup that never generated a pointerdown here at
+ * all — can no longer close it. Escape still closes, which is the predictable
+ * way out and what the accessibility contract expects.
+ */
 export function Modal({ open, onClose, title, children, maxWidth }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode; maxWidth?: string }) {
+  const pressedBackdrop = React.useRef(false);
+  const titleId = React.useId();
+
+  React.useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
   if (!open) return null;
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(58,53,48,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: C.white, borderRadius: '16px', padding: '36px', width: '90%', maxWidth: maxWidth || '600px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.2)' }}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={titleId}
+      // Recorded on the backdrop itself: a press inside the dialog stops at the
+      // inner container below, so it never sets this true.
+      onPointerDown={e => { pressedBackdrop.current = e.target === e.currentTarget; }}
+      onClick={e => {
+        if (e.target !== e.currentTarget) return;   // click landed on the dialog
+        if (!pressedBackdrop.current) return;       // gesture started elsewhere
+        pressedBackdrop.current = false;
+        onClose();
+      }}
+      style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(58,53,48,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    >
+      <div onPointerDown={e => e.stopPropagation()} onClick={e => e.stopPropagation()} style={{ background: C.white, borderRadius: '16px', padding: '36px', width: '90%', maxWidth: maxWidth || '600px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-          <div style={{ fontFamily: serif, fontSize: '26px', fontWeight: 500, color: C.charcoal }}>{title}</div>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: C.warmGray }}>×</button>
+          <div id={titleId} style={{ fontFamily: serif, fontSize: '26px', fontWeight: 500, color: C.charcoal }}>{title}</div>
+          <button type="button" onClick={onClose} aria-label={`Close ${title}`} style={{ background: 'none', border: 'none', fontSize: '22px', cursor: 'pointer', color: C.warmGray }}>×</button>
         </div>
         {children}
       </div>

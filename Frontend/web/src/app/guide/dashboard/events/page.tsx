@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { parsePaymentsGateError } from '@/lib/payments-gate';
 import { toast } from 'sonner';
 import { C, font, formatPrice, PageHeader, Panel, Btn, EmptyState, EventDateBox, Modal, FormGroup, Input, Select, StatusBadge } from '@/components/guide/dashboard-ui';
+import { DateTimeRange, isEndBeforeStart } from '@/components/guide/DateTimeRange';
 import { RichTextEditor } from '@/components/guide/RichTextEditor';
 import { FormLegend } from '@/components/forms';
 
@@ -105,6 +106,12 @@ export default function EventsPage() {
   };
 
   const save = async () => {
+    // A refused submit must always say why — the button is never disabled, so
+    // a silent no-op would read as a broken save.
+    if (isEndBeforeStart(form.startTime, form.endTime)) {
+      toast.error('The event ends before it starts. Check the end time, or tick "Ends on a different day".');
+      return;
+    }
     try {
       if (editingId) {
         // Update existing event
@@ -213,12 +220,11 @@ export default function EventsPage() {
           <FormGroup label="Event Title" required full>
             <Input required aria-required="true" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Spring Equinox Meditation Retreat" />
           </FormGroup>
-          <FormGroup label="Date & Start Time" required>
-            <Input required aria-required="true" type="datetime-local" value={form.startTime} onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))} />
-          </FormGroup>
-          <FormGroup label="End Time" required>
-            <Input required aria-required="true" type="datetime-local" value={form.endTime} onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))} />
-          </FormGroup>
+          <DateTimeRange
+            startTime={form.startTime}
+            endTime={form.endTime}
+            onChange={({ startTime, endTime }) => setForm(f => ({ ...f, startTime, endTime }))}
+          />
           {!editingId && (
             <FormGroup label="Price (USD, 0 for free)" required>
               <Input required aria-required="true" type="number" value={form.ticketPrice} onChange={e => setForm(f => ({ ...f, ticketPrice: e.target.value }))} placeholder="45" min="0" />
