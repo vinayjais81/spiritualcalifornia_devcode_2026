@@ -33,6 +33,9 @@
     "articles:trial": "ts-node -r tsconfig-paths/register scripts/import-articles.ts --mode=trial",
     "articles:execute": "ts-node -r tsconfig-paths/register scripts/import-articles.ts --mode=execute",
     "audit:dual-role": "ts-node -r tsconfig-paths/register scripts/audit-dual-role-accounts.ts",
+    "buyer-access:report": "ts-node -r tsconfig-paths/register scripts/backfill-buyer-access.ts --mode=report",
+    "buyer-access:trial": "ts-node -r tsconfig-paths/register scripts/backfill-buyer-access.ts --mode=trial",
+    "buyer-access:execute": "ts-node -r tsconfig-paths/register scripts/backfill-buyer-access.ts --mode=execute",
     "images:report": "ts-node -r tsconfig-paths/register scripts/upload-article-images.ts --mode=report",
     "images:execute": "ts-node -r tsconfig-paths/register scripts/upload-article-images.ts --mode=execute"
   },

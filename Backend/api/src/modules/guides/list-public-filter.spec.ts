@@ -7,6 +7,7 @@ import { EventsService } from '../events/events.service';
 import { ProductsService } from '../products/products.service';
 import { ReviewsService } from '../reviews/reviews.service';
 import { BlogService } from '../blog/blog.service';
+import { UsersService } from '../users/users.service';
 
 // Cover for the practitioners-directory defect:
 //   1. Filtering by "Reiki" returned 1 guide and excluded Maya Williams, a
@@ -37,6 +38,7 @@ describe('GuidesService.listPublic — modality filter and featured', () => {
         { provide: ProductsService, useValue: stub },
         { provide: ReviewsService, useValue: stub },
         { provide: BlogService, useValue: stub },
+        { provide: UsersService, useValue: stub },
       ],
     }).compile();
 

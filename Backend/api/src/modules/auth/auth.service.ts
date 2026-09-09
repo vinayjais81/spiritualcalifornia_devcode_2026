@@ -225,6 +225,10 @@ export class AuthService {
           }),
           this.prisma.userRole.create({ data: { userId: user.id, role: Role.GUIDE } }),
         ]);
+        // No-op until PRACTITIONER_BUYER_ENABLED is on. Must run before the
+        // token is minted below, or the new practitioner's first session
+        // carries roles that omit SEEKER.
+        await this.usersService.ensureBuyerAccess(user.id);
       }
 
       const fullUser = await this.usersService.findByIdOrThrow(user.id);
@@ -546,6 +550,10 @@ export class AuthService {
         }),
         this.prisma.userRole.create({ data: { userId: user.id, role: Role.GUIDE } }),
       ]);
+      // No-op until PRACTITIONER_BUYER_ENABLED is on. Runs before the tokens
+      // are generated further down, so the practitioner's first session
+      // already carries the buyer role.
+      await this.usersService.ensureBuyerAccess(user.id);
     }
 
     await this.usersService.update(user.id, {

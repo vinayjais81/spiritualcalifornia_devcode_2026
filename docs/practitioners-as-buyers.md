@@ -142,31 +142,64 @@ assertion that every purchase path still calls the guard. Crude, but it fails
 loudly when a refactor drops a call — the failure mode this codebase has
 actually hit before (nested price edits, `PUBLIC_GUIDE_WHERE` on offering reads).
 
-### Phase 1 — Grant buyer access (1–2 days)
+### Phase 1 — Grant buyer access ✅ shipped (flag off)
 
-Create the `SeekerProfile` and SEEKER role for practitioners, plus a re-runnable
-backfill for existing accounts following the report → trial → execute pattern
-used by `purge-demo-data.ts`. No endpoint changes needed. Fully reversible:
-removing the granted role restores current behaviour.
+`UsersService.ensureBuyerAccess(userId)` is the single grant path: creates the
+`SeekerProfile` and SEEKER role, idempotently, and only when
+`PRACTITIONER_BUYER_ENABLED=true`. It is called from all three places a
+practitioner account comes into existence — register-with-intent and
+verify-email-with-intent (`auth.service.ts`) and `startOnboarding`
+(`guides.service.ts`) — because those three paths have already drifted from
+each other once, and a buyer profile present on two of three routes would fail
+invisibly until someone tried to buy.
 
-Run `npm run audit:dual-role` first. If it reports accounts that already hold
-both roles — the admin role editor applies whatever it is handed and never
-consulted the mutex — the backfill must adopt their existing profiles rather
-than create new ones.
+It **adopts an existing `SeekerProfile` rather than replacing it.** An account
+can hold a profile without the role (the admin role editor can strip a role
+without touching the profile), and that profile owns the entire purchase history
+via `SeekerProfile.id` — a second one would orphan it.
 
-### Phase 2 — Front-end experience (4–5 days)
+The mutex in `startOnboarding` is unchanged and still refuses a seeker becoming
+a practitioner (D1). It never fires for practitioners, because the
+already-has-a-GuideProfile early return precedes it. **Do not reorder those two
+blocks** — that would lock every practitioner out of their own onboarding.
 
-Where the effort actually sits, and the phase most likely to grow: it is a hunt
-for implicit assumptions rather than a list of known edits.
+Backfill for existing accounts: `npm run buyer-access:report | :trial | :execute`
+(report → trial → execute, same shape as `purge-demo-data.ts`; trial runs the
+real grant in a transaction and rolls it back). Re-runnable, so it can be rolled
+out in batches. Reversible by deleting the granted SEEKER rows.
 
+Run `npm run audit:dual-role` first.
+
+**Test cover:** `src/modules/users/buyer-access.spec.ts` — off by default, off
+for any value but the literal `"true"`, idempotent, and the adopt-don't-replace
+rule.
+
+### Phase 2 — Front-end experience (~3–4 days)
+
+The proposal called this "an audit, not a fixed list". Having done the audit, it
+is a fixed list — smaller than feared. Two places already handle dual-role
+correctly by accident and need no change: `OnboardingWizard.tsx` suppresses
+itself on `SEEKER && !GUIDE`, and `Navbar.tsx` gates the "List Your Practice"
+CTA on `isGuide` alone.
+
+Remaining:
+
+- **✅ Done, shipped with Phase 1** — `register/page.tsx` computed
+  `isExistingGuide` as `GUIDE && !SEEKER`, which inverts the moment
+  practitioners hold both roles: the block screen disappears and a signed-in
+  practitioner is served the seeker signup wizard. Fixed ahead of the rest of
+  Phase 2 precisely because it is armed by the flag, not by a deploy.
 - A dashboard switcher for dual-role users.
-- Sign-in routing that no longer depends on which role is checked first
-  (`signin/page.tsx`, `Navbar.tsx`).
-- Unwind screens that read "is a buyer" as "is not a practitioner" — the
-  "List Your Practice" CTA reappearing for people who already have a practice,
-  existing practitioners hitting the wrong-account block screen.
-- Suppress buyer onboarding prompts on practitioner accounts.
+- Client-side self-dealing checks, so a practitioner is told *before* the
+  payment step rather than by a 403 at submit: `book/[guideSlug]/page.tsx`,
+  `tours/[slug]/book/page.tsx`, `FavoriteGuideButton.tsx` (hide on your own
+  profile), and add-to-cart.
 - Render the D5 practitioner-review label from `authorIsPractitioner`.
+- While in `signin/page.tsx`: `signedInDestination` (line 43) routes
+  practitioners to `/guide/dashboard` while `handleSubmit` (line 131) sends them
+  to `/onboarding/guide`. The comment above them claims the two "can't drift".
+  They have. Pre-existing and unrelated to this change, but cheap to reconcile
+  while the file is open.
 
 ### Phase 3 — Consistency and testing (2–3 days)
 
@@ -189,6 +222,23 @@ the platform stores no customer record against user accounts, so the two never
 meet.
 
 ---
+
+## Go-live sequence
+
+Once Phases 2 and 3 are done, turning this on is four ordered steps:
+
+1. Apply the migration to production.
+2. `npm run audit:dual-role` — read-only, tells you what the backfill will meet.
+3. `npm run buyer-access:report` → `:trial` → `:execute --confirm=<db>`. Nothing
+   changes for users yet: the grant is a no-op while the flag is off, and the
+   backfill's own writes are inert without it.
+4. Set `PRACTITIONER_BUYER_ENABLED=true` on the API and restart. **This is the
+   step that switches the feature on.** Sessions pick the new role up on their
+   next request (Phase 0's `jwt.strategy` change), not on next sign-in.
+
+To roll back, unset the flag. The granted roles can stay; without the flag
+nothing reads them differently, and the self-dealing guards remain in force
+either way.
 
 ## Open item
 

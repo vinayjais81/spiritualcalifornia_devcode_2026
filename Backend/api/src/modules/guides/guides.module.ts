@@ -8,9 +8,11 @@ import { EventsModule } from '../events/events.module';
 import { ProductsModule } from '../products/products.module';
 import { ReviewsModule } from '../reviews/reviews.module';
 import { BlogModule } from '../blog/blog.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
+    UsersModule,
     VerificationModule,
     UploadModule,
     ServicesModule,

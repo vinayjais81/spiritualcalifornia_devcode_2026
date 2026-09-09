@@ -373,17 +373,22 @@ function RegisterContent() {
     fontFamily: 'var(--font-inter), sans-serif',
   };
 
-  // Cross-role guard: SEEKER and GUIDE are mutually exclusive on the same
-  // email. If a logged-in guide lands on /register, render a clear block
-  // instead of the seeker wizard. ADMIN/SUPER_ADMIN are exempt — staff can
-  // wear both hats for testing.
+  // Cross-role guard: if a logged-in guide lands on /register, render a clear
+  // block instead of the seeker wizard. ADMIN/SUPER_ADMIN are exempt — staff
+  // can wear both hats for testing.
+  //
+  // Deliberately does NOT check for the absence of SEEKER. Practitioners now
+  // hold the buyer role too (docs/practitioners-as-buyers.md), so a
+  // `GUIDE && !SEEKER` test inverts the moment that ships: it would evaluate
+  // false for every practitioner on the platform and serve them the seeker
+  // signup wizard. Holding GUIDE is the whole condition — a practitioner never
+  // needs this page, whether or not they can also buy.
   const userRoles = (user?.roles ?? []) as string[];
   const isAdminClass = userRoles.includes('ADMIN') || userRoles.includes('SUPER_ADMIN');
   const isExistingGuide =
     isAuthenticated &&
     !isAdminClass &&
-    userRoles.includes('GUIDE') &&
-    !userRoles.includes('SEEKER');
+    userRoles.includes('GUIDE');
   if (isExistingGuide) {
     return (
       <div

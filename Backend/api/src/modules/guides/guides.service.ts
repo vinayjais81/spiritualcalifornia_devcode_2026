@@ -13,6 +13,7 @@ import { EventsService } from '../events/events.service';
 import { ProductsService } from '../products/products.service';
 import { ReviewsService } from '../reviews/reviews.service';
 import { BlogService } from '../blog/blog.service';
+import { UsersService } from '../users/users.service';
 import { Role, VerificationStatus } from '@prisma/client';
 import { UpdateGuideProfileDto } from './dto/update-profile.dto';
 import { SetCategoriesDto } from './dto/set-categories.dto';
@@ -69,6 +70,7 @@ export class GuidesService {
     private readonly productsService: ProductsService,
     private readonly reviewsService: ReviewsService,
     private readonly blogService: BlogService,
+    private readonly usersService: UsersService,
   ) {}
 
   private async requireGuide(userId: string) {
@@ -98,10 +100,21 @@ export class GuidesService {
    * Idempotent: if the user already has a GuideProfile we just return it
    * (covers re-tries after a frontend network blip).
    *
-   * Cross-role guard: SEEKER and GUIDE are mutually exclusive on the same
-   * email. If the caller already has the SEEKER role we reject with a clear
-   * 409 — they need to register with a different email. ADMIN/SUPER_ADMIN
-   * are exempt (platform staff can wear both hats for testing).
+   * Cross-role guard: a seeker cannot become a practitioner. If the caller
+   * already has the SEEKER role we reject with a clear 409 — they need to
+   * register with a different email. ADMIN/SUPER_ADMIN are exempt (platform
+   * staff can wear both hats for testing).
+   *
+   * This guard survives practitioners-as-buyers unchanged, and the asymmetry is
+   * deliberate. Decision D1 opens one direction only: a practitioner may buy,
+   * but a buyer may not become a practitioner — that direction pulls in
+   * identity verification, credential review, payout onboarding and the listing
+   * subscription. So the check stays exactly as strict as it was.
+   *
+   * It does not catch practitioners who now hold SEEKER themselves, because the
+   * early return above fires first: anyone with a GuideProfile never reaches
+   * this line. Reordering those two blocks would lock every practitioner out of
+   * their own onboarding.
    */
   async startOnboarding(userId: string) {
     const existing = await this.prisma.guideProfile.findUnique({ where: { userId } });
@@ -137,6 +150,9 @@ export class GuidesService {
         update: {},
       }),
     ]);
+
+    // No-op until PRACTITIONER_BUYER_ENABLED is on.
+    await this.usersService.ensureBuyerAccess(userId);
 
     this.logger.log(`Guide onboarding started: user=${userId} profile=${guideProfile.id}`);
     return guideProfile;
