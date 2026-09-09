@@ -400,8 +400,16 @@ export class AdminController {
   @Patch('users/:id/roles')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Set user roles (replaces all existing roles)' })
-  setUserRoles(@Param('id') id: string, @Body() dto: UpdateRolesDto) {
-    return this.adminService.setUserRoles(id, dto.roles);
+  setUserRoles(
+    @Param('id') id: string,
+    @Body() dto: UpdateRolesDto,
+    @CurrentUser() actor: CurrentUserData,
+  ) {
+    return this.adminService.setUserRoles({
+      targetUserId: id,
+      roles: dto.roles,
+      actor: { id: actor.id, roles: actor.roles, email: actor.email },
+    });
   }
 
   @Post('users/:id/password')

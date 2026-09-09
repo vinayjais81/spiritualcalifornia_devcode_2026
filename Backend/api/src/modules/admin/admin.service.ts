@@ -511,20 +511,124 @@ export class AdminService {
     return { userId: targetUserId, isActive: true, searchCascade };
   }
 
-  async setUserRoles(userId: string, roles: Role[]) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+  // ─── Set user roles ───────────────────────────────────────────────────────
+  //
+  // Replaces the target's entire role set. This endpoint used to apply whatever
+  // it was handed, with no validation at all — which is how production could
+  // end up with accounts in states no application flow can produce.
+  //
+  // Two classes of problem it could create, both now closed:
+  //
+  //   1. Privilege escalation. Any ADMIN could grant SUPER_ADMIN to any
+  //      account, including a second account they control. The adjacent
+  //      setUserPassword has always guarded against exactly this; this one
+  //      never did. Now it matches: staff roles are SUPER_ADMIN's to hand out.
+  //
+  //   2. Roles with no profile behind them. A role is not self-sufficient —
+  //      GUIDE without a GuideProfile breaks every practitioner screen, and
+  //      SEEKER without a SeekerProfile 403s on every purchase, because the
+  //      checkout paths all start from a SeekerProfile lookup rather than a
+  //      role check. Granting GUIDE is refused (a practitioner profile needs a
+  //      slug and a verification record — that is onboarding's job, and D1
+  //      keeps buyer→practitioner closed anyway); granting SEEKER creates the
+  //      missing profile, since it has no required fields and the intent is
+  //      unambiguous.
+  //
+  // GUIDE + SEEKER together is legal now (see docs/practitioners-as-buyers.md)
+  // and is the expected shape for every practitioner once the feature is on.
+
+  async setUserRoles(params: {
+    targetUserId: string;
+    roles: Role[];
+    actor: { id: string; roles: Role[]; email: string };
+  }) {
+    const { targetUserId, actor } = params;
+
+    // Dedupe: the DTO permits repeats and createMany would violate the
+    // (userId, role) unique constraint on the second one.
+    const roles = [...new Set(params.roles)];
+
+    if (roles.length === 0) {
+      throw new BadRequestException(
+        'A user must keep at least one role. To remove someone’s access, deactivate the account instead.',
+      );
+    }
+
+    if (targetUserId === actor.id) {
+      throw new BadRequestException('You cannot change your own roles.');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: targetUserId },
+      include: {
+        roles: { select: { role: true } },
+        seekerProfile: { select: { id: true } },
+        guideProfile: { select: { id: true, isPublished: true } },
+      },
+    });
     if (!user) throw new NotFoundException('User not found');
 
-    // Replace all roles atomically
-    await this.prisma.$transaction([
-      this.prisma.userRole.deleteMany({ where: { userId } }),
-      this.prisma.userRole.createMany({
-        data: roles.map((role) => ({ userId, role })),
-      }),
-    ]);
+    const before = user.roles.map((r) => r.role);
+    const STAFF: Role[] = [Role.ADMIN, Role.SUPER_ADMIN];
+    const actorIsSuperAdmin = actor.roles.includes(Role.SUPER_ADMIN);
+
+    // Staff roles are SUPER_ADMIN's to grant and to take away. Checked on the
+    // difference, not the result, so a plain ADMIN can still edit the
+    // marketplace roles of an account that already holds a staff role.
+    const staffChanged = STAFF.some(
+      (r) => before.includes(r) !== roles.includes(r),
+    );
+    if (staffChanged && !actorIsSuperAdmin) {
+      throw new ForbiddenException(
+        'Only a super admin can grant or revoke admin roles.',
+      );
+    }
+
+    if (roles.includes(Role.GUIDE) && !user.guideProfile) {
+      throw new BadRequestException(
+        'This account has no practitioner profile, so the practitioner role would leave it half-created. ' +
+          'Have them complete practitioner onboarding instead.',
+      );
+    }
+
+    // Taking GUIDE away from a live listing would leave a public profile whose
+    // owner can no longer reach their own dashboard to manage it — public
+    // visibility keys off isVerified/isPublished/isActive, not the role.
+    if (!roles.includes(Role.GUIDE) && user.guideProfile?.isPublished) {
+      throw new BadRequestException(
+        'This practitioner’s profile is still published. Unpublish it first, or deactivate the account.',
+      );
+    }
+
+    const needsSeekerProfile = roles.includes(Role.SEEKER) && !user.seekerProfile;
+
+    await this.prisma.$transaction(async (tx) => {
+      if (needsSeekerProfile) {
+        await tx.seekerProfile.create({ data: { userId: targetUserId } });
+      }
+      await tx.userRole.deleteMany({ where: { userId: targetUserId } });
+      await tx.userRole.createMany({
+        data: roles.map((role) => ({ userId: targetUserId, role })),
+      });
+      await tx.auditLog.create({
+        data: {
+          userId: actor.id,
+          action: 'admin.user.roles',
+          entity: 'User',
+          entityId: targetUserId,
+          oldValue: { roles: before },
+          newValue: {
+            roles,
+            targetEmail: user.email,
+            actorEmail: actor.email,
+            seekerProfileCreated: needsSeekerProfile,
+          },
+        },
+      });
+    });
 
     return this.prisma.user.findUnique({
-      where: { id: userId },
+      where: { id: targetUserId },
       select: { id: true, roles: true },
     });
   }

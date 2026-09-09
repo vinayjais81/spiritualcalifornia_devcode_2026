@@ -210,13 +210,47 @@ What shipped:
 The client mirror is UX only. The server refuses every one of these regardless,
 and nothing here should ever be treated as the enforcement point.
 
-### Phase 3 — Consistency and testing (2–3 days)
+### Phase 3 — Consistency and testing ✅ shipped
 
-- Retire the superseded one-role-per-account policy documentation.
-- Validation on the admin role editor so it cannot create invalid combinations.
-- Regression across both dashboards; end-to-end purchase tests.
+**Admin role editor.** `PATCH /admin/users/:id/roles` applied whatever it was
+handed, with no validation at all. It now enforces:
 
-**Total: 10–14 working days** for one senior developer.
+- **Staff roles require a `SUPER_ADMIN` actor.** Any `ADMIN` could previously
+  grant `SUPER_ADMIN` to any account, including a second account they control.
+  The adjacent `setUserPassword` has always had this rail; this endpoint never
+  did. Checked on the *difference*, not the resulting set, so a plain admin can
+  still edit the marketplace roles of an account that holds a staff role.
+- **Nobody edits their own roles**, mirroring the deactivate flow.
+- **A role must have its profile behind it.** `GUIDE` without a `GuideProfile`
+  breaks every practitioner screen, so it is refused (onboarding's job, and D1
+  keeps that direction closed). `SEEKER` without a `SeekerProfile` 403s on every
+  purchase — the checkout paths start from a profile lookup, not a role check —
+  so that profile is created.
+- **`GUIDE` can't be stripped from a published profile.** Public visibility keys
+  off `isVerified`/`isPublished`/`isActive`, not the role, so this would leave a
+  live listing whose owner cannot reach their dashboard to manage it.
+- **Empty role sets rejected**, and roles deduplicated (`createMany` would
+  otherwise trip the `(userId, role)` unique constraint).
+- **Audit-logged** as `admin.user.roles`, with before/after.
+
+Cover in `src/modules/admin/set-user-roles.spec.ts` (13 tests).
+
+**Documentation.** [seeker-guide-role-mutex.md](./seeker-guide-role-mutex.md)
+rewritten as *superseded in part* rather than deleted — the seeker→practitioner
+half is still live policy and that is still its spec. Each section is marked
+current or retired individually, including the claim in its routing section that
+"every non-admin user has exactly one of (SEEKER, GUIDE)", which is now false and
+was the assumption most likely to mislead someone later. The entry in
+`static-to-dynamic-audit.md` carries a supersession note.
+
+**Regression sweep.** Every remaining role check in both codebases reviewed. All
+surviving backend checks are positive `@Roles(Role.SEEKER)` guards on purchase
+endpoints, which practitioners now legitimately pass; no other place infers "is
+not a practitioner" from the buyer role.
+
+**Total: 10–14 working days** estimated; delivered in one session across four
+commits, with Phase 2 coming in under estimate because the audit it was priced
+for turned out to be a fixed list.
 
 ---
 
