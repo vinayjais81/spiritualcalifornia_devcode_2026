@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { useCartStore } from '@/store/cart.store';
+import { useIsOwnGuide, SELF_DEALING_NOTICE } from '@/lib/self-dealing';
 import { CreatorCard } from '@/components/public/shop/CreatorCard';
 import { ImageGallery } from '@/components/public/shop/ImageGallery';
 import { SizeSelector } from '@/components/public/shop/SizeSelector';
@@ -73,11 +75,18 @@ export default function ProductDetailPage() {
   const [reviews, setReviews] = useState<ReviewApiShape[]>([]);
   const [related, setRelated] = useState<RelatedApiShape[]>([]);
   const addItem = useCartStore((s) => s.addItem);
+  const isOwnProduct = useIsOwnGuide({ slug: product?.guide.slug });
 
   // Add the current product to the cart. Shared by "Add to Cart" and "Buy Now";
   // the caller decides whether to navigate afterwards.
   const addCurrentProduct = () => {
     if (!product) return;
+    // A practitioner's own product. The server refuses the order (per line, so
+    // a mixed cart still goes through) — this stops it reaching the cart at all.
+    if (isOwnProduct) {
+      toast.error(SELF_DEALING_NOTICE);
+      return;
+    }
     addItem({
       itemType: 'PRODUCT',
       itemId: product.id,

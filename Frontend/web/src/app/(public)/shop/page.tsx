@@ -207,6 +207,7 @@ export default function ShopPage() {
                 description={product.description || undefined}
                 badges={product.type === 'DIGITAL' ? ['Digital'] : undefined}
                 guideName={product.guide?.displayName}
+                guideSlug={product.guide?.slug}
               />
             ))}
           </div>

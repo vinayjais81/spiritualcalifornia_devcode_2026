@@ -50,6 +50,22 @@ export function Navbar() {
     (user?.roles ?? []).some((r) => r === 'ADMIN' || r === 'SUPER_ADMIN');
   const showListYourPractice =
     !isAuthenticated || (!isGuide && isAdminClass);
+
+  // Dual-role switcher (decision D6). Practitioners hold the buyer role too, so
+  // they have two dashboards. Their practitioner dashboard stays the default —
+  // exactly what they see today — and buying is the secondary activity,
+  // reachable from the account menu rather than promoted in the nav.
+  //
+  // Single-role users see the unchanged single "My Dashboard" entry, so this is
+  // invisible to every seeker on the platform.
+  const isSeeker = (user?.roles ?? []).includes('SEEKER');
+  const dashboardLinks =
+    isGuide && isSeeker
+      ? [
+          { href: '/guide/dashboard', label: 'Practitioner Dashboard' },
+          { href: '/seeker/dashboard', label: 'My Purchases' },
+        ]
+      : [{ href: isGuide ? '/guide/dashboard' : '/seeker/dashboard', label: 'My Dashboard' }];
   const practiceCtaLabel = 'List Your Practice';
   const practiceCtaHref = '/onboarding/guide';
 
@@ -321,26 +337,29 @@ export function Navbar() {
                         {user.email}
                       </div>
                     </div>
-                    <Link
-                      href={(user?.roles ?? []).includes('GUIDE') ? '/guide/dashboard' : '/seeker/dashboard'}
-                      onClick={() => setUserMenuOpen(false)}
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        padding: '11px 16px',
-                        fontFamily: 'var(--font-inter), sans-serif',
-                        fontSize: '11px',
-                        fontWeight: 500,
-                        letterSpacing: '0.08em',
-                        textTransform: 'uppercase',
-                        color: '#3A3530',
-                        background: 'none',
-                        textDecoration: 'none',
-                        borderBottom: '1px solid rgba(240,120,20,0.08)',
-                      }}
-                    >
-                      My Dashboard
-                    </Link>
+                    {dashboardLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={() => setUserMenuOpen(false)}
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          padding: '11px 16px',
+                          fontFamily: 'var(--font-inter), sans-serif',
+                          fontSize: '11px',
+                          fontWeight: 500,
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                          color: '#3A3530',
+                          background: 'none',
+                          textDecoration: 'none',
+                          borderBottom: '1px solid rgba(240,120,20,0.08)',
+                        }}
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
                     <button
                       onClick={handleLogout}
                       style={{
@@ -569,21 +588,24 @@ export function Navbar() {
               {/* Authenticated users need a way to reach their dashboard/profile
                   from the mobile menu — the desktop user dropdown is hidden here,
                   so without this the only option was Sign Out. */}
-              <Link
-                href={(user?.roles ?? []).includes('GUIDE') ? '/guide/dashboard' : '/seeker/dashboard'}
-                onClick={closeMenu}
-                className="font-playfair"
-                style={{
-                  fontSize: '32px',
-                  fontWeight: 400,
-                  fontStyle: 'italic',
-                  color: '#3A3530',
-                  textDecoration: 'none',
-                  letterSpacing: '0.02em',
-                }}
-              >
-                My Dashboard
-              </Link>
+              {dashboardLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={closeMenu}
+                  className="font-playfair"
+                  style={{
+                    fontSize: '32px',
+                    fontWeight: 400,
+                    fontStyle: 'italic',
+                    color: '#3A3530',
+                    textDecoration: 'none',
+                    letterSpacing: '0.02em',
+                  }}
+                >
+                  {link.label}
+                </Link>
+              ))}
               <button
                 onClick={() => { closeMenu(); handleLogout(); }}
                 style={{

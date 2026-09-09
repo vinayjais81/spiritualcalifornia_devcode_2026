@@ -357,7 +357,7 @@ export class AuthService {
         this.usersService.createSeekerProfile(user.id),
         this.usersService.assignRole(user.id, Role.SEEKER),
       ]);
-      user = await this.prisma.user.findUnique({ where: { id: user.id }, include: { roles: true } }) as any;
+      user = await this.usersService.findById(user.id) as any;
     }
 
     const roles = user!.roles.map((r: any) => r.role);
@@ -954,10 +954,26 @@ export class AuthService {
   }
 
   sanitizeUser(user: any) {
-    const { passwordHash, emailVerifyToken, passwordResetToken, ...safe } = user;
+    const {
+      passwordHash,
+      emailVerifyToken,
+      passwordResetToken,
+      guideProfile,
+      ...safe
+    } = user;
     return {
       ...safe,
       roles: (user.roles ?? []).map((r: any) => r.role ?? r),
+      // Flattened from the joined profile (UsersService.AUTH_USER_INCLUDE) so
+      // the client can answer "is this listing mine?" without a round trip —
+      // needed by the booking pages, the favourite button and add-to-cart now
+      // that a practitioner holds the buyer role too. Undefined for seekers.
+      //
+      // The nested object is destructured out above rather than spread: it
+      // would otherwise reach the client as a second, differently-shaped copy
+      // of the same two fields.
+      guideProfileId: guideProfile?.id ?? undefined,
+      guideSlug: guideProfile?.slug ?? undefined,
     };
   }
 

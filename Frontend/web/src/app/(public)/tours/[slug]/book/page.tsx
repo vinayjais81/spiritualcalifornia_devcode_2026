@@ -14,8 +14,9 @@ import { StripeProvider } from '@/components/public/checkout/StripeProvider';
 import { StripePaymentForm } from '@/components/public/checkout/StripePaymentForm';
 import { useAuthStore } from '@/store/auth.store';
 import { useSiteConfigOrFallback } from '@/lib/siteConfig';
+import { isOwnGuide, SELF_DEALING_NOTICE } from '@/lib/self-dealing';
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+//─── Types ──────────────────────────────────────────────────────────────────
 
 interface RoomType {
   id: string;
@@ -367,6 +368,13 @@ export default function BookTourPage() {
       toast.error('Missing tour or room selection');
       return;
     }
+    // Belt and braces behind the render-time check: the signed-in account can
+    // change between page load and submit, and this is the last point before a
+    // deposit is taken.
+    if (isOwnGuide(user, { slug: tour.guide.slug })) {
+      toast.error(SELF_DEALING_NOTICE);
+      return;
+    }
     if (chosenDeposit === null || chosenDeposit < minDepositTotal) {
       toast.error(`Minimum deposit is $${minDepositTotal.toLocaleString()}`);
       return;
@@ -469,6 +477,29 @@ export default function BookTourPage() {
           letterSpacing: '0.08em', textTransform: 'uppercase',
         }}>
           ← Browse Tours
+        </Link>
+      </div>
+    );
+  }
+  // Your own tour. Practitioners hold the buyer role now, so the role gate in
+  // handleCreateBooking no longer stops them — and the server refuses a
+  // self-booking outright. Said before they pick a departure and a room.
+  if (isOwnGuide(user, { slug: tour.guide.slug })) {
+    return (
+      <div style={{ padding: '120px 24px', textAlign: 'center', fontFamily: 'Inter, sans-serif', maxWidth: 520, margin: '0 auto' }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🪞</div>
+        <h1 style={{ fontFamily: serif, fontSize: 30, color: C.charcoal, marginBottom: 12 }}>
+          This is your own tour
+        </h1>
+        <p style={{ fontSize: 14, lineHeight: 1.6, color: C.warmGray, marginBottom: 24 }}>
+          {SELF_DEALING_NOTICE}
+        </p>
+        <Link href={`/tours/${slug}`} style={{
+          display: 'inline-block', padding: '12px 28px', background: C.gold, color: C.charcoal,
+          textDecoration: 'none', borderRadius: 8, fontWeight: 600, fontSize: 13,
+          letterSpacing: '0.08em', textTransform: 'uppercase',
+        }}>
+          ← Back to the tour
         </Link>
       </div>
     );

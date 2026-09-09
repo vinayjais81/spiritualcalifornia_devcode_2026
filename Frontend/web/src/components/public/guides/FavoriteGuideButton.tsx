@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
+import { useIsOwnGuide } from '@/lib/self-dealing';
 
 /**
  * The practitioners listing renders one button per card, and there is no
@@ -45,14 +46,20 @@ interface FavoriteGuideButtonProps {
  * Save/unsave a guide to the seeker's Favorite Guides.
  *
  * The favorites API (`/seekers/favorites`) is `@Roles(Role.SEEKER)`, so this
- * only renders for seekers: guides and admins have no seeker profile and would
- * just get a 403. Anonymous visitors see the button and are sent to sign-in.
+ * only renders for accounts holding the buyer role. Anonymous visitors see the
+ * button and are sent to sign-in.
+ *
+ * Practitioners now hold that role too, so they see the button on other
+ * practitioners' profiles — but not on their own, where the server refuses the
+ * favourite outright (the count is social proof on the profile). Hiding it is
+ * the honest rendering: the alternative is a button that always errors.
  */
 export function FavoriteGuideButton({ guideId, variant = 'full' }: FavoriteGuideButtonProps) {
   const router = useRouter();
   const pathname = usePathname();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const roles = useAuthStore((s) => s.user?.roles);
+  const isOwnProfile = useIsOwnGuide({ id: guideId });
 
   const isSeeker = !!roles?.includes('SEEKER');
   const [saved, setSaved] = useState(false);
@@ -70,8 +77,10 @@ export function FavoriteGuideButton({ guideId, variant = 'full' }: FavoriteGuide
     return () => { cancelled = true; };
   }, [guideId, isAuthenticated, isSeeker]);
 
-  // Signed in as a guide/admin: favorites aren't theirs to have.
+  // Signed in without the buyer role (admins): favorites aren't theirs to have.
   if (isAuthenticated && !isSeeker) return null;
+  // Your own profile — you can't favourite yourself.
+  if (isOwnProfile) return null;
 
   const handleToggle = async () => {
     if (!isAuthenticated) {

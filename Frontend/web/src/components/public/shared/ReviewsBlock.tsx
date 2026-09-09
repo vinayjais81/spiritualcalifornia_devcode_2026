@@ -12,6 +12,12 @@ interface ReviewItem {
   body: string | null;
   createdAt: string;
   author: { firstName: string; lastName: string; avatarUrl: string | null };
+  /**
+   * The author held a practitioner account when they wrote this (decision D5).
+   * Stamped server-side at write time, so it reflects who they were then — it
+   * does not change if they later become or stop being a practitioner.
+   */
+  authorIsPractitioner?: boolean;
 }
 
 interface ReviewsResponse {
@@ -133,7 +139,28 @@ export function ReviewsBlock({
                 )}
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 500, color: '#3A3530' }}>{displayName(r.author)}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 14, fontWeight: 500, color: '#3A3530' }}>{displayName(r.author)}</span>
+                  {/* D5: peer reviews are labelled. Sits beside the name rather
+                      than replacing "Verified purchase" below — it qualifies who
+                      wrote the review, not whether they actually bought. */}
+                  {r.authorIsPractitioner && (
+                    <span style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      color: '#B65104',
+                      background: '#FDE8D0',
+                      border: '1px solid rgba(240,120,20,0.3)',
+                      borderRadius: 4,
+                      padding: '2px 6px',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      Practitioner
+                    </span>
+                  )}
+                </div>
                 <div style={{ fontSize: 11, color: '#8A8278' }}>Verified purchase · {formatDate(r.createdAt)}</div>
               </div>
               <div style={{ color: '#F07814', fontSize: 12 }}>{stars(r.rating)}</div>

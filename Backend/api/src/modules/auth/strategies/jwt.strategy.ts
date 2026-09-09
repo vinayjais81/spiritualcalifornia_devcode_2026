@@ -54,6 +54,8 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       lastName: user.lastName,
       avatarUrl: user.avatarUrl ?? undefined,
       isEmailVerified: user.isEmailVerified,
+      guideProfileId: user.guideProfile?.id ?? undefined,
+      guideSlug: user.guideProfile?.slug ?? undefined,
     };
   }
 }

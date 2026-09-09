@@ -92,6 +92,8 @@ interface Review {
   body: string | null;
   createdAt: string;
   author: { firstName: string; lastName: string; avatarUrl: string | null };
+  /** Author held a practitioner account when they wrote this (decision D5). */
+  authorIsPractitioner?: boolean;
 }
 
 interface Testimonial {
@@ -701,8 +703,23 @@ export default function GuideProfilePage() {
                       )}
                     </div>
                     <div>
-                      <div style={{ fontFamily: font, fontSize: '13px', fontWeight: 500, color: C.charcoal }}>
-                        {r.author.firstName} {r.author.lastName[0]}.
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '7px', flexWrap: 'wrap' }}>
+                        <span style={{ fontFamily: font, fontSize: '13px', fontWeight: 500, color: C.charcoal }}>
+                          {r.author.firstName} {r.author.lastName[0]}.
+                        </span>
+                        {/* D5: a review written by one practitioner about
+                            another is labelled as such. */}
+                        {r.authorIsPractitioner && (
+                          <span style={{
+                            fontFamily: font, fontSize: '9px', fontWeight: 600,
+                            letterSpacing: '0.06em', textTransform: 'uppercase',
+                            color: '#B65104', background: C.goldPale,
+                            border: '1px solid rgba(240,120,20,0.3)',
+                            borderRadius: '4px', padding: '2px 5px', whiteSpace: 'nowrap',
+                          }}>
+                            Practitioner
+                          </span>
+                        )}
                       </div>
                       <div style={{ fontFamily: font, fontSize: '11px', color: C.warmGray }}>{formatDate(r.createdAt)}</div>
                     </div>

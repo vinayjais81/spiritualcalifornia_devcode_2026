@@ -3,6 +3,26 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../database/prisma.service';
 import { Role, User } from '@prisma/client';
 
+/**
+ * Everything the client needs to know about who it is signed in as.
+ *
+ * `guideProfile` is here so AuthService.sanitizeUser can hand the frontend a
+ * `guideProfileId`. Once practitioners can buy, several public screens have to
+ * answer "is this listing mine?" before letting the user act — the booking
+ * pages, the favourite button, add-to-cart. Without an id on the session they
+ * would each need their own round trip to find out, and the ones that skipped
+ * it would let the user reach the payment step only to be refused there.
+ *
+ * One shared include rather than per-call-site includes, because the auth paths
+ * that build a user response have drifted from each other before, and a
+ * `guideProfileId` present on login but missing on refresh would make
+ * self-purchase checks pass and fail at random.
+ */
+export const AUTH_USER_INCLUDE = {
+  roles: true,
+  guideProfile: { select: { id: true, slug: true } },
+} as const;
+
 /** What ensureBuyerAccess actually did, for logging and backfill reporting. */
 export type BuyerAccessResult =
   | 'granted' // role and/or profile created
@@ -21,14 +41,14 @@ export class UsersService {
   async findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
-      include: { roles: true },
+      include: AUTH_USER_INCLUDE,
     });
   }
 
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email },
-      include: { roles: true },
+      include: AUTH_USER_INCLUDE,
     });
   }
 
@@ -48,7 +68,7 @@ export class UsersService {
   }) {
     return this.prisma.user.create({
       data,
-      include: { roles: true },
+      include: AUTH_USER_INCLUDE,
     });
   }
 

@@ -32,10 +32,20 @@ function safeRedirect(raw: string | null): string | null {
 }
 
 /**
- * Where an already-signed-in visitor to /signin belongs. Kept next to the
- * post-login routing in handleSubmit so the two can't drift: admin always goes
- * to the admin panel, everyone else honours an explicit redirect first, then
- * falls back to their own dashboard.
+ * Where an already-signed-in visitor to /signin belongs: admin goes to the
+ * admin panel, everyone else honours an explicit redirect first, then falls
+ * back to their own dashboard.
+ *
+ * Deliberately NOT identical to the post-login routing in handleSubmit, which
+ * sends practitioners to /onboarding/guide. The two answer different questions.
+ * Someone who just authenticated may have an unfinished wizard to resume;
+ * someone who was already signed in and wandered onto /signin does not — and
+ * bouncing them into onboarding would be jarring. An earlier comment here
+ * claimed the two "can't drift", which was never true of these branches.
+ *
+ * What they DO agree on, and must keep agreeing on: GUIDE is checked before
+ * SEEKER. Practitioners hold both roles now (decision D6), so reversing that
+ * order in either place lands every practitioner on the buyer dashboard.
  */
 function signedInDestination(roles: string[], redirect: string | null): string {
   if (roles.includes('ADMIN') || roles.includes('SUPER_ADMIN')) return '/admin/dashboard';
@@ -129,7 +139,14 @@ function SignInContent() {
       } else if (redirectTo) {
         router.push(redirectTo);
       } else if (isGuide) {
-        // Wizard fetches its own status and resumes at the right step
+        // Practitioners go to the onboarding wizard, which fetches its own
+        // status and either resumes at the right step or forwards to the
+        // dashboard when there is nothing left to complete.
+        //
+        // Checked before isSeeker on purpose: practitioners hold the buyer role
+        // too now (decision D6), and reversing these two branches would land
+        // every practitioner on the buyer dashboard after sign-in — the most
+        // visible way to break the live site. Matches signedInDestination.
         router.push('/onboarding/guide');
       } else if (isSeeker) {
         // Resume incomplete seeker registration if not finished

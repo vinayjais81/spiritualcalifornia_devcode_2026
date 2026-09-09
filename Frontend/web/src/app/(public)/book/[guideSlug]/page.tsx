@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { isOwnGuide, SELF_DEALING_NOTICE } from '@/lib/self-dealing';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/store/auth.store';
 import { StripeProvider } from '@/components/public/checkout/StripeProvider';
@@ -289,6 +291,13 @@ export default function BookPractitionerPage() {
       router.push(`/signin?redirect=/book/${slug}`);
       return;
     }
+    // Belt and braces behind the render-time check above: the account can
+    // change between page load and submit (sign in as the owner in another
+    // tab), and this is the last point before we take a payment.
+    if (isOwnGuide(user, { slug })) {
+      toast.error(SELF_DEALING_NOTICE);
+      return;
+    }
 
     setCreatingBooking(true);
     try {
@@ -341,6 +350,32 @@ export default function BookPractitionerPage() {
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: font, fontSize: '14px', color: C.warmGray, flexDirection: 'column', gap: '12px' }}>
         <span style={{ fontSize: '40px' }}>🔍</span>
         <span>This practitioner is not available for booking right now.</span>
+      </div>
+    );
+  }
+
+  // ─── Your own practice ──────────────────────────────────────────────────
+  // Practitioners hold the buyer role, so the role gate below no longer stops
+  // them here — and the server refuses a self-booking outright. Said here
+  // rather than at submit, so nobody picks a time and fills in a form first.
+  if (isOwnGuide(user, { slug })) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: C.offWhite, padding: '32px' }}>
+        <div style={{ maxWidth: '480px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'center' }}>
+          <span style={{ fontSize: '40px' }}>🪞</span>
+          <span style={{ fontFamily: serif, fontSize: '26px', fontWeight: 400, color: C.charcoal }}>
+            This is your own practice
+          </span>
+          <span style={{ fontFamily: font, fontSize: '14px', lineHeight: 1.6, color: C.warmGray }}>
+            {SELF_DEALING_NOTICE}
+          </span>
+          <Link
+            href={`/guides/${slug}`}
+            style={{ fontFamily: font, fontSize: '13px', color: C.gold, textDecoration: 'underline', marginTop: '4px' }}
+          >
+            View your public profile
+          </Link>
+        </div>
       </div>
     );
   }

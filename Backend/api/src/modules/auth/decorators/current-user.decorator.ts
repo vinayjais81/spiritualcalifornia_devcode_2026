@@ -9,6 +9,15 @@ export interface CurrentUserData {
   lastName: string;
   avatarUrl?: string;
   isEmailVerified: boolean;
+  /**
+   * The caller's own GuideProfile, when they have one. Present so GET /auth/me
+   * returns the same shape the login/register responses do — the frontend
+   * rehydrates its session from /auth/me, and a guideProfileId that exists at
+   * login but disappears on refresh would make the client-side self-purchase
+   * checks pass and fail at random.
+   */
+  guideProfileId?: string;
+  guideSlug?: string;
 }
 
 export const CurrentUser = createParamDecorator(

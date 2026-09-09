@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { toast } from 'sonner';
 import { useCartStore } from '@/store/cart.store';
+import { useIsOwnGuide, SELF_DEALING_NOTICE } from '@/lib/self-dealing';
 
 interface ProductCardProps {
   id: string;
@@ -17,19 +19,28 @@ interface ProductCardProps {
   badges?: string[];
   description?: string;
   guideName?: string;
+  /** Seller's profile slug — lets the card refuse a practitioner's own product. */
+  guideSlug?: string;
 }
 
 export function ProductCard({
   id, name, price, originalPrice, category, type,
-  imageUrl, rating, reviewCount, badges, description, guideName,
+  imageUrl, rating, reviewCount, badges, description, guideName, guideSlug,
 }: ProductCardProps) {
   const [hovered, setHovered] = useState(false);
   const [added, setAdded] = useState(false);
   const addItem = useCartStore((s) => s.addItem);
+  const isOwnProduct = useIsOwnGuide({ slug: guideSlug });
 
   const handleQuickAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    // Quick-add from the listing grid. The server refuses the order anyway, so
+    // the cost of missing this is a late refusal at checkout, not a bad sale.
+    if (isOwnProduct) {
+      toast.error(SELF_DEALING_NOTICE);
+      return;
+    }
     addItem({
       itemType: 'PRODUCT',
       itemId: id,
