@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client';
 import * as crypto from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
 import { PUBLIC_GUIDE_WHERE } from '../../common/public-visibility';
+import { assertNotOwnListing } from '../../common/self-dealing';
 import { CacheService } from '../../database/cache.service';
 import { CreateTourDto } from './dto/create-tour.dto';
 import { UpdateTourDto, UpdateRoomTypeDto } from './dto/update-tour.dto';
@@ -543,9 +544,11 @@ export class SoulToursService {
     // can't be booked via a direct tourId.
     const tour = await this.prisma.soulTour.findFirst({
       where: { id: dto.tourId, isPublished: true, guide: PUBLIC_GUIDE_WHERE },
-      include: { roomTypes: true },
+      include: { roomTypes: true, guide: { select: { userId: true } } },
     });
     if (!tour || tour.isCancelled) throw new NotFoundException('Tour not found');
+
+    assertNotOwnListing(userId, tour.guide.userId);
 
     const departure = await this.prisma.tourDeparture.findUnique({
       where: { id: dto.departureId },

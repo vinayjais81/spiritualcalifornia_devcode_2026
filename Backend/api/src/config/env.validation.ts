@@ -186,6 +186,15 @@ const envSchema = z.object({
   ORDER_HOLD_MINUTES: z.string().optional(),
   ORDER_TASKS_ENABLED: z.string().optional(),
 
+  // ── Practitioners as buyers ────────────────────────────────────────────
+  // Gates Phase 1 only: granting practitioners the SEEKER role so they can
+  // buy from each other. Default off. The self-dealing guards that make the
+  // grant safe (common/self-dealing.ts) are deliberately NOT behind this flag
+  // — they ship unconditionally, so the safeguard cannot be missing on the day
+  // the flag is turned on. Same declaration rule as the flags above.
+  // See docs/practitioners-as-buyers.md.
+  PRACTITIONER_BUYER_ENABLED: z.string().optional(),
+
   // ── Practitioner import ────────────────────────────────────────────────
   // HMAC key for email suppression tombstones. Same declaration rule applies:
   // undeclared here means the service silently falls back to JWT_ACCESS_SECRET

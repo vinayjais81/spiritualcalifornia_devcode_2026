@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
-import { Prisma, ReviewTarget } from '@prisma/client';
+import { Prisma, ReviewTarget, Role } from '@prisma/client';
 import { CreateReviewDto, ReviewTargetType } from './dto/create-review.dto';
 
 type EligibilityResult = {
@@ -172,7 +172,34 @@ export class ReviewsService {
       throw new BadRequestException(eligibility.reason ?? 'Not eligible to review this purchase');
     }
 
+    // Second line of defence behind the self-dealing guards on the four
+    // purchase paths (common/self-dealing.ts). Eligibility already requires a
+    // completed purchase, so this is only reachable if a self-purchase got
+    // through — a guard we missed, or a row that predates them. A self-review
+    // is the most damaging outcome of that gap, so it is refused here too
+    // rather than trusted to the layer below.
+    if (eligibility.guideUserId === userId) {
+      throw new ForbiddenException('You cannot review your own offering.');
+    }
+
     const targetType = dto.targetType as unknown as ReviewTarget;
+
+    // D5 (client decision, 8 Sep 2026): reviews written by one practitioner
+    // about another are labelled as such on the public listing.
+    //
+    // Stamped at write time rather than joined live on read. Two reasons: the
+    // label is a statement about who the author was when they wrote it, so a
+    // seeker who later becomes a practitioner must not retroactively relabel
+    // years of their own reviews; and the listing query stays a single read.
+    //
+    // The client accepted the trade-off this carries — a visible peer label is
+    // also an incentive for practitioners to review each other favourably —
+    // in exchange for the trust signal. See docs/practitioners-as-buyers.md.
+    const authorRoles = await this.prisma.userRole.findMany({
+      where: { userId },
+      select: { role: true },
+    });
+    const authorIsPractitioner = authorRoles.some((r) => r.role === Role.GUIDE);
 
     // Map dto.transactionId → the right per-source FK column (exactly one is set)
     const sourceFk: Partial<Prisma.ReviewCreateInput> = {};
@@ -188,6 +215,7 @@ export class ReviewsService {
           guide: { connect: { id: eligibility.guideUserId! } },
           targetType,
           targetEntityId: eligibility.targetEntityId!,
+          authorIsPractitioner,
           rating: dto.rating,
           title: dto.title,
           body: dto.body,

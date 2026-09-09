@@ -1,0 +1,12 @@
+-- Practitioners as buyers, decision D5: a review written by one practitioner
+-- about another is labelled as such on public listings.
+--
+-- Stamped at write time (see reviews.service.ts create) rather than joined from
+-- the author's current roles on read, so the label stays a statement about who
+-- the author was when they wrote the review. Deriving it live would relabel a
+-- seeker's entire review history the day they became a practitioner.
+--
+-- DEFAULT false is correct for every existing row: until this change no account
+-- could hold both the GUIDE and SEEKER roles, so no existing review can have
+-- been written by a practitioner.
+ALTER TABLE "reviews" ADD COLUMN "authorIsPractitioner" BOOLEAN NOT NULL DEFAULT false;

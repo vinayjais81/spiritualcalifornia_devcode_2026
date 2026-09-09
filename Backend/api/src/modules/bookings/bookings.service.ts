@@ -5,6 +5,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { CreateServiceBookingDto } from './dto/create-service-booking.dto';
 import { PUBLIC_GUIDE_WHERE } from '../../common/public-visibility';
+import { assertNotOwnListing } from '../../common/self-dealing';
 
 @Injectable()
 export class BookingsService {
@@ -24,9 +25,11 @@ export class BookingsService {
 
     const service = await this.prisma.service.findFirst({
       where: { id: dto.serviceId, isActive: true, guide: PUBLIC_GUIDE_WHERE },
-      include: { guide: { select: { id: true, displayName: true, slug: true, stripeAccountId: true } } },
+      include: { guide: { select: { id: true, userId: true, displayName: true, slug: true, stripeAccountId: true } } },
     });
     if (!service) throw new NotFoundException('Service not found or inactive');
+
+    assertNotOwnListing(userId, service.guide.userId);
 
     const startTime = new Date(dto.startTime);
     const endTime = new Date(dto.endTime);
@@ -132,8 +135,11 @@ export class BookingsService {
 
     const service = await this.prisma.service.findFirst({
       where: { id: dto.serviceId, isActive: true, guide: PUBLIC_GUIDE_WHERE },
+      include: { guide: { select: { userId: true } } },
     });
     if (!service) throw new NotFoundException('Service not found or inactive');
+
+    assertNotOwnListing(userId, service.guide.userId);
 
     const slot = await this.prisma.serviceSlot.findUnique({ where: { id: dto.slotId } });
     if (!slot) throw new NotFoundException('Slot not found');

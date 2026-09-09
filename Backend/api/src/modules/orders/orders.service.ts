@@ -5,6 +5,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { PaymentsService } from '../payments/payments.service';
 import { CheckoutService } from '../checkout/checkout.service';
 import { PUBLIC_GUIDE_WHERE } from '../../common/public-visibility';
+import { assertNotOwnListing } from '../../common/self-dealing';
 
 /**
  * How long a PENDING order may hold the stock it reserved before the reaper
@@ -54,8 +55,13 @@ export class OrdersService {
         // from an unverified/unpublished/deactivated guide via a direct productId.
         const product = await this.prisma.product.findFirst({
           where: { id: item.productId, isActive: true, guide: PUBLIC_GUIDE_WHERE },
+          include: { guide: { select: { userId: true } } },
         });
         if (!product) throw new NotFoundException(`Product ${item.productId} not found`);
+
+        // Refused per line, not per order: a cart can mix several
+        // practitioners' products, and only the buyer's own are disallowed.
+        assertNotOwnListing(userId, product.guide.userId, product.name);
 
         let unitPrice = Number(product.price);
 

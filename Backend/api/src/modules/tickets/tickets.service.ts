@@ -4,6 +4,7 @@ import {
 import { PrismaService } from '../../database/prisma.service';
 import { PaymentsService } from '../payments/payments.service';
 import { PUBLIC_GUIDE_WHERE } from '../../common/public-visibility';
+import { assertNotOwnListing } from '../../common/self-dealing';
 import { EventCheckoutDto } from './dto/event-checkout.dto';
 import { randomBytes } from 'crypto';
 import * as QRCode from 'qrcode';
@@ -33,12 +34,14 @@ export class TicketsService {
       where: { id: dto.eventId, guide: PUBLIC_GUIDE_WHERE },
       include: {
         guide: {
-          select: { id: true, displayName: true, stripeAccountId: true, user: { select: { firstName: true, lastName: true } } },
+          select: { id: true, userId: true, displayName: true, stripeAccountId: true, user: { select: { firstName: true, lastName: true } } },
         },
         ticketTiers: true,
       },
     });
     if (!event || !event.isPublished) throw new NotFoundException('Event not found or not published');
+
+    assertNotOwnListing(userId, event.guide.userId);
     if (event.isCancelled) throw new BadRequestException('This event has been cancelled');
     // Registration closes when the event starts. The public listing already
     // hides past events, but the detail page and this endpoint are reachable

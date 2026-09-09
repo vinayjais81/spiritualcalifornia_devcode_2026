@@ -1405,6 +1405,13 @@ model Review {
   rating           Int
   title            String?
   body             String?
+  /// True when the AUTHOR held the GUIDE role at the moment they wrote this.
+  /// Drives the "practitioner review" label on public listings (client
+  /// decision D5, 8 Sep 2026). Stamped at write time, never derived on read:
+  /// the label describes who the author was then, so a seeker who later
+  /// becomes a practitioner must not retroactively relabel their old reviews.
+  /// Every row that predates practitioner buying is correctly false.
+  authorIsPractitioner Boolean  @default(false)
   guideReply       String?
   guideRepliedAt   DateTime?
   isApproved       Boolean      @default(true)

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CartService } from '../cart/cart.service';
+import { assertNotOwnListing } from '../../common/self-dealing';
 import { UpdateSeekerProfileDto } from './dto/update-seeker-profile.dto';
 
 @Injectable()
@@ -382,6 +383,10 @@ export class SeekersService {
 
     const guide = await this.prisma.guideProfile.findUnique({ where: { id: guideId } });
     if (!guide) throw new NotFoundException('Guide not found');
+
+    // Favouriting yourself isn't a payment risk, but it is social proof: the
+    // count feeds the profile. Blocked for the same reason as self-purchase.
+    assertNotOwnListing(userId, guide.userId);
 
     const existing = await this.prisma.favorite.findUnique({
       where: { seekerId_guideId: { seekerId: profile.id, guideId } },
