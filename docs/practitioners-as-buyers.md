@@ -272,16 +272,41 @@ Once Phases 2 and 3 are done, turning this on is four ordered steps:
 
 1. Apply the migration to production.
 2. `npm run audit:dual-role` — read-only, tells you what the backfill will meet.
-3. `npm run buyer-access:report` → `:trial` → `:execute --confirm=<db>`. Nothing
-   changes for users yet: the grant is a no-op while the flag is off, and the
-   backfill's own writes are inert without it.
-4. Set `PRACTITIONER_BUYER_ENABLED=true` on the API and restart. **This is the
-   step that switches the feature on.** Sessions pick the new role up on their
-   next request (Phase 0's `jwt.strategy` change), not on next sign-in.
+3. Set `PRACTITIONER_BUYER_ENABLED=true` and redeploy. On its own this changes
+   nothing visible: it only makes *newly created* practitioner accounts receive
+   the buyer role.
+4. `npm run buyer-access:report` → `:trial` → `:execute --confirm=<db>`.
+   **This is the step that switches the feature on** for practitioners who
+   already exist.
 
-To roll back, unset the flag. The granted roles can stay; without the flag
-nothing reads them differently, and the self-dealing guards remain in force
-either way.
+### The flag is narrower than its name suggests
+
+An earlier version of this document said the backfill's writes were "inert
+without the flag". **That was wrong**, and it is the kind of wrong that gets a
+feature turned on by accident.
+
+`PRACTITIONER_BUYER_ENABLED` gates exactly one thing:
+`UsersService.ensureBuyerAccess`, the automatic grant on account creation.
+Nothing downstream reads it. The purchase endpoints are guarded by
+`@Roles(Role.SEEKER)` and the checkout paths look up a `SeekerProfile` — so once
+a practitioner holds the role and the profile, they can buy, flag or no flag.
+
+Hence the ordering above: flag first (cheap, invisible, covers new accounts),
+backfill second (the real switch, covers existing ones). The execute step now
+prints this warning itself.
+
+**To roll back:** delete the granted `SEEKER` rows —
+
+```sql
+DELETE FROM user_roles WHERE role = 'SEEKER' AND "userId" IN (
+  SELECT "userId" FROM guide_profiles
+);
+```
+
+Unsetting the flag alone does **not** roll back; it only stops new grants. The
+`SeekerProfile` rows can stay — an empty profile with no purchases is inert, and
+keeping it means a re-grant reuses the same id rather than orphaning history.
+The self-dealing guards remain in force throughout, either way.
 
 ## Open items
 

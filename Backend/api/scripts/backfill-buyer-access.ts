@@ -176,6 +176,27 @@ async function main() {
         `Refusing to write. Pass --confirm=${dbName} to confirm you mean this database.`,
       );
     }
+
+    // Say plainly what this does, because it is easy to get wrong — and was
+    // written down wrongly once already.
+    //
+    // PRACTITIONER_BUYER_ENABLED does NOT gate this. The flag gates
+    // UsersService.ensureBuyerAccess, which is the automatic grant for accounts
+    // created from here on. Nothing downstream consults it: the purchase
+    // endpoints are guarded by @Roles(Role.SEEKER) and the checkout paths look
+    // up a SeekerProfile. So the moment these rows are committed, these
+    // practitioners can buy — flag or no flag.
+    //
+    // That makes this command the activation step for existing practitioners,
+    // not a dry staging step before it.
+    const flag = process.env.PRACTITIONER_BUYER_ENABLED === 'true' ? 'on' : 'OFF';
+    console.log('');
+    console.log('  ⚠  This grants buyer access for real. These practitioners will be able');
+    console.log('     to purchase as soon as it commits. PRACTITIONER_BUYER_ENABLED does');
+    console.log('     not gate it — that flag only controls the automatic grant for new');
+    console.log(`     accounts, and is currently ${flag}.`);
+    console.log('     To undo: DELETE the granted SEEKER rows (the profiles can stay).');
+    console.log('');
   }
 
   let granted = 0;
