@@ -174,7 +174,7 @@ Run `npm run audit:dual-role` first.
 for any value but the literal `"true"`, idempotent, and the adopt-don't-replace
 rule.
 
-### Phase 2 — Front-end experience (~3–4 days)
+### Phase 2 — Front-end experience ✅ shipped
 
 The proposal called this "an audit, not a fixed list". Having done the audit, it
 is a fixed list — smaller than feared. Two places already handle dual-role
@@ -182,24 +182,33 @@ correctly by accident and need no change: `OnboardingWizard.tsx` suppresses
 itself on `SEEKER && !GUIDE`, and `Navbar.tsx` gates the "List Your Practice"
 CTA on `isGuide` alone.
 
-Remaining:
+What shipped:
 
-- **✅ Done, shipped with Phase 1** — `register/page.tsx` computed
-  `isExistingGuide` as `GUIDE && !SEEKER`, which inverts the moment
-  practitioners hold both roles: the block screen disappears and a signed-in
-  practitioner is served the seeker signup wizard. Fixed ahead of the rest of
-  Phase 2 precisely because it is armed by the flag, not by a deploy.
-- A dashboard switcher for dual-role users.
-- Client-side self-dealing checks, so a practitioner is told *before* the
-  payment step rather than by a 403 at submit: `book/[guideSlug]/page.tsx`,
-  `tours/[slug]/book/page.tsx`, `FavoriteGuideButton.tsx` (hide on your own
-  profile), and add-to-cart.
-- Render the D5 practitioner-review label from `authorIsPractitioner`.
-- While in `signin/page.tsx`: `signedInDestination` (line 43) routes
-  practitioners to `/guide/dashboard` while `handleSubmit` (line 131) sends them
-  to `/onboarding/guide`. The comment above them claims the two "can't drift".
-  They have. Pre-existing and unrelated to this change, but cheap to reconcile
-  while the file is open.
+- **The `register/page.tsx` inversion** (`GUIDE && !SEEKER` → `GUIDE`), fixed
+  ahead of the rest because it is armed by the flag rather than by a deploy.
+- **`guideProfileId` / `guideSlug` on the session.** Added through one shared
+  `AUTH_USER_INCLUDE` and mirrored into `jwt.strategy` so `GET /auth/me` returns
+  the same shape the login response does — the client rehydrates from
+  `/auth/me`, and a field present at login but missing on refresh would make the
+  self-dealing checks pass and fail at random.
+- **`lib/self-dealing.ts`** — the client mirror of the server rule, applied to
+  the service booking page, the tour booking page, the favourite button and both
+  add-to-cart paths. It resolves **false** when the identifier is missing, on
+  purpose: guessing wrong that way is a cosmetic bug, guessing wrong the other
+  way hides the buy button from everyone when data fails to load.
+- **The dashboard switcher (D6)** — "Practitioner Dashboard" / "My Purchases" in
+  the account menu, desktop and mobile. Single-role users see the unchanged
+  single entry, so it is invisible to every seeker on the platform.
+- **The D5 label**, on the guide profile and in the shared reviews block.
+- A false comment in `signin/page.tsx` claiming `signedInDestination` and
+  `handleSubmit` "can't drift". They had already diverged, and legitimately —
+  one routes someone who just authenticated and may have an unfinished wizard,
+  the other someone already signed in who wandered onto `/signin`. What they
+  must keep agreeing on is that **GUIDE is checked before SEEKER**; reversing
+  that in either place lands every practitioner on the buyer dashboard.
+
+The client mirror is UX only. The server refuses every one of these regardless,
+and nothing here should ever be treated as the enforcement point.
 
 ### Phase 3 — Consistency and testing (2–3 days)
 
@@ -240,10 +249,17 @@ To roll back, unset the flag. The granted roles can stay; without the flag
 nothing reads them differently, and the self-dealing guards remain in force
 either way.
 
-## Open item
+## Open items
 
-The **cart** is not part of the Phase 0 guard set. A practitioner can still add
-their own product to a cart; the refusal lands at order creation
-(`orders.service.ts`), where it is enforced for real. That is safe but late —
-Phase 2 should filter self-owned items at add-to-cart so the refusal is not the
-first the buyer hears of it.
+- **Carts saved before Phase 2** can still hold a practitioner's own product:
+  the cart is persisted client-side, and the guard runs at add time. The refusal
+  lands at order creation (`orders.service.ts`), per line, so the rest of the
+  cart still checks out. Worth a sweep on the cart page if it shows up in
+  testing.
+- **`ReviewsSection.tsx`** (shop) renders from its own flattened
+  `{ authorName, verified }` shape rather than the API review, so the D5 label
+  is not on it. Everywhere reviews come from the reviews API — the guide profile
+  and `ReviewsBlock` — has it.
+- **Peer-review reciprocity** — the incentive the client accepted in D5. If peer
+  reviews start clustering into mutual 5-star pairs, that is the trade-off
+  showing up in the data, and it should go back to them rather than be absorbed.
