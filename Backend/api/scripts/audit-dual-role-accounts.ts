@@ -36,8 +36,24 @@
 import 'reflect-metadata';
 import 'dotenv/config';
 import { PrismaClient, Role } from '@prisma/client';
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { buildPoolConfig } from '../src/common/db-ssl';
 
-const prisma = new PrismaClient();
+// Prisma 7 requires a driver adapter — a bare `new PrismaClient()` throws
+// PrismaClientInitializationError at construction, before any query runs.
+// Matches how PrismaService builds the client in the running app, and how
+// purge-demo-data.ts / backfill-ledger.ts do it. buildPoolConfig supplies the
+// RDS CA bundle, without which this cannot connect to production at all.
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  console.error('DATABASE_URL is not set. Aborting.');
+  process.exit(1);
+}
+
+const pool = new Pool(buildPoolConfig(databaseUrl));
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 function heading(text: string) {
   console.log(`\n${text}`);

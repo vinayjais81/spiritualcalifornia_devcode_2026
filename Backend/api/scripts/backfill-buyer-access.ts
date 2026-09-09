@@ -38,10 +38,23 @@
 import 'reflect-metadata';
 import 'dotenv/config';
 import { PrismaClient, Prisma, Role } from '@prisma/client';
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { buildPoolConfig } from '../src/common/db-ssl';
 
 type Mode = 'report' | 'trial' | 'execute';
 
-const prisma = new PrismaClient();
+// Prisma 7 requires a driver adapter; see the note in
+// audit-dual-role-accounts.ts. buildPoolConfig also supplies the RDS CA bundle.
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  console.error('DATABASE_URL is not set. Aborting.');
+  process.exit(1);
+}
+
+const pool = new Pool(buildPoolConfig(databaseUrl));
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 function arg(name: string): string | undefined {
   const hit = process.argv.find((a) => a.startsWith(`--${name}=`));
