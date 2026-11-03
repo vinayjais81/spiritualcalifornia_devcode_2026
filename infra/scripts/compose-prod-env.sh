@@ -273,6 +273,9 @@ cat > "$WEB_FILE" <<EOF
 # rebuild, not a restart.
 
 NEXT_PUBLIC_API_URL=${API_BASE}
+# Base for absolute og:image / link-card URLs. The public domain, never the
+# ALB name - crawlers fetch it from outside.
+NEXT_PUBLIC_SITE_URL=${SITE_URL}
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${STRIPE_PUB}
 NEXT_PUBLIC_ALGOLIA_APP_ID=disabled
 NEXT_PUBLIC_ALGOLIA_SEARCH_KEY=disabled
